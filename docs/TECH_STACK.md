@@ -12,7 +12,7 @@ Selected: 2026-09-15, under the user's explicit delegation of technical choices.
 | Evidence file storage | Private Supabase Storage | Restricted object access for the user-approved private-document capability; visibility/retention rules still require decisions |
 | Server data access/migrations | Drizzle | Explicit transactional SQL-oriented access and generated SQL migrations that can be reviewed |
 | Initial deployment shape | One web application with separate domain modules | Reduce coordination while keeping market, information and discovery responsibilities distinct |
-| AI goal suggestions | Anthropic Claude API, called only from server code | The user chose AI-written goal suggestions alongside templates (2026-09-15). Provider selected under technical delegation. Model, prompt, which subject inputs are sent, retention and spending limits are set at implementation. The user must create the API key and billing account |
+| AI goal suggestions | Anthropic Claude API (model `claude-haiku-4-5`), called only from server code | The user chose AI-written goal suggestions alongside templates (2026-09-15). Drafting a few goal options from a short profile is a small, structured task, so the cheapest current Claude model fits: $1 per million input tokens and $5 per million output. Do not use an Opus- or Fable-tier model here. Google's Gemini Flash-Lite is cheaper still but adds a second provider and account for a few cents a month at pilot scale. The user creates the API key and billing account; prompt, inputs sent, retention and spending limits are set at implementation |
 
 No separate API service, ML service, analytics SaaS, background-job system or hosting subscription is selected.
 

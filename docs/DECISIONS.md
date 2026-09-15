@@ -193,3 +193,17 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 - An OSU address evidences a current university account. It does not establish that the holder is 18+, or that they are the person a market concerns. The age-check method stays open.
 - Supabase Auth does not restrict sign-up domains by itself; the restriction must be enforced in application code or an auth hook, and tested.
 - Opening a market away from 50% changes the market maker's worst-case loss to -b ln(opening price of the winning side). At b = 150 a market opened at 30% can lose about 181 points if YES wins, against 104 at 50%.
+
+## 2026-09-15 - Model choice and budget for AI goal suggestions
+
+**Question from the user:** how much to load the Claude key with, whether a cheaper or different provider is better, and whether the next AI agent can handle the keys.
+
+**Decision (technical delegation):** use `claude-haiku-4-5` for goal suggestions, at $1 per million input tokens and $5 per million output (Anthropic first-party rates, from the bundled API reference cached 2026-06-24). Drafting a few goal options from a short profile does not need a frontier model. Do not use an Opus- or Fable-tier model for this feature.
+
+**Alternatives priced:** Google's published pricing puts Gemini 3.1 Flash-Lite at $0.25/$1.50 and Gemini 2.5 Flash-Lite at $0.10/$0.40 per million tokens, cheaper than Haiku but requiring a second provider account for a few cents a month at pilot scale. OpenAI's official pricing page returned HTTP 403; third-party reports put GPT-6 Astra at $10/$50 per million, roughly ten times Haiku for a task that does not need it. Revisit if suggestion quality proves inadequate in testing.
+
+**Budget estimate:** about 800 input and 300 output tokens per suggestion request, so roughly $2.30 per thousand suggestions on Haiku. A pilot of 50 people creating three goals each costs well under a dollar.
+
+**Billing mechanics (Anthropic support documentation):** API usage runs on prepaid credits bought in the Console under Billing. Auto-reload is optional; leaving it off caps total spend at the credits purchased. Credits expire one year after purchase and are non-refundable. A specific minimum purchase amount was not verified.
+
+**Secrets:** `.env.example` now lists every variable name. Keys live only in `.env.local`, which Git ignores, and the owner enters them personally. AGENTS.md carries the rule for whichever agent works on this next.

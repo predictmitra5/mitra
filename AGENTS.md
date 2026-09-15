@@ -8,6 +8,14 @@ This repository is a play-money social prediction app about people's goals, buil
 2. The owner decides product behavior: market rules, economy, verification, feed, consent and privacy. Do not implement behavior that is not recorded in `docs/DECISIONS.md`; ask first. Technical choices inside the selected stack (`docs/TECH_STACK.md`) are delegated.
 3. Before ending a session, update `docs/EXECUTION.md` and the affected design documents to describe what actually exists.
 
+## Secrets
+
+Real credentials live only in `.env.local`, which Git ignores. `.env.example` lists the variable names and where each value comes from.
+
+- Read every secret through `process.env`. Never hard-code a key, print one, or write one into a commit, a document or a chat message.
+- The owner pastes values into `.env.local` themselves. Do not ask them to send a key to you, and do not type one for them.
+- If a key is ever exposed, rotate it in the provider's dashboard; editing history is not enough.
+
 ## Commands
 
 - `npm run dev` starts the local app.

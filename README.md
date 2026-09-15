@@ -38,4 +38,4 @@ npm run typecheck
 npm run lint
 ```
 
-No environment variables are needed yet. Supabase and Claude API settings will be listed in `.env.example` when those integrations are added.
+No environment variables are needed for the checks above. When you add Supabase and Claude API credentials, copy `.env.example` to `.env.local` and fill it in. `.env.local` is Git-ignored; keys never belong in a commit or a chat message.
