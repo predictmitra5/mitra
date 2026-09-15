@@ -1,0 +1,31 @@
+# Agent instructions
+
+This repository is a play-money social prediction app about people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`.
+
+## Before substantial work
+
+1. Read `docs/EXECUTION.md`. It is the source of truth for current state, pending user decisions and next actions. Then read the linked design documents relevant to the task.
+2. The owner decides product behavior: market rules, economy, verification, feed, consent and privacy. Do not implement behavior that is not recorded in `docs/DECISIONS.md`; ask first. Technical choices inside the selected stack (`docs/TECH_STACK.md`) are delegated.
+3. Before ending a session, update `docs/EXECUTION.md` and the affected design documents to describe what actually exists.
+
+## Commands
+
+- `npm run dev` starts the local app.
+- `npm test` runs the Vitest unit tests.
+- `npm run typecheck` generates Next.js route types and type-checks.
+- `npm run lint` runs ESLint.
+
+## Layout
+
+- `src/app`: Next.js App Router pages.
+- `src/modules/market`: market engine (binary LMSR pricing and integer rounding). Keep market, information and discovery logic in separate modules.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
