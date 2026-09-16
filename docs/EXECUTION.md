@@ -15,8 +15,8 @@ Sessions so far ran first in Codex, then in Claude Code. This file, not chat his
 ## Current state
 
 - Stage: trading rules decided and implemented as tested domain logic; no database, sign-in or user interface yet.
-- Implemented: Next.js 16 scaffold, and the market module in `src/modules/market` (LMSR pricing, integer quotes, positions and the per-market limit, the Kalshi-style trading ban, refills, and the shared buy/sell rules). 35 unit tests, `npm run typecheck` and `npm run lint` pass.
-- Not implemented: database, ledger persistence, authentication, profiles, goal creation, owner approval queue, resolution and payouts, verification, feed, notifications, deployment.
+- Implemented: Next.js 16 scaffold, and the market module in `src/modules/market` (LMSR pricing, integer quotes, positions and the per-market limit, the Kalshi-style trading ban, refills, and the shared buy/sell rules). 35 unit tests, `npm run typecheck` and `npm run lint` pass. The database schema is applied to Supabase: ten tables from `src/db/schema.ts`, migrations in `drizzle/`, row-level security enabled on every table and verified to hide rows from the browser key.
+- Not implemented: authentication, profile and goal creation flows, the owner approval queue, trade execution against the database, resolution and payouts, verification, feed, notifications, deployment. The tables exist but no application code writes to them yet.
 - Stack selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for server database access/migrations, and the Anthropic Claude API for AI goal suggestions. See TECH_STACK.md. The Supabase project and Claude API key exist and are configured in `.env.local`.
 - Development machine: Windows 11, Node.js 24.19.0 LTS and Git installed with the user's permission on 2026-09-15. Docker is not installed.
 - Credentials: the owner created a Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified working: Supabase auth and REST return 200, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect. `postgres`, `drizzle-orm` and `drizzle-kit` are installed; no schema or migration exists yet.
@@ -107,7 +107,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 ## Next actions
 
 1. Done 2026-09-15: the lifecycle interview (D04). Next, agree the fill-in templates per goal type and what counts as the event happening for each.
-2. Done: the Supabase project and Claude API key are created and verified. Next, implement the database schema, ledger and sign-in restricted to Ohio State email addresses, enforced server-side.
+2. Done: credentials verified and the schema applied. Next, implement sign-in restricted to Ohio State email addresses (enforced server-side), profile creation with the signup grant, and goal creation from templates.
 3. Build Slice 1 on that: profiles, goal creation from templates and AI suggestions, and the owner approval queue with the opening price.
 4. Research collusion and related-party controls for small social groups and bring options back to the user.
 5. Complete the verification/privacy and discovery interviews before their substantive implementations.

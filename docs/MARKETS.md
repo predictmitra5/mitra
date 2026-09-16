@@ -1,6 +1,6 @@
 # Markets
 
-Status: creation, approval, trading eligibility, mechanism and economy decided and implemented as domain logic. Lifecycle, resolution and persistence are not decided or built.
+Status: creation, approval, trading eligibility, mechanism, economy and lifecycle are decided. The engine logic and the database schema are built; trade execution, resolution and the user interface are not.
 
 ## Confirmed direction - 2026-09-15
 
@@ -58,7 +58,7 @@ The initial community is friends and Ohio State students. The user explicitly wa
 | Launch | Will the person launch [specified thing] by [date]? | What exists, who can access it, and what qualifies as a launch | Public release/working artifact or other agreed proof |
 | Gym goal | Will the person perform [defined achievement] by [date]? | Measurable achievement, conditions, witnessing and timing | Agreed observation or evidence; video/witness features are discussion candidates, not approved upload capabilities |
 
-Private student records or offer letters must not become public by default. Market pages are public and may be indexed by search engines, so define exactly what the reviewer needs and what a public outcome explanation reveals. Missing proof is not automatically NO; fallback and cancellation rules need agreement.
+Private student records or offer letters must not become public by default. Market pages are public and may be indexed by search engines, so define exactly what the reviewer needs and what a public outcome explanation reveals. Missing proof by the evidence deadline resolves NO; see Lifecycle below.
 
 ## Kalshi baseline
 

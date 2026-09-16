@@ -14,7 +14,7 @@ Exit: a documented initial product contract and chosen stack, with each policy-d
 
 ## Slice 1 - An approved subject and a well-defined market
 
-Done: the stack is scaffolded and runs locally from the README.
+Done: the stack is scaffolded and runs locally from the README, and the database schema is applied with row-level security enabled on every table.
 
 Remaining: sign-in restricted to Ohio State email addresses, role checks, profile flow, goal creation from templates and AI suggestions, and the owner approval queue including the opening price. Build only the screens necessary for this journey. Needs a Supabase project and Claude API key created by the user, and the lifecycle decisions in D04.
 
@@ -24,7 +24,7 @@ Verify: authorized users can complete it; unauthorized actors cannot approve or 
 
 Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`.
 
-Remaining: persistence of the wallet ledger, trades, positions and price history; market status and pause/close; resolution, payouts and cancellation accounting; concurrency control and portfolio reconciliation.
+Tables for wallets, ledger entries, positions, trades and price history now exist, though no code writes to them. Remaining: the transactional write path for trades; market status and pause/close; resolution, payouts and cancellation accounting; concurrency control and portfolio reconciliation.
 
 Verify: concurrent and retried actions cannot duplicate balances; ledger replay reconciles accounting; resolution and cancellation follow approved rules; migrations, type checks, lint and appropriate tests pass.
 
