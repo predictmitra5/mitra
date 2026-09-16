@@ -24,7 +24,20 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### 2026-09-16 - Goal templates, drafting and the approval queue (Claude Code)
+
+**Plan before changes:**
+
+1. Record the owner's template answers in DECISIONS.md and MARKETS.md: a GPA goal counts that semester's GPA once final grades post, proven by the official grade report; an internship goal counts a written offer received before the deadline, even if declined; a club goal counts the admission offer; a gym goal is proven by one uncut public video link that the owner reviews, with no video stored by the app.
+2. Migration 0003: make the opening price and market-maker share columns on `markets` nullable, because a draft has no opening price until the owner approves it, and add a check constraint requiring them once a market has opened. Chosen over placeholder values, which could be mistaken for real prices.
+3. `src/modules/goals`: templates for GPA, internship, club and gym goals, plus goals in the subject's own words (launch goals use own words until a launch template is decided); server-side validation; a draft writer that creates a `draft` market only for the signed-in subject.
+4. Owner approval queue: list drafts; approve with an opening price, which opens the market with LMSR state from `stateAtProbability` and liquidity from `ECONOMY`; or reject with a reason. Each decision is written to `admin_actions`. Only a profile with `is_owner = 1` may act, checked server-side.
+5. Pages for drafting a goal and for the owner queue, following the existing auth page patterns.
+6. PGlite tests for permissions, state transitions and decision records; then tests, typecheck, lint and build.
+
+**Authority:** DECISIONS.md entries on goal creation and approval, opening price, the lifecycle (close at 23:59 America/New_York on the deadline date, evidence due 7 days later), and today's template answers.
+
+**Not in scope:** AI suggestions, trading, public market pages, outcome deciders, evidence upload, and setting the owner flag on any real account.
 
 ## Current state
 
