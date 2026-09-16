@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): correct three stale documentation statements. DATA_MODEL.md still says no tables exist and lists the economy and cancellation accounting as undecided; ROADMAP.md lists goal templates as remaining. Documentation only.
 
 ## Current state
 
