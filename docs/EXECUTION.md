@@ -19,6 +19,7 @@ Sessions so far ran first in Codex, then in Claude Code. This file, not chat his
 - Not implemented: database, ledger persistence, authentication, profiles, goal creation, owner approval queue, resolution and payouts, verification, feed, notifications, deployment.
 - Stack selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for server database access/migrations, and the Anthropic Claude API for AI goal suggestions. See TECH_STACK.md. Supabase and Claude accounts are not created; the user must create them and place credentials in `.env.local`.
 - Development machine: Windows 11, Node.js 24.19.0 LTS and Git installed with the user's permission on 2026-09-15. Docker is not installed.
+- Credentials: the owner created a Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified working: Supabase auth and REST return 200, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect. `postgres`, `drizzle-orm` and `drizzle-kit` are installed; no schema or migration exists yet.
 - Initial community: the user's friends and Ohio State students, with broad goals including GPA, club admission, internships, launches and gym goals. Sign-in at launch requires an Ohio State email, which excludes non-OSU friends until access widens.
 - Goal creation: people create goals about themselves from fill-in templates, AI-written suggestions based on what they enter, or their own wording. The owner approves every market and sets its opening price. The user wants eventual AI decisions that reflect their judgment.
 - Trading rules (Kalshi reference): nobody trades a market about their own goal, and neither do people who decide its outcome; the ban covers sells as well as buys. The owner rejects goals that can be achieved simply by deciding to. Provisionally, friends may trade using what they know, with a per-person maximum per market; the user asked for more research on collusion.
@@ -106,7 +107,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 ## Next actions
 
 1. Run the market lifecycle and resolution interview (D04) using the goal table in MARKETS.md: exact wording, close time, resolution time, evidence deadline, cancellation and who may change terms.
-2. The user creates a Supabase project and a Claude API key and puts the credentials in `.env.local`. Then implement the database schema, ledger and sign-in restricted to Ohio State email addresses, enforced server-side.
+2. Done: the Supabase project and Claude API key are created and verified. Next, implement the database schema, ledger and sign-in restricted to Ohio State email addresses, enforced server-side.
 3. Build Slice 1 on that: profiles, goal creation from templates and AI suggestions, and the owner approval queue with the opening price.
 4. Research collusion and related-party controls for small social groups and bring options back to the user.
 5. Complete the verification/privacy and discovery interviews before their substantive implementations.
