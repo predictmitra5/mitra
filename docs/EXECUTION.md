@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): the owner named the app Mirai. Record the decision; replace the placeholder name "Goal predictions" in the header, page titles and an aria-label; rename the npm package from `kalshi-for-people` to `mirai`; update README.md, AGENTS.md, PRODUCT.md and this file. The project folder keeps its current name so paths and sessions stay valid.
+Nothing in progress.
 
 ## Current state
 
@@ -54,7 +54,8 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Lifecycle: trading closes at the deadline or earlier by the owner; 7 days to supply proof; missing proof resolves NO; a 24-hour contest window follows each ruling, then payout is final; wording is frozen once trading opens; a subject leaving cancels their markets; cancellation refunds cost basis. See MARKETS.md.
 - Visibility: market pages are public and search engines may index them. Private evidence stays off them.
 - Feed direction: maximize trades, with educating traders secondary. Formula, measurement and discovery allocation remain open.
-- Not yet decided: verification policy, ranking formula, a launch-goal template, product name.
+- Name: Mirai, chosen by the owner on 2026-09-16.
+- Not yet decided: verification policy, ranking formula, a launch-goal template.
 
 ## Product thesis and constraints from the brief
 
@@ -204,3 +205,7 @@ Coordination problem found: Codex was still writing when the handoff began. Thre
 ### 2026-09-16 - Goal templates, drafting and owner review (Claude Code)
 
 Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages. A final read-through corrected stale statements in DATA_MODEL.md and ROADMAP.md. Recorded the custom SMTP options in README.md. A first version wrongly implied every custom SMTP setup needs a domain; the owner pushed back, and Supabase and Google documentation confirmed a personal Gmail with an app password works without one. Only Resend requires a verified domain.
+
+### 2026-09-16 - Named Mirai (Claude Code)
+
+The owner named the app Mirai. Replaced the placeholder name in the header, page titles and an aria-label, renamed the npm package to `mirai`, and updated README.md, AGENTS.md, PRODUCT.md, DECISIONS.md and this file. The project folder keeps its name.

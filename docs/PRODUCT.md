@@ -57,4 +57,4 @@ No cohort size, success threshold, timeframe, or metric weighting is approved. L
 
 ## Pending decisions
 
-See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. Working folder name is not an approved brand. Economy settings, age checks, collusion controls, precise outcome/evidence contracts, exact trading metrics, discovery allocation and final MVP screens remain open.
+See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. The app is named Mirai (owner decision, 2026-09-16); the project folder keeps its original name. Economy settings, age checks, collusion controls, precise outcome/evidence contracts, exact trading metrics, discovery allocation and final MVP screens remain open.

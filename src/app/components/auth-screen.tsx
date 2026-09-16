@@ -9,7 +9,7 @@ const copy: Record<AuthMode, { title: string; description: string }> = {
 };
 
 export function AppHeader() {
-  return <header className="app-header"><Link className="wordmark" href="/"><span className="brand-mark" aria-hidden="true">↗</span>Goal predictions</Link><span className="access-label">OHIO STATE <span> / EARLY ACCESS</span></span></header>;
+  return <header className="app-header"><Link className="wordmark" href="/"><span className="brand-mark" aria-hidden="true">↗</span>Mirai</Link><span className="access-label">OHIO STATE <span> / EARLY ACCESS</span></span></header>;
 }
 
 export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }) {
@@ -25,7 +25,7 @@ export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }
         {message && <p className="form-error" role="alert">{message}</p>}
         <AuthForm mode={mode} />
       </section>
-      <aside className="entry-story" aria-label="About goal predictions">
+      <aside className="entry-story" aria-label="About Mirai">
         <span className="eyebrow">BIG GOALS START SOMEWHERE</span>
         <h2>Your people.<br />Their next <em>move.</em></h2>
         <p className="story-description">Follow the goals. Read the evidence.<br />Make your own call.</p>

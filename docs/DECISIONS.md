@@ -248,3 +248,11 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 - **Gym:** proven by one uncut video of the achievement, posted publicly (for example Instagram, TikTok or YouTube) before the deadline, with the link reviewed by the owner. The app stores no video. Rejected: another member vouching, which invites the collusion the owner already flagged; leaving gym goals out.
 
 **Not decided:** a launch template (what counts as launched). Until then, launch goals are written in the subject's own words and judged at approval.
+
+## 2026-09-16 - Product name
+
+**User response:** "the name for the app is Mirai".
+
+**Confirmed:** the app is called Mirai. It replaces the placeholder "Goal predictions" in the interface and the working folder name "Kalshi for People" everywhere except the folder itself, which keeps its name so existing paths and agent sessions stay valid.
+
+**Not inferred:** no logo, domain, tagline or visual identity was chosen with the name.

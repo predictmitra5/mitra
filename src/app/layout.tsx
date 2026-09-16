@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Goal predictions", template: "%s · Goal predictions" },
+  title: { default: "Mirai", template: "%s · Mirai" },
   description: "Follow people's goals and make informed predictions with play money. Ohio State early access.",
 };
 
