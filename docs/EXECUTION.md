@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): note in README.md that Outlook cannot serve as Supabase custom SMTP, and suggest a dedicated Gmail for sending. Documentation only.
 
 ## Current state
 
