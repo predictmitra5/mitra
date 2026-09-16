@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): the owner named the app Mirai. Record the decision; replace the placeholder name "Goal predictions" in the header, page titles and an aria-label; rename the npm package from `kalshi-for-people` to `mirai`; update README.md, AGENTS.md, PRODUCT.md and this file. The project folder keeps its current name so paths and sessions stay valid.
 
 ## Current state
 
