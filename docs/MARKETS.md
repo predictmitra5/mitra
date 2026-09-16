@@ -80,18 +80,19 @@ Source: sections 5, 6, 9, 10, 18 and 20, pages 5-6, 8 and 13-14.
 - False information does not automatically void a market.
 - Routine approval, pause, resolution and review must have an admin interface.
 
-## Lifecycle questions
+## Lifecycle
 
-- Is V1 binary only? The PDF also gives a comparative race example that requires separate rules.
-- What distinguishes the event deadline, last trading time, scheduled resolution time, and latest evidence time? Which timezone applies?
-- Does reaching a threshold briefly count, or must it persist? Which definition of launch, offer or achievement counts?
-- What happens when evidence arrives late, contradicts another source, disappears, or remains unavailable?
-- Which terms can change after trading, by whom, with what notification and historical version?
-- What states and transitions exist for proposals, approval, trading, pause, closing, dispute, settlement and cancellation?
-- When does settlement become final, and how are corrected decisions accounted for?
-- What happens when a subject withdraws consent? Hiding a profile does not define treatment of existing positions.
+Decided 2026-09-15. States: draft (subject created, awaiting the owner), rejected, open (approved and trading, at the owner's opening price), closed (no trading), ruled (owner has judged, 24-hour contest running), settled (paid out, final), cancelled (refunded).
 
-Cancellation must have its own agreed accounting rule; do not silently treat it as NO, a 50% payout, or a refund.
+- Trading closes automatically at the goal's deadline, and the owner may close a market early once the outcome is already public. Default close instant: 23:59 America/New_York on the deadline date, matching the refill month boundary. Assistant default, not separately confirmed.
+- The subject has 7 days after the deadline to supply proof; the owner then rules.
+- No proof by that deadline resolves NO. YES requires evidence, and the subject both wrote the goal and holds the proof. Known cost: a private person who truly succeeded loses, and NO holders gain from that silence. Revisit if it happens in the pilot.
+- After the owner rules, anyone may contest for 24 hours and the owner may change the ruling. Payout follows and is final; points are never clawed back after settlement.
+- Wording is frozen once trading opens. A broken market is cancelled and republished, never edited.
+- If a subject deletes their account or withdraws, their open markets cancel immediately.
+- Cancellation refunds each trader the cost basis of the shares they still hold; the market maker absorbs the difference. Cancellation is never silently treated as NO or as a 50% payout.
+
+Still open: whether V1 is binary only (the PDF's race example needs separate rules); what counts as the event happening for each goal type (see the goal table above); evidence that surfaces after settlement; and whether any goal type needs a minimum or maximum duration.
 
 ## Engineering acceptance criteria after decisions
 

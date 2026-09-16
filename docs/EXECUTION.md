@@ -27,7 +27,7 @@ Sessions so far ran first in Codex, then in Claude Code. This file, not chat his
 - Economy, subject to change: 1,000 starting points; refills restore cash to 1,000, at most twice per Eastern calendar month, counting cash only; a 100-point maximum per person per market, measured as the cost basis currently held.
 - Visibility: market pages are public, and search engines may index them. Private evidence stays off them.
 - Feed direction: maximize trades; also educate people so they make informed trades. Formula, measurement details and discovery allocation remain open.
-- No verification policy, market lifecycle, ranking formula, age-check method, or product name has been approved.
+- Market lifecycle decided 2026-09-15; see MARKETS.md. No verification policy, ranking formula, age-check method, or product name has been approved.
 
 ## Product thesis and constraints from the brief
 
@@ -70,7 +70,7 @@ Some categories are partially decided as recorded below. Their remaining questio
 | D01 | MVP architecture | Launch cohort, measurable outcomes, age/consent boundaries, outcome horizon | Friends and Ohio State students; five goal examples. Consent: subjects create their own goals. Sign-in gated to OSU email at launch. Age-check method and outcome horizon pending; an OSU address does not evidence age |
 | D02 | MVP architecture | Market proposal/approval authority, subject control, withdrawal and removal | Subject creates (template, AI suggestion or own words); owner approves each market and sets its opening price. Proposals about other people not approved. Withdrawal/removal and future AI-reviewer scope pending |
 | D03 | MVP architecture | Market mechanism, grants/replenishment, liquidity, limits, self/related-party trading | Decided and implemented: market-maker bot (LMSR, b = 150), 1,000 start, two cash refills a month, 100-point per-market limit, selling allowed, self and decision-maker trading banned. Collusion controls still provisional pending research |
-| D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Open. Needed next: template wording, close/resolution times, evidence deadlines, cancellation accounting. Goal table in MARKETS.md is the starting point |
+| D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Lifecycle decided 2026-09-15: auto-close at the deadline plus manual early close, 7-day evidence window, no proof resolves NO, 24-hour contest then final, frozen wording, cancellation refunds cost basis, withdrawal cancels. Open: binary-only scope, per-goal-type event definitions, template wording |
 | D05 | MVP architecture | Existing code, stack, hosting, pilot scale, budget, operational reviewer | Stack selected and scaffolded; Node.js and Git installed. Pending: user-created Supabase project and Claude API key, budget, pilot scale |
 | D06 | Verification architecture | Evidence methods, claim standards, source precedence, reviewer authority | Public sources plus private documents reviewed by owner confirmed; example walkthrough requested. Source sufficiency and APIs pending |
 | D07 | Verification architecture | Evidence access, retention, redaction, status changes, disputes and deletion | Market pages are public, so evidence handling must keep originals off them. Interview queued |
@@ -106,7 +106,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 ## Next actions
 
-1. Run the market lifecycle and resolution interview (D04) using the goal table in MARKETS.md: exact wording, close time, resolution time, evidence deadline, cancellation and who may change terms.
+1. Done 2026-09-15: the lifecycle interview (D04). Next, agree the fill-in templates per goal type and what counts as the event happening for each.
 2. Done: the Supabase project and Claude API key are created and verified. Next, implement the database schema, ledger and sign-in restricted to Ohio State email addresses, enforced server-side.
 3. Build Slice 1 on that: profiles, goal creation from templates and AI suggestions, and the owner approval queue with the opening price.
 4. Research collusion and related-party controls for small social groups and bring options back to the user.

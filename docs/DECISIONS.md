@@ -207,3 +207,22 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Billing mechanics (Anthropic support documentation):** API usage runs on prepaid credits bought in the Console under Billing. Auto-reload is optional; leaving it off caps total spend at the credits purchased. Credits expire one year after purchase and are non-refundable. A specific minimum purchase amount was not verified.
 
 **Secrets:** `.env.example` now lists every variable name. Keys live only in `.env.local`, which Git ignores, and the owner enters them personally. AGENTS.md carries the rule for whichever agent works on this next.
+
+## 2026-09-15 - Market lifecycle and resolution (D04)
+
+**Context:** seven plain-language questions using the user's own GPA, internship, club and launch examples. Every answer took the recommended option.
+
+**Confirmed:**
+- Trading closes automatically at the goal's deadline, and the owner can also close a market early once the outcome is already public. Chosen over deadline-only (which lets whoever hears the result early trade on a certainty) and manual-only (which relies on the owner never forgetting).
+- The subject has 7 days after the deadline to supply proof. Chosen over 3 days, which final grades can outrun, and 30 days, which freezes points and attention.
+- No proof by that deadline resolves NO. Rejected: cancel-and-refund, which lets someone who is failing void the market by going quiet and burns correct NO holders; and case-by-case rulings, which traders cannot predict.
+- After the owner rules, a 24-hour contest window runs, during which anyone may object and the owner may change the ruling. Payout then happens and is final. Chosen specifically so points are never clawed back from people after settlement.
+- Wording is frozen once trading opens; a broken market is cancelled and republished.
+- A subject deleting their account or withdrawing cancels their open markets immediately, consistent with markets existing only because the subject opted in.
+- Cancellation refunds each trader the cost basis of shares still held; the market maker absorbs the difference.
+
+**Known cost the user accepted:** resolving NO on missing proof penalises a private person who genuinely succeeded, and rewards NO holders for that silence. Recorded for review during the pilot.
+
+**Assistant defaults inside these decisions (not separately confirmed):** markets close at 23:59 America/New_York on the deadline date, matching the refill month boundary; the contest window runs 24 hours from the owner's ruling.
+
+**Still open:** binary-only scope for V1, what counts as the event happening for each goal type, template wording, and evidence that appears after settlement.
