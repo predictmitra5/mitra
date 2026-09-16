@@ -36,6 +36,8 @@ Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u
 
 **Finish:** update Current state, Session history, relevant design/setup documents and validation evidence; clear this entry when the bounded slice is completed. Log any change of plan here before continuing.
 
+**Plan update before the next edits:** the owner chose email-and-password sign-in and 18+ self-confirmation. Record both in DECISIONS.md, then implement sign-up, email confirmation, sign-in, sign-out and password recovery/reset. Add a required self-confirmation to profile completion. Persist its server-recorded timestamp in a new nullable `profiles.adult_confirmed_at` field (existing rows must affirm rather than being silently marked eligible). This requires a reviewable local migration; do not apply it to the shared database in this step. Add `@supabase/ssr`, `@supabase/supabase-js` and `server-only`; use `@electric-sql/pglite` only as a development test dependency for isolated PostgreSQL integration checks. Preserve a separate hosted-database test limitation: PGlite does not prove multi-connection production concurrency. Document required auth redirect/SMTP settings without changing them or sending email. Also correct stale README/DATA_MODEL status statements when recording completion.
+
 ## Current state
 
 - Stage: product rules for trading, economy and market lifecycle are decided. The market engine exists as tested logic and the database schema is live in Supabase. No sign-in, no user interface, and no code yet writes to the database.
