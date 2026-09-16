@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): note in README.md that Outlook cannot serve as Supabase custom SMTP, and suggest a dedicated Gmail for sending. Documentation only.
+Nothing in progress.
 
 ## Current state
 
@@ -212,4 +212,4 @@ The owner named the app Mirai. Replaced the placeholder name in the header, page
 
 ### 2026-09-16 - Renamed to Mitra (Claude Code)
 
-The owner renamed the app from Mirai to Mitra and confirmed it when asked, since "name is Mitra" could also have meant a profile name (no accounts existed yet). Replaced Mirai in the header, page titles, aria-label, npm package name, README.md, AGENTS.md, PRODUCT.md and Current state. The earlier Mirai entries in DECISIONS.md and Session history are left as history.
+The owner renamed the app from Mirai to Mitra and confirmed it when asked, since "name is Mitra" could also have meant a profile name (no accounts existed yet). Replaced Mirai in the header, page titles, aria-label, npm package name, README.md, AGENTS.md, PRODUCT.md and Current state. The earlier Mirai entries in DECISIONS.md and Session history are left as history. Added a README note, checked against Microsoft documentation, that Outlook cannot serve as Supabase custom SMTP, and suggested a dedicated Gmail for sending.
