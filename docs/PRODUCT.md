@@ -1,6 +1,6 @@
 # Product
 
-Status: core participation rules confirmed; economy, detailed outcome rules and final MVP screens remain open.
+Status: participation rules, accounts, economy, market lifecycle and goal templates are confirmed; verification, discovery and the final MVP screens remain open.
 
 ## Source-grounded concept
 
@@ -8,7 +8,7 @@ The app lets users forecast people's goals using play money. The PDF emphasized 
 
 ## Confirmed user direction - 2026-09-15
 
-- First community: the user's friends and Ohio State students. This identifies the initial recruiting network; no Ohio-State-only access or university-email requirement was requested.
+- First community: the user's friends and Ohio State students. Sign-in requires an Ohio State email at launch (decided 2026-09-15), widening after product-market fit.
 - Goal categories are broad. The user supplied GPA by semester/year end, club admission, an internship at a named company, launching something, and a gym goal. These are examples, not a closed category list.
 - Main objective: maximize trades. Education and informed trading are also important.
 - People create goals about themselves: from fill-in templates, from AI-written suggestions based on what they enter, or in their own words. The owner approves every market before it is published. The user wants an AI reviewer to eventually follow their judgment.
@@ -39,7 +39,7 @@ One person may occupy multiple roles. A subject is a forecaster on other people'
 - Auditability, provenance, event logging, persistent documentation, and unknown-subject discovery are core requirements.
 - No real-money subject compensation in V1.
 
-The user expects people being predicted about to be 18+; how age is checked is undecided. Kalshi's rules are the trading reference, and Kalshi requires its traders to be 18+; whether this app requires that of traders is undecided. A person creating their own goal is the consent for that market. No public-figure exception or university gate has been approved.
+Everyone with an account confirms they are 18 or older at profile setup, so both subjects and traders are covered. This is self-attestation, not verification (decided 2026-09-16). A person creating their own goal is the consent for that market. No public-figure exception has been approved.
 
 ## Candidate experience, not an approved screen list
 
@@ -57,4 +57,4 @@ No cohort size, success threshold, timeframe, or metric weighting is approved. L
 
 ## Pending decisions
 
-See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. The app is named Mirai (owner decision, 2026-09-16); the project folder keeps its original name. Economy settings, age checks, collusion controls, precise outcome/evidence contracts, exact trading metrics, discovery allocation and final MVP screens remain open.
+See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. The app is named Mirai (owner decision, 2026-09-16); the project folder keeps its original name. Collusion controls, evidence handling, a launch-goal template, exact trading metrics, discovery allocation and final MVP screens remain open.

@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): bring PRODUCT.md up to date. It still lists age checks, the economy and the Ohio State email gate as undecided. Documentation only.
+Nothing in progress.
 
 ## Current state
 
@@ -208,4 +208,4 @@ Asked the owner what counts as YES for GPA, internship, club and gym goals (all 
 
 ### 2026-09-16 - Named Mirai (Claude Code)
 
-The owner named the app Mirai. Replaced the placeholder name in the header, page titles and an aria-label, renamed the npm package to `mirai`, and updated README.md, AGENTS.md, PRODUCT.md, DECISIONS.md and this file. The project folder keeps its name.
+The owner named the app Mirai. Replaced the placeholder name in the header, page titles and an aria-label, renamed the npm package to `mirai`, and updated README.md, AGENTS.md, PRODUCT.md, DECISIONS.md and this file. The project folder keeps its name. Also brought PRODUCT.md up to date: it had still listed age checks, the economy and the Ohio State email gate as undecided.
