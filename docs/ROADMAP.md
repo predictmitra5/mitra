@@ -6,7 +6,7 @@ Status: proposed implementation sequence, conditional on user decisions. No mile
 
 Completed: inspect workspace; deeply read the PDF; create execution documentation; start skill and technical research; ask the first interview batch.
 
-Remaining: economy settings, collusion research, outcome contracts and templates, market lifecycle, verification/privacy and minimal measurement. Confirmed: Ohio State and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
+Remaining: collusion research, per-goal-type outcome definitions and templates, verification/privacy and minimal measurement. The economy and the market lifecycle are decided; see MARKETS.md. Confirmed: Ohio State and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
 
 Follow-up: the initial audience is friends and Ohio State students, and the user emphasized a broad range of goals. Use their GPA, clubs, internship, launch and gym examples to complete the market and evidence design interviews. See TECH_STACK.md for the selected foundation.
 
@@ -16,7 +16,7 @@ Exit: a documented initial product contract and chosen stack, with each policy-d
 
 Done: the stack is scaffolded and runs locally from the README, and the database schema is applied with row-level security enabled on every table.
 
-Remaining: sign-in restricted to Ohio State email addresses, role checks, profile flow, goal creation from templates and AI suggestions, and the owner approval queue including the opening price. Build only the screens necessary for this journey. Needs a Supabase project and Claude API key created by the user, and the lifecycle decisions in D04.
+Remaining: sign-in restricted to Ohio State email addresses, role checks, profile flow, goal creation from templates and AI suggestions, and the owner approval queue including the opening price. Build only the screens necessary for this journey. The Supabase project, the Claude API key and the D04 lifecycle decisions are all in place.
 
 Verify: authorized users can complete it; unauthorized actors cannot approve or impersonate a subject; a non-OSU address cannot sign in; terms and permissions are attributable.
 
