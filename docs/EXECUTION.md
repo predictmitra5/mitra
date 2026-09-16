@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): bring PRODUCT.md up to date. It still lists age checks, the economy and the Ohio State email gate as undecided. Documentation only.
 
 ## Current state
 
