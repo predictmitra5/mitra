@@ -22,7 +22,19 @@ Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u
 
 ## In progress
 
-Nothing in progress.
+### 2026-09-16 - Ohio State sign-in and account creation (Codex)
+
+**Intent before implementation:** build the next recorded slice: server-validated Ohio State sign-in, a profile setup flow, and a one-time 1,000-point signup grant written atomically with the profile and wallet. Replace the starter screen with the entry/account experience for this slice. Preserve the existing market engine and live schema unless inspection proves a necessary change, which must be logged here before it happens.
+
+**Authority:** DECISIONS.md, "Opening price, refill basis, sign-in and version control" (OSU email launch gate), "Node installation, play money, bet limit and search indexing" (1,000 starting points), and the delegated stack in TECH_STACK.md (Supabase Auth, Next.js, Drizzle). The existing schema defines profiles, wallets and ledger entries. No new market, verification or ranking policy is authorized by this plan.
+
+**Open choices to ask now:** the sign-in experience (email link/code versus password) and the age-check method. Build independent validation and atomic provisioning while those choices are pending; do not silently implement an age policy or an unapproved sign-in method.
+
+**Planned work:** inspect current local Next.js guides and official Supabase/Ohio State references; add only the required auth dependencies; implement server-only identity validation and strict university-domain checks; implement transactional, repeat-safe provisioning without granting owner privileges from user input; add the chosen sign-in/profile UI; add meaningful tests for rejected identities, atomic rollback and concurrent/repeated grants; run tests, typecheck, lint, production build and browser checks where possible. Use an isolated local database test harness if available; do not mutate the shared Supabase project merely to test this slice.
+
+**Secrets and scope:** never print or copy `.env.local` values. Do not send test emails, create real users, call Claude, change remote auth settings, or deploy. Existing documentation records an exposed database credential; keep that unresolved item visible and do not claim launch readiness.
+
+**Finish:** update Current state, Session history, relevant design/setup documents and validation evidence; clear this entry when the bounded slice is completed. Log any change of plan here before continuing.
 
 ## Current state
 
