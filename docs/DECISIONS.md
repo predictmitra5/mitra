@@ -2,6 +2,16 @@
 
 Entries distinguish requirements carried from the user-supplied brief, routine project work, recommendations, and decisions awaiting the user.
 
+## 2026-09-16 - Password sign-in and adult self-confirmation
+
+**User choices:** "Email and password" and "Require users to confirm they are 18 or older".
+
+**Confirmed:** implement Supabase email/password signup/sign-in, verification of the Ohio State email, sign-out, and password recovery/reset. Require an explicit 18+ self-confirmation before creating an active app profile and issuing the one-time 1,000-point grant. Record the affirmation time on the server. Do not collect a birth date or identity documents for this version. The checkbox is an assertion, not independent age verification.
+
+**Technical handling under delegated authority:** canonicalize accepted `@buckeyemail.osu.edu` inputs to `@osu.edu`, because Ohio State's [August 19, 2026 announcement](https://it.osu.edu/news/2026/08/19/students-now-have-one-email-account-lastnameosuedu) says both forms reach the same mailbox. Require verified canonical email at protected app boundaries. This prevents those aliases from independently receiving signup grants through this path; it does not establish current enrollment or guarantee one account per human across all identity changes.
+
+**Profile completion:** collect display name, a normalized unique handle and the explicit adult confirmation. Use the verified Auth user id; ignore client-supplied ids, balances and owner roles. Existing accounts must never receive another signup grant merely because the request was retried.
+
 ## 2026-09-15 - Source review and documentation
 
 **Status:** completed, within the user's request.

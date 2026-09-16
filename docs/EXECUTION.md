@@ -40,6 +40,16 @@ Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u
 
 **Identity implementation intent:** official Ohio State documentation (2026-08-19) says the `@osu.edu` and `@buckeyemail.osu.edu` forms deliver to the same mailbox. Canonicalize accepted login inputs to the lowercase `@osu.edu` form and admit only a verified canonical email from Supabase before any app account/grant. Existing noncanonical Auth accounts are not automatically migrated or granted an exception. Keep the university check at every protected server boundary; do not trust editable user metadata for identity, age verification or owner privileges. Account setup takes an explicit age affirmation and saves its server timestamp. This is self-attestation, not proof of age or current enrollment. Signup always creates an ordinary member, never an automatic owner.
 
+**Handoff and plan change (Claude Code, 2026-09-16):** the Codex session ended with its implementation uncommitted. Review before any edits: 60 tests, typecheck and lint pass; identity is re-verified server-side at every boundary; callbacks redirect only to fixed paths; the signup grant is gated on the profile insert inside one transaction, with tests for rollback, retries and injected fields. Remaining work, in order:
+
+1. Run a production build.
+2. Read the Supabase project's public auth settings to confirm email confirmation is required, and check Supabase's email-sending limits, which decide whether Ohio State students can receive confirmation emails at all.
+3. **Changed from the Codex plan:** apply migration 0002 to the shared database. It only adds the nullable `profiles.adult_confirmed_at` column; no existing data changes, and sign-up cannot work end to end without it.
+4. Write the Supabase Auth URL configuration steps into README.md, which `.env.example` already references.
+5. Commit the implementation, then update Current state, Session history, DATA_MODEL.md and README status, and clear this section.
+
+Not planned: sending email, creating real accounts, or changing Supabase dashboard settings; those stay with the owner.
+
 ## Current state
 
 - Stage: product rules for trading, economy and market lifecycle are decided. The market engine exists as tested logic and the database schema is live in Supabase. No sign-in, no user interface, and no code yet writes to the database.
