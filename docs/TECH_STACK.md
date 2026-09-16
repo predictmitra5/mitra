@@ -29,7 +29,7 @@ No separate API service, ML service, analytics SaaS, background-job system or ho
 
 - Next.js 16 generates global route types such as `LayoutProps`. `npm run typecheck` runs `next typegen` before `tsc`, as the bundled Next.js CLI documentation recommends.
 - This Next.js version ships its documentation in `node_modules/next/dist/docs/`. Read the relevant guide before using Next.js APIs.
-- Drizzle, Supabase and the Anthropic SDK are not installed yet. Add each with the feature that uses it.
+- Installed 2026-09-15: `postgres` 3.4.9 (driver), `drizzle-orm` 0.45.2 and `drizzle-kit` 0.31.10. The Anthropic SDK is not installed yet; add it with the goal-suggestions feature.
 - npm reported that ESLint 9.39.5 is no longer supported, and that the `unrs-resolver` install script was not run under npm's allow-scripts policy. Lint passes; revisit when eslint-config-next supports a newer ESLint.
 
 ## Tradeoffs
@@ -53,4 +53,4 @@ Do not assume hosted request handlers support indefinitely running jobs or persi
 
 Market mechanics, economy parameters, subject consent, outcome resolution, evidence retention, ranking formula, data schemas and reviewer autonomy remain product choices. The user has accepted public and private evidence categories; they have not approved a particular file-retention policy or external AI processing of that evidence.
 
-No account, paid resource, remote database, upload bucket, deployment or secret has been created. The user must create the Supabase project and Claude API key and place their credentials in `.env.local` themselves.
+The owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and placed the credentials in `.env.local` themselves; all four connections were verified. No deployment, paid hosting tier or upload bucket exists yet.
