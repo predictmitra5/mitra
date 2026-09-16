@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): record that Resend, the suggested SMTP provider, requires a verified domain owned by the sender; update the blocker note, next actions and README setup step. Documentation only.
 
 ## Current state
 
