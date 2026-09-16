@@ -22,7 +22,7 @@ Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u
 
 ## In progress
 
-- 2026-09-16: adding the before-and-after rule above to this file and to `AGENTS.md`, so every agent working here follows it. No product behavior changes.
+Nothing in progress.
 
 ## Current state
 
@@ -176,4 +176,8 @@ Held the market lifecycle interview; all seven answers took the recommended opti
 
 ### 2026-09-16 - Execution record consistency pass (Claude Code)
 
-The user asked whether this file was being kept current. It had been updated after each step with small targeted edits, which left contradictions: the stage said there was no database while another line said the schema was applied, the pending-decisions table still listed completed setup, and the session history stopped before the credentials and schema work. Rewrote the file as one consistent record of what exists. From here on, update it as a whole at the end of each piece of work rather than patching individual lines.
+The user asked whether this file was being kept current. It had been updated after each step with small targeted edits, which left contradictions: the stage said there was no database while another line said the schema was applied, the pending-decisions table still listed completed setup, and the session history stopped before the credentials and schema work. Rewrote the file as one consistent record of what exists.
+
+### 2026-09-16 - Before-and-after documentation rule (Claude Code)
+
+The owner asked that this file be updated before every change and again whenever a plan changes. Added the rule as a section at the top of this file with a standing In progress section, and made it item 3 of `AGENTS.md` so any agent follows it. Applied the rule to this change itself: the plan was logged and committed first, then `AGENTS.md` was edited, then In progress was cleared and this entry written. No code or product behavior changed.

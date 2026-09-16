@@ -6,7 +6,10 @@ This repository is a play-money social prediction app about people's goals, buil
 
 1. Read `docs/EXECUTION.md`. It is the source of truth for current state, pending user decisions and next actions. Then read the linked design documents relevant to the task.
 2. The owner decides product behavior: market rules, economy, verification, feed, consent and privacy. Do not implement behavior that is not recorded in `docs/DECISIONS.md`; ask first. Technical choices inside the selected stack (`docs/TECH_STACK.md`) are delegated.
-3. Before ending a session, update `docs/EXECUTION.md` and the affected design documents to describe what actually exists.
+3. Record every change in `docs/EXECUTION.md`, before and after. This rule comes from the owner and applies to each change, not only the end of a session:
+   - **Before** changing code, schema, configuration, dependencies or product documents, write the plan under In progress (what, why, which recorded decisions it relies on) and commit that entry first.
+   - **If the plan changes** partway through, update the In progress entry with what changed and why before continuing.
+   - **When finished**, update Current state, Session history and any affected design documents to describe what actually exists, then clear In progress.
 
 ## Secrets
 
