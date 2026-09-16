@@ -256,3 +256,9 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Confirmed:** the app is called Mirai. It replaces the placeholder "Goal predictions" in the interface and the working folder name "Kalshi for People" everywhere except the folder itself, which keeps its name so existing paths and agent sessions stay valid.
 
 **Not inferred:** no logo, domain, tagline or visual identity was chosen with the name.
+
+## 2026-09-16 - Product name changed to Mitra
+
+**User response:** "name is Mitra". Asked whether this meant renaming the app from Mirai, the owner selected "Yes, rename to Mitra".
+
+**Confirmed:** the app is called Mitra. This supersedes the Mirai entry above; the interface, package name and current-state documents now use Mitra.

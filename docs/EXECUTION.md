@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): the owner renamed the app from Mirai to Mitra, confirmed when asked. Replace Mirai in the interface, package name and current-state documents; record the change in DECISIONS.md without rewriting the earlier Mirai entry.
+Nothing in progress.
 
 ## Current state
 
@@ -54,7 +54,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Lifecycle: trading closes at the deadline or earlier by the owner; 7 days to supply proof; missing proof resolves NO; a 24-hour contest window follows each ruling, then payout is final; wording is frozen once trading opens; a subject leaving cancels their markets; cancellation refunds cost basis. See MARKETS.md.
 - Visibility: market pages are public and search engines may index them. Private evidence stays off them.
 - Feed direction: maximize trades, with educating traders secondary. Formula, measurement and discovery allocation remain open.
-- Name: Mirai, chosen by the owner on 2026-09-16.
+- Name: Mitra, chosen by the owner on 2026-09-16 (replacing Mirai, chosen earlier the same day).
 - Not yet decided: verification policy, ranking formula, a launch-goal template.
 
 ## Product thesis and constraints from the brief
@@ -209,3 +209,7 @@ Asked the owner what counts as YES for GPA, internship, club and gym goals (all 
 ### 2026-09-16 - Named Mirai (Claude Code)
 
 The owner named the app Mirai. Replaced the placeholder name in the header, page titles and an aria-label, renamed the npm package to `mirai`, and updated README.md, AGENTS.md, PRODUCT.md, DECISIONS.md and this file. The project folder keeps its name. Also brought PRODUCT.md up to date: it had still listed age checks, the economy and the Ohio State email gate as undecided.
+
+### 2026-09-16 - Renamed to Mitra (Claude Code)
+
+The owner renamed the app from Mirai to Mitra and confirmed it when asked, since "name is Mitra" could also have meant a profile name (no accounts existed yet). Replaced Mirai in the header, page titles, aria-label, npm package name, README.md, AGENTS.md, PRODUCT.md and Current state. The earlier Mirai entries in DECISIONS.md and Session history are left as history.

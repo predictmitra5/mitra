@@ -57,4 +57,4 @@ No cohort size, success threshold, timeframe, or metric weighting is approved. L
 
 ## Pending decisions
 
-See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. The app is named Mirai (owner decision, 2026-09-16); the project folder keeps its original name. Collusion controls, evidence handling, a launch-goal template, exact trading metrics, discovery allocation and final MVP screens remain open.
+See EXECUTION.md D01-D03, D05, D07, D08, D10 and D11. The app is named Mitra (owner decision, 2026-09-16, replacing the earlier name Mirai); the project folder keeps its original name. Collusion controls, evidence handling, a launch-goal template, exact trading metrics, discovery allocation and final MVP screens remain open.
