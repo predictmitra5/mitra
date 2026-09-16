@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import "server-only";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
@@ -7,12 +8,17 @@ import * as schema from "./schema";
  * state, so prepared statements are disabled as its connection guide requires.
  * Never import this from a client component.
  */
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
+let database: PostgresJsDatabase<typeof schema> | undefined;
+
+export function getDb() {
+  if (database) return database;
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("Database is not configured.");
+  const client = postgres(connectionString, {
+    prepare: false, ssl: "require", max: 5, idle_timeout: 20, connect_timeout: 10,
+  });
+  database = drizzle(client, { schema });
+  return database;
 }
 
-const client = postgres(connectionString, { prepare: false, ssl: "require" });
-
-export const db = drizzle(client, { schema });
 export { schema };

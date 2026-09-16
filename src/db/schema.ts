@@ -60,6 +60,7 @@ export const profiles = pgTable(
     handle: text("handle").notNull(),
     displayName: text("display_name").notNull(),
     isOwner: integer("is_owner").notNull().default(0), // 1 for the approving admin
+    adultConfirmedAt: timestamp("adult_confirmed_at", { withTimezone: true }), // explicit self-confirmation, not age verification
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }), // set on leaving; cancels open markets
   },

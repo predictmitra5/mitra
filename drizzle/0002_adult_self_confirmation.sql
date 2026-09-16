@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "adult_confirmed_at" timestamp with time zone;
