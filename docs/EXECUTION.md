@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): the owner renamed the app from Mirai to Mitra, confirmed when asked. Replace Mirai in the interface, package name and current-state documents; record the change in DECISIONS.md without rewriting the earlier Mirai entry.
 
 ## Current state
 
