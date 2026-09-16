@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-16 (Claude Code): correct the SMTP note. The previous entry implied custom SMTP needs a domain; that is only true of Resend. A personal Gmail account with an app password works without one. Update README.md, the blocker note and next action 1. Documentation only.
 
 ## Current state
 
