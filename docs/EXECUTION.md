@@ -12,6 +12,18 @@ The user supplied `Prediction_Market_MVP_Master_Prompt.pdf` (18 pages) and reque
 
 Sessions so far ran first in Codex, then in Claude Code. This file, not chat history, carries project state.
 
+## Working rule: record before and after every change
+
+Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u make a change and after if u change ur mind".
+
+1. **Before** changing code, schema, configuration, dependencies or product documents, write the planned change under In progress below: what you will do, why, and which recorded decisions it relies on. Commit that entry before starting the work.
+2. **If the plan changes** partway through, for any reason, update the In progress entry with what changed and why before continuing.
+3. **When finished**, update Current state and Session history to describe what actually exists, then clear In progress.
+
+## In progress
+
+- 2026-09-16: adding the before-and-after rule above to this file and to `AGENTS.md`, so every agent working here follows it. No product behavior changes.
+
 ## Current state
 
 - Stage: product rules for trading, economy and market lifecycle are decided. The market engine exists as tested logic and the database schema is live in Supabase. No sign-in, no user interface, and no code yet writes to the database.
