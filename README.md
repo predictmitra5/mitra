@@ -43,6 +43,8 @@ These are dashboard settings in your Supabase project. The app never changes the
    - Site URL: `http://localhost:3000` for local development, or the deployment's `APP_URL`.
    - Redirect URLs: `http://localhost:3000/auth/callback` and `http://localhost:3000/auth/recovery`, plus the same two paths on the production `APP_URL`.
 3. **Configure custom SMTP before inviting anyone** (Authentication, Emails, SMTP Settings). Supabase's built-in email only delivers to members of your Supabase project team, at about two messages an hour, so Ohio State students cannot receive confirmation or reset emails until a provider such as Resend, Postmark or Amazon SES is connected. See [Supabase's SMTP guide](https://supabase.com/docs/guides/auth/auth-smtp).
+   - These providers send only from a domain you own and have verified with DNS records. Resend's test sender reaches only the Resend account owner's own address. See [Resend's Supabase guide](https://resend.com/docs/send-with-supabase-smtp).
+   - Resend settings for Supabase: host `smtp.resend.com`, port `465`, username `resend`, password a Resend API key, and a sender address on the verified domain. Enter the API key only in the Supabase dashboard.
 
 ## Database migrations
 

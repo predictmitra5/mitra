@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): record that Resend, the suggested SMTP provider, requires a verified domain owned by the sender; update the blocker note, next actions and README setup step. Documentation only.
+Nothing in progress.
 
 ## Current state
 
@@ -38,7 +38,7 @@ Only one agent should work in this folder at a time. Before starting, check that
   - `src/modules/market`: LMSR pricing, integer quotes that round in the market maker's favour, positions with average-cost basis, the per-market limit, the Kalshi-style trading ban, refill eligibility, and shared buy/sell rules.
   - `src/db/schema.ts` and `drizzle/`: ten tables and four migrations applied to Supabase, with row-level security on every table and check constraints that stop a market trading without an approval and a price. See DATA_MODEL.md.
 - Not implemented: AI goal suggestions, a launch-goal template, public market pages, trade execution against the database, refills in the app, closing, ruling, contests, settlement and cancellation, outcome deciders, verification, feed, notifications, deployment.
-- **Blocks real users:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive confirmation or reset emails. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
+- **Blocks real users:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive confirmation or reset emails. Resend, the suggested provider, also requires a domain the owner controls and has verified with DNS records; its test sender reaches only the account owner's address. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
 - Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, email confirmation is required, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
 - Development machine: Windows 11 with Node.js 24.19.0 LTS and Git, both installed with the user's permission on 2026-09-15. Docker is not installed.
@@ -137,7 +137,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 ## Next actions
 
-1. **Owner:** connect a custom SMTP provider in Supabase and add the redirect URLs from README.md. Then test the full sign-up flow with a real Ohio State inbox.
+1. **Owner:** get a domain, verify it with an SMTP provider such as Resend, connect that provider in Supabase, and add the redirect URLs from README.md. Then test the full sign-up flow with a real Ohio State inbox.
 2. Mark the owner's own profile as the approver (`profiles.is_owner`) once they have signed up, through a reviewed one-off step rather than any sign-up path. Then walk the goal flow end to end in a browser: submit, review, approve, reject.
 3. Build public market pages and trade execution: wrap `planBuy`/`planSell` in a database transaction that writes the trade, ledger entry, position and price point together, with idempotency keys and concurrency tests against the hosted database.
 4. Build closing at the deadline, the owner's ruling, the 24-hour contest window, settlement, and cancellation refunds.
@@ -203,4 +203,4 @@ Coordination problem found: Codex was still writing when the handoff began. Thre
 
 ### 2026-09-16 - Goal templates, drafting and owner review (Claude Code)
 
-Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages. A final read-through corrected stale statements in DATA_MODEL.md and ROADMAP.md.
+Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages. A final read-through corrected stale statements in DATA_MODEL.md and ROADMAP.md. Confirmed from Resend documentation that custom SMTP through Resend needs a verified domain, and recorded it in README.md.
