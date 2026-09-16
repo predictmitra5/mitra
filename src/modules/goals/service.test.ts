@@ -78,7 +78,16 @@ describe("createGoalDraft", () => {
     await createGoalDraft(database, other, { type: "club", club: "Chess Club", deadline: "2026-11-01" }, now);
     const mine = await listGoalsForSubject(database, jake);
     expect(mine).toHaveLength(1);
-    expect(mine[0].subjectUserId).toBe(jake);
+    expect(mine[0].market.subjectUserId).toBe(jake);
+    expect(mine[0].rejectionReason).toBeNull();
+  });
+
+  it("shows the subject the owner's reason for a rejected goal", async () => {
+    const draft = await createGoalDraft(database, jake, internship, now);
+    await rejectDraft(database, owner, draft.id, "Name the role and term", now);
+    const [row] = await listGoalsForSubject(database, jake);
+    expect(row.market.status).toBe("rejected");
+    expect(row.rejectionReason).toBe("Name the role and term");
   });
 });
 

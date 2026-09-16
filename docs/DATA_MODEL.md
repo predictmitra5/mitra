@@ -37,7 +37,7 @@ This list is not a commitment to one table per name or to implementing every ent
 
 ## Implemented schema (2026-09-15)
 
-Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial_schema.sql`, `drizzle/0001_enable_rls.sql` and `drizzle/0002_adult_self_confirmation.sql`. Amounts and share counts are integer micro-units, matching `src/modules/market`.
+Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial_schema.sql`, `drizzle/0001_enable_rls.sql`, `drizzle/0002_adult_self_confirmation.sql` and `drizzle/0003_pricing_set_at_approval.sql`. Migration 0003 leaves a market's opening price and market-maker shares empty until the owner approves it. Its check constraints require those values once a market is approved, require approval before a market can leave draft, rejected or cancelled status, keep opening odds between 1 and 9999 basis points, and keep the proof deadline on or after the trading deadline. Amounts and share counts are integer micro-units, matching `src/modules/market`.
 
 | Table | Holds |
 | --- | --- |

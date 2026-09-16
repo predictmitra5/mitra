@@ -11,9 +11,10 @@ Implemented:
 - Sign-up, email confirmation, sign-in, sign-out and password reset, limited to confirmed Ohio State email addresses.
 - Profile setup with an 18+ self-confirmation and a one-time 1,000-point signup grant, written in a single database transaction.
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
+- Goal creation from templates (GPA, internship, club, gym) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: goal creation, the owner approval queue, trading against the database, resolution, verification, the feed and deployment.
+Not yet implemented: trading against the database, public market pages, resolution, verification, the feed and deployment.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 

@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { ECONOMY } from "@/modules/market/economy";
@@ -81,9 +81,14 @@ export async function listPendingDrafts<Q extends PgQueryResultHKT>(database: Da
     .orderBy(asc(markets.createdAt));
 }
 
-/** A subject's own goals, newest first, for their account page. */
+/** A subject's own goals, newest first, with the owner's reason on any rejected one. */
 export async function listGoalsForSubject<Q extends PgQueryResultHKT>(database: Database<Q>, subjectUserId: string) {
-  return database.select().from(markets).where(eq(markets.subjectUserId, subjectUserId)).orderBy(desc(markets.createdAt));
+  return database
+    .select({ market: markets, rejectionReason: adminActions.reason })
+    .from(markets)
+    .leftJoin(adminActions, and(eq(adminActions.marketId, markets.id), eq(adminActions.kind, "reject")))
+    .where(eq(markets.subjectUserId, subjectUserId))
+    .orderBy(desc(markets.createdAt));
 }
 
 /**

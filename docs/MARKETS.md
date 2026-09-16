@@ -1,6 +1,6 @@
 # Markets
 
-Status: creation, approval, trading eligibility, mechanism, economy and lifecycle are decided. The engine logic and the database schema are built; trade execution, resolution and the user interface are not.
+Status: creation, approval, templates, trading eligibility, mechanism, economy and lifecycle are decided. Goal drafting, owner approval, the engine logic and the database schema are built; trade execution, resolution and public market pages are not.
 
 ## Confirmed direction - 2026-09-15
 

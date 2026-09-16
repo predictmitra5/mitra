@@ -16,7 +16,9 @@ Exit: a documented initial product contract and chosen stack, with each policy-d
 
 Done: the stack is scaffolded and runs locally from the README; the database schema is applied with row-level security enabled on every table; email-and-password sign-in admits only confirmed Ohio State identities; profile setup records an 18+ self-confirmation and issues the 1,000-point grant in one transaction.
 
-Remaining: the owner's custom SMTP and redirect URL setup (without it students receive no email), marking the owner account as approver, goal creation from templates and AI suggestions, and the owner approval queue including the opening price. Build only the screens necessary for this journey.
+Also done: goal creation from templates or the subject's own words, and the owner approval queue with opening odds and rejection reasons.
+
+Remaining: the owner's custom SMTP and redirect URL setup (without it students receive no email), marking the owner account as approver, AI goal suggestions, and a launch template.
 
 Verify: authorized users can complete it; unauthorized actors cannot approve or impersonate a subject; a non-OSU address cannot sign in; terms and permissions are attributable.
 

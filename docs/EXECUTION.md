@@ -24,35 +24,20 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-09-16 - Goal templates, drafting and the approval queue (Claude Code)
-
-**Plan before changes:**
-
-1. Record the owner's template answers in DECISIONS.md and MARKETS.md: a GPA goal counts that semester's GPA once final grades post, proven by the official grade report; an internship goal counts a written offer received before the deadline, even if declined; a club goal counts the admission offer; a gym goal is proven by one uncut public video link that the owner reviews, with no video stored by the app.
-2. Migration 0003: make the opening price and market-maker share columns on `markets` nullable, because a draft has no opening price until the owner approves it, and add a check constraint requiring them once a market has opened. Chosen over placeholder values, which could be mistaken for real prices.
-3. `src/modules/goals`: templates for GPA, internship, club and gym goals, plus goals in the subject's own words (launch goals use own words until a launch template is decided); server-side validation; a draft writer that creates a `draft` market only for the signed-in subject.
-4. Owner approval queue: list drafts; approve with an opening price, which opens the market with LMSR state from `stateAtProbability` and liquidity from `ECONOMY`; or reject with a reason. Each decision is written to `admin_actions`. Only a profile with `is_owner = 1` may act, checked server-side.
-5. Pages for drafting a goal and for the owner queue, following the existing auth page patterns.
-6. PGlite tests for permissions, state transitions and decision records; then tests, typecheck, lint and build.
-
-**Authority:** DECISIONS.md entries on goal creation and approval, opening price, the lifecycle (close at 23:59 America/New_York on the deadline date, evidence due 7 days later), and today's template answers.
-
-**Not in scope:** AI suggestions, trading, public market pages, outcome deciders, evidence upload, and setting the owner flag on any real account.
-
-**Progress:** steps 1 and 2 done and committed (decisions recorded; migration 0003 applied to Supabase with four check constraints). Step 3 and the service half of step 4 written: `src/modules/goals/templates.ts` and `service.ts` with 26 passing PGlite tests.
-
-**Plan change before step 5:** the Codex sign-in pages use about 30 CSS class names (`site-shell`, `auth-form`, `primary-button`, `account-card` and others) but no stylesheet defines them; `src/app/globals.css` is still the 488-byte scaffold default. Those pages therefore render unstyled, which the earlier smoke test did not catch because it checked status codes only. Before building the goal pages, write one mobile-first stylesheet covering every class the existing pages use plus the new goal and review pages, then check the pages visually in a browser. The visual direction is an implementation choice within the brief's "consumer, social, mobile-first" requirement and can be changed by the owner.
+Nothing in progress.
 
 ## Current state
 
-- Stage: people with a confirmed Ohio State email can sign up, set up a profile and receive 1,000 play points. Nothing to do with markets is usable yet.
+- Stage: people with a confirmed Ohio State email can sign up, get 1,000 play points, and submit goals about themselves. The owner can approve a goal with opening odds or reject it with a reason. Trading is not built yet.
 - Implemented:
   - Next.js 16.3.5 app with Vitest, ESLint, route-type generation and a production build.
   - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: Supabase email-and-password authentication admitting only confirmed `@osu.edu` identities (`@buckeyemail.osu.edu` is accepted and stored as `@osu.edu`), re-verified server-side at every boundary. `src/proxy.ts` refreshes sessions; it does not authorize.
   - `src/modules/account` and the account page: profile setup with display name, unique handle and an 18+ self-confirmation, plus the one-time 1,000-point grant, all written in one transaction that is safe to retry.
+  - `src/modules/goals`, `/goals/new` and `/review`: templates for GPA, internship, club and gym goals plus own-words goals; drafts created only for the signed-in subject; an owner-only review queue that opens a draft at the owner's opening odds (LMSR state and first price point) or rejects it with a reason shown to the subject, each decision written to `admin_actions`. The account page lists the subject's goals and their status.
+  - `src/app/globals.css`: the mobile-first stylesheet for every page. The Codex sign-in pages had shipped without one.
   - `src/modules/market`: LMSR pricing, integer quotes that round in the market maker's favour, positions with average-cost basis, the per-market limit, the Kalshi-style trading ban, refill eligibility, and shared buy/sell rules.
-  - `src/db/schema.ts` and `drizzle/`: ten tables and three migrations applied to Supabase, with row-level security on every table. See DATA_MODEL.md.
-- Not implemented: goal creation, AI goal suggestions, the owner approval queue, trade execution against the database, refills in the app, closing, ruling, contests, settlement and cancellation, verification, feed, notifications, deployment.
+  - `src/db/schema.ts` and `drizzle/`: ten tables and four migrations applied to Supabase, with row-level security on every table and check constraints that stop a market trading without an approval and a price. See DATA_MODEL.md.
+- Not implemented: AI goal suggestions, a launch-goal template, public market pages, trade execution against the database, refills in the app, closing, ruling, contests, settlement and cancellation, outcome deciders, verification, feed, notifications, deployment.
 - **Blocks real users:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive confirmation or reset emails. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
 - Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, email confirmation is required, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
@@ -62,14 +47,14 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 - Community: the user's friends and Ohio State students, with broad goals including GPA, club admission, internships, launches and gym goals. Sign-in at launch requires an Ohio State email, which excludes non-OSU friends until access widens after product-market fit.
 - Accounts: email and password. Users confirm they are 18 or older; this is self-attestation, not age verification. No birth date or identity documents are collected.
-- Goal creation: people create goals about themselves from fill-in templates, AI-written suggestions, or their own wording. The owner approves every market and sets its opening price. The user wants eventual AI decisions that reflect their judgment.
+- Goal creation: people create goals about themselves from fill-in templates, AI-written suggestions, or their own wording. The owner approves every market and sets its opening price. The user wants eventual AI decisions that reflect their judgment. What counts as YES: GPA goals use that semester's final grades; internships a written offer, even if declined; clubs the admission offer; gym goals one uncut public video link. See MARKETS.md.
 - Trading rules (Kalshi reference): nobody trades a market about their own goal, and neither do people who decide its outcome; the ban covers sells as well as buys. The owner rejects goals that can be achieved simply by deciding to. Provisionally, friends may trade using what they know, within the per-market limit; the user asked for more research on collusion.
 - Mechanism: trades execute immediately against an app-run market-maker bot (binary LMSR, liquidity b = 150). Selling back to the bot is allowed while trading is open.
 - Economy, subject to change: 1,000 starting points; refills restore cash to 1,000, at most twice per Eastern calendar month, counting cash only; at most 100 points per person per market, measured as cost basis currently held.
 - Lifecycle: trading closes at the deadline or earlier by the owner; 7 days to supply proof; missing proof resolves NO; a 24-hour contest window follows each ruling, then payout is final; wording is frozen once trading opens; a subject leaving cancels their markets; cancellation refunds cost basis. See MARKETS.md.
 - Visibility: market pages are public and search engines may index them. Private evidence stays off them.
 - Feed direction: maximize trades, with educating traders secondary. Formula, measurement and discovery allocation remain open.
-- Not yet decided: verification policy, ranking formula, per-goal-type templates, product name.
+- Not yet decided: verification policy, ranking formula, a launch-goal template, product name.
 
 ## Product thesis and constraints from the brief
 
@@ -112,7 +97,7 @@ Some categories are partially decided as recorded below. Their remaining questio
 | D01 | MVP architecture | Launch cohort, measurable outcomes, age/consent boundaries, outcome horizon | Friends and Ohio State students; five goal examples. Consent: subjects create their own goals. OSU email required at launch. Age: 18+ self-confirmation, implemented. Open: outcome horizon |
 | D02 | MVP architecture | Market proposal/approval authority, subject control, withdrawal and removal | Decided: subject creates, owner approves and sets the opening price; withdrawal cancels the subject's markets. Proposals about other people not approved. Open: future AI-reviewer scope |
 | D03 | MVP architecture | Market mechanism, grants/replenishment, liquidity, limits, self/related-party trading | Decided and implemented as logic: LMSR bot (b = 150), 1,000 start (grant now live), two cash refills a month, 100-point per-market limit, selling allowed, subject and decision-maker trading banned. Open: collusion controls, pending research |
-| D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Lifecycle decided and in the schema. Open: binary-only scope, what counts as the event happening per goal type, template wording |
+| D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Lifecycle decided and in the schema. Templates for GPA, internship, club and gym goals decided and built. Open: binary-only scope, a launch template |
 | D05 | MVP architecture | Existing code, stack, hosting, pilot scale, budget, operational reviewer | Stack built; credentials verified. **Owner action needed:** custom SMTP provider and Supabase redirect URLs before inviting anyone. Open: hosting/deployment, pilot scale |
 | D06 | Verification architecture | Evidence methods, claim standards, source precedence, reviewer authority | Public sources plus private documents reviewed by the owner confirmed. Open: source sufficiency per goal type, any APIs |
 | D07 | Verification architecture | Evidence access, retention, redaction, status changes, disputes and deletion | Market pages are public, so originals must stay off them. No evidence tables exist yet. Interview queued |
@@ -127,10 +112,11 @@ Some categories are partially decided as recorded below. Their remaining questio
 - 2026-09-15 (Claude Code): subject approval, self-trading, private knowledge, mechanism, goal suggestions, visibility, play money, bet limits, search indexing, price sensitivity, refills, selling, limit definition, opening price, refill basis, sign-in, the AI model and budget.
 - 2026-09-15 (Claude Code): market lifecycle, seven questions covering trading close, missing proof, evidence window, cancellation refunds, frozen wording, contests and withdrawal.
 - 2026-09-16 (Codex): sign-in method (email and password) and age check (18+ self-confirmation).
+- 2026-09-16 (Claude Code): goal templates, meaning what counts as YES for GPA, internship, club and gym goals.
 
 Answers, the user's own words and unresolved points are in DECISIONS.md in date order. Do not re-ask anything recorded there.
 
-Worth asking next: per-goal-type templates and what counts as the event happening; the verification and privacy interview (D06, D07); collusion controls, after the requested research; the discovery interview (D08, D09).
+Worth asking next: a launch-goal template; the verification and privacy interview (D06, D07); collusion controls, after the requested research; the discovery interview (D08, D09).
 
 ## Risks and validation
 
@@ -152,9 +138,9 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 ## Next actions
 
 1. **Owner:** connect a custom SMTP provider in Supabase and add the redirect URLs from README.md. Then test the full sign-up flow with a real Ohio State inbox.
-2. Mark the owner's own profile as the approver (`profiles.is_owner`) once they have signed up, through a reviewed one-off step rather than any sign-up path.
-3. Build goal creation and the owner approval queue: draft from a template, approve with an opening price, reject with a reason, all recorded in `admin_actions`. Ask the user for per-goal-type template wording before finalizing templates.
-4. Build trade execution: wrap `planBuy`/`planSell` in a database transaction that writes the trade, ledger entry, position and price point together, with idempotency keys and concurrency tests against the hosted database.
+2. Mark the owner's own profile as the approver (`profiles.is_owner`) once they have signed up, through a reviewed one-off step rather than any sign-up path. Then walk the goal flow end to end in a browser: submit, review, approve, reject.
+3. Build public market pages and trade execution: wrap `planBuy`/`planSell` in a database transaction that writes the trade, ledger entry, position and price point together, with idempotency keys and concurrency tests against the hosted database.
+4. Build closing at the deadline, the owner's ruling, the 24-hour contest window, settlement, and cancellation refunds.
 5. Add AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
 6. Research collusion and related-party controls for small social groups and bring options back to the user.
 7. Hold the verification/privacy and discovery interviews before building those systems.
@@ -163,9 +149,9 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 Source review: all 18 pages extracted and visually inspected.
 
-Verified in this workspace on 2026-09-16: `npm test` (97 tests in 9 files), `npm run typecheck`, `npm run lint` and `npm run build` pass. Migration 0002 applied cleanly; `profiles` has zero rows. Supabase's public auth settings show email sign-in enabled, email confirmation required and sign-ups allowed. A logged-out smoke test against the production server confirmed that public pages render, `/account` and `/reset-password` redirect away, callbacks with a missing or forged code fail closed, and private responses are not cached.
+Verified in this workspace on 2026-09-16: `npm test` (124 tests in 11 files), `npm run typecheck`, `npm run lint` and `npm run build` pass. Migrations 0002 and 0003 applied cleanly; `profiles` and `markets` have zero rows. Supabase's public auth settings show email sign-in enabled, email confirmation required and sign-ups allowed. A logged-out smoke test against the production server confirmed that public pages render, `/account` and `/reset-password` redirect away, callbacks with a missing or forged code fail closed, and private responses are not cached. After the stylesheet was added, the sign-in and sign-up pages were checked in a browser at desktop and 375px phone widths; two layout flaws found there were fixed and rechecked.
 
-Not yet verified: a real sign-up, email confirmation, sign-in or password reset, because those need the owner's SMTP setup and a real inbox. Account-provisioning tests run on PGlite, a single-connection in-memory PostgreSQL, so they do not prove behavior under concurrent connections to the hosted database. Row-level security was verified on 2026-09-15 with a temporary row.
+Not yet verified: a real sign-up, email confirmation, sign-in or password reset, because those need the owner's SMTP setup and a real inbox. The signed-in pages (account, new goal, review queue) are type-checked, built and covered by service tests, but have not been viewed in a browser, because that needs a signed-in account. Account-provisioning tests run on PGlite, a single-connection in-memory PostgreSQL, so they do not prove behavior under concurrent connections to the hosted database. Row-level security was verified on 2026-09-15 with a temporary row.
 
 Kalshi research limits: kalshi.com pages returned HTTP 429 and the rulebook PDFs could not be text-extracted on this machine. Kalshi rule statements rely on rulebook text quoted in search results, plus the CFTC advisory and Kalshi help-center article, which were read directly. Re-read the primary rule text before citing rule numbers.
 
@@ -214,3 +200,7 @@ The owner asked that this file be updated before every change and again whenever
 Codex logged its plan first, asked the owner about the sign-in method and age check, recorded the answers (email and password; 18+ self-confirmation), and implemented authentication, profile setup with the signup grant, migration 0002 and tests. Its session ended with the work uncommitted. Claude Code reviewed the code (sound), logged a handoff plan, ran the production build, confirmed email confirmation is required in Supabase, found that Supabase's built-in email cannot reach students, applied migration 0002, documented the owner's Supabase setup in README.md, smoke-tested routes on the production server, and committed.
 
 Coordination problem found: Codex was still writing when the handoff began. Three of its test files appeared about 40 seconds after Claude Code's first test run and were committed before being run. They were then run and pass, raising the total from 60 to 97 tests. The single-agent note under the working rule above comes from this.
+
+### 2026-09-16 - Goal templates, drafting and owner review (Claude Code)
+
+Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages.
