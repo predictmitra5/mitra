@@ -16,6 +16,9 @@ The source lists death, injury, disease, mental health, self-harm, crime victimi
 - Visibility: anyone with the link can view market pages, and the user chose to let search engines index them, accepting that searching a person's name may surface their goals. Private evidence must never appear on those pages. Idea, not approved: let a subject keep an individual market out of search results.
 - Provisional: friends may trade on their own knowledge with a per-market maximum, and the owner may cancel colluders' trades. The user requested more research. A subject deliberately failing so a friend's NO position wins remains a known risk.
 - AI goal suggestions send what a subject types to an AI provider. Recommended, not yet approved: tell subjects before they use it, and never send evidence documents.
+- Accounts use email and password (chosen by the owner on 2026-09-16). Users confirm they are 18 or older before a profile or grant is created; the server records when. This is self-attestation: it deters minors but does not verify age, and no birth date or identity document is collected.
+- Implemented 2026-09-16: non-OSU accounts are never admitted by the app, but Supabase itself will still create them if someone calls its sign-up API directly. A provider-side auth hook would stop that; not built.
+- Supabase's built-in email delivers only to the project team, so confirmation and reset emails cannot reach students until the owner configures custom SMTP.
 - Sign-in at launch is limited to Ohio State email addresses. This reduces anonymous accounts but excludes the user's non-OSU friends, does not verify age, and does not establish that an account holder is the person a market concerns. Supabase Auth does not enforce a domain restriction by itself; application code must, and it must be tested.
 - The owner sets each market's opening price at approval, which is an editorial judgement about a real person and should be recorded with the approval.
 

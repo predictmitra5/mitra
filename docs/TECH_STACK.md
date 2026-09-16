@@ -26,6 +26,11 @@ No separate API service, ML service, analytics SaaS, background-job system or ho
 | TypeScript | 5.x | Scaffold default. TypeScript 7 is released but has not been evaluated with this Next.js version |
 | Vitest | 5.0.1 | Unit tests; configuration in `vitest.config.mts` |
 | @types/node | 24.x | Matches the Node runtime; Vitest 5 requires 22 or newer |
+| @supabase/ssr, @supabase/supabase-js | 0.12.7, 2.116.0 | Cookie-based Supabase Auth sessions in server code; added 2026-09-16 |
+| server-only | 0.0.1 | Build fails if server modules such as the database client are imported by client code |
+| @electric-sql/pglite | 0.5.8 (dev only) | In-memory PostgreSQL for account-provisioning tests; single connection, so it cannot prove hosted concurrency |
+
+Next.js 16 replaces `middleware.ts` with `src/proxy.ts`, per the bundled `proxy.md` file convention. Here it only refreshes Supabase session cookies; every page and action verifies identity itself.
 
 - Next.js 16 generates global route types such as `LayoutProps`. `npm run typecheck` runs `next typegen` before `tsc`, as the bundled Next.js CLI documentation recommends.
 - This Next.js version ships its documentation in `node_modules/next/dist/docs/`. Read the relevant guide before using Next.js APIs.

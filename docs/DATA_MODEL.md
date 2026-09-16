@@ -37,11 +37,11 @@ This list is not a commitment to one table per name or to implementing every ent
 
 ## Implemented schema (2026-09-15)
 
-Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial_schema.sql` and `drizzle/0001_enable_rls.sql`. Amounts and share counts are integer micro-units, matching `src/modules/market`.
+Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial_schema.sql`, `drizzle/0001_enable_rls.sql` and `drizzle/0002_adult_self_confirmation.sql`. Amounts and share counts are integer micro-units, matching `src/modules/market`.
 
 | Table | Holds |
 | --- | --- |
-| `profiles` | One row per signed-in person, sharing the id of the Supabase auth user; `is_owner` marks the approver; `withdrawn_at` records leaving |
+| `profiles` | One row per signed-in person, sharing the id of the Supabase auth user; `is_owner` marks the approver; `adult_confirmed_at` records the 18+ self-confirmation; `withdrawn_at` records leaving |
 | `wallets` | Cached balance per person, written in the same transaction as the ledger |
 | `ledger_entries` | Append-only money record: signup grant, refill, trade, settlement, cancellation refund |
 | `markets` | Question, frozen wording, deadlines, market-maker state, and every lifecycle timestamp through settlement or cancellation |

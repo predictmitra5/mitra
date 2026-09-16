@@ -10,7 +10,7 @@ Record useful conclusions, evidence, decisions, and concise rationales; do not r
 
 The user supplied `Prediction_Market_MVP_Master_Prompt.pdf` (18 pages) and requested a deep review, questions, and candid recommendations for specialized skills before building. The source was fully text-extracted and every page visually inspected on 2026-09-15. The PDF is preserved unchanged.
 
-Sessions so far ran first in Codex, then in Claude Code. This file, not chat history, carries project state.
+Sessions so far ran in Codex and Claude Code. This file, not chat history, carries project state.
 
 ## Working rule: record before and after every change
 
@@ -20,52 +20,31 @@ Set by the owner on 2026-09-16: "make sure ur always updarting that doc before u
 2. **If the plan changes** partway through, for any reason, update the In progress entry with what changed and why before continuing.
 3. **When finished**, update Current state and Session history to describe what actually exists, then clear In progress.
 
+Only one agent should work in this folder at a time. Before starting, check that In progress is empty and `git status` is clean; if not, find out whether another session is still running before touching anything.
+
 ## In progress
 
-### 2026-09-16 - Ohio State sign-in and account creation (Codex)
-
-**Intent before implementation:** build the next recorded slice: server-validated Ohio State sign-in, a profile setup flow, and a one-time 1,000-point signup grant written atomically with the profile and wallet. Replace the starter screen with the entry/account experience for this slice. Preserve the existing market engine and live schema unless inspection proves a necessary change, which must be logged here before it happens.
-
-**Authority:** DECISIONS.md, "Opening price, refill basis, sign-in and version control" (OSU email launch gate), "Node installation, play money, bet limit and search indexing" (1,000 starting points), and the delegated stack in TECH_STACK.md (Supabase Auth, Next.js, Drizzle). The existing schema defines profiles, wallets and ledger entries. No new market, verification or ranking policy is authorized by this plan.
-
-**Open choices to ask now:** the sign-in experience (email link/code versus password) and the age-check method. Build independent validation and atomic provisioning while those choices are pending; do not silently implement an age policy or an unapproved sign-in method.
-
-**Planned work:** inspect current local Next.js guides and official Supabase/Ohio State references; add only the required auth dependencies; implement server-only identity validation and strict university-domain checks; implement transactional, repeat-safe provisioning without granting owner privileges from user input; add the chosen sign-in/profile UI; add meaningful tests for rejected identities, atomic rollback and concurrent/repeated grants; run tests, typecheck, lint, production build and browser checks where possible. Use an isolated local database test harness if available; do not mutate the shared Supabase project merely to test this slice.
-
-**Secrets and scope:** never print or copy `.env.local` values. Do not send test emails, create real users, call Claude, change remote auth settings, or deploy. Existing documentation records an exposed database credential; keep that unresolved item visible and do not claim launch readiness.
-
-**Finish:** update Current state, Session history, relevant design/setup documents and validation evidence; clear this entry when the bounded slice is completed. Log any change of plan here before continuing.
-
-**Plan update before the next edits:** the owner chose email-and-password sign-in and 18+ self-confirmation. Record both in DECISIONS.md, then implement sign-up, email confirmation, sign-in, sign-out and password recovery/reset. Add a required self-confirmation to profile completion. Persist its server-recorded timestamp in a new nullable `profiles.adult_confirmed_at` field (existing rows must affirm rather than being silently marked eligible). This requires a reviewable local migration; do not apply it to the shared database in this step. Add `@supabase/ssr`, `@supabase/supabase-js` and `server-only`; use `@electric-sql/pglite` only as a development test dependency for isolated PostgreSQL integration checks. Preserve a separate hosted-database test limitation: PGlite does not prove multi-connection production concurrency. Document required auth redirect/SMTP settings without changing them or sending email. Also correct stale README/DATA_MODEL status statements when recording completion.
-
-**Identity implementation intent:** official Ohio State documentation (2026-08-19) says the `@osu.edu` and `@buckeyemail.osu.edu` forms deliver to the same mailbox. Canonicalize accepted login inputs to the lowercase `@osu.edu` form and admit only a verified canonical email from Supabase before any app account/grant. Existing noncanonical Auth accounts are not automatically migrated or granted an exception. Keep the university check at every protected server boundary; do not trust editable user metadata for identity, age verification or owner privileges. Account setup takes an explicit age affirmation and saves its server timestamp. This is self-attestation, not proof of age or current enrollment. Signup always creates an ordinary member, never an automatic owner.
-
-**Handoff and plan change (Claude Code, 2026-09-16):** the Codex session ended with its implementation uncommitted. Review before any edits: 60 tests, typecheck and lint pass; identity is re-verified server-side at every boundary; callbacks redirect only to fixed paths; the signup grant is gated on the profile insert inside one transaction, with tests for rollback, retries and injected fields. Remaining work, in order:
-
-1. Run a production build.
-2. Read the Supabase project's public auth settings to confirm email confirmation is required, and check Supabase's email-sending limits, which decide whether Ohio State students can receive confirmation emails at all.
-3. **Changed from the Codex plan:** apply migration 0002 to the shared database. It only adds the nullable `profiles.adult_confirmed_at` column; no existing data changes, and sign-up cannot work end to end without it.
-4. Write the Supabase Auth URL configuration steps into README.md, which `.env.example` already references.
-5. Commit the implementation, then update Current state, Session history, DATA_MODEL.md and README status, and clear this section.
-
-Not planned: sending email, creating real accounts, or changing Supabase dashboard settings; those stay with the owner.
+Nothing in progress.
 
 ## Current state
 
-- Stage: product rules for trading, economy and market lifecycle are decided. The market engine exists as tested logic and the database schema is live in Supabase. No sign-in, no user interface, and no code yet writes to the database.
+- Stage: people with a confirmed Ohio State email can sign up, set up a profile and receive 1,000 play points. Nothing to do with markets is usable yet.
 - Implemented:
-  - Next.js 16.3.5 scaffold with Vitest, ESLint and route-type generation.
-  - `src/modules/market`: LMSR pricing, integer quotes that round in the market maker's favour, positions with average-cost basis, the per-market limit, the Kalshi-style trading ban, refill eligibility, and shared buy/sell rules. 35 unit tests.
-  - `src/db/schema.ts` and `drizzle/`: ten tables (profiles, wallets, ledger entries, markets, outcome deciders, positions, trades, price history, owner actions, contests) applied to Supabase, with row-level security enabled on every table and verified to hide rows from the browser key. See DATA_MODEL.md.
-  - `src/db/client.ts`: the server-only database client.
-- Not implemented: sign-in and the Ohio State email check, profile and goal creation, AI goal suggestions, the owner approval queue, trade execution against the database, closing, ruling, contests, settlement and cancellation, verification, feed, notifications, deployment.
+  - Next.js 16.3.5 app with Vitest, ESLint, route-type generation and a production build.
+  - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: Supabase email-and-password authentication admitting only confirmed `@osu.edu` identities (`@buckeyemail.osu.edu` is accepted and stored as `@osu.edu`), re-verified server-side at every boundary. `src/proxy.ts` refreshes sessions; it does not authorize.
+  - `src/modules/account` and the account page: profile setup with display name, unique handle and an 18+ self-confirmation, plus the one-time 1,000-point grant, all written in one transaction that is safe to retry.
+  - `src/modules/market`: LMSR pricing, integer quotes that round in the market maker's favour, positions with average-cost basis, the per-market limit, the Kalshi-style trading ban, refill eligibility, and shared buy/sell rules.
+  - `src/db/schema.ts` and `drizzle/`: ten tables and three migrations applied to Supabase, with row-level security on every table. See DATA_MODEL.md.
+- Not implemented: goal creation, AI goal suggestions, the owner approval queue, trade execution against the database, refills in the app, closing, ruling, contests, settlement and cancellation, verification, feed, notifications, deployment.
+- **Blocks real users:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive confirmation or reset emails. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
-- Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
+- Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, email confirmation is required, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
 - Development machine: Windows 11 with Node.js 24.19.0 LTS and Git, both installed with the user's permission on 2026-09-15. Docker is not installed.
 
 ### Product decisions in force
 
 - Community: the user's friends and Ohio State students, with broad goals including GPA, club admission, internships, launches and gym goals. Sign-in at launch requires an Ohio State email, which excludes non-OSU friends until access widens after product-market fit.
+- Accounts: email and password. Users confirm they are 18 or older; this is self-attestation, not age verification. No birth date or identity documents are collected.
 - Goal creation: people create goals about themselves from fill-in templates, AI-written suggestions, or their own wording. The owner approves every market and sets its opening price. The user wants eventual AI decisions that reflect their judgment.
 - Trading rules (Kalshi reference): nobody trades a market about their own goal, and neither do people who decide its outcome; the ban covers sells as well as buys. The owner rejects goals that can be achieved simply by deciding to. Provisionally, friends may trade using what they know, within the per-market limit; the user asked for more research on collusion.
 - Mechanism: trades execute immediately against an app-run market-maker bot (binary LMSR, liquidity b = 150). Selling back to the bot is allowed while trading is open.
@@ -73,7 +52,7 @@ Not planned: sending email, creating real accounts, or changing Supabase dashboa
 - Lifecycle: trading closes at the deadline or earlier by the owner; 7 days to supply proof; missing proof resolves NO; a 24-hour contest window follows each ruling, then payout is final; wording is frozen once trading opens; a subject leaving cancels their markets; cancellation refunds cost basis. See MARKETS.md.
 - Visibility: market pages are public and search engines may index them. Private evidence stays off them.
 - Feed direction: maximize trades, with educating traders secondary. Formula, measurement and discovery allocation remain open.
-- Not yet decided: verification policy, ranking formula, age-check method, per-goal-type templates, product name.
+- Not yet decided: verification policy, ranking formula, per-goal-type templates, product name.
 
 ## Product thesis and constraints from the brief
 
@@ -113,11 +92,11 @@ Some categories are partially decided as recorded below. Their remaining questio
 
 | ID | Needed before | Decision | Status |
 | --- | --- | --- | --- |
-| D01 | MVP architecture | Launch cohort, measurable outcomes, age/consent boundaries, outcome horizon | Friends and Ohio State students; five goal examples. Consent: subjects create their own goals. Sign-in gated to OSU email at launch. Open: age-check method (an OSU address does not evidence age) and outcome horizon |
+| D01 | MVP architecture | Launch cohort, measurable outcomes, age/consent boundaries, outcome horizon | Friends and Ohio State students; five goal examples. Consent: subjects create their own goals. OSU email required at launch. Age: 18+ self-confirmation, implemented. Open: outcome horizon |
 | D02 | MVP architecture | Market proposal/approval authority, subject control, withdrawal and removal | Decided: subject creates, owner approves and sets the opening price; withdrawal cancels the subject's markets. Proposals about other people not approved. Open: future AI-reviewer scope |
-| D03 | MVP architecture | Market mechanism, grants/replenishment, liquidity, limits, self/related-party trading | Decided and implemented as logic: LMSR bot (b = 150), 1,000 start, two cash refills a month, 100-point per-market limit, selling allowed, subject and decision-maker trading banned. Open: collusion controls, pending research |
+| D03 | MVP architecture | Market mechanism, grants/replenishment, liquidity, limits, self/related-party trading | Decided and implemented as logic: LMSR bot (b = 150), 1,000 start (grant now live), two cash refills a month, 100-point per-market limit, selling allowed, subject and decision-maker trading banned. Open: collusion controls, pending research |
 | D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Lifecycle decided and in the schema. Open: binary-only scope, what counts as the event happening per goal type, template wording |
-| D05 | MVP architecture | Existing code, stack, hosting, pilot scale, budget, operational reviewer | Stack selected and scaffolded; Supabase and Claude credentials created and verified; Claude credits are prepaid with auto-reload recommended off. Open: hosting/deployment, pilot scale |
+| D05 | MVP architecture | Existing code, stack, hosting, pilot scale, budget, operational reviewer | Stack built; credentials verified. **Owner action needed:** custom SMTP provider and Supabase redirect URLs before inviting anyone. Open: hosting/deployment, pilot scale |
 | D06 | Verification architecture | Evidence methods, claim standards, source precedence, reviewer authority | Public sources plus private documents reviewed by the owner confirmed. Open: source sufficiency per goal type, any APIs |
 | D07 | Verification architecture | Evidence access, retention, redaction, status changes, disputes and deletion | Market pages are public, so originals must stay off them. No evidence tables exist yet. Interview queued |
 | D08 | Recommendation algorithm | Session objective, personalization, unknown-subject discovery, eligibility | Maximize trades primarily, educate traders secondarily. Open: measurement, weighting, exploration, eligibility |
@@ -130,16 +109,17 @@ Some categories are partially decided as recorded below. Their remaining questio
 - 2026-09-15 (Codex): launch cohort, creation permissions, feed objective, evidence scope, stack.
 - 2026-09-15 (Claude Code): subject approval, self-trading, private knowledge, mechanism, goal suggestions, visibility, play money, bet limits, search indexing, price sensitivity, refills, selling, limit definition, opening price, refill basis, sign-in, the AI model and budget.
 - 2026-09-15 (Claude Code): market lifecycle, seven questions covering trading close, missing proof, evidence window, cancellation refunds, frozen wording, contests and withdrawal.
+- 2026-09-16 (Codex): sign-in method (email and password) and age check (18+ self-confirmation).
 
 Answers, the user's own words and unresolved points are in DECISIONS.md in date order. Do not re-ask anything recorded there.
 
-Worth asking next: per-goal-type templates and what counts as the event happening; the verification and privacy interview (D06, D07); the age-check method; collusion controls, after the requested research; the discovery interview (D08, D09).
+Worth asking next: per-goal-type templates and what counts as the event happening; the verification and privacy interview (D06, D07); collusion controls, after the requested research; the discovery interview (D08, D09).
 
 ## Risks and validation
 
 The riskiest assumption is that subjects will keep providing timely, credible information, including setbacks, and that a small audience will make sufficiently independent predictions to find returning worthwhile. A polished feed cannot by itself establish this behavior.
 
-Other important risks: sparse liquidity; long outcome horizons delaying learning; ambiguous resolution; selective disclosure; attention feeding back into prices; sybil or coordinated activity; a subject deliberately failing so a friend's NO position wins; missing proof resolving NO against someone who succeeded privately; confusing verified identity with verified claims; private evidence exposure; public, indexable pages exposing students' goals; popularity presented as forecast skill.
+Other important risks: sparse liquidity; long outcome horizons delaying learning; ambiguous resolution; selective disclosure; attention feeding back into prices; sybil or coordinated activity; a subject deliberately failing so a friend's NO position wins; missing proof resolving NO against someone who succeeded privately; confusing verified identity with verified claims; private evidence exposure; public, indexable pages exposing students' goals; popularity presented as forecast skill; 18+ status resting on self-attestation.
 
 ## Ideas / Open Questions
 
@@ -150,21 +130,25 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 - Design a future reviewer around saved owner decisions and concise reasons, with corrections and separate evaluation cases. The `admin_actions` table already records decisions with reasons and context.
 - Consider asking subjects, when creating a goal, to name the people who decide its outcome, feeding the trading ban and collusion controls. Not approved.
 - Consider letting a subject keep an individual market out of search results.
+- Consider a Supabase auth hook that rejects non-OSU sign-ups at the provider. Today such accounts can be created by calling Supabase directly, though the app never admits them.
 
 ## Next actions
 
-1. Build sign-in restricted to Ohio State email addresses, enforced server-side, and profile creation that writes the 1,000-point signup grant to the ledger and wallet in one transaction.
-2. Build goal creation and the owner approval queue: draft from a template, approve with an opening price, reject with a reason, all recorded in `admin_actions`. Ask the user for per-goal-type template wording before finalizing templates.
-3. Build trade execution: wrap `planBuy`/`planSell` in a database transaction that writes the trade, ledger entry, position and price point together, with idempotency keys and concurrency tests.
-4. Add AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
-5. Research collusion and related-party controls for small social groups and bring options back to the user.
-6. Hold the verification/privacy and discovery interviews before building those systems.
+1. **Owner:** connect a custom SMTP provider in Supabase and add the redirect URLs from README.md. Then test the full sign-up flow with a real Ohio State inbox.
+2. Mark the owner's own profile as the approver (`profiles.is_owner`) once they have signed up, through a reviewed one-off step rather than any sign-up path.
+3. Build goal creation and the owner approval queue: draft from a template, approve with an opening price, reject with a reason, all recorded in `admin_actions`. Ask the user for per-goal-type template wording before finalizing templates.
+4. Build trade execution: wrap `planBuy`/`planSell` in a database transaction that writes the trade, ledger entry, position and price point together, with idempotency keys and concurrency tests against the hosted database.
+5. Add AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
+6. Research collusion and related-party controls for small social groups and bring options back to the user.
+7. Hold the verification/privacy and discovery interviews before building those systems.
 
 ## Validation and known limitations
 
 Source review: all 18 pages extracted and visually inspected.
 
-Verified in this workspace on 2026-09-15: `npm test` (35 tests in 5 files), `npm run typecheck` (`next typegen && tsc --noEmit`) and `npm run lint` pass. The two migrations applied cleanly to the empty Supabase database. Row-level security was checked with a temporary row: the browser key returned an empty list while the server key returned the row; the row was then deleted and the database left empty. Unit tests cover pure logic only. Nothing has run in a browser or with real users, and no deployment exists.
+Verified in this workspace on 2026-09-16: `npm test` (97 tests in 9 files), `npm run typecheck`, `npm run lint` and `npm run build` pass. Migration 0002 applied cleanly; `profiles` has zero rows. Supabase's public auth settings show email sign-in enabled, email confirmation required and sign-ups allowed. A logged-out smoke test against the production server confirmed that public pages render, `/account` and `/reset-password` redirect away, callbacks with a missing or forged code fail closed, and private responses are not cached.
+
+Not yet verified: a real sign-up, email confirmation, sign-in or password reset, because those need the owner's SMTP setup and a real inbox. Account-provisioning tests run on PGlite, a single-connection in-memory PostgreSQL, so they do not prove behavior under concurrent connections to the hosted database. Row-level security was verified on 2026-09-15 with a temporary row.
 
 Kalshi research limits: kalshi.com pages returned HTTP 429 and the rulebook PDFs could not be text-extracted on this machine. Kalshi rule statements rely on rulebook text quoted in search results, plus the CFTC advisory and Kalshi help-center article, which were read directly. Re-read the primary rule text before citing rule numbers.
 
@@ -198,12 +182,18 @@ Compared model pricing from official sources where reachable and selected `claud
 
 ### 2026-09-15 - Lifecycle interview and database schema (Claude Code)
 
-Held the market lifecycle interview; all seven answers took the recommended option and are recorded in DECISIONS.md and MARKETS.md. Installed `postgres`, `drizzle-orm` and `drizzle-kit`. Wrote the ten-table schema, generated and applied the initial migration plus a row-level-security migration, and verified RLS with a temporary row. Tests, type check and lint pass.
+Held the market lifecycle interview; all seven answers took the recommended option and are recorded in DECISIONS.md and MARKETS.md. Installed `postgres`, `drizzle-orm` and `drizzle-kit`. Wrote the ten-table schema, generated and applied the initial migration plus a row-level-security migration, and verified RLS with a temporary row.
 
 ### 2026-09-16 - Execution record consistency pass (Claude Code)
 
-The user asked whether this file was being kept current. It had been updated after each step with small targeted edits, which left contradictions: the stage said there was no database while another line said the schema was applied, the pending-decisions table still listed completed setup, and the session history stopped before the credentials and schema work. Rewrote the file as one consistent record of what exists.
+The user asked whether this file was being kept current. Incremental edits had left contradictions, so the file was rewritten as one consistent record of what exists.
 
 ### 2026-09-16 - Before-and-after documentation rule (Claude Code)
 
-The owner asked that this file be updated before every change and again whenever a plan changes. Added the rule as a section at the top of this file with a standing In progress section, and made it item 3 of `AGENTS.md` so any agent follows it. Applied the rule to this change itself: the plan was logged and committed first, then `AGENTS.md` was edited, then In progress was cleared and this entry written. No code or product behavior changed.
+The owner asked that this file be updated before every change and again whenever a plan changes. Added the rule at the top of this file with a standing In progress section, and made it item 3 of `AGENTS.md`.
+
+### 2026-09-16 - Ohio State sign-in and account setup (Codex, completed in Claude Code)
+
+Codex logged its plan first, asked the owner about the sign-in method and age check, recorded the answers (email and password; 18+ self-confirmation), and implemented authentication, profile setup with the signup grant, migration 0002 and tests. Its session ended with the work uncommitted. Claude Code reviewed the code (sound), logged a handoff plan, ran the production build, confirmed email confirmation is required in Supabase, found that Supabase's built-in email cannot reach students, applied migration 0002, documented the owner's Supabase setup in README.md, smoke-tested routes on the production server, and committed.
+
+Coordination problem found: Codex was still writing when the handoff began. Three of its test files appeared about 40 seconds after Claude Code's first test run and were committed before being run. They were then run and pass, raising the total from 60 to 97 tests. The single-agent note under the working rule above comes from this.
