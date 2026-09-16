@@ -2,16 +2,6 @@
 
 Entries distinguish requirements carried from the user-supplied brief, routine project work, recommendations, and decisions awaiting the user.
 
-## 2026-09-16 - Password sign-in and adult self-confirmation
-
-**User choices:** "Email and password" and "Require users to confirm they are 18 or older".
-
-**Confirmed:** implement Supabase email/password signup/sign-in, verification of the Ohio State email, sign-out, and password recovery/reset. Require an explicit 18+ self-confirmation before creating an active app profile and issuing the one-time 1,000-point grant. Record the affirmation time on the server. Do not collect a birth date or identity documents for this version. The checkbox is an assertion, not independent age verification.
-
-**Technical handling under delegated authority:** canonicalize accepted `@buckeyemail.osu.edu` inputs to `@osu.edu`, because Ohio State's [August 19, 2026 announcement](https://it.osu.edu/news/2026/08/19/students-now-have-one-email-account-lastnameosuedu) says both forms reach the same mailbox. Require verified canonical email at protected app boundaries. This prevents those aliases from independently receiving signup grants through this path; it does not establish current enrollment or guarantee one account per human across all identity changes.
-
-**Profile completion:** collect display name, a normalized unique handle and the explicit adult confirmation. Use the verified Auth user id; ignore client-supplied ids, balances and owner roles. Existing accounts must never receive another signup grant merely because the request was retried.
-
 ## 2026-09-15 - Source review and documentation
 
 **Status:** completed, within the user's request.
@@ -236,3 +226,25 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Assistant defaults inside these decisions (not separately confirmed):** markets close at 23:59 America/New_York on the deadline date, matching the refill month boundary; the contest window runs 24 hours from the owner's ruling.
 
 **Still open:** binary-only scope for V1, what counts as the event happening for each goal type, template wording, and evidence that appears after settlement.
+
+## 2026-09-16 - Password sign-in and adult self-confirmation
+
+**User choices:** "Email and password" and "Require users to confirm they are 18 or older".
+
+**Confirmed:** implement Supabase email/password signup/sign-in, verification of the Ohio State email, sign-out, and password recovery/reset. Require an explicit 18+ self-confirmation before creating an active app profile and issuing the one-time 1,000-point grant. Record the affirmation time on the server. Do not collect a birth date or identity documents for this version. The checkbox is an assertion, not independent age verification.
+
+**Technical handling under delegated authority:** canonicalize accepted `@buckeyemail.osu.edu` inputs to `@osu.edu`, because Ohio State's [August 19, 2026 announcement](https://it.osu.edu/news/2026/08/19/students-now-have-one-email-account-lastnameosuedu) says both forms reach the same mailbox. Require verified canonical email at protected app boundaries. This prevents those aliases from independently receiving signup grants through this path; it does not establish current enrollment or guarantee one account per human across all identity changes.
+
+**Profile completion:** collect display name, a normalized unique handle and the explicit adult confirmation. Use the verified Auth user id; ignore client-supplied ids, balances and owner roles. Existing accounts must never receive another signup grant merely because the request was retried.
+
+## 2026-09-16 - Goal templates: what counts as YES
+
+**Context:** four questions using the owner's own examples, asked before building goal creation. Every answer took the recommended option.
+
+**Confirmed:**
+- **GPA:** the goal counts that semester's GPA once final grades post on the official record. The deadline is the grade-posting date, not the last day of class. Rejected: cumulative GPA, which moves too slowly for a one-semester goal; letting the subject choose, which adds a way to misread a market.
+- **Internship:** a written offer received before the deadline counts, even if the subject declines it. Rejected: accepting the offer, because accepting is the subject's own choice and would break the owner's rule that a goal cannot be achieved or failed simply by deciding; starting the internship, which keeps markets open for months.
+- **Club:** the club's admission offer before the deadline counts, whether or not the subject then joins. Rejected: officially joining, for the same on/off-switch reason.
+- **Gym:** proven by one uncut video of the achievement, posted publicly (for example Instagram, TikTok or YouTube) before the deadline, with the link reviewed by the owner. The app stores no video. Rejected: another member vouching, which invites the collusion the owner already flagged; leaving gym goals out.
+
+**Not decided:** a launch template (what counts as launched). Until then, launch goals are written in the subject's own words and judged at approval.

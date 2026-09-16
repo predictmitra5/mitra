@@ -48,15 +48,15 @@ Still open: fees (none proposed), minimum trade size, rounding presentation, and
 
 ## User-provided goals and contract questions
 
-The initial community is friends and Ohio State students. The user explicitly wants a broad range of goals. The examples below translate their ideas into questions for discussion and are candidates for the fill-in templates. No threshold, source, deadline or settlement rule is approved by these drafts.
+The initial community is friends and Ohio State students. The user explicitly wants a broad range of goals. Templates for GPA, club, internship and gym goals were decided on 2026-09-16. Launch goals have no template yet and use the subject's own wording.
 
-| User example | Candidate wording pattern | What must become precise | Candidate proof to review |
+| Goal type | Template wording | What counts as YES | Proof the owner reviews |
 | --- | --- | --- | --- |
-| GPA | Will the person earn at least [GPA] for [semester/year]? | Semester versus cumulative GPA; official final versus provisional grades; end date and late grade changes | Redacted official grade report; a student's claim alone may not establish the result |
-| Club admission | Will the person receive admission to [club] for [term]? | Admission offer versus accepting/joining; exact club and intake; deadline | Admission email or official membership confirmation, with irrelevant details removed |
-| Internship | Will the person receive an internship offer from [company] by [date]? | Receiving versus accepting versus starting; qualifying role/term; contingencies | Redacted offer or employer confirmation; exact acceptance standard pending |
-| Launch | Will the person launch [specified thing] by [date]? | What exists, who can access it, and what qualifies as a launch | Public release/working artifact or other agreed proof |
-| Gym goal | Will the person perform [defined achievement] by [date]? | Measurable achievement, conditions, witnessing and timing | Agreed observation or evidence; video/witness features are discussion candidates, not approved upload capabilities |
+| GPA | Will [name] earn at least [GPA] for [semester]? | That semester's GPA once final grades post on the official record. The deadline is the grade-posting date | The official grade report |
+| Club admission | Will [name] be offered admission to [club] by [date]? | Receiving the club's admission offer before the deadline, whether or not they join | The admission message |
+| Internship | Will [name] receive a written internship offer from [company] by [date]? | A written offer dated before the deadline, even if declined | The offer email or letter |
+| Gym | Will [name] [achievement] by [date]? | One uncut video of the achievement, posted publicly before the deadline | A public Instagram, TikTok or YouTube link; the app stores no video |
+| Launch | No template yet | Not decided: what exists, who can access it, what qualifies as launched | Judged from the subject's own wording at approval |
 
 Private student records or offer letters must not become public by default. Market pages are public and may be indexed by search engines, so define exactly what the reviewer needs and what a public outcome explanation reveals. Missing proof by the evidence deadline resolves NO; see Lifecycle below.
 
