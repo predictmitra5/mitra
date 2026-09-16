@@ -6,7 +6,7 @@ Status: proposed implementation sequence, conditional on user decisions. No mile
 
 Completed: inspect workspace; deeply read the PDF; create execution documentation; start skill and technical research; ask the first interview batch.
 
-Remaining: collusion research, per-goal-type outcome definitions and templates, verification/privacy and minimal measurement. The economy and the market lifecycle are decided; see MARKETS.md. Confirmed: Ohio State and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
+Remaining: collusion research, a launch-goal template, verification/privacy and minimal measurement. Templates for GPA, internship, club and gym goals are decided. The economy and the market lifecycle are decided; see MARKETS.md. Confirmed: Ohio State and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
 
 Follow-up: the initial audience is friends and Ohio State students, and the user emphasized a broad range of goals. Use their GPA, clubs, internship, launch and gym examples to complete the market and evidence design interviews. See TECH_STACK.md for the selected foundation.
 

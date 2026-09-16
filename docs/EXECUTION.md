@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-16 (Claude Code): correct three stale documentation statements. DATA_MODEL.md still says no tables exist and lists the economy and cancellation accounting as undecided; ROADMAP.md lists goal templates as remaining. Documentation only.
+Nothing in progress.
 
 ## Current state
 
@@ -203,4 +203,4 @@ Coordination problem found: Codex was still writing when the handoff began. Thre
 
 ### 2026-09-16 - Goal templates, drafting and owner review (Claude Code)
 
-Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages.
+Asked the owner what counts as YES for GPA, internship, club and gym goals (all recommended options), recorded the answers, and moved the Codex decision entry into date order. Added and applied migration 0003 so pricing stays empty until approval, backed by check constraints. Built `src/modules/goals` (templates, drafts, owner-only approve and reject) with 27 PGlite tests, the new-goal and review pages, and goal status on the account page. Found that the Codex pages had no stylesheet and logged that plan change before writing `globals.css`; checked the public pages in a browser and fixed two layout flaws. Added the new routes to `src/proxy.ts`, which previously covered only the original pages. A final read-through corrected stale statements in DATA_MODEL.md and ROADMAP.md.
