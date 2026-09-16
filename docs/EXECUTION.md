@@ -39,6 +39,10 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 **Not in scope:** AI suggestions, trading, public market pages, outcome deciders, evidence upload, and setting the owner flag on any real account.
 
+**Progress:** steps 1 and 2 done and committed (decisions recorded; migration 0003 applied to Supabase with four check constraints). Step 3 and the service half of step 4 written: `src/modules/goals/templates.ts` and `service.ts` with 26 passing PGlite tests.
+
+**Plan change before step 5:** the Codex sign-in pages use about 30 CSS class names (`site-shell`, `auth-form`, `primary-button`, `account-card` and others) but no stylesheet defines them; `src/app/globals.css` is still the 488-byte scaffold default. Those pages therefore render unstyled, which the earlier smoke test did not catch because it checked status codes only. Before building the goal pages, write one mobile-first stylesheet covering every class the existing pages use plus the new goal and review pages, then check the pages visually in a browser. The visual direction is an implementation choice within the brief's "consumer, social, mobile-first" requirement and can be changed by the owner.
+
 ## Current state
 
 - Stage: people with a confirmed Ohio State email can sign up, set up a profile and receive 1,000 play points. Nothing to do with markets is usable yet.

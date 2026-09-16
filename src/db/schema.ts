@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
+  check,
   index,
   integer,
   jsonb,
@@ -117,13 +119,15 @@ export const markets = pgTable(
 
     // Market-maker state. Liquidity and share counts are micro-units; the opening
     // probability is basis points (3000 means 30%). Initial shares are kept so the
-    // market maker's own shares stay separable from what traders hold.
+    // market maker's own shares stay separable from what traders hold. The owner
+    // sets the opening price at approval, so these stay null on drafts; check
+    // constraints below require them once a market is approved.
     liquidityMicro: bigint("liquidity_micro", { mode: "number" }).notNull(),
-    openingProbabilityBp: integer("opening_probability_bp").notNull(),
-    initialYesSharesMicro: bigint("initial_yes_shares_micro", { mode: "number" }).notNull(),
-    initialNoSharesMicro: bigint("initial_no_shares_micro", { mode: "number" }).notNull(),
-    yesSharesMicro: bigint("yes_shares_micro", { mode: "number" }).notNull(),
-    noSharesMicro: bigint("no_shares_micro", { mode: "number" }).notNull(),
+    openingProbabilityBp: integer("opening_probability_bp"),
+    initialYesSharesMicro: bigint("initial_yes_shares_micro", { mode: "number" }),
+    initialNoSharesMicro: bigint("initial_no_shares_micro", { mode: "number" }),
+    yesSharesMicro: bigint("yes_shares_micro", { mode: "number" }),
+    noSharesMicro: bigint("no_shares_micro", { mode: "number" }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
@@ -140,6 +144,21 @@ export const markets = pgTable(
     index("markets_status_idx").on(table.status),
     index("markets_subject_idx").on(table.subjectUserId),
     index("markets_deadline_idx").on(table.deadlineAt),
+    check(
+      "markets_priced_once_approved",
+      sql`${table.approvedAt} is null or (${table.openingProbabilityBp} is not null
+        and ${table.initialYesSharesMicro} is not null and ${table.initialNoSharesMicro} is not null
+        and ${table.yesSharesMicro} is not null and ${table.noSharesMicro} is not null)`,
+    ),
+    check(
+      "markets_trading_requires_approval",
+      sql`${table.status} in ('draft', 'rejected', 'cancelled') or ${table.approvedAt} is not null`,
+    ),
+    check(
+      "markets_opening_probability_range",
+      sql`${table.openingProbabilityBp} is null or ${table.openingProbabilityBp} between 1 and 9999`,
+    ),
+    check("markets_evidence_after_deadline", sql`${table.evidenceDeadlineAt} >= ${table.deadlineAt}`),
   ],
 );
 

@@ -22,6 +22,13 @@
       "when": 1789593936930,
       "tag": "0002_adult_self_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789595308991,
+      "tag": "0003_pricing_set_at_approval",
+      "breakpoints": true
     }
   ]
 }
