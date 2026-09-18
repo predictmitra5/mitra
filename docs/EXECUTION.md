@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### 2026-09-18 — Close, rule, contest, settle and cancel (Codex)
+
+- Intent: finish the decided play-money market lifecycle: deadline/owner close, owner YES/NO ruling, objections during the contest window, one final payout, and owner cancellation with held-cost refunds. Add owner controls alongside the review workflow and outcome/objection UI on the public market page, preserving Mitra's styling.
+- Authority: DECISIONS.md's 2026-09-15 lifecycle decision sets the deadline, seven-day proof period, NO for missing proof, a 24-hour objection window, final payouts, frozen wording and cost-basis refunds. Existing identity/18+ gates and owner-only adjudication remain in force. Account withdrawal/deletion, evidence collection and retention, and selective collusion-trade cancellation are outside this change.
+- Pending answers: whether changing a ruling starts another 24 hours, and visibility of ruling explanations/objections. Asked before implementation; dependent behavior waits for the owner's answers. Independent work can implement close, first ruling, atomic payout/refund arithmetic and tests now.
+- Technical plan: serialize lifecycle changes on the same market lock as trades; lock payout wallets in a stable order; write all credits, cleared positions, terminal status and audit records atomically. Retries must not pay twice. Add only necessary audit/idempotency fields and migrations, with no new dependencies unless a demonstrated need arises. System transitions must be attributed to the system, never a pretend owner action.
+- Timing: implement an idempotent due-transition service and invoke it when relevant pages/actions are accessed, so deadlines and completed contest windows advance without an always-running process. A deployed periodic runner can call the same service later; exact-time background scheduling is not configured. Trading already rejects overdue trades. Missing-proof rulings require the owner's explicit confirmation after the proof deadline because the app has no evidence-submission record; do not infer missing proof from absence of an upload feature.
+- Validation: isolated PostgreSQL tests for authorization, transition boundaries, audit/retry behavior, payouts/refunds and rollback; hosted multi-connection races in generated temporary schemas (then cleanup); action tests, typecheck, lint, production build and public browser checks using disposable fixtures. Apply the reviewed additive migration after validation. Do not create live Auth users, send mail or change credentials.
+- Completion: update this record, MARKETS.md, DATA_MODEL.md, ROADMAP.md, README.md and any directly affected decision/privacy notes; commit the implementation. Initial tree clean, no other writer is active.
 
 ## Current state
 
