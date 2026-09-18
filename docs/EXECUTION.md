@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-09-16
+Last updated: 2026-09-18
 
 ## Read this first
 
@@ -24,7 +24,14 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### 2026-09-18 — Public markets and transactional trading (Codex)
+
+- Intent: make an approved goal viewable at `/markets/[id]` and let an eligible signed-in adult preview and confirm a YES/NO buy or sell. Preserve the existing Mitra design. Link approved goals from the account page; do not invent feed ranking.
+- Authority: DECISIONS.md records public/indexable markets, immediate binary LMSR trades, selling while open, b = 150, the 100-point held-cost limit, and the subject/outcome-decider trading ban. Existing account decisions require a freshly verified OSU identity and an active adult-confirmed profile. This implements Next action 3; no new economy, fees, or outcome-decider assignment policy.
+- Changes planned: a server-side trading service using the existing math, public-safe market reads, server actions and trade UI; an additive migration recording the original requested trade amount so retries cannot change the order; account links and matching styles. Transactions will lock market and wallet state and write trade, ledger, position, market state, and price history together. Quotes must match the current market state at confirmation; a changed price requires another preview, with no silent repricing.
+- Validation planned: exact decimal input tests; isolated PostgreSQL service tests for permissions, limits, deadlines, retry safety, rollback, and ledger/position consistency; multi-connection concurrency checks in a uniquely named temporary hosted test schema if supported; typecheck, lint, build, and browser checks. Hosted checks may create and remove only their isolated test schema. Apply the additive migration through the existing migration command after validation. Do not send auth emails, create live users, or change credentials.
+- Known boundary: stored outcome deciders can be excluded now, but identifying/assigning them still needs the owner's decision. SMTP still blocks the real-inbox sign-up walkthrough. Settlement, refills, evidence, and discovery remain later slices.
+- Single writer: initial Git tree was clean and this section empty; only this agent will edit this folder. After implementation, update Current state, Session history, MARKETS.md, DATA_MODEL.md, ROADMAP.md, and README.md to match tested behavior and remaining limitations.
 
 ## Current state
 
