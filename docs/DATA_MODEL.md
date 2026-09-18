@@ -1,6 +1,6 @@
 # Data model
 
-Status: ten tables and four migrations are implemented and applied; see Implemented schema below. The candidate inventory that follows is kept for entities not yet modelled.
+Status: ten tables and five migrations are implemented and applied; see Implemented schema below. The candidate inventory that follows is kept for entities not yet modelled.
 
 Source: PDF sections 5.2, 7.3, 16, 20-22, pages 5, 7, 11-14.
 
@@ -35,7 +35,7 @@ This list is not a commitment to one table per name or to implementing every ent
 - Feed responses and real impressions can be associated with the right algorithm/configuration.
 - Sensitive content is excluded from analytics by design.
 
-## Implemented schema (2026-09-15)
+## Implemented schema (updated 2026-09-18)
 
 Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial_schema.sql`, `drizzle/0001_enable_rls.sql`, `drizzle/0002_adult_self_confirmation.sql` and `drizzle/0003_pricing_set_at_approval.sql`. Migration 0003 leaves a market's opening price and market-maker shares empty until the owner approves it. Its check constraints require those values once a market is approved, require approval before a market can leave draft, rejected or cancelled status, keep opening odds between 1 and 9999 basis points, and keep the proof deadline on or after the trading deadline. Amounts and share counts are integer micro-units, matching `src/modules/market`.
 
@@ -52,7 +52,13 @@ Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial
 | `admin_actions` | Every owner decision with its reason and the context visible at the time |
 | `contests` | Objections raised during the 24-hour window after a ruling |
 
-Invariants the application must uphold, none of them enforced by the schema yet: a wallet balance equals the sum of that person's ledger entries; a trade writes a ledger entry, a position update and a price point in one transaction; market wording never changes after `status` becomes `open`; cancellation refunds cost basis rather than settling.
+Migration `0004_trade_request_amount.sql`, applied 2026-09-18, adds nullable `trades.request_amount_micro`: the original buy spend cap or sell share quantity. New trades always fill it. This distinguishes a genuine retry from reuse of a request id with changed instructions; nullable values are reserved for legacy rows and never treated as a matching retry.
+
+The trading service now enforces the accounting invariants in one database transaction: update the wallet, append a signed ledger entry, upsert the position, append the trade and price point, and advance the market-maker shares. Tests reconcile wallet balances to ledger sums and market shares to initial shares plus all user positions. These cross-table invariants are not database check constraints; every future writer must preserve them. Cancellation refunds and settlement are still unimplemented.
+
+Concurrency: hold the active trader profile with a shared lock, serialize the user/request id with a transaction advisory lock, lock the market, hold the subject profile, then lock the wallet. The market lock serializes different traders; the wallet lock protects cash across different markets. Retry keys are scoped to the verified user, and existing receipts are returned only when market, side, action and original amount match. Deadline and current authorization checks run after lock waits. Future withdrawal, decider-assignment and lifecycle writers must coordinate their lock order with this service; adding those workflows requires their own race tests.
+
+Public market queries project only approved goal terms, public display name/handle, deadlines, status and current prices. They exclude drafts, rejections, never-approved cancellations, reviewer notes, account identifiers and accounting records. The per-user holdings read and every trade action require a verified identity at the server boundary. Responses containing account information are private and uncached. No evidence files are stored or exposed.
 
 Row-level security is enabled on all ten tables with no policies, so the browser-exposed publishable key reads nothing through the Supabase REST API. This was verified with a temporary row: the browser key returned an empty list while the server key returned the row. All database access goes through server code in `src/db/client.ts`.
 

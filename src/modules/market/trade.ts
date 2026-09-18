@@ -7,7 +7,7 @@ import { assertNonNegativeMicro, assertPositiveMicro } from "./units";
 /*
  * Trade rules shared by every entry point. These functions only decide what a
  * trade would do. The caller must apply the result atomically and check that
- * trading is open; market lifecycle rules are not decided yet.
+ * trading is open and before its deadline. See service.ts for that boundary.
  */
 
 export interface TradeContext {

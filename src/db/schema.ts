@@ -210,8 +210,11 @@ export const trades = pgTable(
     side: tradeSide("side").notNull(),
     action: tradeAction("action").notNull(),
     sharesMicro: bigint("shares_micro", { mode: "number" }).notNull(),
-    // Paid on a buy, received on a sell. Always positive.
+    // Paid on a buy, received on a sell. A tiny sale may round down to zero.
     amountMicro: bigint("amount_micro", { mode: "number" }).notNull(),
+    // Original spend cap (buy) or share quantity (sell), for exact retry matching.
+    // Null is reserved for trades written before transactional execution existed.
+    requestAmountMicro: bigint("request_amount_micro", { mode: "number" }),
     yesPriceBeforeBp: integer("yes_price_before_bp").notNull(),
     yesPriceAfterBp: integer("yes_price_after_bp").notNull(),
     // Lets a retried request return the original trade instead of trading twice.

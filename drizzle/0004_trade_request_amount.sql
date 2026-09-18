@@ -1,0 +1,1 @@
+ALTER TABLE "trades" ADD COLUMN "request_amount_micro" bigint;

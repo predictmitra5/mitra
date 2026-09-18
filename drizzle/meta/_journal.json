@@ -29,6 +29,13 @@
       "when": 1789595308991,
       "tag": "0003_pricing_set_at_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789737868125,
+      "tag": "0004_trade_request_amount",
+      "breakpoints": true
     }
   ]
 }

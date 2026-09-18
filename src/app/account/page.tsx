@@ -55,7 +55,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             ? <p className="muted">No goals yet. Put one out there: a GPA target, an internship, a club, a personal best.</p>
             : <ul className="goal-rows">{goals.map(({ market, rejectionReason }) => <li key={market.id}>
               <span className={`status-pill status-${market.status}`}>{statusLabels[market.status] ?? market.status}</span>
-              <p>{market.question}</p>
+              <p>{market.approvedAt && !["draft", "rejected"].includes(market.status) ? <Link href={`/markets/${market.id}`}>{market.question} ↗</Link> : market.question}</p>
               {market.status === "rejected" && rejectionReason && <p className="rejection">Owner’s note: {rejectionReason}</p>}
             </li>)}</ul>}
         </section>

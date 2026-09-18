@@ -26,7 +26,9 @@ Verify: authorized users can complete it; unauthorized actors cannot approve or 
 
 Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`.
 
-Tables for wallets, ledger entries, positions, trades and price history now exist, though no code writes to them. Remaining: the transactional write path for trades; market status and pause/close; resolution, payouts and cancellation accounting; concurrency control and portfolio reconciliation.
+Also done (2026-09-18): public approved-market pages and authenticated buy/sell previews and confirmations. The transaction writes trade, wallet, ledger, position, market state and price history together. Retry protection, deadline enforcement, wallet/ledger reconciliation and multi-connection hosted concurrency checks pass.
+
+Remaining: scheduled closed-status transitions and early-close controls; ruling, contests, payouts and cancellation accounting; refills in the app; outcome-decider assignment; portfolio navigation. The authenticated trade UI still needs a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
 
 Verify: concurrent and retried actions cannot duplicate balances; ledger replay reconciles accounting; resolution and cancellation follow approved rules; migrations, type checks, lint and appropriate tests pass.
 

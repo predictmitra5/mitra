@@ -1,6 +1,6 @@
 # Markets
 
-Status: creation, approval, templates, trading eligibility, mechanism, economy and lifecycle are decided. Goal drafting, owner approval, the engine logic and the database schema are built; trade execution, resolution and public market pages are not.
+Status: creation, approval, templates, trading eligibility, mechanism, economy and lifecycle are decided. Goal drafting, owner approval, public market pages and transactional buy/sell execution are built. Ruling, contests, settlement, cancellation and in-app refills remain to be implemented.
 
 ## Confirmed direction - 2026-09-15
 
@@ -64,7 +64,7 @@ Private student records or offer letters must not become public by default. Mark
 
 The user said: "Use kalshis rules for trading. id assume the peole being betted on have to be 18".
 
-Adopted: binary YES/NO contracts shown in cents, and Kalshi's ban on trading by anyone who influences the outcome, applied to buys and sells. Subjects are expected to be 18+; how this is checked is undecided, and an Ohio State email does not establish it.
+Adopted: binary YES/NO contracts shown in cents, and Kalshi's ban on trading by anyone who influences the outcome, applied to buys and sells. All participants explicitly confirm they are 18 or older at profile setup (decided 2026-09-16); an Ohio State email does not establish age.
 
 Not adopted: order-book matching (replaced by a market-maker bot) and a strict ban on trading with non-public knowledge (provisionally replaced by per-market limits). Play money only: no deposits, withdrawals, cash value or claim of regulatory compliance.
 
@@ -107,9 +107,9 @@ Still open: whether V1 is binary only (the PDF's race example needs separate rul
 
 These criteria do not prescribe a database schema or specific concurrency technique.
 
-## Implementation status (2026-09-15)
+## Implementation status (updated 2026-09-18)
 
-Implemented and unit-tested in `src/modules/market`, all pure logic with no persistence:
+Implemented and unit-tested pure logic in `src/modules/market`:
 
 - `lmsr.ts`: price, cost function, buy cost, shares for a given spend, sell proceeds, opening state at a chosen probability, and the subsidy bound.
 - `quote.ts`, `units.ts`: integer quotes in micro-points and micro-shares (1 point = 1,000,000 micro-points; a winning micro-share pays one micro-point). Rounding favours the market maker: shares round down, costs round up without exceeding the spend, sale proceeds round down.
@@ -121,7 +121,11 @@ Implemented and unit-tested in `src/modules/market`, all pure logic with no pers
 
 Tests (35) cover cost-function consistency, the identity that n YES plus n NO shares cost n points, spend/cost inversion, round trips that cannot make money, the subsidy bound, average-cost basis including values beyond 2^53, Eastern-time month boundaries, and every rejection path.
 
-Not implemented: persistence, the ledger, price history, market lifecycle and status, resolution and payouts, cancellation accounting, concurrency control, and any user interface.
+`service.ts` and `actions.ts` now wrap that logic in database transactions and freshly verified OSU authorization. They enforce active adult-confirmed accounts, approval/open status, the trading deadline, subject and recorded-decider exclusions, available cash/shares and the held-cost limit. Trade, ledger, wallet, position, market state and price point commit or roll back together. Migration 0004 preserves the original request amount for exact retries. Four hosted concurrency scenarios exercise repeated confirmations, competing traders, a shared wallet across markets and a deadline reached while a request waits on a database lock.
+
+`/markets/[id]` displays public approved terms, prices, subject display name/handle and deadlines. The account's approved-goal entries link to it. Eligible traders see their holdings and can preview a buy in points or a sale in shares, then explicitly confirm it. The server recomputes every quote. If the market's share state changed, confirmation fails and requires a new preview; the app never silently changes the price. Retries retain the same request id after an interrupted response. The existing six-decimal engine precision is shown for totals and holdings; marginal prices and average per-share prices are displayed to two decimal places in cents. A zero-proceeds micro-sale is explicitly identified before confirmation. No fee or new product minimum was introduced.
+
+Remaining: a scheduled closed-status transition and early-close controls, ruling/contests/settlement, cancellation refunds, refills in the app, outcome-decider identification/assignment, evidence and discovery. Deadline checks already prevent execution at or after the deadline. The logged-out market page was browser-checked at desktop and 375px; the authenticated form has service/action coverage but awaits a real-account browser walkthrough after SMTP setup.
 
 Price-impact simulation used to choose b, with markets opening at 50% (1,000 starting points, 100-point maximum):
 
