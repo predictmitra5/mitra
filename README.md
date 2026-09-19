@@ -83,17 +83,19 @@ npm run lint
 npm run build
 ```
 
-The normal tests use isolated in-memory PostgreSQL and do not read database credentials. To run the trading tests on separate hosted PostgreSQL connections (PowerShell):
+The normal tests use isolated in-memory PostgreSQL and do not read database credentials. To run trading, lifecycle and refill tests on separate hosted PostgreSQL connections (PowerShell):
 
 ```powershell
 $env:MITRA_HOSTED_TEST='1'
 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/service.test.ts --testTimeout=30000
 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/lifecycle.test.ts --testTimeout=30000
-node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/account/refill.test.ts --testTimeout=30000
+node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/account/refill.test.ts src/modules/account/refill-safety.test.ts --testTimeout=30000 --maxWorkers=1
 Remove-Item Env:MITRA_HOSTED_TEST
 ```
 
 These commands create uniquely named `mitra_trade_test_*`, `mitra_lifecycle_test_*` or `mitra_refill_test_*` schemas, apply the migrations there, run the accounting/concurrency cases, and drop only those schemas. They never create Auth users or write live app rows. If forcibly interrupted, inspect and remove only that run's temporary schema.
+
+Refill coverage includes retries, authorization, exact credits, Eastern month/year boundaries, daylight-saving changes, rollback and stale account views. Hosted cases also exercise claims racing buys, sells and final payouts, cross-user request reuse, and a month rollover while a claim waits on a wallet lock.
 
 To inspect the actual public page without creating a live goal, build first and run:
 

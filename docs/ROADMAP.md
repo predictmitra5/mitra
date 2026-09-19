@@ -26,6 +26,8 @@ Verify: authorized users can complete it; unauthorized actors cannot approve or 
 
 Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`. Monthly cash refills are built end to end, from the account card through the locked wallet write.
 
+Refill validation was extended on 2026-09-19 with authorization, rollback, exact Eastern boundaries and hosted races against buys, sells and payouts. The next build slice is private navigation to existing positions; its presentation must not introduce a ranking or leaderboard policy.
+
 Also done (2026-09-18): public approved-market pages and authenticated buy/sell previews and confirmations. The transaction writes trade, wallet, ledger, position, market state and price history together. Retry protection, deadline enforcement, wallet/ledger reconciliation and multi-connection hosted concurrency checks pass.
 
 Also done: deadline/early closure, owner rulings and revisions, private objections, final payouts and owner cancellation refunds. Revisions reset the full 24-hour window; terminal accounting is atomic and protected against retries and concurrent trades. Due close/payout transitions run on relevant page access. Public outcome pages are browser-checked.
