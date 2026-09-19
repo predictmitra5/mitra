@@ -24,7 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Private positions page — 2026-09-19 (Codex)
+
+- Intent: implement the owner's "Ok go ahead" approval of the proposed page showing each trader's existing positions. First record that approval in DECISIONS.md. This extends navigation to the already-approved private holdings, buy/sell and lifecycle behavior; it adds no economic, discovery or evidence policy.
+- Build `/positions` ("Your predictions") with server-verified identity and an active adult profile, showing only that user's nonzero holdings in approved markets. Show the goal, public subject name, current YES/NO shares and their held cost, lifecycle status/deadline, and a link to the existing market page. Fully sold, settled and refunded holdings are no longer active; explain this on the page. Present soonest deadlines first with bounded pages, and explicit empty/error states.
+- Process already-due lifecycle transitions before loading holdings, consistent with account/market pages. Keep the holdings query and profile eligibility in a consistent private database snapshot, project only needed fields, and prevent shared caching/indexing. Add links from account and market pages, session refresh coverage and revalidation after existing trading/lifecycle actions. Preserve the existing cream/lime design and six-decimal holdings precision.
+- No schema, dependencies, provider setup or trading rules need changes. Test cross-user isolation (including owner accounts), eligibility, zero/terminal/draft exclusions, both sides, partial sales, ordering/pagination, due transitions and logged-out route protection. Run local tests, typecheck, lint and production build. Visually inspect the reusable positions presentation with fictional local data, without bypassing authentication or creating Auth users; a real-account walkthrough still depends on SMTP setup.
+- Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
 
 ## Current state
 
