@@ -24,7 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Cash refills — 2026-09-18
+
+- Intent: finish the approved cash-refill flow on `/account`. The decisions dated 2026-09-15 authorize a user-triggered top-up to 1,000 available points, only below that balance, at most twice per Eastern calendar month; open positions do not count. No new provider, credentials or product decisions are needed.
+- Implementation: add a server-side refill service and authenticated action, using an active adult profile and a locked wallet. Recompute amount and Eastern-month usage after acquiring the wallet lock, and commit the credit and append-only ledger entry together. Use the existing ledger UUID as the request identifier so retries return the original receipt, even after later spending or a month change. Reject identifiers belonging to another user or ledger kind. No schema/dependency changes are planned.
+- Account UI: show remaining monthly refills, eligibility and the top-up button within the existing design; retain the same request identifier after an uncertain response and show safe errors. Derive all money, quota and identity on the server. Fix the obsolete comment that still calls cash-only eligibility unconfirmed.
+- Validation: cover authorization, exact credits, cash-only eligibility, Eastern month boundaries, quota, retries and rollback locally, plus real PostgreSQL races with trades/payouts in an isolated disposable schema. Run typecheck, lint and production build. Signed-in browser verification remains dependent on the owner's email setup; do not create Auth users or change SMTP settings.
+- Finish: update README, MARKETS, DATA_MODEL, ROADMAP and this record with actual behavior and verification, clear In progress, and commit. Keep a single workspace writer; any independent review must use only the described design, without accessing this folder.
 
 ## Current state
 
