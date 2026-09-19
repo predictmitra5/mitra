@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Owner asked whether Gmail, Yahoo and iCloud are the only no-domain SMTP senders. They are not the complete set, so README step 3 should name the full working list and the ruled-out providers, with the reason each one is in or out. Verified against provider documentation today: AOL uses Yahoo infrastructure and still accepts app passwords, GMX allows external SMTP once POP3/IMAP access is switched on, Zoho removed IMAP/POP/SMTP from free plans for new signups, and Proton restricts SMTP submission to paid business plans. Documentation only; no behavior relies on a recorded decision.
+Nothing in progress.
 
 ## Current state
 
@@ -244,3 +244,7 @@ Verified: 200 tests pass with 12 skipped (hosted-only), and the refill file pass
 ### 2026-09-19 - SMTP alternatives recorded (Claude Code)
 
 The owner asked what could be used instead of Google for sending confirmation email. Added Yahoo Mail and iCloud Mail to README.md as no-domain options, both sending from their own mailbox with an app password, plus Brevo and Mailjet as domain-based options. Recorded the trap that matters: Gmail and Yahoo publish quarantine DMARC policies, so using such an address as the sender through a third-party provider passes configuration but lands in spam. No code changed; email delivery is still unconfigured and no account exists.
+
+### 2026-09-19 - Full list of no-domain email senders (Claude Code)
+
+The owner asked whether Gmail, Yahoo and iCloud were the only options without a domain. They are not, so README.md step 3 now names every one that works and every one that does not, with the reason. Added AOL Mail, which runs on Yahoo infrastructure and still accepts app passwords, as the fallback if Yahoo resists; and GMX, which accepts the ordinary password but only after POP3 and IMAP access is switched on, and which switches it off again after idling. Recorded as unusable: Zoho Mail, which removed IMAP, POP and SMTP from free plans for new signups; Proton Mail, whose SMTP submission is limited to paid business plans; and Fastmail, which works but is paid. Each claim was checked against provider documentation on the day, not recalled. Documentation only; nothing in the app changed and email delivery is still unconfigured.
