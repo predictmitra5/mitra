@@ -72,6 +72,14 @@ Migration `0006_feed_events.sql`, applied 2026-09-19, adds `feed_events` for the
 
 The feed reads only `status = 'open'` markets that have an approval time and market-maker shares, joins the subject's public display name and handle, and returns an explicit projection: question, goal type, deadline, prices and the placement reason. It carries no subject user id, liquidity, score, owner note or accounting value, so opening browsing to people without accounts did not widen what is visible about anybody. Ranking itself is a pure function in `src/modules/discovery/ranking.ts` with no database access.
 
+Migration `0007_evidence.sql`, applied 2026-09-19, adds `evidence`: the goal, who submitted it, whether it is a file or a link, the private original, the published artifact once approved, review status, the owner's private note and timestamps. Twelve tables in total, all with row-level security enabled and no policies.
+
+Three database checks carry the decision rather than trusting application code: `evidence_shape_matches_kind` keeps a row from being both a file and a link, `evidence_published_is_reviewed` refuses to mark anything published without an attributable review and, for a file, without its redacted artifact, and `evidence_published_is_not_the_original` refuses to publish the original file as though it had been redacted. Tests assert all three by attempting the write.
+
+Objects live in two Supabase Storage buckets: `evidence-originals` (private) and `evidence-public` (public). The split was verified empirically, not assumed: a probe object written to the private bucket could not be downloaded with the browser publishable key, an unauthenticated request for its URL returned 400, the server key could read it, and a signed link worked and expires in five minutes. `scripts/setup-evidence-storage.mjs` re-checks both buckets' privacy on every run.
+
+Access is three explicit functions and nothing else: `listForOwner` (owner only, includes the original path), `listForSubject` (a person's own submissions, never the owner's private note) and `listPublished` (anybody, approved items only, never the original path). A file's object is written before its row, so a row always points at a real object; if the row cannot be written the object is discarded. Only image types this app can rasterise and re-encode are accepted, because a format it cannot redact could only be refused later or published unredacted.
+
 Evidence and verification tables are deliberately absent: their retention, access and redaction rules are still undecided (D06, D07).
 
 ## Schema blockers

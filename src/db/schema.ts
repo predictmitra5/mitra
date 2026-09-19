@@ -34,6 +34,12 @@ export const marketStatus = pgEnum("market_status", [
 
 export const marketOutcome = pgEnum("market_outcome", ["yes", "no"]);
 export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
+export const evidenceKind = pgEnum("evidence_kind", ["file", "link"]);
+export const evidenceStatus = pgEnum("evidence_status", [
+  "submitted", // waiting for the owner; visible only to the owner and the sender
+  "published", // approved and public; a file is public only as its redacted artifact
+  "rejected", // not published, kept as part of the audit trail
+]);
 export const tradeSide = pgEnum("trade_side", ["yes", "no"]);
 export const tradeAction = pgEnum("trade_action", ["buy", "sell"]);
 
@@ -304,4 +310,68 @@ export const feedEvents = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("feed_events_market_time_idx").on(table.marketId, table.createdAt)],
+);
+
+/**
+ * Proof attached to a goal by its own subject, decided 2026-09-19 (D06, D07).
+ *
+ * Nothing here is public until the owner approves it. For a file, the original
+ * is never served to anyone but the owner: the public artifact is a separate,
+ * re-rendered image with the hidden pixels destroyed rather than covered. Both
+ * are kept permanently, because the owner chose a permanent audit trail, so this
+ * table is the most sensitive in the app and nothing may widen its access without
+ * a recorded decision.
+ */
+export const evidence = pgTable(
+  "evidence",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    marketId: uuid("market_id")
+      .notNull()
+      .references(() => markets.id),
+    /** Always the goal's subject. Nobody submits proof about somebody else. */
+    submittedBy: uuid("submitted_by")
+      .notNull()
+      .references(() => profiles.id),
+    kind: evidenceKind("kind").notNull(),
+
+    /** File only: the private original in the originals bucket. Never served publicly. */
+    originalPath: text("original_path"),
+    originalContentType: text("original_content_type"),
+    originalBytes: integer("original_bytes"),
+    /** File only: the approved, pixel-destroyed artifact in the public bucket. */
+    publishedPath: text("published_path"),
+    /** Link only: published exactly as submitted, because a URL cannot be redacted. */
+    linkUrl: text("link_url"),
+
+    /** The subject's own description of what this shows. Public once approved. */
+    caption: text("caption"),
+    status: evidenceStatus("status").notNull().default("submitted"),
+    /** The owner's note on the decision. Private, part of the audit trail. */
+    reviewNote: text("review_note"),
+    reviewedBy: uuid("reviewed_by").references(() => profiles.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("evidence_market_idx").on(table.marketId, table.createdAt),
+    // A file carries an original and no link; a link carries a URL and no file.
+    check(
+      "evidence_shape_matches_kind",
+      sql`(${table.kind} = 'file' and ${table.originalPath} is not null and ${table.linkUrl} is null)
+          or (${table.kind} = 'link' and ${table.linkUrl} is not null and ${table.originalPath} is null)`,
+    ),
+    // Publishing requires an attributable review, and a file needs its redacted artifact.
+    check(
+      "evidence_published_is_reviewed",
+      sql`${table.status} <> 'published'
+          or (${table.reviewedBy} is not null and ${table.reviewedAt} is not null
+              and (${table.kind} = 'link' or ${table.publishedPath} is not null))`,
+    ),
+    // The original is never the published artifact; redaction always re-renders.
+    check(
+      "evidence_published_is_not_the_original",
+      sql`${table.publishedPath} is null or ${table.publishedPath} <> ${table.originalPath}`,
+    ),
+  ],
 );

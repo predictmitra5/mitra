@@ -7,10 +7,13 @@ import { currentIdentity } from "@/modules/auth/server";
 import { formatMicro } from "@/modules/market/input";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
 import { recordClick } from "@/modules/discovery/feed";
+import { canSubmit, listForSubject, listPublished } from "@/modules/evidence/service";
+import { publishedUrl } from "@/modules/evidence/storage";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { AppHeader } from "@/app/components/auth-screen";
 import { TradeForm } from "./trade-form";
 import { ObjectionForm } from "./objection-form";
+import { EvidenceForm } from "./evidence-form";
 
 // This page includes the current user's holdings: never put it in a shared cache.
 export const dynamic = "force-dynamic";
@@ -51,6 +54,21 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
       if (trader) objections = await readObjections(getDb(), identity.id, id);
     }
   } catch { accountUnavailable = true; }
+
+  // Proof. listPublished is public by decision; the other two are only ever
+  // read for the person they belong to, and never reveal who the subject is.
+  let publishedProof: Awaited<ReturnType<typeof listPublished>> = [];
+  let myProof: Awaited<ReturnType<typeof listForSubject>> = [];
+  let maySendProof = false;
+  try {
+    publishedProof = await listPublished(getDb(), id);
+    if (identity) {
+      maySendProof = await canSubmit(getDb(), identity.id, id);
+      if (maySendProof) myProof = await listForSubject(getDb(), identity.id, id);
+    }
+  } catch {
+    // Proof is additive to this page; never let it take the goal down with it.
+  }
   const open = market.tradingOpen;
   const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
@@ -79,6 +97,20 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
         </section>}
         {market.status === "cancelled" && <section className="market-rules ruling-box"><span className="eyebrow">CANCELLED</span><h2>Held costs refunded.</h2><p>Every participant received the cost of the shares they still held. This is a refund, not a YES or NO payout.</p></section>}
         {!!objections.length && <section className="market-rules private-objections"><h2>Private objections you can view</h2><p className="field-hint">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {date(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
+        {!!publishedProof.length && <section className="market-rules"><span className="eyebrow">PROOF</span><h2>What was supplied</h2>
+          <p className="field-hint">Reviewed by the owner before publication. Images have private details hidden; the hidden parts are removed from the published copy, not covered over.</p>
+          <ul className="evidence-public">{publishedProof.map((item) => <li key={item.id}>
+            {item.kind === "file" && item.publishedPath
+              // next/image would proxy and cache every proof through a second store. Stage 2 caps the
+              // published artifact size when it re-renders it, which is the right place to control
+              // bandwidth for an image this app produces itself.
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={publishedUrl(item.publishedPath)} alt={item.caption ?? "Proof supplied for this goal"} loading="lazy" />
+              : item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>}
+            {item.caption && <p className="market-criteria">{item.caption}</p>}
+          </li>)}</ul>
+        </section>}
+        {maySendProof && <EvidenceForm marketId={id} mine={myProof} proofDeadline={`${date(market.evidenceDeadlineAt)} ET`} />}
         <section className="market-rules"><span className="eyebrow">BEFORE YOU MAKE YOUR CALL</span><h2>What counts as YES</h2>
           <p className="market-criteria">{market.resolutionCriteria}</p>
           <dl className="goal-dates"><div><dt>Goal deadline</dt><dd>{date(market.deadlineAt)} ET</dd></div><div><dt>Proof due</dt><dd>{date(market.evidenceDeadlineAt)} ET</dd></div></dl>

@@ -308,3 +308,23 @@ body {
   .feed-prompt { animation: feed-prompt-in 220ms ease-out; }
   @keyframes feed-prompt-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
 }
+
+/* Proof, decided 2026-09-19. Public items sit in the goal's story column; the
+   subject's own panel only appears for them, while their window is open. */
+.evidence-panel { display: grid; gap: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 2rem); }
+.evidence-panel h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+.evidence-mine { display: grid; gap: 0.6rem; }
+.evidence-mine li { display: grid; gap: 0.25rem; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.85rem; font-size: 0.85rem; overflow-wrap: anywhere; }
+.evidence-mine-what { font-weight: 600; }
+.evidence-status { justify-self: start; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--line); color: var(--ink-soft); }
+.evidence-status-published { background: var(--accent); color: var(--accent-ink); }
+.evidence-status-rejected { background: var(--ink); color: #f4f4f0; }
+.evidence-public { display: grid; gap: 1rem; }
+.evidence-public li { display: grid; gap: 0.5rem; }
+.evidence-public img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.evidence-public a { text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+
+.owner-proof { display: grid; gap: 0.75rem; }
+.owner-proof h3 { font-weight: 700; }
+.owner-proof article { display: grid; gap: 0.4rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
+.owner-proof a { text-decoration: underline; text-underline-offset: 3px; }

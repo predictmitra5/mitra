@@ -38,6 +38,10 @@ Verify: concurrent and retried actions cannot duplicate balances; ledger replay 
 
 ## Slice 3 - Useful information with an audit trail
 
+Decisions taken 2026-09-19 (D06, D07); see DECISIONS.md. Stage 1 is built: the `evidence` table, both storage buckets with their privacy verified, submission by the subject during the proof window, the owner's review listing with expiring links to originals, and a public projection that cannot leak an original.
+
+Stage 2, not built: automatic detection of sensitive regions, the owner's redaction and approval screen, the pixel-destroying re-render with a size cap, and public display of approved proof on the goal page. Until it exists, nothing can be published, and the owner records what they saw in the ruling explanation.
+
 After verification/privacy decisions: update submission, source/evidence handling, admin review, public claim presentation, corrections, revocations and the agreed dispute path.
 
 If private evidence is essential to the first cohort, move its restricted-access/review foundation before trading implementation. Do not trade on an unproven evidence-access design.

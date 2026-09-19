@@ -24,21 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Evidence submission, stage 1 - 2026-09-19 (Claude Code)
-
-Implements the evidence decision recorded in DECISIONS.md today. Large enough to land in two stages, each of which leaves the app working.
-
-**Stage 1, this entry:** the record and the submission path.
-
-- Migration 0007 adds `evidence`: the market, who submitted it, whether it is a file or a link, the private original, the published artifact once approved, review status, the owner's note and timestamps. Row-level security enabled with no policies, as on every other table.
-- Supabase Storage: a private bucket for originals that the browser publishable key cannot read, and a public bucket that holds only approved, already-redacted artifacts.
-- `src/modules/evidence/`: submission rules as testable logic. Only the subject of a goal may submit, only while the proof window is open, with size and type limits and a cap on how many items one goal can carry.
-- A submission form on the subject's own goal page during the proof window, stating plainly that approved proof becomes public and that a link publishes whatever is behind it.
-- The owner's review queue lists submissions with their originals. Nothing is public yet in this stage: an unreviewed submission is visible only to the owner and the person who sent it.
-
-**Stage 2, not this entry:** automatic detection of sensitive regions, the owner's redaction and approval screen, pixel-destroying re-render, and public display on the goal page.
-
-Not in either stage: automatic rulings from evidence, evidence about somebody else's goal, and deletion, which the owner left open by choosing permanent retention.
+Nothing in progress.
 
 ## Deferred, to come back to
 
@@ -66,7 +52,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
   - `src/modules/account/refill.ts`, `refill-actions.ts` and the account refill card: a user-triggered top-up to 1,000 available points, below that balance only, at most twice per Eastern calendar month, counting cash only. An advisory lock on the request id and a wallet row lock serialize it with trades and payouts; the clock and quota are read after both locks; the credit and its ledger entry commit together; and the ledger row id is the request id, so a retry returns the original receipt.
   - Refill validation includes the original tests plus `refill-safety.test.ts` and `refill-actions.test.ts`: exact credits, cash-only accounting, Eastern month/year and daylight-saving boundaries, retries, authorization, stale reads, rollback, and seven hosted concurrency scenarios. No additional connection or migration is needed for refills.
   - `scripts/preview-market.mjs`: a localhost-only browser verification helper with fictional open, ruled, settled and cancelled goals in a disposable schema. It creates no Auth users or live app rows and cleans up on normal exit; usage is in README.md.
-- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence submission/verification, profile pictures, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
+- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence redaction and publication (stage 2), profile pictures, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
 - **Must be undone before anyone outside the owner's circle joins:** email confirmation is off, so the `@osu.edu` gate proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's.
 - **Still unresolved, no longer blocking:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive reset emails, and confirmation cannot be restored. A personal Gmail account with an app password works without a domain and suits a small pilot; Resend requires a verified domain. See README.md. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
@@ -326,3 +312,19 @@ A second agent (Codex) logged a plan for the private positions page, built it, a
 Committed it unchanged as 3ce54f6 so it could not be lost and the tree was clean for the feed. Verified only that the whole suite passed (246 tests, 17 hosted-only skipped) with typecheck and lint clean; it was not reviewed line by line, and `/positions` has had no real-account walkthrough. Cleared its In progress entry afterwards, since the work exists and is committed.
 
 The collision itself is the lesson already recorded above: only one agent should work in this folder at a time. Two did, and the only reason nothing was lost is that the feed work stayed inside files the other agent was not touching and was committed by explicit path.
+
+### 2026-09-19 - Evidence submission, stage 1 (Claude Code)
+
+The owner chose to settle evidence before deploying, and asked again whether it was already built. It was not, and the shape of that gap is worth recording: the seven-day proof window, the terms that resolve NO without proof, the ruling basis options and the public promise that private documents stay off the page all existed. Only the middle was missing. The owner controls said so in their own text.
+
+Interviewed on D06 and D07, then challenged one combination before building it: the owner chose public, permanent and redacted, which is the least forgiving set available, because one missed redaction is published about a named student forever with no undo. Shown that, they kept it and chose owner approval as the gate. That is the right mitigation and it is what the build enforces: nothing publishes until a human has seen the whole original and confirmed.
+
+Built: migration 0007 and the `evidence` table with three database checks carrying the rules; both storage buckets, created and verified; `src/modules/evidence/policy.ts` as pure rules; `service.ts` with three named read functions and nothing else; server actions that never return a storage or database message to a browser; the subject's proof panel on their own goal page; and the owner's review listing with links to originals that expire in five minutes.
+
+Verified: 333 tests pass with 17 skipped (hosted-only), 51 of them new. Typecheck, lint and production build pass. Storage privacy was checked empirically rather than trusted: a probe object in the private bucket could not be read with the browser publishable key, an unauthenticated request for its URL returned 400, the server key could read it, and a signed link worked. The probe was removed.
+
+Two deliberate refusals worth keeping: PDFs are not accepted, because this app cannot yet rasterise and redact one, and accepting a format it cannot safely publish would mean refusing it later or publishing it unredacted. A link is published verbatim and the form says so, because a URL cannot be redacted at all.
+
+Not built, and the reason the slice is called stage 1: automatic detection of sensitive regions, the owner's redaction and approval screen, the pixel-destroying re-render with a size cap, and public display. Nothing can reach the public bucket until that exists.
+
+Left open by the owner's choice of permanent retention: there is no route for a subject to remove published proof, and what account withdrawal should do to it is undecided.

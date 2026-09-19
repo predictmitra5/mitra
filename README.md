@@ -10,6 +10,7 @@ Implemented:
 
 - A public home feed at `/`: anyone can browse open goals and open any goal page without an account. Goals are grouped by person, newly approved ones get a "Just added" row, and a dismissible prompt to create an account appears after two minutes of browsing.
 - Feed ranking from recent activity over time decay, with a head start for new goals and a cap of two leading slots per person, so one popular person cannot fill the page. Exposure and click counts are recorded without any viewer identity.
+- Proof submission: the subject of a goal can attach images or links to it from approval until the proof deadline. Nothing is visible to anyone but them and the owner until the owner approves it. The owner's outcome page lists every submission with an expiring link to the original.
 - Sign-up, sign-in, sign-out and password reset, limited to Ohio State email addresses. Email confirmation is built and currently switched off; see Supabase Auth setup below.
 - Profile setup with an 18+ self-confirmation and a one-time 1,000-point signup grant, written in a single database transaction.
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
@@ -19,7 +20,7 @@ Implemented:
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: account withdrawal/deletion, outcome-decider assignment, evidence submission, profile pictures and deployment. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no search, follow or leaderboard. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
+Not yet implemented: account withdrawal/deletion, outcome-decider assignment, profile pictures and deployment. Proof can be submitted and reviewed but not yet redacted or published: the owner's redaction and approval screen is the next piece, so approved proof does not appear publicly yet. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no search, follow or leaderboard. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
@@ -60,6 +61,19 @@ These are dashboard settings in your Supabase project. The app never changes the
    - **Also ruled out:** Zoho Mail removed IMAP, POP and SMTP from its free plans for new signups, so a free `@zohomail.com` address cannot send from here. Proton Mail offers SMTP submission only on paid business plans. Fastmail does work without a domain, but the mailbox is paid.
    - If a Gmail account will not offer App passwords, create a separate Gmail used only for sending Mitra email and turn on 2-Step Verification there. This also keeps a personal inbox out of the app.
    - Enter any password or API key only in the Supabase dashboard.
+
+## Evidence storage
+
+Proof needs two Supabase Storage buckets. Run this once per environment; it is safe to repeat, and it verifies each bucket's privacy rather than trusting the setting:
+
+```bash
+node --env-file=.env.local scripts/setup-evidence-storage.mjs
+```
+
+- `evidence-originals` is **private**. It holds what a subject actually sent, including anything they did not think to hide. Nothing in it is ever served by URL; the owner reads it through a link that expires in five minutes.
+- `evidence-public` is **public**. It receives only artifacts the owner has confirmed, re-rendered with the hidden pixels destroyed.
+
+If that script reports wrong privacy on a bucket, fix it in the Supabase dashboard before accepting any upload.
 
 ## Database migrations
 
