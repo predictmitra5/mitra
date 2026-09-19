@@ -24,7 +24,21 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Evidence submission, stage 1 - 2026-09-19 (Claude Code)
+
+Implements the evidence decision recorded in DECISIONS.md today. Large enough to land in two stages, each of which leaves the app working.
+
+**Stage 1, this entry:** the record and the submission path.
+
+- Migration 0007 adds `evidence`: the market, who submitted it, whether it is a file or a link, the private original, the published artifact once approved, review status, the owner's note and timestamps. Row-level security enabled with no policies, as on every other table.
+- Supabase Storage: a private bucket for originals that the browser publishable key cannot read, and a public bucket that holds only approved, already-redacted artifacts.
+- `src/modules/evidence/`: submission rules as testable logic. Only the subject of a goal may submit, only while the proof window is open, with size and type limits and a cap on how many items one goal can carry.
+- A submission form on the subject's own goal page during the proof window, stating plainly that approved proof becomes public and that a link publishes whatever is behind it.
+- The owner's review queue lists submissions with their originals. Nothing is public yet in this stage: an unreviewed submission is visible only to the owner and the person who sent it.
+
+**Stage 2, not this entry:** automatic detection of sensitive regions, the owner's redaction and approval screen, pixel-destroying re-render, and public display on the goal page.
+
+Not in either stage: automatic rulings from evidence, evidence about somebody else's goal, and deletion, which the owner left open by choosing permanent retention.
 
 ## Deferred, to come back to
 
@@ -117,8 +131,8 @@ Some categories are partially decided as recorded below. Their remaining questio
 | D03 | MVP architecture | Market mechanism, grants/replenishment, liquidity, limits, self/related-party trading | Decided and built: LMSR bot (b = 150), 1,000-point signup grant, two cash refills a month, 100-point per-market limit, selling allowed, subject and recorded decision-maker trading banned. Open: collusion controls, pending research |
 | D04 | MVP architecture | Binary vs other markets, lifecycle, source rules, deadlines, cancellation and appeals | Close, ruling/revision, objections, final payouts and owner refunds built. Templates for GPA, internship, club and gym goals built. Open: binary-only scope, a launch template; account withdrawal and periodic scheduling still unimplemented |
 | D05 | MVP architecture | Existing code, stack, hosting, pilot scale, budget, operational reviewer | Stack built; credentials verified. **Owner action needed:** custom SMTP provider and Supabase redirect URLs before inviting anyone. Open: hosting/deployment, pilot scale |
-| D06 | Verification architecture | Evidence methods, claim standards, source precedence, reviewer authority | Public sources plus private documents reviewed by the owner confirmed. Open: source sufficiency per goal type, any APIs |
-| D07 | Verification architecture | Evidence access, retention, redaction, status changes, disputes and deletion | Public ruling explanations and author/owner-only objections decided and built. Originals stay off public pages. No evidence tables exist yet; access/retention interview remains queued |
+| D06 | Verification architecture | Evidence methods, claim standards, source precedence, reviewer authority | Decided 2026-09-19: uploaded files or pasted links, submitted by the subject during the proof window, reviewed by the owner before anything is visible. Open: source sufficiency per goal type, any APIs |
+| D07 | Verification architecture | Evidence access, retention, redaction, status changes, disputes and deletion | Decided 2026-09-19: approved proof is public to everyone, redacted automatically and confirmed by the owner, kept permanently as an audit trail; objectors see exactly what the public sees. Open: whether a withdrawing subject can remove published proof |
 | D08 | Recommendation algorithm | Session objective, personalization, unknown-subject discovery, eligibility | Maximize trades primarily, educate traders secondarily. Open: measurement, weighting, exploration, eligibility |
 | D09 | Recommendation algorithm | Measurement definitions, attribution, exposure logging, analytics/experiment policy | Interview queued |
 | D10 | Public scores/incentives | Forecaster reputation, explicit probability observations, subject incentives | UI can wait; data capture must be decided earlier. Refills mean a leaderboard should rank profit, not balance |

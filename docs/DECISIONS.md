@@ -311,3 +311,33 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Deliberately deferred by the owner:** profile pictures ("sure, add pfp option but we willd o it later"). Recorded in EXECUTION.md under Deferred.
 
 **Recorded limitation:** exposure and click counts are stored without any viewer identity, so they cannot be deduplicated per person and can be inflated by refreshing. This is the privacy-preserving choice for a first version and is honest about what the numbers mean. Per-viewer measurement needs its own privacy decision (D08, D09).
+
+## 2026-09-19 - Evidence submission, redaction and retention (D06, D07)
+
+**Context:** the owner chose to settle evidence before deploying. Asked whether evidence was already built, the answer was no: the seven-day proof window, the goal terms that resolve NO without proof, the ruling basis options and the public promise that private documents stay off the page all exist, but no way to send, store or view proof exists at all. The app says so itself in the owner controls.
+
+**User answers:**
+
+- Form of proof: "Upload a file, or paste a link", their choice per goal.
+- Who sees it: "everyone, it is publci, but we shoudl redact private info".
+- Retention: "Kept as a permanent audit trail".
+- Objectors: after being shown that public visibility makes objector access moot unless the public version is redacted and objectors get the original, the owner chose "Nothing extra - same as everyone". Verification of an objection decides whether it is taken seriously, never what the objector can see.
+- Redaction: "Automatic redaction, you approve it".
+
+**Concern raised before the choice, and the owner's resolution:** public plus permanent plus redacted is the least forgiving combination available. A redaction that misses a student id or an address is published about a named person at a named university, permanently, with no undo, and automatic redaction of a photographed document fails silently. The owner chose it with the approval gate, which is the mitigation: nothing is published until a human has looked at the full original and deliberately confirmed.
+
+**Confirmed:**
+
+- A subject may attach proof to their own goal during the seven-day proof window: an uploaded file, a pasted link, or several of either.
+- Every submission is reviewed by the owner before anything becomes visible. Nothing publishes automatically.
+- Files: automatic detection proposes regions to hide; the owner sees the whole original, adjusts the proposal and confirms. The published artifact is a newly rendered image with those pixels destroyed. The original is never served to anyone but the owner.
+- Links: published as submitted. A URL cannot be redacted, so a subject choosing a link is choosing to publish whatever is behind it. The submission form must say so.
+- Approved proof is public on the goal page, to everybody, with or without an account.
+- Originals and published versions are both kept permanently, as the audit trail behind every ruling.
+- An objector sees exactly what the public sees. Objection verification gates whether the owner acts on it, never access to anything.
+
+**Not inferred:** no change to who rules, to the twenty-four hour objection window, to payouts, or to the rule that missing proof resolves NO. Traders still cannot submit proof about somebody else's goal. No automatic ruling from evidence: the owner still decides, and proof is input to that decision rather than a replacement for it.
+
+**Technical form under delegated authority:** redaction burns pixels into a re-encoded image rather than drawing an overlay, because an overlay can be removed by anyone who downloads the file. Automatic detection is a suggestion engine and is described that way in the interface; the owner's confirmation is the control that actually protects the subject. Originals live in a private store that the browser key cannot read, as with every other table.
+
+**Left open:** deletion. The owner chose permanent retention, so there is currently no route for a subject to withdraw a document once it is published. Account withdrawal already cancels a subject's markets; what it should do to their published proof is not decided and is recorded in EXECUTION.md as open.
