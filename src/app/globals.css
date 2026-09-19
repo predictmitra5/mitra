@@ -29,6 +29,16 @@
 .holdings { padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
 .trade-preview h3 { font-weight: 700; }
 .market-ticket .primary-button { text-align: center; }
+.lifecycle-controls, .lifecycle-confirm { display: grid; gap: 1rem; }
+.lifecycle-controls details { border-top: 1px solid var(--line); padding-top: 1rem; }
+.lifecycle-controls summary { cursor: pointer; font-weight: 600; padding: 0.4rem 0; }
+.lifecycle-controls details[open] summary { margin-bottom: 1rem; }
+.proof-options { display: grid; gap: 0.75rem; }
+.proof-options legend { margin-bottom: 0.75rem; font-size: 0.85rem; font-weight: 600; }
+.lifecycle-controls h3, .ruling-box h3, .private-objections h3 { font-weight: 700; }
+.ruling-box { display: grid; gap: 0.75rem; border-left: 4px solid var(--accent); }
+.private-objections { display: grid; gap: 0.75rem; }
+.private-objections article { padding: 0.8rem; border: 1px solid var(--line); border-radius: 12px; }
 @media (min-width: 900px) {
   .market-layout { grid-template-columns: minmax(0, 1fr) 360px; }
   .market-ticket { position: sticky; top: 5.5rem; }

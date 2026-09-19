@@ -75,6 +75,8 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     id: markets.id, question: markets.question, resolutionCriteria: markets.resolutionCriteria,
     goalType: markets.goalType, status: markets.status, deadlineAt: markets.deadlineAt,
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
+    ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
+    ruledAt: markets.ruledAt, contestEndsAt: markets.contestEndsAt, settledAt: markets.settledAt, cancelledAt: markets.cancelledAt,
     displayName: profiles.displayName, handle: profiles.handle,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
   }).from(markets).innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
@@ -83,6 +85,7 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
   const { liquidityMicro, yesSharesMicro, noSharesMicro, ...publicFields } = row;
   return { ...publicFields,
     tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > Date.now(),
+    contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt.getTime() > Date.now(),
     yesPrice: price(toLmsr({ liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro, noSharesMicro }), "YES") };
 }
 

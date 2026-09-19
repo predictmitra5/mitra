@@ -262,3 +262,9 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **User response:** "name is Mitra". Asked whether this meant renaming the app from Mirai, the owner selected "Yes, rename to Mitra".
 
 **Confirmed:** the app is called Mitra. This supersedes the Mirai entry above; the interface, package name and current-state documents now use Mitra.
+
+## 2026-09-18 - Ruling revisions and objection privacy
+
+**User choices:** "Yes, restart the 24 hours (recommended)" and "Public ruling explanation; private objections (recommended)".
+
+**Confirmed:** changing a YES/NO ruling during its objection window starts a fresh 24-hour window for the revised ruling. The owner's written ruling explanation is public. An objection and its text are visible only to the owner and the person who submitted it. This does not authorize publication of private evidence originals. Settlement remains final, as decided on 2026-09-15.

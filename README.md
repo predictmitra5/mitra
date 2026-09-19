@@ -13,9 +13,10 @@ Implemented:
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
 - Goal creation from templates (GPA, internship, club, gym) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
 - Public approved-goal pages with prices, resolution terms and deadlines; signed-in traders can preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
+- Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: refills in the app, early-close controls, resolution and payouts, cancellation, outcome-decider assignment, verification, the feed and deployment. Deadline checks already stop new trades even before a scheduled status transition exists.
+Not yet implemented: refills in the app, account withdrawal/deletion, outcome-decider assignment, evidence submission, the feed and deployment. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
@@ -81,10 +82,11 @@ The normal tests use isolated in-memory PostgreSQL and do not read database cred
 ```powershell
 $env:MITRA_HOSTED_TEST='1'
 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/service.test.ts --testTimeout=30000
+node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/lifecycle.test.ts --testTimeout=30000
 Remove-Item Env:MITRA_HOSTED_TEST
 ```
 
-This creates a uniquely named `mitra_trade_test_*` schema, applies the migrations there, runs the accounting/concurrency cases, and drops only that schema. It never creates Auth users or writes live app rows. If forcibly interrupted, inspect and remove only that run's temporary schema.
+These commands create uniquely named `mitra_trade_test_*` or `mitra_lifecycle_test_*` schemas, apply the migrations there, run the accounting/concurrency cases, and drop only those schemas. They never create Auth users or write live app rows. If forcibly interrupted, inspect and remove only that run's temporary schema.
 
 To inspect the actual public page without creating a live goal, build first and run:
 
@@ -92,4 +94,4 @@ To inspect the actual public page without creating a live goal, build first and 
 node --env-file=.env.local scripts/preview-market.mjs
 ```
 
-The helper prints a localhost:3100 link to a fictional goal, uses a disposable `mitra_preview_*` schema, and removes it on normal exit or Ctrl+C. Authentication is unchanged, so the signed-in trade form still requires a real verified account. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
+The helper prints localhost:3100 links to fictional open, ruled, settled and cancelled goals, uses a disposable `mitra_preview_*` schema, and removes it on normal exit or Ctrl+C. Authentication is unchanged, so signed-in controls still require a real verified account. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.

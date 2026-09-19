@@ -6,6 +6,8 @@ Status: public and private evidence categories and initial owner review confirme
 
 The user selected public sources plus private documents reviewed by them. They also selected walking through a real example before settling details. This refers to the current question's third option; it is not approval to implement an automated source integration.
 
+Decided 2026-09-18 and implemented: the owner's ruling explanation is public; objections are visible only to their author and the owner. The outcome forms record a public explanation and whether the owner reviewed proof or received none. They do not collect original documents. This narrow ruling/objection decision does not settle evidence access, uploads, retention, redaction or AI processing.
+
 The selected technical foundation can support restricted Supabase Storage, but that infrastructure choice does not decide evidence visibility, retention, redaction or what establishes a claim. Goal examples will be used to specify acceptable proof. A public announcement may still be self-reported and a private screenshot may be insufficient; accepting an evidence category does not automatically verify its contents.
 
 ## Purpose

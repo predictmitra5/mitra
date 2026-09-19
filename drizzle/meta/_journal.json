@@ -36,6 +36,13 @@
       "when": 1789737868125,
       "tag": "0004_trade_request_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789786783195,
+      "tag": "0005_market_lifecycle",
+      "breakpoints": true
     }
   ]
 }

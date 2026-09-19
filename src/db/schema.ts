@@ -49,6 +49,7 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "approve",
   "reject",
   "close_early",
+  "close_deadline",
   "rule",
   "change_ruling",
   "settle",
@@ -133,6 +134,7 @@ export const markets = pgTable(
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     approvedBy: uuid("approved_by").references(() => profiles.id),
     ruledAt: timestamp("ruled_at", { withTimezone: true }),
+    rulingVersion: integer("ruling_version").notNull().default(0),
     ruledOutcome: marketOutcome("ruled_outcome"),
     rulingReason: text("ruling_reason"),
     contestEndsAt: timestamp("contest_ends_at", { withTimezone: true }), // ruled_at plus 24 hours
@@ -252,14 +254,17 @@ export const adminActions = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     marketId: uuid("market_id").references(() => markets.id),
     actorUserId: uuid("actor_user_id")
-      .notNull()
-      .references(() => profiles.id),
+      .references(() => profiles.id), // null for automatic deadline/settlement actions
+    requestId: uuid("request_id"), // idempotency for owner lifecycle actions
     kind: adminActionKind("kind").notNull(),
     reason: text("reason"),
     details: jsonb("details"), // what was visible at decision time
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("admin_actions_market_idx").on(table.marketId)],
+  (table) => [
+    index("admin_actions_market_idx").on(table.marketId),
+    uniqueIndex("admin_actions_request_key").on(table.actorUserId, table.requestId),
+  ],
 );
 
 /** Objections raised during the 24-hour window after a ruling. */
@@ -274,6 +279,7 @@ export const contests = pgTable(
       .notNull()
       .references(() => profiles.id),
     reason: text("reason").notNull(),
+    rulingVersion: integer("ruling_version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("contests_market_idx").on(table.marketId)],

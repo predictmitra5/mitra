@@ -6,6 +6,7 @@ import { currentIdentity } from "@/modules/auth/server";
 import { signOut } from "@/modules/auth/actions";
 import { listGoalsForSubject } from "@/modules/goals/service";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
+import { advanceDueMarkets } from "@/modules/market/lifecycle";
 import { AppHeader } from "../components/auth-screen";
 import { ProfileForm } from "./profile-form";
 
@@ -29,6 +30,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   let unavailable = false;
   try {
     const db = getDb();
+    await advanceDueMarkets(db, identity.id);
     const rows = await db.select({ profile: schema.profiles, wallet: schema.wallets })
       .from(schema.profiles).leftJoin(schema.wallets, eq(schema.wallets.userId, schema.profiles.id))
       .where(eq(schema.profiles.id, identity.id)).limit(1);
@@ -48,7 +50,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
         <section className="account-welcome"><span className="eyebrow">YOU’RE IN</span><h1>Hey, {account.profile.displayName}.</h1><p>@{account.profile.handle}</p></section>
         <section className="balance-card"><div><span className="eyebrow">AVAILABLE PLAY POINTS</span><p className="balance-number">{((account.wallet?.balanceMicro ?? 0) / MICRO_PER_UNIT).toLocaleString("en-US", { maximumFractionDigits: 2 })}</p></div><span className="balance-symbol" aria-hidden="true">↗</span><p>For making predictions. No deposits, withdrawals or cash value.</p></section>
-        {account.profile.isOwner === 1 && <section className="account-note"><h2>Owner tools</h2><p><Link href="/review">Review submitted goals</Link></p></section>}
+        {account.profile.isOwner === 1 && <section className="account-note"><h2>Owner tools</h2><p><Link href="/review">Review submitted goals</Link></p><p><Link href="/review/markets">Manage outcomes and objections</Link></p></section>}
         <section className="goals-card">
           <div className="section-head"><h2>Your goals</h2><Link className="secondary-button" href="/goals/new">New goal ↗</Link></div>
           {goals.length === 0

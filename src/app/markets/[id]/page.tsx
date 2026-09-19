@@ -6,12 +6,18 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { formatMicro } from "@/modules/market/input";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
+import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { AppHeader } from "@/app/components/auth-screen";
 import { TradeForm } from "./trade-form";
+import { ObjectionForm } from "./objection-form";
 
 // This page includes the current user's holdings: never put it in a shared cache.
 export const dynamic = "force-dynamic";
-const loadMarket = cache(async (id: string) => readPublicMarket(getDb(), id));
+const loadMarket = cache(async (id: string) => {
+  const database = getDb();
+  await advanceMarket(database, id);
+  return readPublicMarket(database, id);
+});
 
 export async function generateMetadata({ params }: PageProps<"/markets/[id]">): Promise<Metadata> {
   try {
@@ -32,13 +38,17 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   if (!market) notFound();
   let identity = null;
   let trader = null;
+  let objections: Awaited<ReturnType<typeof readObjections>> = [];
   let accountUnavailable = false;
   try {
     identity = await currentIdentity();
-    if (identity) trader = await readTrader(getDb(), identity.id, id);
+    if (identity) {
+      trader = await readTrader(getDb(), identity.id, id);
+      if (trader) objections = await readObjections(getDb(), identity.id, id);
+    }
   } catch { accountUnavailable = true; }
   const open = market.tradingOpen;
-  const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : "Trading closed";
+  const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
   return <div className="site-shell"><AppHeader /><main className="market-main">
     <nav className="market-nav"><Link href="/account">← Your account</Link><span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
@@ -48,12 +58,23 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
           <div className="review-meta"><span className={`status-pill ${open ? "status-open" : ""}`}>{status}</span><span>{market.goalType?.replaceAll("_", " ")}</span></div>
           <p className="market-person">{market.displayName} <span>@{market.handle}</span></p>
           <h1>{market.question}</h1>
-          <div className="market-prices" aria-label="Current share prices">
+          <div className="market-prices" aria-label="Last market share prices">
             <div><span>YES</span><strong>{(market.yesPrice * 100).toFixed(2)}<small>¢</small></strong></div>
             <div><span>NO</span><strong>{((1 - market.yesPrice) * 100).toFixed(2)}<small>¢</small></strong></div>
           </div>
-          <p className="market-price-note">100¢ = 1 play point. A share pays 1 point if its outcome wins, and 0 if it loses. These are current prices; your preview shows the full trade cost.</p>
+          <p className="market-price-note">{open ? "100¢ = 1 play point. A share pays 1 point if its outcome wins, and 0 if it loses. These are current prices; your preview shows the full trade cost." : "These are the last trading prices, not a final payout. The outcome and any refund appear below."}</p>
         </section>
+        {market.ruledOutcome && market.status !== "cancelled" && <section className="market-rules ruling-box">
+          <span className="eyebrow">{market.status === "settled" ? "FINAL OUTCOME" : "OWNER RULING"}</span>
+          <h2>{market.ruledOutcome.toUpperCase()} · {market.status === "settled" ? "Payout complete" : "Open to objections"}</h2>
+          <p className="market-criteria">{market.rulingReason}</p>
+          {market.status === "settled" ? <p className="muted">Winning shares paid 1 point each; losing shares paid 0. Balances have been updated. This result is final.</p>
+            : <p className="muted">Objections close {market.contestEndsAt && date(market.contestEndsAt)} ET. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
+          {market.contestOpen && (trader ? <ObjectionForm marketId={id} version={market.rulingVersion} />
+            : <Link className="secondary-button" href={identity ? "/account" : "/sign-in"}>{identity ? "Complete your profile to object" : "Sign in to object"}</Link>)}
+        </section>}
+        {market.status === "cancelled" && <section className="market-rules ruling-box"><span className="eyebrow">CANCELLED</span><h2>Held costs refunded.</h2><p>Every participant received the cost of the shares they still held. This is a refund, not a YES or NO payout.</p></section>}
+        {!!objections.length && <section className="market-rules private-objections"><h2>Private objections you can view</h2><p className="field-hint">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {date(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
         <section className="market-rules"><span className="eyebrow">BEFORE YOU MAKE YOUR CALL</span><h2>What counts as YES</h2>
           <p className="market-criteria">{market.resolutionCriteria}</p>
           <dl className="goal-dates"><div><dt>Goal deadline</dt><dd>{date(market.deadlineAt)} ET</dd></div><div><dt>Proof due</dt><dd>{date(market.evidenceDeadlineAt)} ET</dd></div></dl>

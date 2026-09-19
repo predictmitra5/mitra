@@ -1,6 +1,6 @@
 # Markets
 
-Status: creation, approval, templates, trading eligibility, mechanism, economy and lifecycle are decided. Goal drafting, owner approval, public market pages and transactional buy/sell execution are built. Ruling, contests, settlement, cancellation and in-app refills remain to be implemented.
+Status: goal drafting, owner approval, public market pages, transactional buy/sell execution, close, ruling/revision, private objections, final payouts and cancellation refunds are built. In-app refills, account withdrawal, evidence submission and deployed background scheduling remain to be implemented.
 
 ## Confirmed direction - 2026-09-15
 
@@ -88,6 +88,7 @@ Decided 2026-09-15. States: draft (subject created, awaiting the owner), rejecte
 - The subject has 7 days after the deadline to supply proof; the owner then rules.
 - No proof by that deadline resolves NO. YES requires evidence, and the subject both wrote the goal and holds the proof. Known cost: a private person who truly succeeded loses, and NO holders gain from that silence. Revisit if it happens in the pilot.
 - After the owner rules, anyone may contest for 24 hours and the owner may change the ruling. Payout follows and is final; points are never clawed back after settlement.
+- Decided 2026-09-18: a changed ruling starts a fresh full 24-hour window. Ruling explanations are public; objections are visible only to their author and the owner. Objections themselves do not extend the cutoff.
 - Wording is frozen once trading opens. A broken market is cancelled and republished, never edited.
 - If a subject deletes their account or withdraws, their open markets cancel immediately.
 - Cancellation refunds each trader the cost basis of the shares they still hold; the market maker absorbs the difference. Cancellation is never silently treated as NO or as a 50% payout.
@@ -125,7 +126,11 @@ Tests (35) cover cost-function consistency, the identity that n YES plus n NO sh
 
 `/markets/[id]` displays public approved terms, prices, subject display name/handle and deadlines. The account's approved-goal entries link to it. Eligible traders see their holdings and can preview a buy in points or a sale in shares, then explicitly confirm it. The server recomputes every quote. If the market's share state changed, confirmation fails and requires a new preview; the app never silently changes the price. Retries retain the same request id after an interrupted response. The existing six-decimal engine precision is shown for totals and holdings; marginal prices and average per-share prices are displayed to two decimal places in cents. A zero-proceeds micro-sale is explicitly identified before confirmation. No fee or new product minimum was introduced.
 
-Remaining: a scheduled closed-status transition and early-close controls, ruling/contests/settlement, cancellation refunds, refills in the app, outcome-decider identification/assignment, evidence and discovery. Deadline checks already prevent execution at or after the deadline. The logged-out market page was browser-checked at desktop and 375px; the authenticated form has service/action coverage but awaits a real-account browser walkthrough after SMTP setup.
+`lifecycle.ts`, `lifecycle-actions.ts` and `/review/markets` now implement deadline closure, owner early close after confirmation that the outcome is public, first rulings after the seven-day proof period, ruling changes, private objections, final settlement and owner cancellation/refunds. Commands carry retry keys and the version the owner reviewed. A changed ruling increments the version and starts another full 24 hours; stale forms and late objections fail. At the cutoff, changes and cancellation are refused even if payout processing has not yet run. Objections do not suspend finalization on their own. A missing-proof ruling must be explicitly recorded as NO by the owner; no upload-absence inference is made.
+
+Settlement pays one micro-point per winning micro-share and records zero payouts for losing positions. Cancellation returns the sum of held cost basis on both sides, including the effect of earlier partial sales. Each operation locks the market and participant wallets, appends ledger/audit records, clears active positions and sets the terminal status in one transaction. Retry or racing calls cannot credit twice. Historical market-maker shares are kept as the last trading state; settled pages separately show the final outcome, and cancellation pages show refunds rather than an outcome payout.
+
+Due transitions run on access to market, account and owner-management pages, with bounded batches for account/owner reads. No deployed periodic runner exists yet, so unattended markets may retain their old stored status and unprocessed payouts until accessed. Trading and objection deadline checks still apply at their exact cutoff. Account withdrawal/deletion, automatic cancellation on withdrawal, selective collusion-trade reversal, refill UI, outcome-decider assignment, evidence collection and discovery remain unfinished. Public outcome pages were checked at desktop/375px; signed-in controls have service/action tests but await a real-account browser walkthrough after SMTP setup.
 
 Price-impact simulation used to choose b, with markets opening at 50% (1,000 starting points, 100-point maximum):
 
