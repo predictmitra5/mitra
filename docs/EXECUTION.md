@@ -34,6 +34,29 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Integration update: while this page was being verified, the separate owner-authorized email-confirmation change was committed in 23d8196. Preserve that completed change and the recorded decision; the positions page already calls the shared `currentIdentity` policy. Recheck the combined tree before committing. The remaining signed-in walkthrough needs an eligible account and matching Supabase pilot settings; SMTP is now needed for resets and eventual email confirmation, not inherently for the pilot signup path.
 - Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
 
+### Public feed with ranking - 2026-09-19 (Claude Code)
+
+Implements the decision recorded in DECISIONS.md today. The other agent's positions work was committed first (3ce54f6) so this starts from a clean tree.
+
+- Migration 0006 adds `feed_events`: market id, kind (exposure or click) and a timestamp, with no viewer identity, so counts are privacy-preserving but cannot be deduplicated. Row-level security enabled with no policies, like every other table.
+- `src/modules/discovery/ranking.ts`: the score as a pure function, with the newborn bonus, deadline urgency, time decay and the two-per-subject cap on the top ten. Fully unit tested, no database.
+- `src/modules/discovery/feed.ts`: reads open approved markets and their 24-hour counts, applies the ranking, returns an explicit public projection with nothing private in it.
+- `src/app/page.tsx` becomes the public feed: person tabs, a "Just added" row, and market cards. Signed-out visitors can browse it and open any goal.
+- A dismissible sign-in prompt after two minutes for signed-out visitors.
+- Exposure is recorded when the feed renders; a click is recorded when a public market page is opened.
+
+Not in this slice: personalization, follows, search, leaderboards, profile pictures, and any change to trading, pricing or privacy rules. The sign-in and sign-up pages keep their own routes.
+
+## Deferred, to come back to
+
+Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
+
+| Item | Why it is waiting | What it needs first |
+| --- | --- | --- |
+| Profile pictures | The owner asked for them alongside the feed and said "we will do it later" | File storage, size and type limits, and a decision on deletion and who can see a real student's photo. Fits with the evidence privacy interview (D06, D07) |
+| Email confirmation | Switched off 2026-09-19 so the owner could get in without SMTP; the owner said "ill add it later" | A working SMTP sender. Then delete `AUTH_REQUIRE_EMAIL_CONFIRMATION` from `.env.local` and turn "Confirm email" back on in Supabase. Must happen before anyone outside the owner's circle joins, because the `@osu.edu` gate currently proves only that an address was typed |
+| Evidence submission and verification | No way exists for a subject to submit proof; the owner rules from information held outside the app | The verification and privacy interview, D06 and D07 |
+
 ## Current state
 
 - Stage: the core goal-to-payout flow is built: Ohio State identities, adult profile setup and 1,000 points; subject-created goals and owner approval; public markets and buy/sell trading; close, ruling/revision, private objections, final payouts and owner cancellation refunds. Email confirmation is switched off for the pilot, so real-account walkthroughs no longer wait on email setup. Monthly cash refills are now built too. Evidence submission and deployment remain unfinished.

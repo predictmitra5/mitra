@@ -290,3 +290,24 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Consequence the owner accepted:** the `@osu.edu` gate now proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including one belonging to somebody else.
 
 **Technical form under delegated authority:** an environment switch rather than deleted checks, so restoring it is one line and no deployment can lose the protection by accident. `AUTH_REQUIRE_EMAIL_CONFIRMATION=false` in `.env.local` disables it; any other value, including unset, requires confirmation. Supabase's own "Confirm email" setting must be turned off to match.
+
+## 2026-09-19 - Public feed, ranking and signed-out browsing
+
+**User instruction:** shown the Kalshi and Polymarket home pages, "this is the ui i want for my markets. all thre marekts will popuup like a yotube algorhtim behdin it. also let anyone see it withotu an account and then proomtp a popup."
+
+**Interview answers:** ordering - "idk cop kalshi and polymakret, do in depth research on how there algirhtim and how other osocial apps algrithim works to show and copy that", then "okay ill take ur recommendation". New goals - "just added row and then like tiktok we show it to other people and evlaute how well peopel are clicking on it". Categories - "tabs by person". Popup - "give them two minutes to create an account".
+
+**Confirmed:**
+
+- The home page is a public browsable feed of approved goals, shaped like Kalshi's and Polymarket's card grids. No account is needed to browse it or to open any goal page.
+- A visitor with no account is prompted to create one after two minutes of browsing. The prompt is dismissible; it is a prompt, not a wall.
+- Goals are grouped by person, not by topic. Tabs across the top are the people with open goals.
+- Newly approved goals get a "Just added" row, and exposure and clicks are recorded so that later ranking can evaluate how goals actually perform, in the way the owner described TikTok doing it.
+- Ranking order, delegated to research and then accepted by the owner: an activity score over time decay, in the shape Reddit and Hacker News use, because those work without training data. `interest = log10(1 + clicks + 5 x trades + 3 x unique traders)` over the last 24 hours; a newborn bonus of 1.0 for the first 48 hours after approval, fading to zero; a 1.5x multiplier when the deadline is within 72 hours; all divided by `(hours since approval + 2) ^ 1.5`. Gravity is 1.5 rather than Hacker News's 1.8 because goals run for weeks rather than hours.
+- Fairness cap, recommended and accepted: no single subject holds more than two of the top ten feed slots. Without it the most popular person's goals crowd out everyone else, which contradicts the owner's stated wish that a broad range of people's goals get seen.
+
+**Not inferred:** no personalization per viewer, no follows, no notifications, no leaderboard, no comments, no search. Signed-out visitors see exactly what the already-approved public market pages show: public display name, handle, goal terms, prices, deadlines and outcomes. Nothing private becomes public because browsing became public.
+
+**Deliberately deferred by the owner:** profile pictures ("sure, add pfp option but we willd o it later"). Recorded in EXECUTION.md under Deferred.
+
+**Recorded limitation:** exposure and click counts are stored without any viewer identity, so they cannot be deduplicated per person and can be inflated by refreshing. This is the privacy-preserving choice for a first version and is honest about what the numbers mean. Per-viewer measurement needs its own privacy decision (D08, D09).
