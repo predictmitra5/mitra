@@ -38,6 +38,14 @@ Safety properties to hold and to test: the published artifact is always a re-enc
 
 Not in this slice: deleting proof on account withdrawal, which was decided today and belongs with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided.
 
+**Plan changed part-way, 2026-09-19.** The detection step was built as planned and then checked against a fictional transcript with a real model call. The model named exactly the right four items - student id, date of birth, home address, phone number - and placed them badly: every box sat about 85 pixels above its line. Measured coverage of the rendered artifact was 100% of the student id, 35% of the date of birth, 2% of the address and 3% of the phone number. The address and phone stayed readable.
+
+That is worse than offering nothing. Four plausible black rectangles on the picture invite the owner to press publish without reading, which defeats the one control protecting the subject.
+
+So detection changes to match what the model is actually reliable at. It identifies well and localises badly, so it now returns *what* it found - a short label and the text it read - and no coordinates. The review screen shows that as a checklist the owner must work through, and the owner draws every box. `suggestRedactions` becomes `findSensitiveItems`; the editor keeps its drawing tool and loses the pre-drawn boxes.
+
+This is still "automatic redaction, you approve it" as the owner chose it. The automatic part finds things a tired reader would miss; the owner still decides and still covers them.
+
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
