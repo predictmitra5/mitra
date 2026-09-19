@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- 2026-09-18 (Claude Code): MARKETS.md still lists the refill UI among unfinished work. Documentation only.
+Nothing in progress.
 
 ## Current state
 
@@ -239,4 +239,4 @@ Built owner controls with an explicit confirmation step, public ruling/terminal 
 
 The previous session stopped at its rate limit with the refill service, action and account card written but untested, undocumented and uncommitted; the owner asked this session to take over. Reviewed the code as written and kept its design unchanged. Added `src/modules/account/refill.test.ts` covering exact credits, refusal at or above the starting balance, cash-only eligibility through a real trade, the two-per-month quota, Eastern month boundaries against a UTC-only reading, retries returning the original receipt, request ids belonging to another user or another ledger kind, malformed ids, inactive profiles, and the status read. Two concurrency cases run only against hosted PostgreSQL: simultaneous claims never exceed the quota, and the same request id claimed twice at once credits once.
 
-Verified: 200 tests pass with 12 skipped (hosted-only), and the refill file passes all 13 against hosted PostgreSQL in a disposable `mitra_refill_test_*` schema that was dropped afterwards, leaving no live rows. Typecheck, lint and production build pass. Updated README.md, MARKETS.md, DATA_MODEL.md and ROADMAP.md to describe refills as built.
+Verified: 200 tests pass with 12 skipped (hosted-only), and the refill file passes all 13 against hosted PostgreSQL in a disposable `mitra_refill_test_*` schema that was dropped afterwards, leaving no live rows. Typecheck, lint and production build pass. Updated README.md, MARKETS.md, DATA_MODEL.md and ROADMAP.md to describe refills as built, including a stale mention of the refill UI among unfinished work.
