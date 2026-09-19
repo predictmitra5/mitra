@@ -341,3 +341,19 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Technical form under delegated authority:** redaction burns pixels into a re-encoded image rather than drawing an overlay, because an overlay can be removed by anyone who downloads the file. Automatic detection is a suggestion engine and is described that way in the interface; the owner's confirmation is the control that actually protects the subject. Originals live in a private store that the browser key cannot read, as with every other table.
 
 **Left open:** deletion. The owner chose permanent retention, so there is currently no route for a subject to withdraw a document once it is published. Account withdrawal already cancels a subject's markets; what it should do to their published proof is not decided and is recorded in EXECUTION.md as open.
+
+## 2026-09-19 - Deleting proof when an account goes away
+
+**User instruction:** "obv tehre shoudl be data delition for an account going away."
+
+**The conflict this resolves:** earlier the same day the owner chose permanent retention, and left deletion open. Read literally the two answers contradict each other. They do not once the two things being kept are separated.
+
+**Confirmed:**
+
+- When someone withdraws, their submitted documents go: every original in the private bucket and every published artifact in the public bucket, for every goal they were the subject of.
+- What survives is the record that a decision was made: the ruling, its written explanation, who reviewed it and when, the trades and the ledger. A deleted item leaves a visible tombstone on the goal, saying proof was supplied and later removed at the person's request.
+- This is what "permanent audit trail" was for. The trail is the chain of decisions, not a permanent copy of a student's transcript.
+
+**Consequence accepted:** a settled ruling can become unverifiable after the fact, because the document behind it is gone. The payout does not move: settlement is already final and the ledger is untouched, so deletion cannot change anyone's balance.
+
+**Not inferred:** nothing here decides what else account withdrawal does, which is still unbuilt, nor whether a subject can delete a single piece of proof without leaving. Deleting one item while staying is not decided.

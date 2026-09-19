@@ -24,7 +24,19 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Evidence stage 2: redaction and approval - 2026-09-19 (Claude Code)
+
+The owner asked for the redaction screen next. Completes the evidence decision of today: until this exists nothing can reach the public bucket.
+
+- `sharp` becomes a direct dependency. It is already present as a transitive dependency of Next, which is not something to rely on. It composites the boxes and re-encodes, which is what makes redaction destroy pixels rather than cover them.
+- `src/modules/evidence/redact.ts`: box geometry as pure functions (normalised coordinates, clamping, rejecting degenerate or out-of-range boxes) and the render itself. The render flattens to RGB, draws opaque black over each box, caps the long edge so a 10 MB photo does not become a 10 MB public asset, and re-encodes to PNG, which drops whatever metadata the original carried including any camera location.
+- `src/modules/evidence/detect.ts`: asks Claude for regions that look sensitive, returning normalised boxes. Suggestions only. A failure returns none rather than blocking review, and the interface never implies the model found everything.
+- `/review/evidence/[id]`: the owner sees the whole original, the suggested boxes drawn over it, adjusts or adds boxes, and either publishes or rejects with a note.
+- Publishing renders the artifact, uploads it to the public bucket and sets status in one step. Rejecting records the note and publishes nothing.
+
+Safety properties to hold and to test: the published artifact is always a re-encode and never the original bytes; boxes are validated server-side, because the browser supplies them; a box covering nothing is refused rather than silently ignored; publishing twice is safe.
+
+Not in this slice: deleting proof on account withdrawal, which was decided today and belongs with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided.
 
 ## Deferred, to come back to
 
@@ -34,7 +46,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 | --- | --- | --- |
 | Profile pictures | The owner asked for them alongside the feed and said "we will do it later" | File storage, size and type limits, and a decision on deletion and who can see a real student's photo. Fits with the evidence privacy interview (D06, D07) |
 | Email confirmation | Switched off 2026-09-19 so the owner could get in without SMTP; the owner said "ill add it later" | A working SMTP sender. Then delete `AUTH_REQUIRE_EMAIL_CONFIRMATION` from `.env.local` and turn "Confirm email" back on in Supabase. Must happen before anyone outside the owner's circle joins, because the `@osu.edu` gate currently proves only that an address was typed |
-| Evidence submission and verification | No way exists for a subject to submit proof; the owner rules from information held outside the app | The verification and privacy interview, D06 and D07 |
+| Deleting proof on account withdrawal | Decided 2026-09-19: withdrawing removes a person's originals and published artifacts, leaving a tombstone and the ruling record | The account withdrawal flow, which is itself unbuilt |
 
 ## Current state
 
