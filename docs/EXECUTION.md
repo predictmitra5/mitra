@@ -31,7 +31,14 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Process already-due lifecycle transitions before loading holdings, consistent with account/market pages. Keep the holdings query and profile eligibility in a consistent private database snapshot, project only needed fields, and prevent shared caching/indexing. Add links from account and market pages, session refresh coverage and revalidation after existing trading/lifecycle actions. Preserve the existing cream/lime design and six-decimal holdings precision.
 - No schema, dependencies, provider setup or trading rules need changes. Test cross-user isolation (including owner accounts), eligibility, zero/terminal/draft exclusions, both sides, partial sales, ordering/pagination, due transitions and logged-out route protection. Run local tests, typecheck, lint and production build. Visually inspect the reusable positions presentation with fictional local data, without bypassing authentication or creating Auth users; a real-account walkthrough still depends on SMTP setup.
 - Review refinement before validation: verify the active adult profile before any due-transition processing, then recheck it inside the holdings snapshot. Add a localhost-only `scripts/preview-positions.mjs` helper that renders the real presentation component against fictional data and the built CSS; it never connects to the database or bypasses the production route. Use this to inspect populated, pending-payout and empty layouts at desktop/phone sizes.
+- Integration update: while this page was being verified, the separate owner-authorized email-confirmation change was committed in 23d8196. Preserve that completed change and the recorded decision; the positions page already calls the shared `currentIdentity` policy. Recheck the combined tree before committing. The remaining signed-in walkthrough needs an eligible account and matching Supabase pilot settings; SMTP is now needed for resets and eventual email confirmation, not inherently for the pilot signup path.
 - Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
+
+### Mark the owner profile - 2026-09-19 (Claude Code)
+
+The owner signed up and reached the account page, but `profiles.is_owner` is 0, so `/review` refuses them and no goal can be approved. There are no markets at all yet, which is why nothing is tradeable.
+
+Set `is_owner = 1` on the single existing profile. Guarded: refuse unless exactly one active profile exists, and print the before and after rows. One live data row changes; no code, schema or configuration. This is the one-off step already named in Next actions.
 
 ## Current state
 
