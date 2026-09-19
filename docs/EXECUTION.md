@@ -30,7 +30,26 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Build `/positions` ("Your predictions") with server-verified identity and an active adult profile, showing only that user's nonzero holdings in approved markets. Show the goal, public subject name, current YES/NO shares and their held cost, lifecycle status/deadline, and a link to the existing market page. Fully sold, settled and refunded holdings are no longer active; explain this on the page. Present soonest deadlines first with bounded pages, and explicit empty/error states.
 - Process already-due lifecycle transitions before loading holdings, consistent with account/market pages. Keep the holdings query and profile eligibility in a consistent private database snapshot, project only needed fields, and prevent shared caching/indexing. Add links from account and market pages, session refresh coverage and revalidation after existing trading/lifecycle actions. Preserve the existing cream/lime design and six-decimal holdings precision.
 - No schema, dependencies, provider setup or trading rules need changes. Test cross-user isolation (including owner accounts), eligibility, zero/terminal/draft exclusions, both sides, partial sales, ordering/pagination, due transitions and logged-out route protection. Run local tests, typecheck, lint and production build. Visually inspect the reusable positions presentation with fictional local data, without bypassing authentication or creating Auth users; a real-account walkthrough still depends on SMTP setup.
+- Review refinement before validation: verify the active adult profile before any due-transition processing, then recheck it inside the holdings snapshot. Add a localhost-only `scripts/preview-positions.mjs` helper that renders the real presentation component against fictional data and the built CSS; it never connects to the database or bypasses the production route. Use this to inspect populated, pending-payout and empty layouts at desktop/phone sizes.
 - Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
+
+### Email confirmation becomes a switch - 2026-09-19 (Claude Code)
+
+Owner instruction: "bro just remove emial verificaiton ill add it later". Email delivery has blocked every real-account walkthrough for four days, so confirmation comes out now and returns before anyone outside the owner's circle joins. A second agent holds the positions page in this same working tree, so this change stays inside `src/modules/auth`, `.env.example` and README.
+
+An environment switch rather than deleted checks, so restoring it later is one line and a deployment cannot lose the protection by accident. `AUTH_REQUIRE_EMAIL_CONFIRMATION=false` turns it off; anything else, including an unset variable, keeps requiring confirmation.
+
+- `src/modules/auth/config.ts`: add `emailConfirmationRequired()`, defaulting to true.
+- `src/modules/auth/policy.ts`: `eligibleIdentity` takes a second argument for whether confirmation is required, defaulting to true so any future call site fails safe.
+- `src/modules/auth/actions.ts`: with the switch off, sign-up keeps the session Supabase returns and lands on the account page instead of signing out, and the sign-in messages stop naming confirmation. With it on, the existing fail-closed behavior is unchanged.
+- `src/modules/auth/server.ts` and `callback.ts`: pass the setting through.
+- Tests for both settings, with the existing cases unchanged.
+
+The owner must also turn off Confirm email in the Supabase dashboard; without that Supabase returns no session and the app still asks for a link.
+
+Consequence to record, not to solve here: the `@osu.edu` gate now only checks the address typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's, so nobody outside the owner's own circle should be invited until confirmation is back on.
+
+Relies on no recorded decision; this is a new owner instruction and gets its own DECISIONS.md entry.
 
 ## Current state
 
