@@ -16,9 +16,14 @@ export function canonicalUniversityEmail(value: unknown): string | null {
   return `${match[1]}@osu.edu`;
 }
 
-/** Only use with a fresh, server-verified auth.getUser() result. */
-export function eligibleIdentity(user: AuthUser | null): AuthIdentity | null {
-  if (!user || user.is_anonymous || !user.email_confirmed_at) return null;
+/**
+ * Only use with a fresh, server-verified auth.getUser() result.
+ * requireConfirmation defaults to true so a new call site fails safe; pass
+ * emailConfirmationRequired() from server code.
+ */
+export function eligibleIdentity(user: AuthUser | null, requireConfirmation = true): AuthIdentity | null {
+  if (!user || user.is_anonymous) return null;
+  if (requireConfirmation && !user.email_confirmed_at) return null;
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(user.id)) return null;
   const email = canonicalUniversityEmail(user.email);
   // Do not silently link a separate alias Auth account to another user's wallet.

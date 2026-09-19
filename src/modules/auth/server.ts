@@ -2,7 +2,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { authConfig } from "./config";
+import { authConfig, emailConfirmationRequired } from "./config";
 import { eligibleIdentity } from "./policy";
 
 export async function createAuthClient(readOnly = false) {
@@ -24,5 +24,5 @@ export async function createAuthClient(readOnly = false) {
 export const currentIdentity = cache(async () => {
   const client = await createAuthClient(true);
   const { data, error } = await client.auth.getUser();
-  return error ? null : eligibleIdentity(data.user);
+  return error ? null : eligibleIdentity(data.user, emailConfirmationRequired());
 });

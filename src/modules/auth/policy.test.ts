@@ -52,6 +52,26 @@ describe("university identity policy", () => {
     expect(eligibleIdentity(user)).toEqual({ id: verifiedUser.id, email: verifiedUser.email });
     expect(eligibleIdentity({ ...user, email_confirmed_at: undefined })).toBeNull();
   });
+
+  it("accepts an unconfirmed mailbox only when the caller waives confirmation", () => {
+    const unconfirmed = { ...verifiedUser, email_confirmed_at: undefined };
+    expect(eligibleIdentity(unconfirmed)).toBeNull();
+    expect(eligibleIdentity(unconfirmed, true)).toBeNull();
+    expect(eligibleIdentity(unconfirmed, false)).toEqual({ id: verifiedUser.id, email: verifiedUser.email });
+  });
+
+  it("keeps every other identity rule when confirmation is waived", () => {
+    for (const user of [
+      null,
+      { ...verifiedUser, email_confirmed_at: undefined, is_anonymous: true },
+      { ...verifiedUser, email_confirmed_at: undefined, email: "student.123@buckeyemail.osu.edu" },
+      { ...verifiedUser, email_confirmed_at: undefined, email: "student.123@gmail.com" },
+      { ...verifiedUser, email_confirmed_at: undefined, email: undefined },
+      { ...verifiedUser, email_confirmed_at: undefined, id: "client-controlled-profile-id" },
+    ]) {
+      expect(eligibleIdentity(user, false)).toBeNull();
+    }
+  });
 });
 
 describe("password validation", () => {

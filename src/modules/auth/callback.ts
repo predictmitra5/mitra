@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthClient } from "./server";
+import { emailConfirmationRequired } from "./config";
 import { eligibleIdentity } from "./policy";
 
 export async function completeAuthCallback(request: NextRequest, destination: "/account" | "/reset-password") {
@@ -12,7 +13,7 @@ export async function completeAuthCallback(request: NextRequest, destination: "/
       const exchanged = await client.auth.exchangeCodeForSession(code);
       if (!exchanged.error) {
         const verified = await client.auth.getUser();
-        accepted = !verified.error && !!eligibleIdentity(verified.data.user);
+        accepted = !verified.error && !!eligibleIdentity(verified.data.user, emailConfirmationRequired());
         if (!accepted) await client.auth.signOut({ scope: "local" });
       }
     }

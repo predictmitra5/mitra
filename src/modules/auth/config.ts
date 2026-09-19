@@ -7,6 +7,15 @@ export function authConfig() {
   return { url, key };
 }
 
+/**
+ * Whether a confirmed mailbox is required to use the app. The owner turns this
+ * off while custom SMTP is unconfigured. Only the exact string "false" disables
+ * it, so an unset, empty or misspelled variable keeps the protection.
+ */
+export function emailConfirmationRequired(): boolean {
+  return process.env.AUTH_REQUIRE_EMAIL_CONFIRMATION !== "false";
+}
+
 /** Email callbacks use configured origins, never an untrusted Host header. */
 export function appOrigin(): string {
   const value = process.env.APP_URL ??

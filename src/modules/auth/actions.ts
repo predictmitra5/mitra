@@ -3,11 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createAuthClient } from "./server";
-import { appOrigin } from "./config";
+import { appOrigin, emailConfirmationRequired } from "./config";
 import { canonicalUniversityEmail, eligibleIdentity, passwordError, type FormState } from "./policy";
 
 const unavailable = { error: "We couldn’t connect right now. Please try again shortly." };
 const emailMessage = "Use your Ohio State email, such as name.123@osu.edu.";
+const signupFailed = "We couldn’t create your account. Try again shortly, or sign in if you already registered.";
 
 export async function signIn(_state: FormState, form: FormData): Promise<FormState> {
   const email = canonicalUniversityEmail(form.get("email"));
@@ -17,11 +18,18 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
   try {
     const client = await createAuthClient();
     const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error) return { error: "Unable to sign in. Check your email and password, and confirm your email first." };
+    const confirming = emailConfirmationRequired();
+    if (error) {
+      return { error: confirming
+        ? "Unable to sign in. Check your email and password, and confirm your email first."
+        : "Unable to sign in. Check your email and password." };
+    }
     const verified = await client.auth.getUser();
-    if (verified.error || !eligibleIdentity(verified.data.user)) {
+    if (verified.error || !eligibleIdentity(verified.data.user, confirming)) {
       await client.auth.signOut({ scope: "local" });
-      return { error: "Sign in with a confirmed @osu.edu account to continue." };
+      return { error: confirming
+        ? "Sign in with a confirmed @osu.edu account to continue."
+        : "Sign in with an @osu.edu account to continue." };
     }
   } catch { return unavailable; }
   revalidatePath("/", "layout");
@@ -35,20 +43,34 @@ export async function signUp(_state: FormState, form: FormData): Promise<FormSta
   const invalid = passwordError(password);
   if (invalid) return { error: invalid };
   if (password !== form.get("confirmPassword")) return { error: "Your passwords don’t match." };
+  let admitted = false;
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.signUp({
       email, password: password as string,
       options: { emailRedirectTo: `${appOrigin()}/auth/callback` },
     });
-    if (error) return { error: "We couldn’t create your account. Try again shortly, or sign in if you already registered." };
-    // Confirmation must stay enabled; never turn automatic signup into app access.
+    if (error) return { error: signupFailed };
     if (data.session) {
-      await client.auth.signOut({ scope: "local" });
-      return { error: "Email confirmation is unavailable. Please contact the app owner." };
+      // While confirmation is required, an automatic session must never become app access.
+      if (emailConfirmationRequired()) {
+        await client.auth.signOut({ scope: "local" });
+        return { error: "Email confirmation is unavailable. Please contact the app owner." };
+      }
+      const verified = await client.auth.getUser();
+      if (verified.error || !eligibleIdentity(verified.data.user, false)) {
+        await client.auth.signOut({ scope: "local" });
+        return { error: signupFailed };
+      }
+      admitted = true;
     }
-    return { success: "Check your Ohio State inbox for a confirmation link. Open it in this browser to finish creating your account. Already registered? You can sign in instead." };
+    if (!admitted) {
+      return { success: "Check your Ohio State inbox for a confirmation link. Open it in this browser to finish creating your account. Already registered? You can sign in instead." };
+    }
   } catch { return unavailable; }
+  // redirect() throws to unwind, so it stays outside the try.
+  revalidatePath("/", "layout");
+  redirect("/account");
 }
 
 export async function requestPasswordReset(_state: FormState, form: FormData): Promise<FormState> {
@@ -70,7 +92,7 @@ export async function resetPassword(_state: FormState, form: FormData): Promise<
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.getUser();
-    if (error || !eligibleIdentity(data.user)) return { error: "Your reset session has expired. Request a new reset link." };
+    if (error || !eligibleIdentity(data.user, emailConfirmationRequired())) return { error: "Your reset session has expired. Request a new reset link." };
     const result = await client.auth.updateUser({ password: password as string });
     if (result.error) return { error: "Choose a different password and try again. If the link expired, request a new one." };
   } catch { return unavailable; }

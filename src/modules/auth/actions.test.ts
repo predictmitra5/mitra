@@ -195,3 +195,54 @@ describe("auth server actions", () => {
     expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/sign-in");
   });
 });
+
+describe("auth server actions with email confirmation switched off", () => {
+  const unconfirmed = { ...user, email_confirmed_at: undefined };
+
+  beforeEach(() => {
+    vi.stubEnv("AUTH_REQUIRE_EMAIL_CONFIRMATION", "false");
+    mocks.auth.signUp.mockResolvedValue({ data: { user: unconfirmed, session }, error: null });
+    mocks.auth.getUser.mockResolvedValue({ data: { user: unconfirmed }, error: null });
+    mocks.auth.signInWithPassword.mockResolvedValue({ data: { user: unconfirmed, session }, error: null });
+  });
+
+  it("admits a new account straight to the account page", async () => {
+    await expect(signUp({}, form())).rejects.toThrow("NEXT_REDIRECT:/account");
+    expect(mocks.auth.signOut).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
+  });
+
+  it("signs in an unconfirmed account", async () => {
+    await expect(signIn({}, form())).rejects.toThrow("NEXT_REDIRECT:/account");
+    expect(mocks.auth.signOut).not.toHaveBeenCalled();
+  });
+
+  it("still verifies the identity the server reports, not the signup payload", async () => {
+    mocks.auth.getUser.mockResolvedValue({ data: { user: { ...unconfirmed, email: "outsider@example.com" } }, error: null });
+    expect(await signUp({}, form())).toHaveProperty("error");
+    expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("does not leak the provider error when the server check fails", async () => {
+    mocks.auth.getUser.mockResolvedValue({ data: { user: unconfirmed }, error: providerError });
+    const result = await signUp({}, form());
+    expect(result).toHaveProperty("error");
+    expect(JSON.stringify(result)).not.toContain(providerError.message);
+    expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+  });
+
+  it("still asks for the emailed link when Supabase withholds a session", async () => {
+    mocks.auth.signUp.mockResolvedValue({ data: { user: unconfirmed, session: null }, error: null });
+    expect(await signUp({}, form())).toHaveProperty("success");
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("treats any value other than the exact string false as confirmation required", async () => {
+    for (const value of ["true", "", "FALSE", "0", "no"]) {
+      vi.stubEnv("AUTH_REQUIRE_EMAIL_CONFIRMATION", value);
+      expect(await signUp({}, form())).toHaveProperty("error");
+      expect(mocks.redirect).not.toHaveBeenCalled();
+    }
+  });
+});

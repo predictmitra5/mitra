@@ -268,3 +268,25 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **User choices:** "Yes, restart the 24 hours (recommended)" and "Public ruling explanation; private objections (recommended)".
 
 **Confirmed:** changing a YES/NO ruling during its objection window starts a fresh 24-hour window for the revised ruling. The owner's written ruling explanation is public. An objection and its text are visible only to the owner and the person who submitted it. This does not authorize publication of private evidence originals. Settlement remains final, as decided on 2026-09-15.
+
+## 2026-09-19 - Navigation to a trader's existing positions
+
+**Context:** the proposed next build slice was "a page showing each trader's existing positions." The owner answered: "Ok go ahead".
+
+**Confirmed:** add a private page where the signed-in trader can find their existing holdings and open the corresponding market. This presents the already-approved YES/NO shares, held costs, market states and buy/sell navigation across their goals. It does not authorize public portfolios, an owner override to view others' holdings, discovery ranking, a leaderboard, or new valuation/economy rules.
+
+**Technical presentation under delegated authority:** `/positions`, titled "Your predictions", shows nonzero active holdings, soonest deadline first, in bounded pages. Fully sold, settled and refunded positions no longer have active shares; the page explains that they leave this list. Existing market pages remain the place to preview and confirm trades. Historical trading statements are a later feature.
+
+## 2026-09-19 - Email confirmation suspended for the pilot
+
+**User instruction:** "bro just remove emial verificaiton ill add it later".
+
+**Context:** no SMTP provider is connected, so Supabase delivers only to members of the Supabase project team. Nobody could receive a confirmation link, and this had blocked every real-account walkthrough for four days.
+
+**Confirmed:** signing up and signing in no longer require a confirmed mailbox. The requirement returns before anyone outside the owner's own circle joins; the owner said "ill add it later" and this entry is the record of that intent.
+
+**Not inferred:** the `@osu.edu` restriction stays, passwords stay, and the app still re-verifies identity server-side at every boundary. Nothing about age self-confirmation, the economy or market rules changes. No decision was made to launch or invite anyone in this state.
+
+**Consequence the owner accepted:** the `@osu.edu` gate now proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including one belonging to somebody else.
+
+**Technical form under delegated authority:** an environment switch rather than deleted checks, so restoring it is one line and no deployment can lose the protection by accident. `AUTH_REQUIRE_EMAIL_CONFIRMATION=false` in `.env.local` disables it; any other value, including unset, requires confirmation. Supabase's own "Confirm email" setting must be turned off to match.

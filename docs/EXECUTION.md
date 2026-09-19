@@ -33,30 +33,12 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Review refinement before validation: verify the active adult profile before any due-transition processing, then recheck it inside the holdings snapshot. Add a localhost-only `scripts/preview-positions.mjs` helper that renders the real presentation component against fictional data and the built CSS; it never connects to the database or bypasses the production route. Use this to inspect populated, pending-payout and empty layouts at desktop/phone sizes.
 - Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
 
-### Email confirmation becomes a switch - 2026-09-19 (Claude Code)
-
-Owner instruction: "bro just remove emial verificaiton ill add it later". Email delivery has blocked every real-account walkthrough for four days, so confirmation comes out now and returns before anyone outside the owner's circle joins. A second agent holds the positions page in this same working tree, so this change stays inside `src/modules/auth`, `.env.example` and README.
-
-An environment switch rather than deleted checks, so restoring it later is one line and a deployment cannot lose the protection by accident. `AUTH_REQUIRE_EMAIL_CONFIRMATION=false` turns it off; anything else, including an unset variable, keeps requiring confirmation.
-
-- `src/modules/auth/config.ts`: add `emailConfirmationRequired()`, defaulting to true.
-- `src/modules/auth/policy.ts`: `eligibleIdentity` takes a second argument for whether confirmation is required, defaulting to true so any future call site fails safe.
-- `src/modules/auth/actions.ts`: with the switch off, sign-up keeps the session Supabase returns and lands on the account page instead of signing out, and the sign-in messages stop naming confirmation. With it on, the existing fail-closed behavior is unchanged.
-- `src/modules/auth/server.ts` and `callback.ts`: pass the setting through.
-- Tests for both settings, with the existing cases unchanged.
-
-The owner must also turn off Confirm email in the Supabase dashboard; without that Supabase returns no session and the app still asks for a link.
-
-Consequence to record, not to solve here: the `@osu.edu` gate now only checks the address typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's, so nobody outside the owner's own circle should be invited until confirmation is back on.
-
-Relies on no recorded decision; this is a new owner instruction and gets its own DECISIONS.md entry.
-
 ## Current state
 
-- Stage: the core goal-to-payout flow is built: confirmed Ohio State identities, adult profile setup and 1,000 points; subject-created goals and owner approval; public markets and buy/sell trading; close, ruling/revision, private objections, final payouts and owner cancellation refunds. Real-account walkthroughs still need the owner's email setup. Monthly cash refills are now built too. Evidence submission and deployment remain unfinished.
+- Stage: the core goal-to-payout flow is built: Ohio State identities, adult profile setup and 1,000 points; subject-created goals and owner approval; public markets and buy/sell trading; close, ruling/revision, private objections, final payouts and owner cancellation refunds. Email confirmation is switched off for the pilot, so real-account walkthroughs no longer wait on email setup. Monthly cash refills are now built too. Evidence submission and deployment remain unfinished.
 - Implemented:
   - Next.js 16.3.5 app with Vitest, ESLint, route-type generation and a production build.
-  - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: Supabase email-and-password authentication admitting only confirmed `@osu.edu` identities (`@buckeyemail.osu.edu` is accepted and stored as `@osu.edu`), re-verified server-side at every boundary. `src/proxy.ts` refreshes sessions; it does not authorize.
+  - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: Supabase email-and-password authentication admitting only `@osu.edu` identities, confirmed ones when `AUTH_REQUIRE_EMAIL_CONFIRMATION` is not set to `false` (`@buckeyemail.osu.edu` is accepted and stored as `@osu.edu`), re-verified server-side at every boundary. `src/proxy.ts` refreshes sessions; it does not authorize.
   - `src/modules/account` and the account page: profile setup with display name, unique handle and an 18+ self-confirmation, plus the one-time 1,000-point grant, all written in one transaction that is safe to retry.
   - `src/modules/goals`, `/goals/new` and `/review`: templates for GPA, internship, club and gym goals plus own-words goals; drafts created only for the signed-in subject; an owner-only review queue that opens a draft at the owner's opening odds (LMSR state and first price point) or rejects it with a reason shown to the subject, each decision written to `admin_actions`. The account page lists the subject's goals and their status.
   - `src/app/globals.css`: the mobile-first stylesheet for every page. The Codex sign-in pages had shipped without one.
@@ -68,9 +50,10 @@ Relies on no recorded decision; this is a new owner instruction and gets its own
   - Refill validation includes the original tests plus `refill-safety.test.ts` and `refill-actions.test.ts`: exact credits, cash-only accounting, Eastern month/year and daylight-saving boundaries, retries, authorization, stale reads, rollback, and seven hosted concurrency scenarios. No additional connection or migration is needed for refills.
   - `scripts/preview-market.mjs`: a localhost-only browser verification helper with fictional open, ruled, settled and cancelled goals in a disposable schema. It creates no Auth users or live app rows and cleans up on normal exit; usage is in README.md.
 - Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence submission/verification, feed, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
-- **Blocks real users:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive confirmation or reset emails. A personal Gmail account with an app password works without a domain and suits a small pilot; Resend requires a verified domain. See README.md. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
+- **Must be undone before anyone outside the owner's circle joins:** email confirmation is off, so the `@osu.edu` gate proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's.
+- **Still unresolved, no longer blocking:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive reset emails, and confirmation cannot be restored. A personal Gmail account with an app password works without a domain and suits a small pilot; Resend requires a verified domain. See README.md. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
-- Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, email confirmation is required, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
+- Credentials: the owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and holds them in `.env.local`, which Git ignores. Verified: Supabase auth and REST respond, the Claude Messages API returns 200 on `claude-haiku-4-5`, and both Postgres poolers connect.
 - Development machine: Windows 11 with Node.js 24.19.0 LTS and Git, both installed with the user's permission on 2026-09-15. Docker is not installed.
 
 ### Product decisions in force
@@ -282,3 +265,13 @@ The owner asked whether Gmail, Yahoo and iCloud were the only options without a 
 Resumed when the owner said to continue. Discovered that Claude had already completed the originally logged refill implementation (1fca445, completed in 284077f) and subsequently updated SMTP documentation while this task was paused. Logged the reconciliation plan in 3adea3d before further edits. Restored the original committed refill tests unchanged and placed the added cases in `refill-safety.test.ts`, with a separate authenticated-action test file. An independent design review used only the design description and did not access the shared folder.
 
 Added coverage for exact fractional credits, independent quotas, Eastern month/year and daylight-saving boundaries, replay across months, inactive profiles, missing wallets, stale snapshots, rollback, and contention with other wallet writers. The action tests verify fresh server identity, safe errors, refreshes and preserving retry semantics after an uncertain post-commit response. Completed the combined local/hosted checks and cleanup recorded above, and updated README, MARKETS, DATA_MODEL and ROADMAP. No production code, schema, dependencies, credentials, Auth users, SMTP settings or deployment changed in this follow-up. The next build slice is private navigation to existing positions; email setup still gates real-account walkthroughs.
+
+### 2026-09-19 - Email confirmation switched off (Claude Code)
+
+The owner asked for email verification to be removed and added back later. Built it as `AUTH_REQUIRE_EMAIL_CONFIRMATION`, read by `emailConfirmationRequired()` in `src/modules/auth/config.ts`: only the exact string `false` disables confirmation, so an unset, empty or misspelled value keeps it. `eligibleIdentity` now takes that setting as a second argument defaulting to true, so a future call site that forgets it fails safe; `server.ts`, `callback.ts` and both sign-in paths pass it through. With the switch off, sign-up keeps the session Supabase returns and lands on the account page, after re-verifying the identity the server reports rather than the signup payload; with it on, the previous fail-closed behavior is untouched. Sign-in messages stop naming confirmation when it is not required.
+
+Verified: 246 tests pass with 17 skipped (hosted-only), including 45 in `src/modules/auth` covering both settings, that waiving confirmation waives nothing else, and that values like `"FALSE"` or `"0"` still require it. Typecheck and lint pass. Recorded in DECISIONS.md, README.md step 1 and `.env.example`.
+
+The owner must also turn "Confirm email" off in the Supabase dashboard; with it on, Supabase withholds the session and the app still asks for a link. Not yet done from code and not checkable from code.
+
+A second agent held the positions page in this working tree throughout, so this change stayed inside `src/modules/auth`, the env files and README, and was committed by explicit path.
