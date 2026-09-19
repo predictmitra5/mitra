@@ -34,12 +34,6 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Integration update: while this page was being verified, the separate owner-authorized email-confirmation change was committed in 23d8196. Preserve that completed change and the recorded decision; the positions page already calls the shared `currentIdentity` policy. Recheck the combined tree before committing. The remaining signed-in walkthrough needs an eligible account and matching Supabase pilot settings; SMTP is now needed for resets and eventual email confirmation, not inherently for the pilot signup path.
 - Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
 
-### Mark the owner profile - 2026-09-19 (Claude Code)
-
-The owner signed up and reached the account page, but `profiles.is_owner` is 0, so `/review` refuses them and no goal can be approved. There are no markets at all yet, which is why nothing is tradeable.
-
-Set `is_owner = 1` on the single existing profile. Guarded: refuse unless exactly one active profile exists, and print the before and after rows. One live data row changes; no code, schema or configuration. This is the one-off step already named in Next actions.
-
 ## Current state
 
 - Stage: the core goal-to-payout flow is built: Ohio State identities, adult profile setup and 1,000 points; subject-created goals and owner approval; public markets and buy/sell trading; close, ruling/revision, private objections, final payouts and owner cancellation refunds. Email confirmation is switched off for the pilot, so real-account walkthroughs no longer wait on email setup. Monthly cash refills are now built too. Evidence submission and deployment remain unfinished.
@@ -282,3 +276,11 @@ Verified: 246 tests pass with 17 skipped (hosted-only), including 45 in `src/mod
 The owner must also turn "Confirm email" off in the Supabase dashboard; with it on, Supabase withholds the session and the app still asks for a link. Not yet done from code and not checkable from code.
 
 A second agent held the positions page in this working tree throughout, so this change stayed inside `src/modules/auth`, the env files and README, and was committed by explicit path.
+
+### 2026-09-19 - Owner account live (Claude Code)
+
+The owner signed up with email confirmation off and completed profile setup: handle `ducky`, adult self-confirmation recorded, the 1,000-point grant issued. Set `is_owner = 1` on that profile, guarded to refuse unless exactly one active profile existed, so `/review` and goal approval now work. One live row changed; no code, schema or configuration.
+
+State of the live database at this point: one profile, one wallet at 1,000 points, zero markets. Nothing is tradeable because no goal has been created or approved yet, not because of a fault.
+
+Still untested with a real account: creating a goal, approving it, and trading. The owner cannot trade a goal about themselves, so confirming the trade path needs a second account.
