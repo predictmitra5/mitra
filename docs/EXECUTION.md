@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+- 2026-09-19 (Claude Code): the owner asked for SMTP options other than Google. Add Yahoo and iCloud as no-domain alternatives, and record that a Gmail or Yahoo sender address routed through a third-party provider fails DMARC and lands in spam. Documentation only.
 
 ## Current state
 
