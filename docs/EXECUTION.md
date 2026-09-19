@@ -155,14 +155,18 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 ## Next actions
 
-1. **Owner:** connect custom SMTP in Supabase (a personal Gmail with an app password needs no domain) and add the redirect URLs from README.md. Then test the full sign-up flow with a real Ohio State inbox.
-2. Mark the owner's own profile as the approver (`profiles.is_owner`) once they have signed up, through a reviewed one-off step rather than any sign-up path. Then walk the goal flow end to end in a browser: submit, review, approve, reject, share the market link, and buy/sell as another eligible account.
-3. Add a way for traders to find their existing positions across markets. Do not invent feed ranking or leaderboard policy.
-4. Finish account withdrawal and its cancellations, and configure periodic due-transition processing when choosing deployment. Ask how outcome deciders should be identified/assigned; stored deciders are already barred from buying and selling.
-5. Add AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
-6. Research collusion and related-party controls for small social groups and bring options back to the user.
-7. Hold the verification/privacy and discovery interviews before building those systems.
+Refreshed 2026-09-19. Items 1 to 3 of the previous list are done or superseded: the owner is marked as approver, the positions page exists, and SMTP no longer blocks anything because email confirmation is switched off (see Deferred).
 
+1. **Nothing has been walked end to end with a real account.** The live database holds one profile and zero markets. Create a goal, approve it at `/review`, then trade it from a second account, since the subject cannot trade their own goal. Needs no decisions and proves the pieces work together for the first time.
+2. **Evidence submission (D06, D07).** The largest hole in the product: the owner can rule YES or NO, but no one can supply proof through the app, so a ruling rests on something seen outside it. Needs the verification and privacy interview before any table is designed.
+3. **Deployment.** The app runs only on the owner's machine. The feed was just opened to people without accounts, which is worth nothing while nobody can reach it. Deployment also settles periodic processing of due closes and payouts, which currently run only when a relevant page is opened.
+4. Account withdrawal and its automatic cancellations. Ask how outcome deciders should be identified and assigned; stored deciders are already barred from buying and selling.
+5. AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
+6. Research collusion and related-party controls for small social groups and bring options back to the owner.
+7. Hold the discovery interview (D08, D09) before any per-viewer measurement or personalization. The current feed deliberately records no viewer identity.
+8. Review the positions page, which a second agent built and this session committed without a line-by-line read.
+
+Deferred by the owner, with what each needs, in the Deferred section above: profile pictures, restoring email confirmation, evidence submission.
 ## Validation and known limitations
 
 Source review: all 18 pages extracted and visually inspected.
