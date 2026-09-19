@@ -24,13 +24,13 @@ Verify: authorized users can complete it; unauthorized actors cannot approve or 
 
 ## Slice 2 - Complete play-money lifecycle
 
-Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`.
+Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`. Monthly cash refills are built end to end, from the account card through the locked wallet write.
 
 Also done (2026-09-18): public approved-market pages and authenticated buy/sell previews and confirmations. The transaction writes trade, wallet, ledger, position, market state and price history together. Retry protection, deadline enforcement, wallet/ledger reconciliation and multi-connection hosted concurrency checks pass.
 
 Also done: deadline/early closure, owner rulings and revisions, private objections, final payouts and owner cancellation refunds. Revisions reset the full 24-hour window; terminal accounting is atomic and protected against retries and concurrent trades. Due close/payout transitions run on relevant page access. Public outcome pages are browser-checked.
 
-Remaining: deployed periodic scheduling; refill UI; account withdrawal with its automatic cancellations; outcome-decider assignment; portfolio navigation; evidence collection. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
+Remaining: deployed periodic scheduling; account withdrawal with its automatic cancellations; outcome-decider assignment; portfolio navigation; evidence collection. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
 
 Verify: concurrent and retried actions cannot duplicate balances; ledger replay reconciles accounting; resolution and cancellation follow approved rules; migrations, type checks, lint and appropriate tests pass.
 

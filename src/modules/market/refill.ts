@@ -19,8 +19,8 @@ export function calendarMonth(at: Date, timeZone: string): string {
 /**
  * A refill restores the balance to the starting balance when it is below it,
  * at most `refillsPerMonth` times per calendar month. `balanceMicro` is the
- * available balance; whether open positions should count is awaiting the
- * owner's confirmation (docs/MARKETS.md).
+ * available cash only: open positions are excluded, as confirmed by the owner
+ * on 2026-09-15 (docs/MARKETS.md).
  */
 export function refillDecision(input: {
   balanceMicro: number;

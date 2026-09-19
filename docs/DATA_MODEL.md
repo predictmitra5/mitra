@@ -43,7 +43,7 @@ Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial
 | --- | --- |
 | `profiles` | One row per signed-in person, sharing the id of the Supabase auth user; `is_owner` marks the approver; `adult_confirmed_at` records the 18+ self-confirmation; `withdrawn_at` records leaving |
 | `wallets` | Cached balance per person, written in the same transaction as the ledger |
-| `ledger_entries` | Append-only money record: signup grant, refill, trade, settlement, cancellation refund |
+| `ledger_entries` | Append-only money record: signup grant, refill, trade, settlement, cancellation refund. A refill's row id is the client's request id, so a retried refill finds the original entry instead of writing a second one |
 | `markets` | Question, frozen wording, deadlines, market-maker state, and every lifecycle timestamp through settlement or cancellation |
 | `market_outcome_deciders` | People barred from trading a market because they decide its outcome |
 | `positions` | Shares and average-cost basis per person per market; the per-market limit reads this |

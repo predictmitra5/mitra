@@ -1,6 +1,6 @@
 # Markets
 
-Status: goal drafting, owner approval, public market pages, transactional buy/sell execution, close, ruling/revision, private objections, final payouts and cancellation refunds are built. In-app refills, account withdrawal, evidence submission and deployed background scheduling remain to be implemented.
+Status: goal drafting, owner approval, public market pages, transactional buy/sell execution, close, ruling/revision, private objections, final payouts, cancellation refunds and monthly cash refills are built. Account withdrawal, evidence submission and deployed background scheduling remain to be implemented.
 
 ## Confirmed direction - 2026-09-15
 
@@ -37,7 +37,7 @@ Implementation: binary LMSR. Worst-case play-money subsidy is b ln 2 for a marke
 Decided 2026-09-15 and explicitly "subject to change". Values live in `src/modules/market/economy.ts`.
 
 - Starting balance: 1,000 points.
-- Refills: when the available balance is below 1,000, the user may tap Refill to restore it to 1,000, at most twice per calendar month in Eastern time. Confirmed 2026-09-15: only cash counts, so money in open positions does not block a refill and a trader's cash plus positions can exceed 1,000.
+- Refills: when the available balance is below 1,000, the user may tap Refill to restore it to 1,000, at most twice per calendar month in Eastern time. Confirmed 2026-09-15: only cash counts, so money in open positions does not block a refill and a trader's cash plus positions can exceed 1,000. Built 2026-09-18 in `src/modules/account/refill.ts`: the wallet row is locked before the amount and the monthly quota are recomputed, the credit and its ledger entry commit together, and the ledger row id doubles as the request id so a retry returns the original receipt rather than crediting twice.
 - Per-market maximum: 100 points per person, counting the cost basis of shares currently held on both sides. Selling releases cost basis at average cost and frees allowance.
 - Selling: allowed back to the market maker while trading is open.
 - Liquidity parameter b: 150 for new markets, so a 100-point bet moves a 50% market to 74%. The user asked for Kalshi's behavior and accepted this option; Kalshi's order book has no equivalent parameter.

@@ -12,11 +12,12 @@ Implemented:
 - Profile setup with an 18+ self-confirmation and a one-time 1,000-point signup grant, written in a single database transaction.
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
 - Goal creation from templates (GPA, internship, club, gym) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
+- Monthly cash refills on the account page: a top-up to 1,000 available points when cash is below it, at most twice per Eastern calendar month. Money held in open predictions does not count. Retrying the same request returns the original receipt instead of crediting twice.
 - Public approved-goal pages with prices, resolution terms and deadlines; signed-in traders can preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: refills in the app, account withdrawal/deletion, outcome-decider assignment, evidence submission, the feed and deployment. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
+Not yet implemented: account withdrawal/deletion, outcome-decider assignment, evidence submission, the feed and deployment. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
@@ -83,10 +84,11 @@ The normal tests use isolated in-memory PostgreSQL and do not read database cred
 $env:MITRA_HOSTED_TEST='1'
 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/service.test.ts --testTimeout=30000
 node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/market/lifecycle.test.ts --testTimeout=30000
+node --env-file=.env.local ./node_modules/vitest/vitest.mjs run src/modules/account/refill.test.ts --testTimeout=30000
 Remove-Item Env:MITRA_HOSTED_TEST
 ```
 
-These commands create uniquely named `mitra_trade_test_*` or `mitra_lifecycle_test_*` schemas, apply the migrations there, run the accounting/concurrency cases, and drop only those schemas. They never create Auth users or write live app rows. If forcibly interrupted, inspect and remove only that run's temporary schema.
+These commands create uniquely named `mitra_trade_test_*`, `mitra_lifecycle_test_*` or `mitra_refill_test_*` schemas, apply the migrations there, run the accounting/concurrency cases, and drop only those schemas. They never create Auth users or write live app rows. If forcibly interrupted, inspect and remove only that run's temporary schema.
 
 To inspect the actual public page without creating a live goal, build first and run:
 
