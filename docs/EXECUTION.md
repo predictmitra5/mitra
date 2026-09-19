@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+Owner asked whether Gmail, Yahoo and iCloud are the only no-domain SMTP senders. They are not the complete set, so README step 3 should name the full working list and the ruled-out providers, with the reason each one is in or out. Verified against provider documentation today: AOL uses Yahoo infrastructure and still accepts app passwords, GMX allows external SMTP once POP3/IMAP access is switched on, Zoho removed IMAP/POP/SMTP from free plans for new signups, and Proton restricts SMTP submission to paid business plans. Documentation only; no behavior relies on a recorded decision.
 
 ## Current state
 
