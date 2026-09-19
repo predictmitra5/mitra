@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 
 ## Read this first
 
@@ -24,7 +24,12 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Refill validation follow-up — 2026-09-19 (Codex)
+
+- Resumed the original refill plan (1fca445) after the owner said to continue. On checking Git, found that Claude had completed the implementation, tests and documentation in 284077f and subsequent documentation commits while this task was paused. Those sessions are recorded as complete; their product code and SMTP documentation will be preserved.
+- The resumed test edit landed over the refill test file added during that handoff. Before any further changes, record the correction: restore the committed tests unchanged and keep the additional cases in a separate validation file. Add authenticated-action tests without changing approved behavior, schema, dependencies or provider settings.
+- The extra coverage targets exact micro-point credits, daylight-saving/year boundaries, retries after month changes, missing wallets, stale snapshots, transaction rollback, and hosted races with buys, sells, payouts and a month rollover during a wallet-lock wait. All rely on the existing 2026-09-15 refill decisions. Keep the single workspace writer rule; the independent design review accessed no files.
+- Finish by checking both suites together, recording the final validation/cleanup and updated test command in README, MARKETS, DATA_MODEL, ROADMAP and this record, then commit. SMTP and real-account browser testing remain owner setup work.
 
 ## Current state
 
