@@ -357,3 +357,24 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Consequence accepted:** a settled ruling can become unverifiable after the fact, because the document behind it is gone. The payout does not move: settlement is already final and the ledger is untouched, so deletion cannot change anyone's balance.
 
 **Not inferred:** nothing here decides what else account withdrawal does, which is still unbuilt, nor whether a subject can delete a single piece of proof without leaving. Deleting one item while staying is not decided.
+
+## 2026-09-19 - Verified statements replace publishing the document (supersedes part of D07)
+
+**User instruction:** "maybe we just do this. the user uploaded the everifeid inforamtion, and we just put that in the verifcied information setting using jsut reading the pdf. we leave out the condidential stuff ourself, no need for redactaiton. and then obv wed have to add ac ontract saying that all info we post there is verfied or wtver".
+
+**What prompted it:** the redaction screen was built and then measured against a fictional transcript. The model named the right four private items and placed every box about 85 pixels too high, leaving the home address and phone number readable under boxes that looked like the job was done. Its reading of the document was exact; only its aim was wrong.
+
+**Confirmed, superseding the earlier choice that approved proof is public:**
+
+- An uploaded document is never published. It is read, kept privately as the audit trail, and never served to anyone but the owner.
+- What becomes public is a short verified statement the owner confirms, such as "Fall 2026 GPA 3.85, checked against an official transcript". The confidential parts are left out because they are never carried across, not because they were covered up.
+- Redaction is removed. There is nothing to redact when nothing is published.
+- PDFs are now accepted, because the app only has to read one, never render a safe copy of it.
+- A link is still published exactly as submitted. Submitting a link is already a decision to publish whatever is behind it, and the form says so.
+- A public attestation accompanies published statements: that each one was checked by the owner against an original the app still holds, and that the original is deliberately not shown.
+
+**The tradeoff the owner accepted:** proof was made public so traders could check a ruling themselves. They no longer can. Transparency moves from the document to the owner's attested statement, and the owner's record is what backs it. This was stated before the change was made.
+
+**Unchanged:** only the subject may submit, only during the proof window; the owner reviews everything before anything is visible; originals are kept permanently; an objector sees exactly what the public sees; withdrawing an account deletes the documents and leaves a tombstone.
+
+**Not inferred:** no automatic ruling from a statement. Extraction proposes wording, the owner confirms or rewrites it, and the ruling remains a separate decision.

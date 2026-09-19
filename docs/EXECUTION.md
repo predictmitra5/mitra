@@ -24,28 +24,21 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Evidence stage 2: redaction and approval - 2026-09-19 (Claude Code)
+### Evidence stage 2: verified statements - 2026-09-19 (Claude Code)
 
-The owner asked for the redaction screen next. Completes the evidence decision of today: until this exists nothing can reach the public bucket.
+Replaces the redaction plan logged earlier today. That plan was built, measured and abandoned: the reasoning is in DECISIONS.md and the measurement is in the session history below. The owner's replacement is simpler and safer, because nothing confidential is ever published in the first place.
 
-- `sharp` becomes a direct dependency. It is already present as a transitive dependency of Next, which is not something to rely on. It composites the boxes and re-encodes, which is what makes redaction destroy pixels rather than cover them.
-- `src/modules/evidence/redact.ts`: box geometry as pure functions (normalised coordinates, clamping, rejecting degenerate or out-of-range boxes) and the render itself. The render flattens to RGB, draws opaque black over each box, caps the long edge so a 10 MB photo does not become a 10 MB public asset, and re-encodes to PNG, which drops whatever metadata the original carried including any camera location.
-- `src/modules/evidence/detect.ts`: asks Claude for regions that look sensitive, returning normalised boxes. Suggestions only. A failure returns none rather than blocking review, and the interface never implies the model found everything.
-- `/review/evidence/[id]`: the owner sees the whole original, the suggested boxes drawn over it, adjusts or adds boxes, and either publishes or rejects with a note.
-- Publishing renders the artifact, uploads it to the public bucket and sets status in one step. Rejecting records the note and publishes nothing.
+- Migration 0008 drops `published_path` from `evidence` and adds `verified_statement`. No file is ever published, so there is no artifact to point at. The live table holds no rows, so nothing needs migrating.
+- Check constraints follow: publishing requires an attributable review, and for an uploaded document it requires a statement. The old constraint that a published path may not equal the original goes away with the column.
+- `policy.ts`: accept `application/pdf` alongside the image types, since the app now only reads a document.
+- `extract.ts` replaces `detect.ts`: given the document and the goal's own resolution terms, propose short factual statements that bear on whether the goal was met, and say what in the document supports each. This is what the model was measured to be good at.
+- `redact.ts`, its tests and the drawing editor are deleted rather than left unused.
+- The review screen becomes: read the original, see proposed statements, edit the wording, publish or reject.
+- The goal page shows published statements with the attestation, and no document.
 
-Safety properties to hold and to test: the published artifact is always a re-encode and never the original bytes; boxes are validated server-side, because the browser supplies them; a box covering nothing is refused rather than silently ignored; publishing twice is safe.
+Safety properties to hold and to test: no code path serves an original to anyone but the owner; a published row always carries a statement for an uploaded document; publishing twice is safe; extraction failing never blocks review.
 
-Not in this slice: deleting proof on account withdrawal, which was decided today and belongs with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided.
-
-**Plan changed part-way, 2026-09-19.** The detection step was built as planned and then checked against a fictional transcript with a real model call. The model named exactly the right four items - student id, date of birth, home address, phone number - and placed them badly: every box sat about 85 pixels above its line. Measured coverage of the rendered artifact was 100% of the student id, 35% of the date of birth, 2% of the address and 3% of the phone number. The address and phone stayed readable.
-
-That is worse than offering nothing. Four plausible black rectangles on the picture invite the owner to press publish without reading, which defeats the one control protecting the subject.
-
-So detection changes to match what the model is actually reliable at. It identifies well and localises badly, so it now returns *what* it found - a short label and the text it read - and no coordinates. The review screen shows that as a checklist the owner must work through, and the owner draws every box. `suggestRedactions` becomes `findSensitiveItems`; the editor keeps its drawing tool and loses the pre-drawn boxes.
-
-This is still "automatic redaction, you approve it" as the owner chose it. The automatic part finds things a tired reader would miss; the owner still decides and still covers them.
-
+Not in this slice: deleting proof on account withdrawal, decided today and belonging with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided.
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
