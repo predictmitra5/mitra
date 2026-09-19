@@ -8,6 +8,8 @@ Start with [docs/EXECUTION.md](docs/EXECUTION.md) for current state, decisions a
 
 Implemented:
 
+- A public home feed at `/`: anyone can browse open goals and open any goal page without an account. Goals are grouped by person, newly approved ones get a "Just added" row, and a dismissible prompt to create an account appears after two minutes of browsing.
+- Feed ranking from recent activity over time decay, with a head start for new goals and a cap of two leading slots per person, so one popular person cannot fill the page. Exposure and click counts are recorded without any viewer identity.
 - Sign-up, sign-in, sign-out and password reset, limited to Ohio State email addresses. Email confirmation is built and currently switched off; see Supabase Auth setup below.
 - Profile setup with an 18+ self-confirmation and a one-time 1,000-point signup grant, written in a single database transaction.
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
@@ -17,7 +19,7 @@ Implemented:
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: account withdrawal/deletion, outcome-decider assignment, evidence submission, the feed and deployment. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
+Not yet implemented: account withdrawal/deletion, outcome-decider assignment, evidence submission, profile pictures and deployment. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no search, follow or leaderboard. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
@@ -105,4 +107,12 @@ To inspect the actual public page without creating a live goal, build first and 
 node --env-file=.env.local scripts/preview-market.mjs
 ```
 
-The helper prints localhost:3100 links to fictional open, ruled, settled and cancelled goals, uses a disposable `mitra_preview_*` schema, and removes it on normal exit or Ctrl+C. Authentication is unchanged, so signed-in controls still require a real verified account. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
+The helper prints localhost:3100 links to fictional open, ruled, settled and cancelled goals, uses a disposable `mitra_preview_*` schema, and removes it on normal exit or Ctrl+C.
+
+To inspect the feed with enough goals to see the tabs, the "Just added" row and the per-subject cap:
+
+```bash
+node --env-file=.env.local scripts/preview-feed.mjs
+```
+
+That one seeds four fictional people and nine goals into a disposable `mitra_feed_preview_*` schema and serves the whole app at localhost:3100, signed out. Authentication is unchanged, so signed-in controls still require a real verified account. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.

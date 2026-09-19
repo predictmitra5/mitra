@@ -68,6 +68,10 @@ Public market queries project approved goal terms, public display name/handle, d
 
 Row-level security is enabled on all ten tables with no policies, so the browser-exposed publishable key reads nothing through the Supabase REST API. This was verified with a temporary row: the browser key returned an empty list while the server key returned the row. All database access goes through server code in `src/db/client.ts`.
 
+Migration `0006_feed_events.sql`, applied 2026-09-19, adds `feed_events` for the public feed: a market id, whether the goal was shown in the feed or opened, and a timestamp. It carries no viewer id, session id or address by deliberate choice, so a row cannot be tied to a person. The cost is that counts cannot be deduplicated and repeated refreshing inflates them; the ranking treats them as rough interest rather than reach. Adding any identifying column requires the discovery privacy decision (D08, D09) first. Row-level security is enabled with no policies, as on every other table, making eleven tables in total.
+
+The feed reads only `status = 'open'` markets that have an approval time and market-maker shares, joins the subject's public display name and handle, and returns an explicit projection: question, goal type, deadline, prices and the placement reason. It carries no subject user id, liquidity, score, owner note or accounting value, so opening browsing to people without accounts did not widen what is visible about anybody. Ranking itself is a pure function in `src/modules/discovery/ranking.ts` with no database access.
+
 Evidence and verification tables are deliberately absent: their retention, access and redaction rules are still undecided (D06, D07).
 
 ## Schema blockers

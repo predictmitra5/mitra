@@ -46,6 +46,10 @@ Verify: originals do not leak; each review is attributable; factual updates and 
 
 ## Slice 4 - Instrumented discovery
 
+Done (2026-09-19): the public feed at `/`, browsable without an account, with person tabs, a "Just added" row and a dismissible account prompt after two minutes. Ranking is recent activity over time decay, with a new-goal head start and a two-slot-per-person cap, recorded in DECISIONS.md and explainable per card. Exposure and click events are recorded from day one, without viewer identity.
+
+Remaining here: per-viewer measurement and any personalization, which need the discovery privacy decision (D08, D09) first; search; and any ranking change informed by what the recorded events actually show.
+
 Record the agreed exposure and action events when the first usable feed is introduced. After the dedicated ranking interview, implement an explainable baseline with the chosen eligibility, exploration and diversity behavior; record its version.
 
 Verify: actual exposure is distinguishable from response delivery; version/reason attribution is inspectable; unknown subjects can receive the agreed discovery opportunities; ranking never directly writes prices.

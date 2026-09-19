@@ -33,6 +33,7 @@ export const marketStatus = pgEnum("market_status", [
 ]);
 
 export const marketOutcome = pgEnum("market_outcome", ["yes", "no"]);
+export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
 export const tradeSide = pgEnum("trade_side", ["yes", "no"]);
 export const tradeAction = pgEnum("trade_action", ["buy", "sell"]);
 
@@ -283,4 +284,24 @@ export const contests = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("contests_market_idx").on(table.marketId)],
+);
+
+/**
+ * Discovery measurement for the feed ranking. Counts only: no viewer id, no
+ * session id, no address, so a row cannot be tied to a person. That also means
+ * these counts cannot be deduplicated and one person refreshing inflates them.
+ * Per-viewer measurement needs its own privacy decision (D08, D09) before any
+ * identifying column is added here.
+ */
+export const feedEvents = pgTable(
+  "feed_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    marketId: uuid("market_id")
+      .notNull()
+      .references(() => markets.id),
+    kind: feedEventKind("kind").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("feed_events_market_time_idx").on(table.marketId, table.createdAt)],
 );

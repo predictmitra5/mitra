@@ -6,6 +6,7 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { formatMicro } from "@/modules/market/input";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
+import { recordClick } from "@/modules/discovery/feed";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { AppHeader } from "@/app/components/auth-screen";
 import { TradeForm } from "./trade-form";
@@ -36,6 +37,9 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
     return <div className="site-shell"><AppHeader /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/account">Your account</Link></section></main></div>;
   }
   if (!market) notFound();
+  // Feed measurement. recordClick swallows its own failures, and is called here
+  // rather than in the cached loader so generateMetadata does not double-count.
+  await recordClick(getDb(), id);
   let identity = null;
   let trader = null;
   let objections: Awaited<ReturnType<typeof readObjections>> = [];
@@ -51,7 +55,7 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
   return <div className="site-shell"><AppHeader /><main className="market-main">
-    <nav className="market-nav"><Link href="/account">← Your account</Link>{identity && <Link href="/positions" prefetch={false}>Your predictions ↗</Link>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
+    <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗</Link><Link href="/account">Your account ↗</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
     <div className="market-layout">
       <div className="market-story">
         <section className="market-hero">

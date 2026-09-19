@@ -43,6 +43,13 @@
       "when": 1789786783195,
       "tag": "0005_market_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789853730825,
+      "tag": "0006_feed_events",
+      "breakpoints": true
     }
   ]
 }

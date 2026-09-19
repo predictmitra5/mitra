@@ -24,28 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Private positions page — 2026-09-19 (Codex)
-
-- Intent: implement the owner's "Ok go ahead" approval of the proposed page showing each trader's existing positions. First record that approval in DECISIONS.md. This extends navigation to the already-approved private holdings, buy/sell and lifecycle behavior; it adds no economic, discovery or evidence policy.
-- Build `/positions` ("Your predictions") with server-verified identity and an active adult profile, showing only that user's nonzero holdings in approved markets. Show the goal, public subject name, current YES/NO shares and their held cost, lifecycle status/deadline, and a link to the existing market page. Fully sold, settled and refunded holdings are no longer active; explain this on the page. Present soonest deadlines first with bounded pages, and explicit empty/error states.
-- Process already-due lifecycle transitions before loading holdings, consistent with account/market pages. Keep the holdings query and profile eligibility in a consistent private database snapshot, project only needed fields, and prevent shared caching/indexing. Add links from account and market pages, session refresh coverage and revalidation after existing trading/lifecycle actions. Preserve the existing cream/lime design and six-decimal holdings precision.
-- No schema, dependencies, provider setup or trading rules need changes. Test cross-user isolation (including owner accounts), eligibility, zero/terminal/draft exclusions, both sides, partial sales, ordering/pagination, due transitions and logged-out route protection. Run local tests, typecheck, lint and production build. Visually inspect the reusable positions presentation with fictional local data, without bypassing authentication or creating Auth users; a real-account walkthrough still depends on SMTP setup.
-- Review refinement before validation: verify the active adult profile before any due-transition processing, then recheck it inside the holdings snapshot. Add a localhost-only `scripts/preview-positions.mjs` helper that renders the real presentation component against fictional data and the built CSS; it never connects to the database or bypasses the production route. Use this to inspect populated, pending-payout and empty layouts at desktop/phone sizes.
-- Integration update: while this page was being verified, the separate owner-authorized email-confirmation change was committed in 23d8196. Preserve that completed change and the recorded decision; the positions page already calls the shared `currentIdentity` policy. Recheck the combined tree before committing. The remaining signed-in walkthrough needs an eligible account and matching Supabase pilot settings; SMTP is now needed for resets and eventual email confirmation, not inherently for the pilot signup path.
-- Finish by updating README, MARKETS, DATA_MODEL, ROADMAP and this record with implementation and verification, then clear In progress and commit. Single workspace writer; an independent review may use the design description without accessing this folder.
-
-### Public feed with ranking - 2026-09-19 (Claude Code)
-
-Implements the decision recorded in DECISIONS.md today. The other agent's positions work was committed first (3ce54f6) so this starts from a clean tree.
-
-- Migration 0006 adds `feed_events`: market id, kind (exposure or click) and a timestamp, with no viewer identity, so counts are privacy-preserving but cannot be deduplicated. Row-level security enabled with no policies, like every other table.
-- `src/modules/discovery/ranking.ts`: the score as a pure function, with the newborn bonus, deadline urgency, time decay and the two-per-subject cap on the top ten. Fully unit tested, no database.
-- `src/modules/discovery/feed.ts`: reads open approved markets and their 24-hour counts, applies the ranking, returns an explicit public projection with nothing private in it.
-- `src/app/page.tsx` becomes the public feed: person tabs, a "Just added" row, and market cards. Signed-out visitors can browse it and open any goal.
-- A dismissible sign-in prompt after two minutes for signed-out visitors.
-- Exposure is recorded when the feed renders; a click is recorded when a public market page is opened.
-
-Not in this slice: personalization, follows, search, leaderboards, profile pictures, and any change to trading, pricing or privacy rules. The sign-in and sign-up pages keep their own routes.
+Nothing in progress.
 
 ## Deferred, to come back to
 
@@ -73,7 +52,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
   - `src/modules/account/refill.ts`, `refill-actions.ts` and the account refill card: a user-triggered top-up to 1,000 available points, below that balance only, at most twice per Eastern calendar month, counting cash only. An advisory lock on the request id and a wallet row lock serialize it with trades and payouts; the clock and quota are read after both locks; the credit and its ledger entry commit together; and the ledger row id is the request id, so a retry returns the original receipt.
   - Refill validation includes the original tests plus `refill-safety.test.ts` and `refill-actions.test.ts`: exact credits, cash-only accounting, Eastern month/year and daylight-saving boundaries, retries, authorization, stale reads, rollback, and seven hosted concurrency scenarios. No additional connection or migration is needed for refills.
   - `scripts/preview-market.mjs`: a localhost-only browser verification helper with fictional open, ruled, settled and cancelled goals in a disposable schema. It creates no Auth users or live app rows and cleans up on normal exit; usage is in README.md.
-- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence submission/verification, feed, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
+- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence submission/verification, profile pictures, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
 - **Must be undone before anyone outside the owner's circle joins:** email confirmation is off, so the `@osu.edu` gate proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's.
 - **Still unresolved, no longer blocking:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive reset emails, and confirmation cannot be restored. A personal Gmail account with an app password works without a domain and suits a small pilot; Resend requires a verified domain. See README.md. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
@@ -307,3 +286,25 @@ The owner signed up with email confirmation off and completed profile setup: han
 State of the live database at this point: one profile, one wallet at 1,000 points, zero markets. Nothing is tradeable because no goal has been created or approved yet, not because of a fault.
 
 Still untested with a real account: creating a goal, approving it, and trading. The owner cannot trade a goal about themselves, so confirming the trade path needs a second account.
+
+### 2026-09-19 - Public feed with ranking (Claude Code)
+
+The owner showed the Kalshi and Polymarket home pages and asked for that shape, open to people without accounts, with "a youtube algorithm behind it". They delegated the ranking to research, then accepted the recommendation.
+
+Researched first, from sources rather than memory: Polymarket orders by 24-hour volume; Kalshi structures by category rather than ranking; TikTok gives a new video a cold-start pool and graduates it on measured response; YouTube splits candidate generation from ranking; Reddit and Hacker News use a log-scaled score over time decay. Recommendation, since nothing here can learn from millions of interactions: copy the structure, not the model. The formula, the newborn head start and the per-subject cap are recorded in DECISIONS.md.
+
+Built: `feed_events` (migration 0006, applied to Supabase, row-level security on, no viewer identity); `src/modules/discovery/ranking.ts` as pure functions; `src/modules/discovery/feed.ts` for the query and an explicit public projection; `/` as the public feed with person tabs, a "Just added" strip and cards; a dismissible prompt after two minutes for signed-out visitors; exposure recorded on feed render and a click recorded when a goal page opens. Goal pages now link back to the feed rather than to an account page a signed-out visitor cannot use.
+
+Verified: 282 tests pass with 17 skipped (hosted-only), 36 of them new. Typecheck, lint and production build pass. Browser-checked against a disposable `mitra_feed_preview_*` schema seeded with four people and nine goals: the cap pushed the two goals with the most clicks down below goals with almost none, all nine still appeared, prices matched their opening probabilities, and a signed-out visitor opening a goal saw "Sign in to trade". Measurement recorded nine exposures and the real click. The live database holds no markets, so no live feed rows exist yet.
+
+One thing the cap cannot do, deliberately: when too few people have open goals to fill the leading slots, displaced goals come back up rather than leaving the feed short. With four subjects that is the normal case.
+
+Found and fixed while checking: the seed helper had the market-maker share formula inverted, which showed every price as its complement. The app was correct; the fixture was wrong.
+
+### 2026-09-19 - The other agent's positions work, committed on its behalf (Claude Code)
+
+A second agent (Codex) logged a plan for the private positions page, built it, and then stopped without committing, leaving the work uncommitted in the shared tree for about forty minutes and its In progress entry open. The owner said another agent would review the work later.
+
+Committed it unchanged as 3ce54f6 so it could not be lost and the tree was clean for the feed. Verified only that the whole suite passed (246 tests, 17 hosted-only skipped) with typecheck and lint clean; it was not reviewed line by line, and `/positions` has had no real-account walkthrough. Cleared its In progress entry afterwards, since the work exists and is committed.
+
+The collision itself is the lesson already recorded above: only one agent should work in this folder at a time. Two did, and the only reason nothing was lost is that the feed work stayed inside files the other agent was not touching and was committed by explicit path.

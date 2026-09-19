@@ -248,3 +248,63 @@ body {
   .review-actions { grid-template-columns: 1fr 1fr; align-items: start; }
 }
 .review-form .secondary-button { width: 100%; }
+
+/* Public feed, decided 2026-09-19. Card grid in the shape of Kalshi's and
+   Polymarket's home pages, on the existing Mitra palette. */
+.feed-main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 3rem; display: grid; gap: 1.75rem; align-content: start; }
+.feed-intro { display: grid; gap: 0.6rem; }
+.feed-intro h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; }
+.feed-intro p { color: var(--muted); max-width: 46ch; }
+.feed-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; margin-top: 0.4rem; }
+.feed-link { font-size: 0.88rem; text-decoration: underline; text-underline-offset: 3px; }
+.feed-actions .primary-button, .feed-empty .primary-button, .feed-prompt .primary-button { width: auto; padding-inline: 1.4rem; }
+
+.feed-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--line); }
+.feed-tabs button { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); padding: 0.4rem 0.9rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ink); }
+.feed-tabs button span { min-width: 1.25rem; padding: 0 0.3rem; border-radius: 999px; background: var(--line); font-size: 0.72rem; font-variant-numeric: tabular-nums; text-align: center; }
+.feed-tabs button:hover { border-color: var(--ink-soft); }
+.feed-tabs button.is-active { background: var(--ink); color: #f4f4f0; border-color: var(--ink); }
+.feed-tabs button.is-active span { background: #434855; color: #f4f4f0; }
+
+.feed-section { display: grid; gap: 0.9rem; }
+.feed-section-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
+.feed-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.feed-strip { display: grid; gap: 1rem; grid-auto-flow: column; grid-auto-columns: minmax(min(85vw, 300px), 1fr); overflow-x: auto; padding-bottom: 0.5rem; scroll-snap-type: x proximity; }
+.feed-strip > * { scroll-snap-align: start; }
+
+.feed-card { display: grid; gap: 0.75rem; align-content: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 1.1rem; color: var(--ink); overflow-wrap: anywhere; }
+.feed-card:hover { border-color: var(--ink-soft); }
+.feed-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.feed-person { font-size: 0.85rem; font-weight: 700; }
+.feed-person span { margin-left: 0.35rem; color: var(--muted); font-weight: 400; }
+.feed-tag { flex: none; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--line); color: var(--ink-soft); }
+.feed-tag-just-added { background: var(--accent); color: var(--accent-ink); }
+.feed-tag-closing-soon { background: var(--ink); color: #f4f4f0; }
+.feed-question { font-size: 0.98rem; font-weight: 600; line-height: 1.4; }
+.feed-odds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.feed-odds > div { display: grid; gap: 0.15rem; border: 1px solid var(--line); border-radius: 12px; padding: 0.5rem 0.65rem; }
+.feed-odds span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); }
+.feed-odds strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.feed-bar { height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.feed-bar span { display: block; height: 100%; background: var(--ink); }
+.feed-card-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; font-size: 0.76rem; color: var(--muted); }
+
+.feed-empty { display: grid; gap: 0.75rem; justify-items: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 2rem); }
+.feed-empty h1 { font-size: 1.3rem; font-weight: 700; }
+.feed-empty p { color: var(--muted); max-width: 52ch; }
+
+/* Shown to a signed-out visitor after two minutes of browsing. Dismissible by
+   decision: it is a prompt, not a wall. */
+.feed-prompt { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 20; display: flex; align-items: flex-start; gap: 1rem; max-width: 30rem; margin-inline: auto; border: 1px solid var(--ink); border-radius: var(--radius); background: var(--ink); color: #f4f4f0; padding: 1.1rem 1.25rem; box-shadow: 0 18px 40px rgb(15 17 21 / 0.28); }
+.feed-prompt-body { display: grid; gap: 0.5rem; }
+.feed-prompt h2 { font-size: 1.05rem; font-weight: 700; }
+.feed-prompt p { font-size: 0.85rem; line-height: 1.5; color: #c9ccd4; }
+.feed-prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.85rem; margin-top: 0.25rem; }
+.feed-prompt-secondary { font-size: 0.85rem; color: #f4f4f0; text-decoration: underline; text-underline-offset: 3px; }
+.feed-prompt-close { flex: none; border: 0; background: transparent; color: #a9aebb; font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }
+.feed-prompt-close:hover { color: #f4f4f0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .feed-prompt { animation: feed-prompt-in 220ms ease-out; }
+  @keyframes feed-prompt-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
+}
