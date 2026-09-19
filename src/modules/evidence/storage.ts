@@ -4,21 +4,20 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 /*
  * Object storage for proof, decided 2026-09-19 (D06, D07).
  *
- * Two buckets, and the split is the whole point:
+ * One bucket, and it is private. It holds what the subject actually sent,
+ * including whatever they did not think to hide. Nothing in it is ever served
+ * to a browser by URL; the owner reads it through server code that has already
+ * checked who they are, or through a link that expires in minutes.
  *
- * - ORIGINALS is private. It holds what the subject actually sent, including
- *   whatever they did not think to hide. Nothing in it is ever served to a
- *   browser by URL; the owner reads it through server code that has already
- *   checked who they are.
- * - PUBLISHED is public. It only ever receives an artifact that the owner has
- *   confirmed, re-rendered with the hidden pixels destroyed.
+ * There is deliberately no public bucket. Since the decision of 2026-09-19 no
+ * uploaded document is ever published, so nothing here can put one in front of
+ * the public even by mistake.
  *
- * Both are written with the secret key, which bypasses row-level security, so
- * every caller here must have authorised the request first.
+ * Everything is written with the secret key, which bypasses row-level security,
+ * so every caller must have authorised the request first.
  */
 
 export const ORIGINALS_BUCKET = "evidence-originals";
-export const PUBLISHED_BUCKET = "evidence-public";
 
 /** How long a link the owner uses to view an original stays valid. */
 export const ORIGINAL_VIEW_SECONDS = 300;
@@ -49,14 +48,6 @@ export async function putOriginal(path: string, body: ArrayBuffer | Uint8Array, 
   if (error) throw new StorageError("That file could not be stored. Please try again.");
 }
 
-/** Stores a redacted artifact. Only ever called with a re-rendered image. */
-export async function putPublished(path: string, body: ArrayBuffer | Uint8Array): Promise<void> {
-  const { error } = await storage().storage.from(PUBLISHED_BUCKET).upload(path, body, {
-    contentType: "image/png", upsert: true,
-  });
-  if (error) throw new StorageError("That redaction could not be saved. Please try again.");
-}
-
 /** Reads an original into memory. Server-side only; never hand this to a browser. */
 export async function readOriginal(path: string): Promise<Uint8Array> {
   const { data, error } = await storage().storage.from(ORIGINALS_BUCKET).download(path);
@@ -75,11 +66,6 @@ export async function signedOriginalUrl(path: string): Promise<string> {
     .createSignedUrl(path, ORIGINAL_VIEW_SECONDS);
   if (error || !data) throw new StorageError("That file could not be opened.");
   return data.signedUrl;
-}
-
-/** The permanent address of an approved, already-redacted artifact. */
-export function publishedUrl(path: string): string {
-  return storage().storage.from(PUBLISHED_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 /**

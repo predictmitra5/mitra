@@ -7,7 +7,7 @@ import type { SubjectEvidence } from "@/modules/evidence/service";
 
 const statusLabel: Record<SubjectEvidence["status"], string> = {
   submitted: "Waiting for review",
-  published: "Public on this page",
+  published: "Verified and published",
   rejected: "Not published",
 };
 
@@ -66,7 +66,7 @@ export function EvidenceForm({
             <li key={item.id}>
               <span className={`evidence-status evidence-status-${item.status}`}>{statusLabel[item.status]}</span>
               <span className="evidence-mine-what">
-                {item.kind === "link" ? item.linkUrl : "Image"}
+                {item.kind === "link" ? item.linkUrl : "Document"}
                 {item.caption ? ` — ${item.caption}` : ""}
               </span>
               <span className="muted">{dateOf(item.createdAt)}</span>
@@ -81,7 +81,7 @@ export function EvidenceForm({
           <label className="checkbox-row">
             <input type="radio" name="mode" value="file" checked={mode === "file"}
               onChange={() => setMode("file")} disabled={pending} />
-            An image
+            A document
           </label>
           <label className="checkbox-row">
             <input type="radio" name="mode" value="link" checked={mode === "link"}
@@ -96,13 +96,14 @@ export function EvidenceForm({
         {mode === "file" ? (
           <>
             <label className="field">
-              Image
-              <input type="file" name="file" accept="image/png,image/jpeg,image/webp" required disabled={pending} />
+              Document
+              <input type="file" name="file" accept="application/pdf,image/png,image/jpeg,image/webp"
+                required disabled={pending} />
             </label>
             <p className="field-hint">
-              PNG, JPEG or WebP, up to 10 MB. PDFs are not accepted yet. The owner sees the whole image, hides
-              anything private, and only the hidden version is published. <strong>You cannot take it back
-              afterwards</strong>, so send the least that proves the point.
+              PDF, PNG, JPEG or WebP, up to 10 MB. <strong>Your document is never published.</strong> The owner
+              reads it and publishes one sentence saying what it shows, such as &ldquo;Fall 2026 GPA is
+              3.85&rdquo;. The file itself stays private and is kept as the record behind that statement.
             </p>
           </>
         ) : (

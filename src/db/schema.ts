@@ -315,12 +315,17 @@ export const feedEvents = pgTable(
 /**
  * Proof attached to a goal by its own subject, decided 2026-09-19 (D06, D07).
  *
- * Nothing here is public until the owner approves it. For a file, the original
- * is never served to anyone but the owner: the public artifact is a separate,
- * re-rendered image with the hidden pixels destroyed rather than covered. Both
- * are kept permanently, because the owner chose a permanent audit trail, so this
- * table is the most sensitive in the app and nothing may widen its access without
- * a recorded decision.
+ * An uploaded document is never published. It is read, kept permanently as the
+ * audit trail, and served to nobody but the owner. What becomes public is
+ * verifiedStatement: a short fact the owner confirmed after reading the
+ * original, such as "Fall 2026 GPA 3.85". Confidential detail is left out
+ * because it is never carried across, not because it was covered up.
+ *
+ * A link is the exception, published exactly as submitted, because submitting
+ * one is already a decision to publish whatever sits behind it.
+ *
+ * This is the most sensitive table in the app. Nothing may widen its access
+ * without a recorded decision.
  */
 export const evidence = pgTable(
   "evidence",
@@ -339,10 +344,10 @@ export const evidence = pgTable(
     originalPath: text("original_path"),
     originalContentType: text("original_content_type"),
     originalBytes: integer("original_bytes"),
-    /** File only: the approved, pixel-destroyed artifact in the public bucket. */
-    publishedPath: text("published_path"),
     /** Link only: published exactly as submitted, because a URL cannot be redacted. */
     linkUrl: text("link_url"),
+    /** The public output: what the owner confirmed after reading the original. */
+    verifiedStatement: text("verified_statement"),
 
     /** The subject's own description of what this shows. Public once approved. */
     caption: text("caption"),
@@ -361,17 +366,13 @@ export const evidence = pgTable(
       sql`(${table.kind} = 'file' and ${table.originalPath} is not null and ${table.linkUrl} is null)
           or (${table.kind} = 'link' and ${table.linkUrl} is not null and ${table.originalPath} is null)`,
     ),
-    // Publishing requires an attributable review, and a file needs its redacted artifact.
+    // Publishing requires an attributable review, and an uploaded document can
+    // only be published as a statement, never as the document itself.
     check(
       "evidence_published_is_reviewed",
       sql`${table.status} <> 'published'
           or (${table.reviewedBy} is not null and ${table.reviewedAt} is not null
-              and (${table.kind} = 'link' or ${table.publishedPath} is not null))`,
-    ),
-    // The original is never the published artifact; redaction always re-renders.
-    check(
-      "evidence_published_is_not_the_original",
-      sql`${table.publishedPath} is null or ${table.publishedPath} <> ${table.originalPath}`,
+              and (${table.kind} = 'link' or ${table.verifiedStatement} is not null))`,
     ),
   ],
 );

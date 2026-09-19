@@ -5,13 +5,14 @@ import {
   MAX_CAPTION_LENGTH,
   MAX_FILE_BYTES,
   MAX_ITEMS_PER_GOAL,
+  MAX_STATEMENT_LENGTH,
   assertAcceptableFile,
   assertMaySubmit,
   normalizeCaption,
   normalizeLink,
+  normalizeStatement,
   originalStoragePath,
   proofWindowOpen,
-  publishedStoragePath,
   type EvidenceMarket,
 } from "./policy";
 
@@ -93,20 +94,24 @@ describe("proofWindowOpen", () => {
 });
 
 describe("accepted files", () => {
-  it("accepts the image types this app can redact", () => {
+  it("accepts every type this app can read", () => {
     for (const type of ACCEPTED_IMAGE_TYPES) {
       expect(() => assertAcceptableFile(type, 1024)).not.toThrow();
     }
   });
 
-  it("refuses anything it cannot rasterise and re-render, including PDFs", () => {
-    for (const type of ["application/pdf", "image/gif", "image/svg+xml", "text/html", "", null, 42]) {
+  it("accepts a PDF, because the app only reads it and never republishes it", () => {
+    expect(() => assertAcceptableFile("application/pdf", 1024)).not.toThrow();
+  });
+
+  it("refuses anything it cannot read", () => {
+    for (const type of ["image/gif", "image/svg+xml", "text/html", "application/zip", "", null, 42]) {
       expect(() => assertAcceptableFile(type, 1024)).toThrow(EvidenceError);
     }
   });
 
   it("refuses an SVG, which can carry script and external references", () => {
-    expect(() => assertAcceptableFile("image/svg+xml", 1024)).toThrow(/PNG, JPEG or WebP/);
+    expect(() => assertAcceptableFile("image/svg+xml", 1024)).toThrow(/PDF, or a PNG, JPEG or WebP/);
   });
 
   it("enforces the size limit at its boundary", () => {
@@ -172,6 +177,23 @@ describe("captions", () => {
   });
 });
 
+describe("published statements", () => {
+  it("keeps what the owner wrote", () => {
+    expect(normalizeStatement("  Fall 2026 term GPA is 3.85.  ")).toBe("Fall 2026 term GPA is 3.85.");
+  });
+
+  it("refuses an empty or near-empty statement, so nothing publishes bare", () => {
+    for (const value of ["", "   ", "ab", null, undefined, 42, {}]) {
+      expect(() => normalizeStatement(value)).toThrow(EvidenceError);
+    }
+  });
+
+  it("enforces the length limit at its boundary", () => {
+    expect(normalizeStatement("x".repeat(MAX_STATEMENT_LENGTH))).toHaveLength(MAX_STATEMENT_LENGTH);
+    expect(() => normalizeStatement("x".repeat(MAX_STATEMENT_LENGTH + 1))).toThrow(/under/i);
+  });
+});
+
 describe("storage paths", () => {
   it("keys a file by goal and evidence id, never by anything the browser supplied", () => {
     const path = originalStoragePath(marketId, evidenceId, "image/png");
@@ -184,12 +206,7 @@ describe("storage paths", () => {
     expect(originalStoragePath(marketId, evidenceId, "image/webp")).toMatch(/original\.webp$/);
   });
 
-  it("never lets the published artifact be the original", () => {
-    expect(publishedStoragePath(marketId, evidenceId))
-      .not.toBe(originalStoragePath(marketId, evidenceId, "image/png"));
-  });
-
-  it("always publishes as PNG, so a re-encode drops the original's metadata", () => {
-    expect(publishedStoragePath(marketId, evidenceId)).toMatch(/\.png$/);
+  it("gives a PDF its own extension, now that a PDF is read rather than republished", () => {
+    expect(originalStoragePath(marketId, evidenceId, "application/pdf")).toMatch(/original\.pdf$/);
   });
 });

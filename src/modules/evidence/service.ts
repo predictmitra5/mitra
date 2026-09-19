@@ -10,7 +10,7 @@ import {
   normalizeLink,
   originalStoragePath,
   proofWindowOpen,
-  type AcceptedImageType,
+  type AcceptedUploadType,
 } from "./policy";
 
 const { evidence, markets, profiles } = schema;
@@ -32,8 +32,8 @@ export type OwnerEvidence = {
   kind: "file" | "link";
   originalPath: string | null;
   originalContentType: string | null;
-  publishedPath: string | null;
   linkUrl: string | null;
+  verifiedStatement: string | null;
   caption: string | null;
   status: "submitted" | "published" | "rejected";
   reviewNote: string | null;
@@ -51,12 +51,15 @@ export type SubjectEvidence = {
   createdAt: Date;
 };
 
-/** What everybody sees. Only approved items, and never the original path. */
+/**
+ * What everybody sees. Approved items only, and never anything that could lead
+ * back to the document: no original path, no file, no size, no content type.
+ * For an upload this is the owner's statement and nothing else.
+ */
 export type PublicEvidence = {
   id: string;
   kind: "file" | "link";
-  /** Present for a published file: the redacted artifact, never the original. */
-  publishedPath: string | null;
+  verifiedStatement: string | null;
   linkUrl: string | null;
   caption: string | null;
   createdAt: Date;
@@ -151,7 +154,7 @@ export async function submitFile<Q extends PgQueryResultHKT>(
 ): Promise<{ id: string }> {
   assertAcceptableFile(input.contentType, input.bytes);
   // The assertion narrows the argument, not the property it came from.
-  const contentType = input.contentType as AcceptedImageType;
+  const contentType = input.contentType as AcceptedUploadType;
   const bytes = input.bytes as number;
   const caption = normalizeCaption(input.caption);
   // The declared size must match what actually arrived, so a small declared
@@ -214,8 +217,8 @@ export async function listForOwner<Q extends PgQueryResultHKT>(
       kind: evidence.kind,
       originalPath: evidence.originalPath,
       originalContentType: evidence.originalContentType,
-      publishedPath: evidence.publishedPath,
       linkUrl: evidence.linkUrl,
+      verifiedStatement: evidence.verifiedStatement,
       caption: evidence.caption,
       status: evidence.status,
       reviewNote: evidence.reviewNote,
@@ -261,7 +264,7 @@ export async function listPublished<Q extends PgQueryResultHKT>(
     .select({
       id: evidence.id,
       kind: evidence.kind,
-      publishedPath: evidence.publishedPath,
+      verifiedStatement: evidence.verifiedStatement,
       linkUrl: evidence.linkUrl,
       caption: evidence.caption,
       createdAt: evidence.createdAt,

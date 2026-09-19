@@ -328,3 +328,36 @@ body {
 .owner-proof h3 { font-weight: 700; }
 .owner-proof article { display: grid; gap: 0.4rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
 .owner-proof a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* The owner's redaction screen, decided 2026-09-19. The picture leads; the
+   decision controls sit beside it so nothing is confirmed without looking. */
+.redact-layout { display: grid; gap: 1.5rem; align-items: start; }
+.redact-stage { display: grid; gap: 0.75rem; min-width: 0; }
+.redact-frame { position: relative; display: block; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); overflow: hidden; touch-action: none; cursor: crosshair; user-select: none; }
+.redact-frame img { display: block; width: 100%; height: auto; pointer-events: none; }
+.redact-box { position: absolute; margin: 0; padding: 0; border: 2px solid #f4f4f0; background: #000; cursor: pointer; }
+.redact-box.is-suggested { border-color: var(--accent); }
+.redact-box.is-drawing { pointer-events: none; opacity: 0.6; border-style: dashed; }
+.redact-box:hover { outline: 2px solid var(--accent); }
+.redact-panel { display: grid; gap: 1rem; align-content: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 1.75rem); }
+.redact-panel h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+.redact-panel .primary-button, .redact-panel .secondary-button { width: 100%; }
+@media (min-width: 900px) {
+  .redact-layout { grid-template-columns: minmax(0, 1fr) 340px; }
+  .redact-panel { position: sticky; top: 5.5rem; }
+}
+
+.redact-findings { display: grid; gap: 0.6rem; border-top: 1px solid var(--line); padding-top: 0.9rem; }
+.redact-findings h3 { font-size: 0.95rem; font-weight: 700; }
+.redact-findings ul { display: grid; gap: 0.55rem; }
+.redact-findings .checkbox-row { align-items: start; gap: 0.55rem; font-size: 0.85rem; }
+.redact-findings .checkbox-row > span { display: grid; gap: 0.15rem; overflow-wrap: anywhere; }
+.redact-finding-text { font-family: var(--font-geist-mono), monospace; font-size: 0.8rem; }
+
+/* Verified statements, decided 2026-09-19. The statement is the artifact; the
+   document behind it is never shown. */
+.verified-statement { font-size: 1.02rem; font-weight: 600; line-height: 1.5; border-left: 4px solid var(--accent); padding-left: 0.9rem; }
+.review-original { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.proposal-button { display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 0.6rem 0.75rem; font: inherit; font-size: 0.85rem; color: var(--ink); cursor: pointer; }
+.proposal-button:hover:not(:disabled) { border-color: var(--ink-soft); }
+.proposal-button:disabled { opacity: 0.6; cursor: default; }

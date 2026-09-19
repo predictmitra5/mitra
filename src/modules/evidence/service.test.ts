@@ -122,14 +122,23 @@ describe("attaching a file", () => {
     expect(storage.putOriginal).not.toHaveBeenCalled();
   });
 
-  it("refuses a type it cannot redact, before touching storage", async () => {
+  it("refuses a type it cannot read, before touching storage", async () => {
     const storage = fakeStorage();
-    for (const contentType of ["application/pdf", "image/svg+xml", "image/gif"]) {
+    for (const contentType of ["image/svg+xml", "image/gif", "text/html", "application/zip"]) {
       await expect(submitFile(db, subject,
         { marketId, contentType, bytes: png.byteLength, body: png }, storage, clock))
-        .rejects.toThrow(/PNG, JPEG or WebP/);
+        .rejects.toThrow(/PDF, or a PNG, JPEG or WebP/);
     }
     expect(storage.putOriginal).not.toHaveBeenCalled();
+  });
+
+  it("accepts a PDF, since the app only reads it and never republishes it", async () => {
+    const storage = fakeStorage();
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const { id } = await submitFile(db, subject,
+      { marketId, contentType: "application/pdf", bytes: pdf.byteLength, body: pdf }, storage, clock);
+    const [row] = await listForOwner(db, owner, marketId);
+    expect(row.originalPath).toBe(`${marketId}/${id}/original.pdf`);
   });
 
   it("refuses a body whose real size does not match the declared one", async () => {
@@ -207,23 +216,27 @@ describe("who can read what", () => {
     expect(await listForSubject(db, stranger, marketId)).toEqual([]);
   });
 
-  it("never exposes the original path publicly, even once published", async () => {
+  it("publishes the statement and never anything that leads back to the document", async () => {
     const storage = fakeStorage();
     const { id } = await submitFile(db, subject,
       { marketId, contentType: "image/png", bytes: png.byteLength, body: png }, storage, clock);
     await db.update(evidence).set({
-      status: "published", publishedPath: `${marketId}/${id}/redacted.png`, reviewedBy: owner, reviewedAt: now,
+      status: "published", verifiedStatement: "Fall 2026 GPA is 3.85.", reviewedBy: owner, reviewedAt: now,
     }).where(eq(evidence.id, id));
 
     const published = await listPublished(db, marketId);
     expect(published).toHaveLength(1);
-    expect(published[0].publishedPath).toBe(`${marketId}/${id}/redacted.png`);
-    expect(JSON.stringify(published)).not.toContain("original");
+    expect(published[0].verifiedStatement).toBe("Fall 2026 GPA is 3.85.");
+
+    const visible = JSON.stringify(published);
+    expect(visible).not.toContain("original");
+    expect(visible).not.toContain(".png");
+    expect(visible).not.toContain(marketId + "/" + id);
   });
 });
 
 describe("database guarantees", () => {
-  it("refuses to mark a file published without a redacted artifact", async () => {
+  it("refuses to mark an uploaded document published without a statement", async () => {
     const storage = fakeStorage();
     const { id } = await submitFile(db, subject,
       { marketId, contentType: "image/png", bytes: png.byteLength, body: png }, storage, clock);
@@ -237,14 +250,20 @@ describe("database guarantees", () => {
     await expect(db.update(evidence).set({ status: "published" })).rejects.toThrow();
   });
 
-  it("refuses to publish the original file as if it were redacted", async () => {
+  it("has no column that could point the public at a stored file", async () => {
+    // The published path column was removed with the redaction design, so there
+    // is no longer any field on a public row that names an object in storage.
     const storage = fakeStorage();
     const { id } = await submitFile(db, subject,
       { marketId, contentType: "image/png", bytes: png.byteLength, body: png }, storage, clock);
-    const path = `${marketId}/${id}/original.png`;
-    await expect(db.update(evidence)
-      .set({ status: "published", publishedPath: path, reviewedBy: owner, reviewedAt: now })
-      .where(eq(evidence.id, id))).rejects.toThrow();
+    await db.update(evidence).set({
+      status: "published", verifiedStatement: "Confirmed.", reviewedBy: owner, reviewedAt: now,
+    }).where(eq(evidence.id, id));
+
+    const [row] = await listPublished(db, marketId);
+    for (const value of Object.values(row)) {
+      if (typeof value === "string") expect(value).not.toContain(marketId + "/");
+    }
   });
 
   it("refuses a row that is both a file and a link", async () => {

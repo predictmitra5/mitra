@@ -24,21 +24,8 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Evidence stage 2: verified statements - 2026-09-19 (Claude Code)
+Nothing in progress.
 
-Replaces the redaction plan logged earlier today. That plan was built, measured and abandoned: the reasoning is in DECISIONS.md and the measurement is in the session history below. The owner's replacement is simpler and safer, because nothing confidential is ever published in the first place.
-
-- Migration 0008 drops `published_path` from `evidence` and adds `verified_statement`. No file is ever published, so there is no artifact to point at. The live table holds no rows, so nothing needs migrating.
-- Check constraints follow: publishing requires an attributable review, and for an uploaded document it requires a statement. The old constraint that a published path may not equal the original goes away with the column.
-- `policy.ts`: accept `application/pdf` alongside the image types, since the app now only reads a document.
-- `extract.ts` replaces `detect.ts`: given the document and the goal's own resolution terms, propose short factual statements that bear on whether the goal was met, and say what in the document supports each. This is what the model was measured to be good at.
-- `redact.ts`, its tests and the drawing editor are deleted rather than left unused.
-- The review screen becomes: read the original, see proposed statements, edit the wording, publish or reject.
-- The goal page shows published statements with the attestation, and no document.
-
-Safety properties to hold and to test: no code path serves an original to anyone but the owner; a published row always carries a statement for an uploaded document; publishing twice is safe; extraction failing never blocks review.
-
-Not in this slice: deleting proof on account withdrawal, decided today and belonging with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided.
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
@@ -65,7 +52,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
   - `src/modules/account/refill.ts`, `refill-actions.ts` and the account refill card: a user-triggered top-up to 1,000 available points, below that balance only, at most twice per Eastern calendar month, counting cash only. An advisory lock on the request id and a wallet row lock serialize it with trades and payouts; the clock and quota are read after both locks; the credit and its ledger entry commit together; and the ledger row id is the request id, so a retry returns the original receipt.
   - Refill validation includes the original tests plus `refill-safety.test.ts` and `refill-actions.test.ts`: exact credits, cash-only accounting, Eastern month/year and daylight-saving boundaries, retries, authorization, stale reads, rollback, and seven hosted concurrency scenarios. No additional connection or migration is needed for refills.
   - `scripts/preview-market.mjs`: a localhost-only browser verification helper with fictional open, ruled, settled and cancelled goals in a disposable schema. It creates no Auth users or live app rows and cleans up on normal exit; usage is in README.md.
-- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations, outcome-decider assignment, evidence redaction and publication (stage 2), profile pictures, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
+- Not implemented: AI goal suggestions, a launch-goal template, deployed periodic scheduling, account withdrawal/deletion and its automatic cancellations (including deleting a withdrawing person's documents, decided but unbuilt), outcome-decider assignment, profile pictures, notifications, deployment. Due close/payout transitions run when relevant market/account/owner pages are accessed; exact trading/objection cutoffs still apply without a visit. Missing-proof NO requires an explicit owner ruling because no evidence-submission record exists yet.
 - **Must be undone before anyone outside the owner's circle joins:** email confirmation is off, so the `@osu.edu` gate proves only that an address was typed, not that the person owns that mailbox. Anyone can claim any Ohio State address, including someone else's.
 - **Still unresolved, no longer blocking:** Supabase's built-in email only delivers to members of the Supabase project team, about two messages an hour. Until the owner connects a custom SMTP provider, Ohio State students cannot receive reset emails, and confirmation cannot be restored. A personal Gmail account with an app password works without a domain and suits a small pilot; Resend requires a verified domain. See README.md. The owner must also add the redirect URLs listed in README.md. Neither can be checked from code.
 - Stack, selected under explicit user delegation: Next.js/React/TypeScript, PostgreSQL on Supabase, Supabase Auth, private Supabase Storage if evidence uploads are implemented, Drizzle for database access and migrations, and the Claude API (`claude-haiku-4-5`) for AI goal suggestions. See TECH_STACK.md.
@@ -341,3 +328,23 @@ Two deliberate refusals worth keeping: PDFs are not accepted, because this app c
 Not built, and the reason the slice is called stage 1: automatic detection of sensitive regions, the owner's redaction and approval screen, the pixel-destroying re-render with a size cap, and public display. Nothing can reach the public bucket until that exists.
 
 Left open by the owner's choice of permanent retention: there is no route for a subject to remove published proof, and what account withdrawal should do to it is undecided.
+
+### 2026-09-19 - Evidence, built twice (Claude Code)
+
+The owner chose to settle evidence before deploying. This entry records both attempts, because the first one is the reason the second exists.
+
+**First attempt: redaction.** The owner chose public, permanent and redacted with their own approval as the gate. Built it: `evidence` with three database checks, both storage buckets verified empirically, submission, the owner's review listing, a pixel-destroying renderer that resizes and re-encodes to PNG (confirmed to drop EXIF), and a drawing editor with model-suggested boxes.
+
+**Then measured it**, against a fictional transcript carrying a student id, date of birth, home address and phone number. The model named all four correctly and placed every box about 85 pixels above its line. Coverage of the rendered artifact: student id 100%, date of birth 35%, home address 2%, phone number 3%. The address and phone stayed readable under boxes that looked like the job was done, which is worse than offering nothing, because it invites publishing without reading.
+
+**Second attempt, the owner's idea: publish a statement, not the document.** The document is read, kept privately, and never published; what goes public is a sentence the owner confirms. That removes the failure mode instead of managing it, and it plays to what the same measurement showed the model is good at, since it had read every value exactly right.
+
+Built: migrations 0008 and 0009 (dropping `published_path`, adding `verified_statement`, applied with zero rows to migrate); PDFs accepted, since the app now only reads a document; `extract.ts` proposing publishable wording against the goal's own terms and separately naming the private details to leave out; the owner's review screen; public statements with an attestation. `redact.ts`, its tests, the drawing editor and the public bucket were deleted rather than left unused.
+
+Verified: 371 tests pass with 17 skipped (hosted-only). Typecheck, lint and production build pass. Checked live against the real model with a fictional transcript as both PDF and PNG: the GPA came through in the proposals, all four private details were named as do-not-carry, and no id number, date of birth, address or phone number appeared in any proposed statement. Storage privacy was re-verified: the browser key could not read a probe object, its URL returned 400, only the server key and an expiring signed link reached it.
+
+Caught while finishing: the storage bucket kept the image-only allow list it was created with, so a PDF would have been refused by Supabase itself. The setup script now brings an existing bucket's limits up to date, and the bucket was confirmed to accept PDFs and to still be private.
+
+The owner also decided that withdrawing an account deletes that person's documents, leaving the ruling record and a tombstone. That is recorded and belongs with the unbuilt withdrawal flow.
+
+One consequence worth keeping visible: proof was originally made public so traders could check a ruling themselves, and they no longer can. Transparency now rests on the owner's attested statement. The owner was told this before choosing it.

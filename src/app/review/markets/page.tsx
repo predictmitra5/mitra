@@ -55,7 +55,7 @@ export default async function ManageMarketsPage() {
       {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && when.format(market.contestEndsAt)} ET</p></section>}
       {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {when.format(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
       {!!proof.length && <section className="owner-proof"><h3>Proof supplied ({proof.length})</h3>
-        <p className="field-hint">Nothing here is public. Approving and redacting is not built yet, so record your decision in the ruling explanation for now.</p>
+        <p className="field-hint">Documents are never published. Opening an item shows you the original and suggested wording; what you publish is a statement about it.</p>
         {proof.map((item) => <article key={item.id}>
           <p className="field-hint"><span className={`evidence-status evidence-status-${item.status}`}>{item.status}</span> @{item.submittedByHandle} · {when.format(item.createdAt)} ET</p>
           {item.caption && <p className="market-criteria">{item.caption}</p>}
@@ -64,6 +64,7 @@ export default async function ManageMarketsPage() {
             : item.viewUrl
               ? <a href={item.viewUrl} target="_blank" rel="noopener noreferrer">Open the original image (link expires in 5 minutes)</a>
               : <span className="muted">That image could not be opened. Reload the page for a fresh link.</span>}
+          {item.status === "submitted" && <Link className="text-button" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗</Link>}
         </article>)}
       </section>}
       <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}

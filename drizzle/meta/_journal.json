@@ -57,6 +57,20 @@
       "when": 1789855355707,
       "tag": "0007_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789856999277,
+      "tag": "0008_drop_published_path",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789857006971,
+      "tag": "0009_verified_statement",
+      "breakpoints": true
     }
   ]
 }

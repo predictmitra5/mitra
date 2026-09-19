@@ -1,13 +1,18 @@
 // Run once per environment: node --env-file=.env.local scripts/setup-evidence-storage.mjs
 //
-// Creates the two buckets the evidence decision of 2026-09-19 requires, and
-// verifies their privacy afterwards rather than trusting the create call.
+// Creates the one bucket the evidence decision of 2026-09-19 requires, and
+// verifies its privacy afterwards rather than trusting the create call.
 //
 //   evidence-originals  private  what the subject actually sent, owner-only
-//   evidence-public     public   only artifacts the owner approved, already redacted
+//
+// There is deliberately no public bucket. Since the revision of 2026-09-19 no
+// uploaded document is ever published: what goes public is a statement the
+// owner wrote after reading it. An earlier version of this script created an
+// "evidence-public" bucket; if your project still has one it is unused and can
+// be removed in the Supabase dashboard.
 //
 // Safe to run repeatedly. It never deletes a bucket or anything inside one, and
-// it refuses to continue if an existing bucket has the wrong privacy.
+// it refuses to continue if the bucket has the wrong privacy.
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,16 +26,9 @@ const wanted = [
   {
     id: "evidence-originals",
     public: false,
-    allowedMimeTypes: IMAGE_TYPES,
+    allowedMimeTypes: [...IMAGE_TYPES, "application/pdf"],
     fileSizeLimit: MAX_BYTES,
-    why: "holds unredacted documents; must never be readable without server-side authorisation",
-  },
-  {
-    id: "evidence-public",
-    public: true,
-    allowedMimeTypes: ["image/png"],
-    fileSizeLimit: MAX_BYTES,
-    why: "holds only approved, pixel-destroyed artifacts",
+    why: "holds people's actual documents; must never be readable without server-side authorisation",
   },
 ];
 
@@ -54,7 +52,20 @@ for (const bucket of wanted) {
     }
     console.log(`Created ${bucket.id} (${bucket.public ? "public" : "private"}) - ${bucket.why}`);
   } else {
-    console.log(`${bucket.id} already exists.`);
+    // An existing bucket keeps whatever it was created with, so bring its
+    // limits up to date. PDFs were not accepted under the redaction design and
+    // would otherwise still be rejected by storage itself.
+    const { error } = await supabase.storage.updateBucket(bucket.id, {
+      public: bucket.public,
+      allowedMimeTypes: bucket.allowedMimeTypes,
+      fileSizeLimit: bucket.fileSizeLimit,
+    });
+    if (error) {
+      console.error(`Could not update ${bucket.id}: ${error.message}`);
+      failed = true;
+      continue;
+    }
+    console.log(`${bucket.id} already exists; limits brought up to date.`);
   }
 
   // Verify rather than assume: read the bucket back and check what it says.
@@ -79,5 +90,5 @@ if (failed) {
   console.error("\nEvidence storage is not correctly configured. Do not accept uploads until it is.");
   process.exitCode = 1;
 } else {
-  console.log("\nEvidence storage is ready. Originals are private; only approved redactions are public.");
+  console.log("\nEvidence storage is ready. Every uploaded document is private and stays that way.");
 }

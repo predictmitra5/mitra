@@ -2,16 +2,13 @@
  * What a subject may attach to their own goal as proof, decided 2026-09-19
  * (D06, D07). Pure functions: no database, no storage, no clock of its own.
  *
- * Two things here exist because of the owner's choice that approved proof is
- * public and kept forever:
+ * An uploaded document is never published, only read, so the accepted formats
+ * are simply the ones this app can read: images and PDFs. That is the whole
+ * reason PDFs are allowed here now and were not before.
  *
- * - Only image types are accepted. Redaction has to destroy pixels and then
- *   re-render, and this app can only do that to a raster image. Accepting a
- *   format it cannot safely publish would mean either refusing it later or
- *   publishing it unredacted.
- * - A link is published exactly as submitted, because a URL cannot be redacted.
- *   Choosing a link is choosing to publish whatever sits behind it, and the
- *   submission form has to say so.
+ * A link is different. It is published exactly as submitted, because a URL
+ * cannot be summarised away: choosing a link is choosing to publish whatever
+ * sits behind it, and the submission form has to say so.
  */
 
 export class EvidenceError extends Error {
@@ -21,9 +18,12 @@ export class EvidenceError extends Error {
   }
 }
 
-/** Formats this app can rasterise, redact and re-encode. PDFs are not among them. */
+/** Images this app can read. */
 export const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+/** Everything a subject may upload. The app reads these; it never republishes them. */
+export const ACCEPTED_UPLOAD_TYPES = [...ACCEPTED_IMAGE_TYPES, "application/pdf"] as const;
 export type AcceptedImageType = (typeof ACCEPTED_IMAGE_TYPES)[number];
+export type AcceptedUploadType = (typeof ACCEPTED_UPLOAD_TYPES)[number];
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export const MAX_ITEMS_PER_GOAL = 10;
@@ -75,16 +75,20 @@ export function isAcceptedImageType(value: unknown): value is AcceptedImageType 
   return typeof value === "string" && (ACCEPTED_IMAGE_TYPES as readonly string[]).includes(value);
 }
 
+export function isAcceptedUploadType(value: unknown): value is AcceptedUploadType {
+  return typeof value === "string" && (ACCEPTED_UPLOAD_TYPES as readonly string[]).includes(value);
+}
+
 /** Validates an upload's declared type and size. Content is checked separately. */
 export function assertAcceptableFile(contentType: unknown, bytes: unknown): asserts bytes is number {
-  if (!isAcceptedImageType(contentType)) {
-    throw new EvidenceError("BAD_TYPE", "Send a PNG, JPEG or WebP image. PDFs are not accepted yet.");
+  if (!isAcceptedUploadType(contentType)) {
+    throw new EvidenceError("BAD_TYPE", "Send a PDF, or a PNG, JPEG or WebP image.");
   }
   if (typeof bytes !== "number" || !Number.isFinite(bytes) || bytes <= 0) {
     throw new EvidenceError("BAD_FILE", "That file could not be read.");
   }
   if (bytes > MAX_FILE_BYTES) {
-    throw new EvidenceError("TOO_LARGE", "Images must be 10 MB or smaller.");
+    throw new EvidenceError("TOO_LARGE", "Files must be 10 MB or smaller.");
   }
 }
 
@@ -134,17 +138,30 @@ export function normalizeCaption(value: unknown): string | null {
  * cannot overwrite another's file, and never by anything the browser supplies:
  * an uploaded filename is attacker-controlled and would be a path traversal.
  */
-export function originalStoragePath(marketId: string, evidenceId: string, contentType: AcceptedImageType): string {
+export function originalStoragePath(marketId: string, evidenceId: string, contentType: AcceptedUploadType): string {
   return `${marketId}/${evidenceId}/original.${extensionFor(contentType)}`;
 }
 
-/** Where the redacted artifact is stored, once the owner approves it. */
-export function publishedStoragePath(marketId: string, evidenceId: string): string {
-  // Always PNG: redaction re-encodes, and re-encoding to PNG drops any metadata
-  // the original carried, including the location a phone camera may have written.
-  return `${marketId}/${evidenceId}/redacted.png`;
+function extensionFor(contentType: AcceptedUploadType): string {
+  if (contentType === "application/pdf") return "pdf";
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/webp") return "webp";
+  return "jpg";
 }
 
-function extensionFor(contentType: AcceptedImageType): string {
-  return contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
+/** A published statement. Short on purpose: it is a fact, not a retelling. */
+export const MAX_STATEMENT_LENGTH = 300;
+
+export function normalizeStatement(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new EvidenceError("BAD_STATEMENT", "Write what the document proves before publishing it.");
+  }
+  const trimmed = value.trim();
+  if (trimmed.length < 3) {
+    throw new EvidenceError("BAD_STATEMENT", "Write what the document proves before publishing it.");
+  }
+  if (trimmed.length > MAX_STATEMENT_LENGTH) {
+    throw new EvidenceError("BAD_STATEMENT", `Keep the statement under ${MAX_STATEMENT_LENGTH} characters.`);
+  }
+  return trimmed;
 }

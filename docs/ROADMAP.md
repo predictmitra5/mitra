@@ -38,9 +38,11 @@ Verify: concurrent and retried actions cannot duplicate balances; ledger replay 
 
 ## Slice 3 - Useful information with an audit trail
 
-Decisions taken 2026-09-19 (D06, D07); see DECISIONS.md. Stage 1 is built: the `evidence` table, both storage buckets with their privacy verified, submission by the subject during the proof window, the owner's review listing with expiring links to originals, and a public projection that cannot leak an original.
+Decisions taken 2026-09-19 (D06, D07, revised the same day); see DECISIONS.md. Built end to end: the `evidence` table, the private storage bucket with its privacy verified, submission of documents or links by the subject during the proof window, an automatic read that proposes publishable wording and names the private details to leave out, the owner's review screen, and public verified statements on the goal page with an attestation.
 
-Stage 2, not built: automatic detection of sensitive regions, the owner's redaction and approval screen, the pixel-destroying re-render with a size cap, and public display of approved proof on the goal page. Until it exists, nothing can be published, and the owner records what they saw in the ruling explanation.
+The redaction design that preceded it was built, measured and removed the same day: a model asked for bounding boxes named the right private items and placed them badly enough to leave an address readable. Publishing a statement instead removes the failure mode rather than managing it.
+
+Remaining here: deleting a withdrawing person's documents, which is decided and belongs with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided; corrections to a published statement, which is not decided.
 
 After verification/privacy decisions: update submission, source/evidence handling, admin review, public claim presentation, corrections, revocations and the agreed dispute path.
 
