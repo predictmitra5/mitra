@@ -38,5 +38,6 @@ export async function confirmOrder(input: TradeConfirmation): Promise<Result<Tra
   } catch (error) { return failure(error); }
   revalidatePath(`/markets/${result.marketId}`);
   revalidatePath("/account");
+  revalidatePath("/positions");
   return { ok: true, value: result };
 }

@@ -51,7 +51,7 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
   return <div className="site-shell"><AppHeader /><main className="market-main">
-    <nav className="market-nav"><Link href="/account">← Your account</Link><span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
+    <nav className="market-nav"><Link href="/account">← Your account</Link>{identity && <Link href="/positions" prefetch={false}>Your predictions ↗</Link>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
     <div className="market-layout">
       <div className="market-story">
         <section className="market-hero">

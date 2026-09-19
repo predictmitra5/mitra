@@ -30,6 +30,7 @@ describe("lifecycle action boundary", () => {
     expect(mocks.refresh).toHaveBeenCalledWith("/markets/goal-id");
     expect(mocks.refresh).toHaveBeenCalledWith("/review/markets");
     expect(mocks.refresh).toHaveBeenCalledWith("/account");
+    expect(mocks.refresh).toHaveBeenCalledWith("/positions");
   });
   it("preserves permission errors and never exposes provider/database details", async () => {
     mocks.manage.mockRejectedValue(new LifecycleError("NOT_OWNER", "Only the owner may do this."));

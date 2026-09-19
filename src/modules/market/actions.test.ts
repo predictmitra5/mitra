@@ -58,8 +58,8 @@ describe("trade action authorization boundary", () => {
     expect(JSON.stringify(result)).not.toContain("private database");
     expect(mocks.revalidate).not.toHaveBeenCalled();
   });
-  it("refreshes the account and the market after a successful trade", async () => {
+  it("refreshes the account, market and positions after a successful trade", async () => {
     expect(await confirmOrder(confirmation)).toMatchObject({ ok: true });
-    expect(mocks.revalidate.mock.calls).toEqual([[`/markets/${marketId}`], ["/account"]]);
+    expect(mocks.revalidate.mock.calls).toEqual([[`/markets/${marketId}`], ["/account"], ["/positions"]]);
   });
 });

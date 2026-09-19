@@ -16,6 +16,7 @@ function refresh(marketId: string) {
   revalidatePath(`/markets/${marketId}`);
   revalidatePath("/review/markets");
   revalidatePath("/account");
+  revalidatePath("/positions");
 }
 
 export async function manageMarket(input: OwnerCommand): Promise<LifecycleResult> {

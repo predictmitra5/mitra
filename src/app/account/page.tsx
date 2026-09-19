@@ -55,6 +55,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <section className="account-welcome"><span className="eyebrow">YOU’RE IN</span><h1>Hey, {account.profile.displayName}.</h1><p>@{account.profile.handle}</p></section>
         <section className="balance-card"><div><span className="eyebrow">AVAILABLE PLAY POINTS</span><p className="balance-number">{((refillStatus?.balanceMicro ?? account.wallet?.balanceMicro ?? 0) / MICRO_PER_UNIT).toLocaleString("en-US", { maximumFractionDigits: 2 })}</p></div><span className="balance-symbol" aria-hidden="true">↗</span><p>For making predictions. No deposits, withdrawals or cash value.</p></section>
         {refillStatus && <RefillCard status={refillStatus} />}
+        <section className="account-note"><div className="section-head"><h2>Your predictions</h2><Link className="secondary-button" href="/positions" prefetch={false}>View holdings ↗</Link></div><p>Find the goals you’ve backed, see your shares and return to a market.</p></section>
         {account.profile.isOwner === 1 && <section className="account-note"><h2>Owner tools</h2><p><Link href="/review">Review submitted goals</Link></p><p><Link href="/review/markets">Manage outcomes and objections</Link></p></section>}
         <section className="goals-card">
           <div className="section-head"><h2>Your goals</h2><Link className="secondary-button" href="/goals/new">New goal ↗</Link></div>
