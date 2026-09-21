@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing in progress.
+### Write up the verification idea - 2026-09-20 (Claude Code)
+
+The owner asked for an in-depth document on the idea, and a PDF of it, to read and show people.
+
+- `docs/VERIFICATION.md`: the reasoning behind publishing verified statements rather than documents. Written to stand on its own for someone who does not know the app: what the problem is, what was tried first, the measurement that killed it, what replaced it, how it works, what it costs and what is still open.
+- A PDF rendered from it. No Python on this machine, and the app has no use for a PDF library at runtime, so the renderer is installed in the scratchpad and only its output lands in the repository.
+- The measurement numbers in it come from the runs recorded in the session history, not from memory.
+
+Documentation only. No code, schema, configuration or dependency of the app changes.
 
 ## Deferred, to come back to
 
