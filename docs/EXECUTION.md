@@ -24,15 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Write up the verification idea - 2026-09-20 (Claude Code)
-
-The owner asked for an in-depth document on the idea, and a PDF of it, to read and show people.
-
-- `docs/VERIFICATION.md`: the reasoning behind publishing verified statements rather than documents. Written to stand on its own for someone who does not know the app: what the problem is, what was tried first, the measurement that killed it, what replaced it, how it works, what it costs and what is still open.
-- A PDF rendered from it. No Python on this machine, and the app has no use for a PDF library at runtime, so the renderer is installed in the scratchpad and only its output lands in the repository.
-- The measurement numbers in it come from the runs recorded in the session history, not from memory.
-
-Documentation only. No code, schema, configuration or dependency of the app changes.
+Nothing in progress.
 
 ## Deferred, to come back to
 
@@ -356,3 +348,15 @@ Caught while finishing: the storage bucket kept the image-only allow list it was
 The owner also decided that withdrawing an account deletes that person's documents, leaving the ruling record and a tombstone. That is recorded and belongs with the unbuilt withdrawal flow.
 
 One consequence worth keeping visible: proof was originally made public so traders could check a ruling themselves, and they no longer can. Transparency now rests on the owner's attested statement. The owner was told this before choosing it.
+
+### 2026-09-20 - The verification idea, written up (Claude Code)
+
+The owner asked for an in-depth document on the idea and a PDF of it.
+
+`docs/VERIFICATION.md` explains why Mitra publishes a statement rather than a document: the three requirements that pull against each other, the redaction design that was built first, the measurement that killed it with its numbers, what replaced it, how it works, what it costs and what is still undecided. Written to stand alone for a reader who does not know the app. `docs/VERIFICATION.pdf` is the rendered version, seven pages.
+
+No Python on this machine and no use for a PDF library in the app, so the renderer was installed and kept in the scratchpad; only its output is in the repository. Regenerating it needs `npm install pdfkit` in a scratch directory and the small markdown-to-PDF script recorded there.
+
+Worth recording, because it cost three attempts: the first two renders produced fifteen and then nineteen mostly blank pages. The cause was a footer drawn below the bottom margin, which pdfkit reads as overflow and answers by adding a page, once per footer. A second version that managed the cursor and page breaks by hand fought the library and made it worse. The working version lets pdfkit flow and paginate everything except tables, and drops the bottom margin while drawing a footer.
+
+Also of note: an uncompressed PDF splits text across kerning operators, so grepping one for a phrase reports absent text as missing when it is there. That mis-diagnosis sent the second attempt in the wrong direction for a while. Page counts read out of the file structure were the reliable check.
