@@ -1,13 +1,19 @@
-// Run after `npm run build`: node --env-file=.env.local scripts/preview-feed.mjs
-// Uses an isolated, disposable schema; never seeds the live app or Auth users.
-// Seeds several fictional people and goals so the feed's tabs, "Just added" row,
-// ranking and per-subject cap can all be seen at once.
+// Fictional markets for building and reviewing the UI.
+//
+//   node --env-file=.env.local scripts/preview-feed.mjs          (after npm run build)
+//   node --env-file=.env.local scripts/preview-feed.mjs --dev    (hot reload; stop npm run dev first)
+//
+// Seeds seven fictional people and fourteen goals, with price paths, trades for
+// volume and recent movement, into an isolated, disposable schema, then serves
+// the whole app against it at http://localhost:3100, signed out. It never seeds
+// the live app or creates Auth users. Ctrl+C, or "stop" on stdin, removes it.
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import postgres from "postgres";
 
 if (!process.env.DIRECT_DATABASE_URL) throw new Error("Set DIRECT_DATABASE_URL in .env.local first.");
+const devMode = process.argv.includes("--dev");
 const name = `mitra_feed_preview_${randomUUID().replaceAll("-", "")}`;
 const connection = new URL(process.env.DIRECT_DATABASE_URL);
 connection.searchParams.set("search_path", name);
@@ -27,30 +33,78 @@ async function cleanup() {
   await client.end();
 }
 
-const hour = 3_600_000;
-const liquidityMicro = 150_000_000;
-/** Market-maker no-shares for an opening probability, matching the engine. */
-const noSharesFor = (probability) => Math.round(150 * Math.log((1 - probability) / probability) * 1_000_000);
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+const LIQUIDITY = 150;
+const now = Date.now();
+
+/** Seeded so every run draws the same fictional world. */
+let seed = 20260922;
+const random = () => {
+  seed = (seed * 1664525 + 1013904223) % 4294967296;
+  return seed / 4294967296;
+};
+
+/** Market-maker NO shares that put the YES price at p, with YES shares at zero. */
+const noSharesFor = (p) => Math.round(LIQUIDITY * Math.log((1 - p) / p) * 1_000_000);
+
+const label = (ms) => new Intl.DateTimeFormat("en-US", {
+  month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York",
+}).format(new Date(ms));
 
 const people = [
-  { handle: "demo_maya", displayName: "Maya" },
-  { handle: "demo_andre", displayName: "Andre" },
-  { handle: "demo_priya", displayName: "Priya" },
-  { handle: "demo_luis", displayName: "Luis" },
+  ["demo_maya", "Maya Chen"],
+  ["demo_andre", "Andre Williams"],
+  ["demo_priya", "Priya Patel"],
+  ["demo_luis", "Luis Ortega"],
+  ["demo_jordan", "Jordan Kim"],
+  ["demo_sam", "Sam Lee"],
+  ["demo_aisha", "Aisha Bello"],
 ];
 
-// approvedHoursAgo drives the newborn bonus and the time decay; clicks drive activity.
+// [person, type, question builder, opened days ago, deadline in days, open p, final p, trades, moves in last day]
 const goals = [
-  { person: 0, type: "gpa", text: "finish the fall semester with a 3.8 GPA or higher", approvedHoursAgo: 2, deadlineDays: 90, probability: 0.45, clicks: 0 },
-  { person: 1, type: "internship", text: "receive a written summer internship offer", approvedHoursAgo: 6, deadlineDays: 120, probability: 0.3, clicks: 3 },
-  { person: 2, type: "gym", text: "deadlift 315 pounds", approvedHoursAgo: 30, deadlineDays: 2, probability: 0.62, clicks: 12 },
-  { person: 0, type: "club", text: "be elected to the Chess Club board", approvedHoursAgo: 200, deadlineDays: 40, probability: 0.55, clicks: 26 },
-  { person: 0, type: "launch", text: "publish a working version of their side project", approvedHoursAgo: 210, deadlineDays: 60, probability: 0.4, clicks: 22 },
-  { person: 0, type: "gym", text: "run a sub-25-minute 5K", approvedHoursAgo: 220, deadlineDays: 75, probability: 0.5, clicks: 20 },
-  { person: 3, type: "club", text: "join the debate team", approvedHoursAgo: 400, deadlineDays: 20, probability: 0.7, clicks: 4 },
-  { person: 1, type: "gpa", text: "pass organic chemistry", approvedHoursAgo: 600, deadlineDays: 110, probability: 0.8, clicks: 1 },
-  { person: 2, type: "launch", text: "get 100 people using their app", approvedHoursAgo: 900, deadlineDays: 150, probability: 0.25, clicks: 0 },
+  [0, "gpa", (n) => `Will ${n} earn at least a 3.8 GPA for Fall 2026?`, 20, 88, 0.45, 0.62, 34, 3],
+  [1, "internship", (n, d) => `Will ${n} receive a written internship offer from Google by ${d}?`, 1.2, 150, 0.3, 0.38, 6, 4],
+  [2, "gym", (n, d) => `Will ${n} deadlift 315 pounds by ${d}?`, 12, 2.5, 0.5, 0.71, 22, 5],
+  [3, "club", (n, d) => `Will ${n} be offered admission to the Chess Club board by ${d}?`, 9, 38, 0.55, 0.47, 18, 2],
+  [4, "own_words", () => `Will Jordan get 100 people using their study app?`, 30, 120, 0.25, 0.19, 27, 1],
+  [5, "gym", (n, d) => `Will ${n} run a sub-25-minute 5K by ${d}?`, 6, 20, 0.5, 0.83, 19, 6],
+  [6, "internship", (n, d) => `Will ${n} receive a written internship offer from Deloitte by ${d}?`, 25, 95, 0.4, 0.58, 29, 0],
+  [0, "club", (n, d) => `Will ${n} be offered admission to the Mock Trial team by ${d}?`, 0.3, 30, 0.6, 0.6, 0, 0],
+  [2, "gpa", (n) => `Will ${n} earn at least a 3.5 GPA for Fall 2026?`, 16, 88, 0.7, 0.66, 14, 2],
+  [3, "gym", (n, d) => `Will ${n} bench 225 pounds by ${d}?`, 0.8, 60, 0.35, 0.41, 3, 3],
+  [1, "own_words", () => `Will Andre publish his first song on Spotify?`, 14, 45, 0.5, 0.29, 21, 4],
+  [4, "gpa", (n) => `Will ${n} earn at least a 4.0 GPA for Fall 2026?`, 18, 88, 0.2, 0.12, 16, 0],
+  [5, "internship", (n, d) => `Will ${n} receive a written internship offer from JPMorgan by ${d}?`, 4, 110, 0.35, 0.44, 9, 2],
+  [6, "club", (n, d) => `Will ${n} be offered admission to the Undergraduate Student Government cabinet by ${d}?`, 11, 1.6, 0.4, 0.52, 15, 3],
 ];
+
+/**
+ * A price path from the opening price to the final one: a walk with drift,
+ * bounded away from certainty, with some moves pushed into the last day so the
+ * "moving today" list and the 24-hour change have something to show.
+ */
+function pricePath(openP, finalP, count, recent, openedAt) {
+  const points = [{ at: openedAt, p: openP }];
+  if (count === 0) return points;
+  const older = count - recent;
+  const lastDay = now - DAY;
+  const oldEnd = Math.max(openedAt + HOUR, Math.min(lastDay, now - HOUR));
+  const times = [];
+  for (let i = 0; i < older; i += 1) times.push(openedAt + ((i + 1) / (older + 1)) * (oldEnd - openedAt));
+  for (let i = 0; i < recent; i += 1) times.push(Math.max(openedAt + HOUR, lastDay) + ((i + 1) / (recent + 1)) * (now - Math.max(openedAt + HOUR, lastDay)));
+  times.sort((a, b) => a - b);
+  let p = openP;
+  times.forEach((at, i) => {
+    const remaining = times.length - i;
+    const drift = (finalP - p) / remaining;
+    const noise = (random() - 0.5) * 0.09;
+    p = i === times.length - 1 ? finalP : Math.min(0.96, Math.max(0.04, p + drift + noise));
+    points.push({ at, p });
+  });
+  return points;
+}
 
 try {
   await client.unsafe(`CREATE SCHEMA "${name}"`);
@@ -62,44 +116,79 @@ try {
   await client`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at)
     values (${owner}, 'demo_owner', 'Demo owner', 1, now())`;
 
-  const ids = [];
-  for (const person of people) {
+  const subjectIds = [];
+  for (const [handle, displayName] of people) {
     const id = randomUUID();
-    ids.push(id);
+    subjectIds.push(id);
     await client`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at)
-      values (${id}, ${person.handle}, ${person.displayName}, 0, now())`;
+      values (${id}, ${handle}, ${displayName}, 0, now())`;
   }
 
-  for (const goal of goals) {
+  // Fictional traders, so trades have somebody to belong to.
+  const traders = [];
+  for (let i = 1; i <= 6; i += 1) {
     const id = randomUUID();
-    const subject = ids[goal.person];
-    const who = people[goal.person].displayName;
-    const approvedAt = new Date(Date.now() - goal.approvedHoursAgo * hour);
-    const deadlineAt = new Date(Date.now() + goal.deadlineDays * 24 * hour);
-    const evidenceAt = new Date(deadlineAt.getTime() + 7 * 24 * hour);
-    const noShares = noSharesFor(goal.probability);
+    traders.push(id);
+    await client`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at)
+      values (${id}, ${`demo_trader_${i}`}, ${`Demo trader ${i}`}, 0, now())`;
+  }
+
+  let tradeCount = 0;
+  let pointCount = 0;
+  for (const [who, type, build, openedDaysAgo, deadlineDays, openP, finalP, count, recent] of goals) {
+    const id = randomUUID();
+    const [, displayName] = people[who];
+    const first = displayName.split(" ")[0];
+    const openedAt = now - openedDaysAgo * DAY;
+    const deadlineAt = now + deadlineDays * DAY;
+    const question = build(first, label(deadlineAt));
+    const openNo = noSharesFor(openP);
 
     await client`insert into markets (id, subject_user_id, status, question, resolution_criteria, goal_type,
       deadline_at, evidence_deadline_at, liquidity_micro, opening_probability_bp,
       initial_yes_shares_micro, initial_no_shares_micro, yes_shares_micro, no_shares_micro, approved_at, approved_by)
-      values (${id}, ${subject}, 'open',
-      ${`Will ${who} ${goal.text} by the deadline?`},
-      ${`YES if ${who} does this before the deadline and supplies proof for review. This is fictional test data for layout only.`},
-      ${goal.type}, ${deadlineAt}, ${evidenceAt}, ${liquidityMicro}, ${Math.round(goal.probability * 10000)},
-      0, ${noShares}, 0, ${noShares}, ${approvedAt}, ${owner})`;
+      values (${id}, ${subjectIds[who]}, 'open', ${question},
+      ${`YES if ${first} does this before the deadline and supplies proof the owner reviews. Fictional data for layout only.`},
+      ${type}, ${new Date(deadlineAt)}, ${new Date(deadlineAt + 7 * DAY)}, ${LIQUIDITY * 1_000_000},
+      ${Math.round(openP * 10000)}, 0, ${openNo}, 0, ${noSharesFor(finalP)}, ${new Date(openedAt)}, ${owner})`;
 
-    for (let i = 0; i < goal.clicks; i += 1) {
+    const path = pricePath(openP, finalP, count, recent, openedAt);
+    for (let i = 0; i < path.length; i += 1) {
+      const point = path[i];
+      let tradeId = null;
+      if (i > 0) {
+        tradeId = randomUUID();
+        const before = path[i - 1].p;
+        const side = point.p >= before ? "yes" : "no";
+        const amount = Math.round((5 + random() * 55) * 1_000_000);
+        await client`insert into trades (id, market_id, user_id, side, action, shares_micro, amount_micro,
+          request_amount_micro, yes_price_before_bp, yes_price_after_bp, idempotency_key, created_at)
+          values (${tradeId}, ${id}, ${traders[Math.floor(random() * traders.length)]}, ${side}, 'buy',
+          ${Math.round(amount * 1.6)}, ${amount}, ${amount}, ${Math.round(before * 10000)},
+          ${Math.round(point.p * 10000)}, ${`preview-${tradeId}`}, ${new Date(point.at)})`;
+        tradeCount += 1;
+      }
+      await client`insert into price_history (market_id, yes_price_bp, trade_id, recorded_at)
+        values (${id}, ${Math.round(point.p * 10000)}, ${tradeId}, ${new Date(point.at)})`;
+      pointCount += 1;
+    }
+
+    const clicks = Math.floor(random() * 25);
+    for (let i = 0; i < clicks; i += 1) {
       await client`insert into feed_events (market_id, kind, created_at)
-        values (${id}, 'click', ${new Date(Date.now() - Math.floor(Math.random() * 20) * hour)})`;
+        values (${id}, 'click', ${new Date(now - Math.floor(random() * 20) * HOUR)})`;
     }
   }
 
   const port = "3100";
-  server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", port], {
+  const args = devMode
+    ? ["node_modules/next/dist/bin/next", "dev", "--port", port]
+    : ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", port];
+  server = spawn(process.execPath, args, {
     env: { ...process.env, DATABASE_URL: connection.toString() }, stdio: ["ignore", "inherit", "inherit"], windowsHide: true,
   });
-  console.log(`Fictional feed preview: http://localhost:${port}/`);
-  console.log(`${goals.length} goals across ${people.length} people. Maya holds four, to show the per-subject cap.`);
+  console.log(`Fictional feed preview${devMode ? " (dev, hot reload)" : ""}: http://localhost:${port}/`);
+  console.log(`${goals.length} goals across ${people.length} people, ${tradeCount} trades, ${pointCount} price points.`);
   console.log("Signed out, so the sign-in prompt appears after two minutes of browsing.");
   console.log("Press Ctrl+C or send 'stop' on stdin to stop and remove the isolated fixture.");
   process.on("SIGINT", () => { void cleanup(); });

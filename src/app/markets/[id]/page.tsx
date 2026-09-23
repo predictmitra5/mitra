@@ -6,10 +6,13 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { formatMicro } from "@/modules/market/input";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
-import { recordClick } from "@/modules/discovery/feed";
+import { readPriceSeries, recordClick } from "@/modules/discovery/feed";
 import { canSubmit, listForSubject, listPublished } from "@/modules/evidence/service";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
-import { AppHeader } from "@/app/components/auth-screen";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
+import { ProbabilityBar } from "@/app/components/market/goal-card";
+import { categoryLabel } from "@/modules/discovery/present";
+import { PriceChart } from "@/app/components/market/price-chart";
 import { TradeForm } from "./trade-form";
 import { ObjectionForm } from "./objection-form";
 import { EvidenceForm } from "./evidence-form";
@@ -36,7 +39,7 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   let market;
   try { market = await loadMarket(id); }
   catch {
-    return <div className="site-shell"><AppHeader /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/account">Your account</Link></section></main></div>;
+    return <div className="theme-dark market-shell"><MarketHeader signedIn={false} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/account">Your account</Link></section></main></div>;
   }
   if (!market) notFound();
   // Feed measurement. recordClick swallows its own failures, and is called here
@@ -71,20 +74,32 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   const open = market.tradingOpen;
   const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
-  return <div className="site-shell"><AppHeader /><main className="market-main">
+  // Price history for the chart. Prices are already public on this page; the
+  // chart only shows how they got here. Additive, so a failure never takes the page down.
+  let series: { at: string; yesBp: number }[] = [];
+  try {
+    const points = await readPriceSeries(getDb(), id, { at: new Date(), yesBp: Math.round(market.yesPrice * 10_000) });
+    series = points.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp }));
+  } catch {
+    // Leave the chart empty; the prices above are still correct.
+  }
+
+  return <div className="theme-dark market-shell"><MarketHeader signedIn={!!identity} /><main className="market-main">
     <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗</Link><Link href="/account">Your account ↗</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
     <div className="market-layout">
       <div className="market-story">
         <section className="market-hero">
-          <div className="review-meta"><span className={`status-pill ${open ? "status-open" : ""}`}>{status}</span><span>{market.goalType?.replaceAll("_", " ")}</span></div>
+          <div className="review-meta"><span className={`status-pill ${open ? "status-open" : ""}`}>{status}</span><span>{categoryLabel(market.goalType)}</span></div>
           <p className="market-person">{market.displayName} <span>@{market.handle}</span></p>
           <h1>{market.question}</h1>
           <div className="market-prices" aria-label="Last market share prices">
             <div><span>YES</span><strong>{(market.yesPrice * 100).toFixed(2)}<small>¢</small></strong></div>
             <div><span>NO</span><strong>{((1 - market.yesPrice) * 100).toFixed(2)}<small>¢</small></strong></div>
           </div>
+          <ProbabilityBar yesPrice={market.yesPrice} />
           <p className="market-price-note">{open ? "100¢ = 1 play point. A share pays 1 point if its outcome wins, and 0 if it loses. These are current prices; your preview shows the full trade cost." : "These are the last trading prices, not a final payout. The outcome and any refund appear below."}</p>
         </section>
+        <section className="market-rules market-chart"><PriceChart points={series} height={240} /></section>
         {market.ruledOutcome && market.status !== "cancelled" && <section className="market-rules ruling-box">
           <span className="eyebrow">{market.status === "settled" ? "FINAL OUTCOME" : "OWNER RULING"}</span>
           <h2>{market.ruledOutcome.toUpperCase()} · {market.status === "settled" ? "Payout complete" : "Open to objections"}</h2>
@@ -127,5 +142,5 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
           : <TradeForm marketId={id} />}
       </aside>
     </div>
-  </main><footer className="app-footer"><span>Play money. Real goals.</span><span>No deposits. No cash value.</span></footer></div>;
+  </main><MarketFooter /></div>;
 }

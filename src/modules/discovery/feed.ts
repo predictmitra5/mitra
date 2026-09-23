@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { price } from "@/modules/market/lmsr";
@@ -6,7 +6,7 @@ import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { justAdded, rankMarkets, type FeedReason, type MarketSignals, type RankedMarket } from "./ranking";
 
-const { markets, profiles, trades, feedEvents } = schema;
+const { markets, profiles, trades, feedEvents, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 /**
@@ -26,7 +26,23 @@ export type FeedCard = {
   yesPrice: number;
   tradingOpen: boolean;
   reason: FeedReason;
+  /** When the goal went live, for "2d ago" in the card's meta line. */
+  approvedAt: Date;
+  /**
+   * Play points traded on this goal, all time. An aggregate, shown the way
+   * Kalshi shows volume. Trader counts are deliberately not exposed: in a small
+   * group "1 trader" can identify a person.
+   */
+  volumeMicro: number;
+  /** YES price now minus 24 hours ago, in basis points. Opening price if younger. */
+  change24hBp: number;
 };
+
+/** One point of a goal's price history, for a chart. */
+export type PricePoint = { at: Date; yesBp: number };
+
+/** A featured goal carries its history, so the carousel can draw a chart. */
+export type FeaturedGoal = FeedCard & { series: PricePoint[] };
 
 /** A tab across the top of the feed. The owner chose to group by person. */
 export type FeedPerson = {
@@ -39,7 +55,18 @@ export type Feed = {
   cards: FeedCard[];
   justAdded: FeedCard[];
   people: FeedPerson[];
+  /** The leading goals by rank, with price history, for the carousel. */
+  featured: FeaturedGoal[];
+  /** Open goals whose trading deadline is nearest. */
+  closingSoon: FeedCard[];
+  /** Open goals whose price moved most in 24 hours, either way. */
+  movers: FeedCard[];
 };
+
+const FEATURED_COUNT = 5;
+const RUNDOWN_COUNT = 5;
+/** A chart wider than this many points is visually identical; keep payloads small. */
+const MAX_SERIES_POINTS = 120;
 
 const SIGNAL_WINDOW_HOURS = 24;
 /** An upper bound on one page of the feed, so a busy app cannot render forever. */
@@ -74,7 +101,20 @@ function toCard(row: RankedMarket<FeedRow>, now: Date): FeedCard {
     ),
     tradingOpen: !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
     reason: row.reason,
+    approvedAt: row.approvedAt,
+    // Filled in by readFeed once volume and history are loaded.
+    volumeMicro: 0,
+    change24hBp: 0,
   };
+}
+
+/** Evenly thins a series to at most max points, always keeping both ends. */
+export function thinSeries(points: readonly PricePoint[], max = MAX_SERIES_POINTS): PricePoint[] {
+  if (points.length <= max) return [...points];
+  const out: PricePoint[] = [];
+  const step = (points.length - 1) / (max - 1);
+  for (let i = 0; i < max; i += 1) out.push(points[Math.round(i * step)]);
+  return out;
 }
 
 /**
@@ -165,13 +205,121 @@ export async function readFeed<Q extends PgQueryResultHKT>(
     else people.set(row.handle, { handle: row.handle, displayName: row.displayName, openGoals: 1 });
   }
 
+  const cards = ranked.map((row) => toCard(row, now));
+  const ids = cards.map((card) => card.id);
+  const info = await readMarketInformation(database, ids, since);
+  for (const card of cards) {
+    card.volumeMicro = info.volume.get(card.id) ?? 0;
+    const then = info.priceThen.get(card.id);
+    card.change24hBp = then === undefined ? 0 : Math.round(card.yesPrice * 10_000) - then;
+  }
+  const byId = new Map(cards.map((card) => [card.id, card]));
+
+  // The carousel leads with goals that have been traded, still in rank order,
+  // because a featured chart with no history is a flat line. A new goal keeps
+  // its place in the ranked grid and the Just added strip; this only changes
+  // which goals the carousel draws a chart for.
+  const leading = [
+    ...cards.filter((card) => card.volumeMicro > 0),
+    ...cards.filter((card) => card.volumeMicro === 0),
+  ].slice(0, FEATURED_COUNT);
+  const series = await readSeries(database, leading.map((card) => card.id));
+  const featured: FeaturedGoal[] = leading.map((card) => {
+    const history = series.get(card.id) ?? [];
+    // End the line at the live price, so the chart agrees with the pills beside it.
+    const current = { at: now, yesBp: Math.round(card.yesPrice * 10_000) };
+    return { ...card, series: thinSeries([...history, current]) };
+  });
+
+  const open = cards.filter((card) => card.tradingOpen);
+
   return {
-    cards: ranked.map((row) => toCard(row, now)),
-    justAdded: fresh.map((row) => toCard(row, now)),
+    cards,
+    justAdded: fresh.map((row) => byId.get(row.id) ?? toCard(row, now)),
     people: [...people.values()].sort(
       (a, b) => b.openGoals - a.openGoals || a.displayName.localeCompare(b.displayName),
     ),
+    featured,
+    closingSoon: [...open]
+      .sort((a, b) => a.deadlineAt.getTime() - b.deadlineAt.getTime())
+      .slice(0, RUNDOWN_COUNT),
+    movers: [...open]
+      .filter((card) => card.change24hBp !== 0)
+      .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))
+      .slice(0, RUNDOWN_COUNT),
   };
+}
+
+/**
+ * Volume and the price 24 hours ago, for a set of goals. The earlier price is
+ * the last recorded point at or before the window; a goal younger than that
+ * falls back to its first point, which approval writes at the opening price.
+ */
+async function readMarketInformation<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  ids: readonly string[],
+  since: Date,
+): Promise<{ volume: Map<string, number>; priceThen: Map<string, number> }> {
+  const volume = new Map<string, number>();
+  const priceThen = new Map<string, number>();
+  if (ids.length === 0) return { volume, priceThen };
+  const list = [...ids];
+
+  const volumes = await database
+    .select({ marketId: trades.marketId, total: sql<string>`coalesce(sum(${trades.amountMicro}), 0)` })
+    .from(trades)
+    .where(inArray(trades.marketId, list))
+    .groupBy(trades.marketId);
+  for (const row of volumes) volume.set(row.marketId, Number(row.total));
+
+  const before = await database
+    .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
+    .from(priceHistory)
+    .where(and(inArray(priceHistory.marketId, list), lte(priceHistory.recordedAt, since)))
+    .orderBy(priceHistory.marketId, desc(priceHistory.recordedAt));
+  for (const row of before) priceThen.set(row.marketId, row.yesBp);
+
+  const missing = list.filter((id) => !priceThen.has(id));
+  if (missing.length) {
+    const first = await database
+      .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
+      .from(priceHistory)
+      .where(inArray(priceHistory.marketId, missing))
+      .orderBy(priceHistory.marketId, asc(priceHistory.recordedAt));
+    for (const row of first) priceThen.set(row.marketId, row.yesBp);
+  }
+
+  return { volume, priceThen };
+}
+
+/** Full recorded price history for a few goals, oldest first. */
+async function readSeries<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  ids: readonly string[],
+): Promise<Map<string, PricePoint[]>> {
+  const out = new Map<string, PricePoint[]>();
+  if (ids.length === 0) return out;
+  const rows = await database
+    .select({ marketId: priceHistory.marketId, at: priceHistory.recordedAt, yesBp: priceHistory.yesPriceBp })
+    .from(priceHistory)
+    .where(inArray(priceHistory.marketId, [...ids]))
+    .orderBy(asc(priceHistory.recordedAt));
+  for (const row of rows) {
+    const list = out.get(row.marketId) ?? [];
+    list.push({ at: row.at, yesBp: row.yesBp });
+    out.set(row.marketId, list);
+  }
+  return out;
+}
+
+/** One goal's price history, for its own page. Public: prices are already public. */
+export async function readPriceSeries<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  marketId: string,
+  current: { at: Date; yesBp: number },
+): Promise<PricePoint[]> {
+  const history = (await readSeries(database, [marketId])).get(marketId) ?? [];
+  return thinSeries([...history, current]);
 }
 
 /**

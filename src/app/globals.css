@@ -249,65 +249,6 @@ body {
 }
 .review-form .secondary-button { width: 100%; }
 
-/* Public feed, decided 2026-09-19. Card grid in the shape of Kalshi's and
-   Polymarket's home pages, on the existing Mitra palette. */
-.feed-main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 3rem; display: grid; gap: 1.75rem; align-content: start; }
-.feed-intro { display: grid; gap: 0.6rem; }
-.feed-intro h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; }
-.feed-intro p { color: var(--muted); max-width: 46ch; }
-.feed-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; margin-top: 0.4rem; }
-.feed-link { font-size: 0.88rem; text-decoration: underline; text-underline-offset: 3px; }
-.feed-actions .primary-button, .feed-empty .primary-button, .feed-prompt .primary-button { width: auto; padding-inline: 1.4rem; }
-
-.feed-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--line); }
-.feed-tabs button { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); padding: 0.4rem 0.9rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--ink); }
-.feed-tabs button span { min-width: 1.25rem; padding: 0 0.3rem; border-radius: 999px; background: var(--line); font-size: 0.72rem; font-variant-numeric: tabular-nums; text-align: center; }
-.feed-tabs button:hover { border-color: var(--ink-soft); }
-.feed-tabs button.is-active { background: var(--ink); color: #f4f4f0; border-color: var(--ink); }
-.feed-tabs button.is-active span { background: #434855; color: #f4f4f0; }
-
-.feed-section { display: grid; gap: 0.9rem; }
-.feed-section-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
-.feed-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
-.feed-strip { display: grid; gap: 1rem; grid-auto-flow: column; grid-auto-columns: minmax(min(85vw, 300px), 1fr); overflow-x: auto; padding-bottom: 0.5rem; scroll-snap-type: x proximity; }
-.feed-strip > * { scroll-snap-align: start; }
-
-.feed-card { display: grid; gap: 0.75rem; align-content: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 1.1rem; color: var(--ink); overflow-wrap: anywhere; }
-.feed-card:hover { border-color: var(--ink-soft); }
-.feed-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
-.feed-person { font-size: 0.85rem; font-weight: 700; }
-.feed-person span { margin-left: 0.35rem; color: var(--muted); font-weight: 400; }
-.feed-tag { flex: none; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--line); color: var(--ink-soft); }
-.feed-tag-just-added { background: var(--accent); color: var(--accent-ink); }
-.feed-tag-closing-soon { background: var(--ink); color: #f4f4f0; }
-.feed-question { font-size: 0.98rem; font-weight: 600; line-height: 1.4; }
-.feed-odds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
-.feed-odds > div { display: grid; gap: 0.15rem; border: 1px solid var(--line); border-radius: 12px; padding: 0.5rem 0.65rem; }
-.feed-odds span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); }
-.feed-odds strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.feed-bar { height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.feed-bar span { display: block; height: 100%; background: var(--ink); }
-.feed-card-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; font-size: 0.76rem; color: var(--muted); }
-
-.feed-empty { display: grid; gap: 0.75rem; justify-items: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 2rem); }
-.feed-empty h1 { font-size: 1.3rem; font-weight: 700; }
-.feed-empty p { color: var(--muted); max-width: 52ch; }
-
-/* Shown to a signed-out visitor after two minutes of browsing. Dismissible by
-   decision: it is a prompt, not a wall. */
-.feed-prompt { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 20; display: flex; align-items: flex-start; gap: 1rem; max-width: 30rem; margin-inline: auto; border: 1px solid var(--ink); border-radius: var(--radius); background: var(--ink); color: #f4f4f0; padding: 1.1rem 1.25rem; box-shadow: 0 18px 40px rgb(15 17 21 / 0.28); }
-.feed-prompt-body { display: grid; gap: 0.5rem; }
-.feed-prompt h2 { font-size: 1.05rem; font-weight: 700; }
-.feed-prompt p { font-size: 0.85rem; line-height: 1.5; color: #c9ccd4; }
-.feed-prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.85rem; margin-top: 0.25rem; }
-.feed-prompt-secondary { font-size: 0.85rem; color: #f4f4f0; text-decoration: underline; text-underline-offset: 3px; }
-.feed-prompt-close { flex: none; border: 0; background: transparent; color: #a9aebb; font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }
-.feed-prompt-close:hover { color: #f4f4f0; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .feed-prompt { animation: feed-prompt-in 220ms ease-out; }
-  @keyframes feed-prompt-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
-}
 
 /* Proof, decided 2026-09-19. Public items sit in the goal's story column; the
    subject's own panel only appears for them, while their window is open. */
@@ -329,16 +270,10 @@ body {
 .owner-proof article { display: grid; gap: 0.4rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
 .owner-proof a { text-decoration: underline; text-underline-offset: 3px; }
 
-/* The owner's redaction screen, decided 2026-09-19. The picture leads; the
-   decision controls sit beside it so nothing is confirmed without looking. */
+/* The owner's proof review screen, decided 2026-09-19 and revised the same day to
+   publish statements rather than redacted documents. The original leads. */
 .redact-layout { display: grid; gap: 1.5rem; align-items: start; }
 .redact-stage { display: grid; gap: 0.75rem; min-width: 0; }
-.redact-frame { position: relative; display: block; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); overflow: hidden; touch-action: none; cursor: crosshair; user-select: none; }
-.redact-frame img { display: block; width: 100%; height: auto; pointer-events: none; }
-.redact-box { position: absolute; margin: 0; padding: 0; border: 2px solid #f4f4f0; background: #000; cursor: pointer; }
-.redact-box.is-suggested { border-color: var(--accent); }
-.redact-box.is-drawing { pointer-events: none; opacity: 0.6; border-style: dashed; }
-.redact-box:hover { outline: 2px solid var(--accent); }
 .redact-panel { display: grid; gap: 1rem; align-content: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 1.75rem); }
 .redact-panel h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
 .redact-panel .primary-button, .redact-panel .secondary-button { width: 100%; }
@@ -361,3 +296,287 @@ body {
 .proposal-button { display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 0.6rem 0.75rem; font: inherit; font-size: 0.85rem; color: var(--ink); cursor: pointer; }
 .proposal-button:hover:not(:disabled) { border-color: var(--ink-soft); }
 .proposal-button:disabled { opacity: 0.6; cursor: default; }
+
+/* ========================================================================
+   Market surfaces, redesigned 2026-09-22 (docs/DESIGN.md).
+   Kalshi's layout, YouTube's thumbnails, GoFundMe's titles and single bar.
+   Dark, scoped to .theme-dark so account, review and positions pages are
+   untouched until the look is approved.
+
+   Data colours were validated with the data-visualisation checks, not chosen
+   by eye: --yes and --no pass lightness band, chroma, colourblind separation
+   (delta E 31.5) and 3:1 contrast on the --card surface. The bright brand
+   lime is for buttons and labels only; data marks use the validated step.
+   ======================================================================== */
+.theme-dark {
+  --paper: #0b0d10;
+  --card: #14171c;
+  --raised: #1b1f26;
+  --line: #262b33;
+  --line-strong: #353b45;
+  --ink: #eef0f3;
+  --ink-soft: #c4c9d2;
+  --muted: #8b93a1;
+  --accent: #d2f24a;
+  --accent-ink: #141a00;
+  --yes: #82a000;
+  --no: #796ae5;
+  /* Text-safe steps of the same two hues, for the direction of a move. */
+  --toward-yes: #b9dc4f;
+  --toward-no: #a99ff2;
+  --danger: #ff8f85;
+  --danger-bg: #2c1512;
+  --success: #74e0a8;
+  --success-bg: #0f271c;
+  color-scheme: dark;
+  background: var(--paper);
+  color: var(--ink);
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* The page canvas comes from html and body, not the shell, so without this a
+   phone's overscroll bounce flashes the light background past a dark page.
+   No color-scheme here, on purpose: with it, the build's CSS compiler rewrote
+   the rule with its color-scheme polyfill and the result never reached the
+   browser's stylesheet. The shell already sets color-scheme for its contents. */
+html:has(.theme-dark) { background: #0b0d10; }
+body:has(.theme-dark) { background: #0b0d10; }
+
+.market-shell { min-height: 100vh; display: flex; flex-direction: column; }
+/* Every track is minmax(0, 1fr). An auto track grows to its widest child's natural
+   width, and the Just added strip's natural width is all its cards end to end,
+   which stretched the whole column past a phone screen. */
+.market-wrap { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.25rem clamp(1rem, 3vw, 2rem) 3rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-content: start; }
+.market-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; padding: 1.25rem clamp(1rem, 3vw, 2rem); border-top: 1px solid var(--line); color: var(--muted); font-size: 0.8rem; }
+
+/* Top bar */
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 1rem; padding: 0.8rem clamp(1rem, 3vw, 2rem); background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.topbar-brand { display: inline-flex; align-items: center; gap: 0.55rem; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
+.topbar-mark { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 0.55rem; background: var(--accent); color: var(--accent-ink); font-size: 1rem; }
+.topbar-scope { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.topbar-scope span { color: var(--muted); }
+.topbar-actions { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+.topbar-link { font-size: 0.88rem; color: var(--ink-soft); }
+.topbar-link:hover { color: var(--ink); }
+@media (max-width: 720px) { .topbar-scope, .topbar-link { display: none; } }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 2.35rem; padding: 0 1.05rem; border-radius: 999px; font-size: 0.88rem; font-weight: 700; border: 1px solid transparent; cursor: pointer; white-space: nowrap; }
+.btn-accent { background: var(--accent); color: var(--accent-ink); }
+.btn-accent:hover { filter: brightness(1.06); }
+.btn-ghost { border-color: var(--line-strong); color: var(--ink); background: transparent; }
+.btn-ghost:hover { border-color: var(--ink-soft); }
+
+/* Person chips, YouTube's topic row. The owner chose tabs by person. */
+.chips { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.2rem; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 0.45rem; height: 2.2rem; padding: 0 0.85rem 0 0.4rem; border-radius: 0.6rem; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 0.86rem; font-weight: 600; cursor: pointer; }
+.chip:first-child { padding-left: 0.85rem; }
+.chip:hover { border-color: var(--line-strong); }
+.chip.is-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip.is-active .avatar { background: var(--paper); color: var(--ink); }
+.chip-count { min-width: 1.3rem; padding: 0.05rem 0.35rem; border-radius: 999px; background: color-mix(in srgb, currentColor 14%, transparent); font-size: 0.72rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* Avatar: initials only. Photos wait for the profile picture decision. */
+.avatar { flex: none; display: grid; place-items: center; border-radius: 999px; background: linear-gradient(135deg, #2b3340, #404a5a); color: var(--ink); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+
+/* Layout: main column and Kalshi's rundown down the side */
+.feed-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.feed-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.6rem; min-width: 0; }
+.feed-side { display: grid; gap: 1rem; min-width: 0; }
+@media (min-width: 1100px) {
+  .feed-layout { grid-template-columns: minmax(0, 1fr) 330px; }
+  .feed-side { position: sticky; top: 4.6rem; }
+}
+.panel { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 1.15rem; }
+.section-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.85rem; }
+.feed-empty { display: grid; gap: 0.75rem; justify-items: start; padding: clamp(1.25rem, 3vw, 2rem); }
+.feed-empty h1 { font-size: 1.3rem; font-weight: 800; }
+.feed-empty p { color: var(--ink-soft); max-width: 52ch; }
+
+/* Featured goal: Kalshi's hero, text on the left and the chart on the right */
+.hero { display: grid; gap: 1rem; border: 1px solid var(--line); border-radius: 18px; background: var(--card); padding: clamp(1.1rem, 2.5vw, 1.6rem); }
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.hero-kicker { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.hero-kicker-dot { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: var(--accent); }
+.hero-nav { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.hero-nav button { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.hero-nav button:hover { border-color: var(--ink-soft); }
+.hero-body { display: grid; gap: 1.25rem; align-items: center; }
+.hero-main { display: grid; gap: 1rem; align-content: start; min-width: 0; }
+.hero-person { display: flex; align-items: center; gap: 0.65rem; }
+.hero-person > span:last-child { display: grid; font-size: 0.9rem; }
+.hero-person > span:last-child span { color: var(--muted); font-size: 0.8rem; }
+.hero-title { font-size: clamp(1.45rem, 3vw, 2.05rem); line-height: 1.12; font-weight: 800; letter-spacing: -0.03em; overflow-wrap: anywhere; }
+.hero-title a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.85rem; }
+.hero-chart { min-width: 0; }
+@media (min-width: 860px) { .hero-body { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+
+/* Trust notes, Kalshi's three info cards */
+.trust { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.trust > div { display: grid; gap: 0.25rem; border: 1px solid var(--line); border-radius: 14px; background: var(--card); padding: 0.95rem 1.05rem; }
+.trust strong { font-size: 0.95rem; }
+.trust span { color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+
+/* Just added: Kalshi's Upcoming strip */
+.strip { min-width: 0; }
+.strip-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 230px); gap: 0.85rem; overflow-x: auto; padding-bottom: 0.4rem; scroll-snap-type: x proximity; }
+.strip-row > li { scroll-snap-align: start; }
+.strip-card { display: grid; gap: 0.35rem; color: var(--ink); }
+.strip-card .thumb { margin-bottom: 0.35rem; }
+.strip-date { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; color: var(--muted); }
+.strip-title { font-size: 0.9rem; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.strip-who { font-size: 0.8rem; color: var(--muted); }
+.strip-card:hover .strip-title { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Thumbnail: YouTube's big, bold, few-words image, generated per goal type */
+.thumb { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; isolation: isolate; color: #fff; }
+.thumb-pattern { position: absolute; inset: 0; z-index: -1; opacity: 0.22; }
+.thumb-chip { position: absolute; top: 0.6rem; left: 0.6rem; padding: 0.18rem 0.5rem; border-radius: 6px; background: rgb(0 0 0 / 0.38); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; backdrop-filter: blur(4px); }
+.thumb-stake { position: absolute; left: 0.8rem; right: 34%; bottom: 0.75rem; font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 900; line-height: 1.02; letter-spacing: -0.03em; text-transform: uppercase; text-shadow: 0 2px 14px rgb(0 0 0 / 0.45); overflow-wrap: anywhere; }
+.thumb-who { position: absolute; right: -0.4rem; top: 50%; transform: translateY(-50%); font-size: 5.4rem; font-weight: 900; letter-spacing: -0.06em; line-height: 1; opacity: 0.2; }
+.thumb-badge { position: absolute; right: 0.55rem; bottom: 0.55rem; padding: 0.15rem 0.45rem; border-radius: 5px; background: rgb(0 0 0 / 0.72); font-size: 0.74rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.art-gpa { background: linear-gradient(135deg, #172554 0%, #3730a3 55%, #6366f1 100%); }
+.art-gpa .thumb-pattern { background: repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 22px), repeating-linear-gradient(90deg, #fff 0 1px, transparent 1px 22px); }
+.art-club { background: linear-gradient(135deg, #500724 0%, #9d174d 50%, #c026d3 100%); }
+.art-club .thumb-pattern { background: radial-gradient(circle at 1px 1px, #fff 1.4px, transparent 1.6px) 0 0 / 16px 16px; }
+.art-internship { background: linear-gradient(135deg, #022c22 0%, #065f46 50%, #0d9488 100%); }
+.art-internship .thumb-pattern { background: repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 14px); }
+.art-gym { background: linear-gradient(135deg, #431407 0%, #9a3412 50%, #f97316 100%); }
+.art-gym .thumb-pattern { background: repeating-linear-gradient(90deg, #fff 0 6px, transparent 6px 26px); opacity: 0.12; }
+.art-launch { background: linear-gradient(135deg, #2e1065 0%, #7e22ce 50%, #db2777 100%); }
+.art-launch .thumb-pattern { background: repeating-conic-gradient(from 0deg at 85% 110%, #fff 0 4deg, transparent 4deg 18deg); opacity: 0.14; }
+.art-goal { background: linear-gradient(135deg, #111827 0%, #334155 60%, #475569 100%); }
+.art-goal .thumb-pattern { background: radial-gradient(circle at 2px 2px, #fff 1px, transparent 1.4px) 0 0 / 20px 20px; }
+.thumb-hero { border-radius: 14px; }
+
+/* Goal card */
+.grid { display: grid; gap: 1.1rem 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 262px), 1fr)); }
+.gcard { display: grid; gap: 0.75rem; align-content: start; min-width: 0; }
+.gcard-thumb { display: block; border-radius: 12px; }
+.gcard-thumb:hover .thumb { filter: brightness(1.08); }
+.gcard-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.gcard-body { display: flex; gap: 0.65rem; align-items: flex-start; }
+.gcard-text { display: grid; gap: 0.25rem; min-width: 0; }
+.gcard-title { font-size: 0.97rem; font-weight: 700; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gcard-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.gcard-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; font-size: 0.8rem; color: var(--muted); }
+.gcard-market { display: grid; gap: 0.5rem; padding: 0.7rem; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.gcard-odds { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-soft); }
+.gcard-chance strong { font-size: 1.15rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+
+/* Probability bar: GoFundMe's progress bar, read as a chance. A 2px surface gap
+   separates the two segments; ends are rounded, per the mark specs. */
+.pbar { display: flex; gap: 2px; height: 6px; }
+.pbar-yes { flex: none; border-radius: 4px 0 0 4px; background: var(--yes); min-width: 2px; }
+.pbar-no { flex: 1; border-radius: 0 4px 4px 0; background: var(--no); min-width: 2px; }
+
+/* YES and NO: Kalshi's outlined price pills. The number wears the text colour;
+   the short key beside it carries the side, so identity is never colour alone. */
+.pills { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.pill { display: flex; align-items: center; gap: 0.5rem; min-height: 3rem; padding: 0 0.95rem; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--raised); color: var(--ink); transition: border-color 120ms ease, background 120ms ease; }
+.pill strong { margin-left: auto; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+.pill-side { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.pill-key { width: 3px; height: 1.1rem; border-radius: 2px; }
+.pill-yes .pill-key { background: var(--yes); }
+.pill-no .pill-key { background: var(--no); }
+.pill-yes:hover { border-color: var(--yes); }
+.pill-no:hover { border-color: var(--no); }
+.pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pills-compact .pill { min-height: 2.25rem; padding: 0 0.7rem; border-radius: 9px; }
+.pills-compact .pill strong { font-size: 0.98rem; }
+.pills-compact .pill-side { font-size: 0.7rem; }
+
+/* The day's move. The arrow carries direction; the tint only repeats it. */
+.change { display: inline-flex; align-items: center; gap: 0.15rem; font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.change span { font-size: 0.62rem; }
+.change-up { color: var(--toward-yes); }
+.change-down { color: var(--toward-no); }
+.change-flat { color: var(--muted); }
+
+/* Rundown: Kalshi's Trending list */
+.rundown h2 { font-size: 1.02rem; font-weight: 800; padding-bottom: 0.75rem; margin-bottom: 0.25rem; border-bottom: 1px solid var(--line); }
+.rundown ul { display: grid; }
+.rundown-row { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); color: var(--ink); }
+.rundown li:last-child .rundown-row { border-bottom: 0; padding-bottom: 0.1rem; }
+.rundown-text { display: grid; gap: 0.2rem; min-width: 0; }
+.rundown-title { font-size: 0.88rem; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rundown-sub { font-size: 0.77rem; color: var(--muted); }
+.rundown-value { display: grid; justify-items: end; gap: 0.15rem; }
+.rundown-value strong { font-size: 1rem; font-weight: 800; }
+.rundown-row:hover .rundown-title { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Price chart. Marks per the data-visualisation specs: 2px line, 10% wash,
+   hairline solid grid one step off the surface, 8px end dot with a 2px surface
+   ring, recessive muted ticks. The container includes the axis band. */
+.chart { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; min-width: 0; }
+.chart-caption { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chart-plot { position: relative; width: 100%; outline: none; border-radius: 8px; touch-action: pan-y; }
+.chart-plot:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+/* Out of flow, so the plot's width comes from its container alone. In flow, the
+   SVG's pixel width inflated the container, which the resize observer then
+   measured: a loop that pushed the axis labels outside the card. */
+.chart-plot svg { position: absolute; top: 0; left: 0; display: block; overflow: visible; }
+.chart-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.chart-tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart-line { fill: none; stroke: var(--yes); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-area { fill: var(--yes); opacity: 0.1; stroke: none; }
+.chart-dot { fill: var(--yes); stroke: var(--card); stroke-width: 2; }
+.chart-crosshair { stroke: var(--ink-soft); stroke-width: 1; opacity: 0.6; shape-rendering: crispEdges; }
+.chart-tip { position: absolute; top: 0; transform: translateX(-50%); display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.6rem; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--raised); font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap; pointer-events: none; box-shadow: 0 6px 18px rgb(0 0 0 / 0.35); }
+.chart-tip strong { font-size: 0.95rem; color: var(--ink); }
+.chart-tip-key { width: 12px; height: 2px; border-radius: 1px; background: var(--yes); }
+.chart-empty { display: grid; place-items: center; min-height: 180px; border: 1px dashed var(--line-strong); border-radius: 12px; color: var(--muted); font-size: 0.85rem; text-align: center; padding: 1rem; }
+.chart-table summary { cursor: pointer; font-size: 0.78rem; color: var(--muted); }
+.chart-table summary:hover { color: var(--ink-soft); }
+.chart-table table { width: 100%; margin-top: 0.5rem; border-collapse: collapse; font-size: 0.8rem; }
+.chart-table th, .chart-table td { padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--line); text-align: left; }
+.chart-table td:last-child, .chart-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.chart-table th { color: var(--muted); font-weight: 600; }
+
+/* Sign-up prompt after two minutes. Dismissible by decision: a prompt, not a wall. */
+.feed-prompt { position: fixed; inset-inline: 1rem; bottom: 1rem; z-index: 40; display: flex; align-items: flex-start; gap: 1rem; max-width: 30rem; margin-inline: auto; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--raised); color: var(--ink); padding: 1.1rem 1.25rem; box-shadow: 0 18px 50px rgb(0 0 0 / 0.5); }
+.feed-prompt-body { display: grid; gap: 0.5rem; }
+.feed-prompt h2 { font-size: 1.05rem; font-weight: 800; }
+.feed-prompt p { font-size: 0.85rem; line-height: 1.5; color: var(--ink-soft); }
+.feed-prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.85rem; margin-top: 0.25rem; }
+.feed-prompt-secondary { font-size: 0.85rem; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.feed-prompt-close { flex: none; border: 0; background: transparent; color: var(--muted); font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 0.15rem; }
+.feed-prompt-close:hover { color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .feed-prompt { animation: feed-prompt-in 220ms ease-out; }
+  @keyframes feed-prompt-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
+}
+
+/* The goal page under the dark theme. These components predate it and several
+   use var(--ink) as a background with light text on top. Flipping --ink alone
+   would turn them into light blocks with near-white text, so each is set here. */
+.theme-dark .market-main { max-width: 1240px; }
+.theme-dark .market-nav a { color: var(--ink-soft); }
+.theme-dark .market-nav a:hover { color: var(--ink); }
+.theme-dark .market-hero { background: var(--card); color: var(--ink); border-color: var(--line); }
+.theme-dark .market-rules, .theme-dark .market-ticket, .theme-dark .evidence-panel { background: var(--card); border-color: var(--line); }
+.theme-dark .market-hero .review-meta, .theme-dark .market-person span, .theme-dark .market-price-note { color: var(--muted); }
+.theme-dark .market-prices > div { border-color: var(--line-strong); background: var(--raised); }
+.theme-dark .market-prices > div:first-child { color: var(--toward-yes); }
+.theme-dark .market-prices > div:last-child { color: var(--toward-no); }
+.theme-dark .market-chart { padding-bottom: 1.1rem; }
+.theme-dark .status-pill { background: var(--raised); color: var(--ink-soft); }
+.theme-dark .status-open { background: var(--accent); color: var(--accent-ink); }
+.theme-dark .primary-button { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.theme-dark .primary-button span { color: var(--accent-ink); }
+.theme-dark .secondary-button { color: var(--ink); border-color: var(--line-strong); }
+.theme-dark .secondary-button:hover:not(:disabled) { border-color: var(--ink-soft); }
+.theme-dark .text-button { color: var(--ink-soft); }
+/* Inputs hardcode a white background; on a dark page that is white text on white. */
+.theme-dark .field input, .theme-dark .field textarea { background: var(--raised); color: var(--ink); border-color: var(--line-strong); }
+.theme-dark .field input:focus, .theme-dark .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(210 242 74 / 0.25); }
+.theme-dark .field input::file-selector-button { background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.35rem 0.7rem; margin-right: 0.7rem; }
+.theme-dark .checkbox-row input { accent-color: var(--accent); }
+.theme-dark .type-option input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.theme-dark .rule-note { background: #1f2610; color: #d9ec9a; }
+.theme-dark .evidence-status-rejected { background: var(--raised); color: var(--ink); }
+.theme-dark .evidence-status { background: var(--raised); color: var(--ink-soft); }
+.theme-dark .evidence-status-published { background: var(--accent); color: var(--accent-ink); }
+.theme-dark .verified-statement { border-left-color: var(--accent); }
+.theme-dark .account-card { background: var(--card); border-color: var(--line); }

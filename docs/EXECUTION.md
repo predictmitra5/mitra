@@ -32,25 +32,6 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Run the current local suite, typecheck, lint and production build, then check the production positions route's logged-out HTML/RSC privacy. Reuse the fictional presentation helper for any changed layout. Do not create Auth users, change live markets or send documents to an AI provider for this validation.
 - Finish the missing positions documentation in README, MARKETS, DATA_MODEL and ROADMAP. Reconcile stale Current state, decision status and Next actions here with the already-committed feed and evidence work so a future session does not rebuild them. Record actual verification and its limits, clear In progress, and commit. Keep one workspace writer; any independent design review must use only the supplied description.
 
-### Market UI redesign - 2026-09-22 (Claude Code)
-
-The owner shared Kalshi, GoFundMe and YouTube home pages and asked for an analysis and a UI built from it: Kalshi's price and information layout and its event rundown, the thumbnail quality and title structure of YouTube and GoFundMe compressed to a Kalshi-sized card, a price graph if it earns its place, and fake markets to build against.
-
-**Working alongside the other agent's open entry above.** Codex holds the positions slice with five uncommitted files (README, DATA_MODEL, MARKETS, ROADMAP, positions-view) and has not written for about 34 hours. This work touches none of them and is committed by explicit path. README and ROADMAP updates for this slice wait until that entry closes.
-
-- `docs/DESIGN.md`: the analysis of the three references and the reasoning for what was taken from each.
-- Dark theme for the public browsing surfaces, the home feed and the goal page, built on CSS tokens. Chart and bar colors validated with the data-visualisation checks rather than chosen by eye: YES `#82a000` and NO `#796ae5` pass lightness band, chroma, colourblind separation (delta E 31.5) and contrast on the `#14171c` surface. The bright brand lime stays for buttons and labels; data marks use the validated step.
-- Goal card: a generated thumbnail (goal-type art, the stake in large type, a closes-in badge), an initials avatar, a two-line title, attribution, a YES/NO probability bar, YES and NO prices, and the 24-hour change.
-- Home: the decided person tabs, a featured carousel of top-ranked goals with a price chart, the decided Just added row, the ranked grid, and a sidebar rundown of goals closing soon and goals moving most.
-- Price chart on the featured goal and the goal page: one series, YES probability over time, hover crosshair with a tooltip, keyboard reachable, with a table view. Not on grid cards; Kalshi itself keeps charts off its cards.
-- `src/modules/discovery/feed.ts` also returns play-point volume, 24-hour change and, for featured goals only, a price series. Tests extended.
-- `scripts/preview-feed.mjs` seeds fourteen fictional goals across seven people with trades and price history, in a disposable schema, with a dev-server option for iterating on layout.
-
-Decisions this relies on: the public feed, person tabs, Just added row and ranking of 2026-09-19. Visual presentation is delegated.
-
-Deliberately not built, because each is a product decision that has not been made: search (the feed decision excludes it), photographs in thumbnails (the deferred profile picture question, and these would be photos of real students), and category tabs (the owner chose tabs by person).
-
-One new public disclosure, flagged rather than slipped in: play-point volume per goal, which is the Kalshi information the owner asked for and is an aggregate. Trader counts are deliberately not shown. In a small friend group "1 trader" can identify a person.
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
@@ -385,3 +366,26 @@ No Python on this machine and no use for a PDF library in the app, so the render
 Worth recording, because it cost three attempts: the first two renders produced fifteen and then nineteen mostly blank pages. The cause was a footer drawn below the bottom margin, which pdfkit reads as overflow and answers by adding a page, once per footer. A second version that managed the cursor and page breaks by hand fought the library and made it worse. The working version lets pdfkit flow and paginate everything except tables, and drops the bottom margin while drawing a footer.
 
 Also of note: an uncompressed PDF splits text across kerning operators, so grepping one for a phrase reports absent text as missing when it is there. That mis-diagnosis sent the second attempt in the wrong direction for a while. Page counts read out of the file structure were the reliable check.
+
+### 2026-09-22 - Market UI redesign (Claude Code)
+
+The owner shared Kalshi, GoFundMe and YouTube home pages and asked for an analysis and a working UI built from it, with fake markets to build against. The analysis and every choice below are in `docs/DESIGN.md`.
+
+Built: the home feed and goal page on a dark theme scoped to `.theme-dark`; a goal card that stacks YouTube's thumbnail and title, GoFundMe's single bar and Kalshi's prices; a featured carousel with a price chart; a rundown of goals closing soon and moving today; the Just added strip with thumbnails; trust notes. The feed now returns play-point volume, the 24-hour change, a price series for featured goals, and the two rundowns. `scripts/preview-feed.mjs` seeds fourteen fictional goals across seven people with 233 trades and 247 price points.
+
+Colours were validated, not chosen: YES `#82a000` and NO `#796ae5` pass all five palette checks on the card surface. The brand lime failed the lightness band as a data colour and stays for buttons and labels.
+
+Verified: 406 tests pass with 17 skipped (hosted-only), 35 of them new. Typecheck, lint and production build pass. Checked in the browser against the fictional fixture at desktop and phone widths, by screenshot where the pane rendered and by measurement where it did not: three columns with the rundown beside them on desktop, one column with a 16px gutter on a phone, no sideways scroll, and every card's parts reading correctly. The chart's crosshair snaps to the nearest point, clears on leaving, and responds to Home and End. The fixture schema was removed and the live database still holds one profile and no markets.
+
+Found and fixed while checking, each of which would have shipped:
+
+- The carousel led with a goal nobody had traded, so its chart was a flat line. It now prefers traded goals, in rank order; the ranking itself is unchanged, and a test pins both.
+- The chart's SVG inflated its own container, which the resize observer then measured, pushing the axis labels outside the card. The SVG is now out of flow.
+- The resize observer never fires while a page is hidden, so the chart kept its starting width and overflowed a phone. It now measures on mount, re-measures on resize, and has a viewBox so an unmeasured chart still fits.
+- On a phone the whole page scrolled sideways: the Just added strip's natural width is all its cards end to end, and auto-sized grid tracks let that stretch every sibling. Every track is now `minmax(0, 1fr)`.
+- The body stayed light behind the dark shell, which a phone's overscroll bounce would show. Fixed with `:has()`. The first attempt included `color-scheme`, and the compiled rule never reached the browser's stylesheet; without it, it does.
+- Card helpers: a two-word name was guessed by shape and ate the verb ("Will Sam launch the app?" became "The app"), so the name is now stripped exactly; and rounding was lopsided, showing an 11.5-point fall as 11 and an 11.5-point rise as 12.
+
+Deliberately not built, each an undecided product question: search, photographs in thumbnails (the deferred profile picture question), category tabs, and trader counts, which could identify someone in a small group. Play-point volume is a new public disclosure, recorded as such in DESIGN.md.
+
+Worked alongside the other agent's open positions entry without touching its five uncommitted files, and committed by explicit path. README and ROADMAP updates for this slice wait until that entry closes. Account, review and positions pages keep the light theme until the owner approves this look.

@@ -1,0 +1,120 @@
+# Market UI design
+
+How Mitra's market surfaces are laid out, and why. Redesigned 2026-09-22 from three references the owner supplied: Kalshi's home page, GoFundMe's fundraiser grid and YouTube's home feed.
+
+The owner's brief: Kalshi's price and information layout and its rundown of events; the thumbnail quality and title structure of YouTube and GoFundMe, compressed to a Kalshi-sized card; a price graph if it earns its place.
+
+Applies to the public home feed (`/`) and the goal page (`/markets/[id]`). Account, review and positions pages keep the original light theme until this look is approved.
+
+---
+
+## 1. What each reference does
+
+### Kalshi — the market is the headline
+
+- **The probability is the number that matters.** 47%, 54%, in outlined pills that double as the way to trade. Everything else is supporting detail.
+- **Volume as social proof.** "$4,130,203 vol" under every market; "$773M volume" on hub cards.
+- **Movement.** "▲ 2" beside a price in the Trending list: not just where a market is, but which way it is going.
+- **A featured market with its chart**, in a carousel ("1 of 7"). The chart lives only here and on market pages, never on the small cards.
+- **A rundown down the side.** Trending and category lists: question, outcome, percentage, change. Dense and scannable.
+- **An upcoming strip** with dates first ("SEP 24").
+- **Trust cards.** Market integrity, markets over monopolies, responsible trading. Short reassurance for a first-time visitor.
+- Dark, with one saturated brand colour.
+
+### GoFundMe — the person is the headline
+
+- **A photo of the person**, large, at the top of every card.
+- **The title names them and the stakes.** "Support Matthew Donovan's Recovery", "Help Yuen Through Harassment and Doxxing". Human, not abstract.
+- **"by [organiser]"** directly under the title.
+- **One bar you read at a glance**, then one number: "$89,368 raised".
+- Light, generous whitespace, four columns.
+
+### YouTube — the thumbnail is the headline
+
+- **16:9 thumbnails that carry text.** "BOTH SOLD?", "$1000 challenge": a few huge words that say what is at stake before you read the title.
+- **A corner badge** for duration, bottom right.
+- **Avatar beside a two-line title**, then a meta line: channel, views, age ("197K · 6d ago").
+- **Topic chips** across the top, the active one inverted.
+- Dark, three wide columns.
+
+---
+
+## 2. What Mitra took, and the card that resulted
+
+Each reference is strongest at one layer, so the card stacks them top to bottom.
+
+| Layer | From | In Mitra |
+| --- | --- | --- |
+| Thumbnail | YouTube | 16:9, the stake in a few large words ("3.8 GPA", "GOOGLE INTERNSHIP"), category chip top left, time left bottom right |
+| Identity | YouTube + GoFundMe | Avatar, a two-line title naming the person, then name · volume · age |
+| Market | Kalshi | The chance of YES as the big number, the day's change beside it |
+| Glance | GoFundMe | One bar, read as a probability instead of money raised |
+| Action | Kalshi | YES and NO pills, which open the goal to trade |
+
+**The key mapping:** GoFundMe's progress bar and Kalshi's probability are the same shape of information — one quantity between two ends. So the bar that says "how close to the goal" on GoFundMe says "how likely" on Mitra.
+
+**Titles are compressed** by dropping the trailing deadline from template goals ("…offer from Google by March 1, 2027?" becomes "…offer from Google?"), because the badge already shows the time left. A goal written in the person's own words is never trimmed: "accepted by Stanford" must keep "by Stanford".
+
+**The thumbnail's big text** is derived from the fixed template wording per goal type, with a fallback for anything else. When the display name is known it is stripped exactly, because shape alone cannot tell "Sam Lee launch" from "Sam launch".
+
+### The page
+
+- **Top bar** (Kalshi): brand, sign in and sign up.
+- **Person chips** (YouTube's topic row). Tabs by person was decided on 2026-09-19; categories stay on the cards.
+- **Featured carousel** (Kalshi): a goal, its YES and NO prices, volume, time left, the day's change, and its price chart.
+- **Trust notes** (Kalshi): play money only; proof checked by a person; nobody bets on their own goal.
+- **Just added** (Kalshi's upcoming strip): decided on 2026-09-19, now with thumbnails and closing dates.
+- **The grid** in ranked order.
+- **Rundown** down the side (Kalshi's Trending): closing soon, and moving today.
+
+---
+
+## 3. The chart
+
+**It earns its place on the featured goal and the goal page, not on grid cards.** The price path is the story of a prediction market: when opinion turned. But a sparkline on every card adds noise without adding a decision, and Kalshi itself keeps charts off its cards. The day's change carries direction on the card instead.
+
+Built to the data-visualisation rules rather than by eye:
+
+- **One series**, so no legend box; the heading names what is plotted.
+- **A step line.** A price holds flat between trades, so a sloped line would draw movement that never happened.
+- 2px line, 10% wash beneath, hairline solid gridlines, an 8px end dot with a 2px surface ring.
+- **A crosshair that snaps to the nearest point**, with the value leading the tooltip and the time after it.
+- **Keyboard reachable** (arrows, Home, End, Escape) with the same readout, a summary for screen readers, and a table view, so no value is reachable only by hovering.
+- **Always fits its container.** It measures itself on mount, re-measures on resize, and has a `viewBox`, so even unmeasured it scales rather than overflowing. A ResizeObserver alone was not enough: it never fires while a page is hidden, and the chart stayed at its starting width and ran off a phone screen.
+- The carousel leads with goals that have been traded, still in rank order. A featured chart with no history is a flat line. This changes only what the carousel draws; the ranking is untouched.
+
+---
+
+## 4. Colour
+
+Dark, following Kalshi and YouTube, and because it is the genre convention for trading. Mitra's lime accent was already close to Kalshi's green-on-dark.
+
+**Data colours were validated, not chosen.** Run through the palette checks (lightness band, chroma, colourblind separation, normal-vision separation, contrast) against the `#14171c` card surface:
+
+| Role | Colour | Result |
+| --- | --- | --- |
+| YES | `#82a000` | Pass on all five |
+| NO | `#796ae5` | Pass on all five; colourblind separation from YES delta E 31.5 |
+
+The brand lime (`#d2f24a`) **failed** the lightness band as a data colour — too bright to sit beside another series at equal weight — so it is kept for buttons, the logo and labels, and data marks use the validated step. The day's change uses lighter, text-safe steps of the same two hues, so up reads as "towards YES" rather than "good", and the arrow carries direction on its own.
+
+---
+
+## 5. What was deliberately not taken
+
+Each of these is a product decision that has not been made, so the redesign leaves a place for it rather than inventing it.
+
+- **Photographs.** GoFundMe and YouTube lead with faces. On Mitra these would be photos of real students, which is the profile picture question the owner deferred. Thumbnails are generated per goal type instead, with the person's initials as a large faded monogram; the component takes a photo once that is decided.
+- **Search.** Kalshi and GoFundMe put search front and centre. The feed decision of 2026-09-19 excludes it.
+- **Category tabs.** Kalshi's topic row. The owner chose tabs by person.
+- **Trader counts.** YouTube shows views and Kalshi implies participation. In a small friend group "1 trader" can identify someone, so counts stay private. **Play-point volume is shown**, as the Kalshi information the owner asked for; it is an aggregate, and it is a new public disclosure, recorded as such.
+
+---
+
+## 6. Trying it
+
+```bash
+node --env-file=.env.local scripts/preview-feed.mjs
+```
+
+After `npm run build`. Seeds seven fictional people and fourteen goals with price paths and trades into a disposable schema, serves the app at http://localhost:3100 signed out, and removes it all on Ctrl+C. `--dev` runs a hot-reloading server instead; stop `npm run dev` first, as the two share a build folder.
