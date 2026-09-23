@@ -32,6 +32,25 @@ Only one agent should work in this folder at a time. Before starting, check that
 - Run the current local suite, typecheck, lint and production build, then check the production positions route's logged-out HTML/RSC privacy. Reuse the fictional presentation helper for any changed layout. Do not create Auth users, change live markets or send documents to an AI provider for this validation.
 - Finish the missing positions documentation in README, MARKETS, DATA_MODEL and ROADMAP. Reconcile stale Current state, decision status and Next actions here with the already-committed feed and evidence work so a future session does not rebuild them. Record actual verification and its limits, clear In progress, and commit. Keep one workspace writer; any independent design review must use only the supplied description.
 
+### Market UI redesign - 2026-09-22 (Claude Code)
+
+The owner shared Kalshi, GoFundMe and YouTube home pages and asked for an analysis and a UI built from it: Kalshi's price and information layout and its event rundown, the thumbnail quality and title structure of YouTube and GoFundMe compressed to a Kalshi-sized card, a price graph if it earns its place, and fake markets to build against.
+
+**Working alongside the other agent's open entry above.** Codex holds the positions slice with five uncommitted files (README, DATA_MODEL, MARKETS, ROADMAP, positions-view) and has not written for about 34 hours. This work touches none of them and is committed by explicit path. README and ROADMAP updates for this slice wait until that entry closes.
+
+- `docs/DESIGN.md`: the analysis of the three references and the reasoning for what was taken from each.
+- Dark theme for the public browsing surfaces, the home feed and the goal page, built on CSS tokens. Chart and bar colors validated with the data-visualisation checks rather than chosen by eye: YES `#82a000` and NO `#796ae5` pass lightness band, chroma, colourblind separation (delta E 31.5) and contrast on the `#14171c` surface. The bright brand lime stays for buttons and labels; data marks use the validated step.
+- Goal card: a generated thumbnail (goal-type art, the stake in large type, a closes-in badge), an initials avatar, a two-line title, attribution, a YES/NO probability bar, YES and NO prices, and the 24-hour change.
+- Home: the decided person tabs, a featured carousel of top-ranked goals with a price chart, the decided Just added row, the ranked grid, and a sidebar rundown of goals closing soon and goals moving most.
+- Price chart on the featured goal and the goal page: one series, YES probability over time, hover crosshair with a tooltip, keyboard reachable, with a table view. Not on grid cards; Kalshi itself keeps charts off its cards.
+- `src/modules/discovery/feed.ts` also returns play-point volume, 24-hour change and, for featured goals only, a price series. Tests extended.
+- `scripts/preview-feed.mjs` seeds fourteen fictional goals across seven people with trades and price history, in a disposable schema, with a dev-server option for iterating on layout.
+
+Decisions this relies on: the public feed, person tabs, Just added row and ranking of 2026-09-19. Visual presentation is delegated.
+
+Deliberately not built, because each is a product decision that has not been made: search (the feed decision excludes it), photographs in thumbnails (the deferred profile picture question, and these would be photos of real students), and category tabs (the owner chose tabs by person).
+
+One new public disclosure, flagged rather than slipped in: play-point volume per goal, which is the Kalshi information the owner asked for and is an aggregate. Trader counts are deliberately not shown. In a small friend group "1 trader" can identify a person.
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
