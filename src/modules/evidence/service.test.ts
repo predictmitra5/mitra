@@ -151,7 +151,7 @@ describe("attaching a file", () => {
     expect(storage.putOriginal).not.toHaveBeenCalled();
   });
 
-  it("discards the stored object when the row cannot be written", async () => {
+  it("refuses a newly inactive subject without touching the uploaded original", async () => {
     const storage = fakeStorage();
     // Withdraw the subject after the pre-check but before the transaction.
     const original = storage.putOriginal;
@@ -164,8 +164,8 @@ describe("attaching a file", () => {
       { marketId, contentType: "image/png", bytes: png.byteLength, body: png }, storage, clock))
       .rejects.toThrow(EvidenceError);
 
-    expect(storage.discarded).toHaveLength(1);
-    expect(storage.written.size).toBe(0);
+    expect(storage.discarded).toHaveLength(0);
+    expect(storage.written.size).toBe(1);
     expect(await listForOwner(db, owner, marketId)).toHaveLength(0);
   });
 
@@ -256,9 +256,69 @@ describe("uploading straight to storage (2026-09-24)", () => {
     await expect(completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
       .rejects.toThrow(/already sent/i);
     await expect(completeFileUpload(db, stranger, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
-      .rejects.toThrow(/already sent/i);
+      .rejects.toThrow(/only the person/i);
     expect(bucket.discarded).toEqual([]);
     expect(bucket.objects.has(start.path)).toBe(true);
+  });
+
+  it("does not read or delete another subject's pending upload", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: png.byteLength }, clock);
+    bucket.objects.set(start.path, png);
+    for (const actor of [stranger, owner]) {
+      await expect(completeFileUpload(db, actor, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
+        .rejects.toThrow(/only the person/i);
+    }
+    expect(bucket.readOriginal).not.toHaveBeenCalled();
+    expect(bucket.discarded).toEqual([]);
+    expect(bucket.objects.has(start.path)).toBe(true);
+    await completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(1);
+  });
+
+  it.each(["bannedAt", "withdrawnAt", "adultConfirmedAt"] as const)("refuses start and finish when the subject fails %s", async (field) => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: png.byteLength }, clock);
+    bucket.objects.set(start.path, png);
+    await db.update(profiles).set({ [field]: field === "adultConfirmedAt" ? null : now }).where(eq(profiles.id, subject));
+    await expect(beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: png.byteLength }, clock))
+      .rejects.toThrow(/finish setting up/i);
+    await expect(completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
+      .rejects.toThrow(/finish setting up/i);
+    expect(bucket.readOriginal).not.toHaveBeenCalled();
+    expect(bucket.discarded).toEqual([]);
+    expect(bucket.objects.has(start.path)).toBe(true);
+  });
+
+  it("keeps one original and one row when two finishes overlap", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: png.byteLength }, clock);
+    bucket.objects.set(start.path, png);
+    const input = { marketId, id: start.id, contentType: "image/png" };
+    const results = await Promise.allSettled([
+      completeFileUpload(db, subject, input, bucket, clock),
+      completeFileUpload(db, subject, input, bucket, clock),
+    ]);
+    expect(results[0].status).toBe("fulfilled");
+    expect(results[1].status).toBe("rejected");
+    expect(bucket.readOriginal).toHaveBeenCalledTimes(1);
+    expect(bucket.discarded).toEqual([]);
+    expect(bucket.objects.has(start.path)).toBe(true);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(1);
+  });
+
+  it("lets a valid finish succeed after an invalid-caption request arrives first", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: png.byteLength }, clock);
+    bucket.objects.set(start.path, png);
+    const input = { marketId, id: start.id, contentType: "image/png" };
+    await expect(completeFileUpload(db, subject, { ...input, caption: "x".repeat(2000) }, bucket, clock))
+      .rejects.toThrow(EvidenceError);
+    expect(bucket.readOriginal).not.toHaveBeenCalled();
+    expect(bucket.discarded).toEqual([]);
+    await completeFileUpload(db, subject, input, bucket, clock);
+    expect(bucket.objects.has(start.path)).toBe(true);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(1);
   });
 
   it("refuses ids and types that are not its own shape before reading anything", async () => {

@@ -151,8 +151,9 @@ export async function submitLink<Q extends PgQueryResultHKT>(
  *      size, and names a fresh path. Nothing is stored.
  *   2. The browser sends the file to that path through a one-time signed link.
  *   3. completeFileUpload reads the object back, checks its real size and its
- *      file signature, re-checks eligibility and writes the row. If anything
- *      fails the object is discarded, so a row always points at a checked file.
+ *      file signature, re-checks eligibility and writes the row. Invalid file
+ *      content is discarded; other failures retain the private upload so a
+ *      malformed request cannot destroy valid proof awaiting completion.
  *
  * submitFile runs the same three steps in one call, for a caller that already
  * holds the bytes.
@@ -168,6 +169,7 @@ export async function beginFileUpload<Q extends PgQueryResultHKT>(
   clock: Clock = () => new Date(),
 ): Promise<FileUploadStart> {
   assertAcceptableFile(input.contentType, input.bytes);
+  await requireActiveProfile(database, userId);
   // The assertion narrows the argument, not the property it came from.
   const contentType = input.contentType as AcceptedUploadType;
   // Check eligibility before anything can be stored, so a stranger cannot make
@@ -199,28 +201,40 @@ export async function completeFileUpload<Q extends PgQueryResultHKT>(
   const id = input.id;
   const contentType = input.contentType;
   const path = originalStoragePath(input.marketId, id, contentType);
-  // An id that is already recorded names a kept original. Finishing it again
-  // must fail without touching the file: proof is retained permanently, and a
-  // failure below would otherwise discard it.
-  if (await isRecorded(database, id)) throw new EvidenceError("ALREADY_SENT", "That file was already sent.");
-  let body: Uint8Array;
-  try {
-    body = await storage.readOriginal(path);
-  } catch {
-    throw new EvidenceError("UPLOAD_MISSING", "The file did not finish uploading. Please try again.");
-  }
-  try {
-    assertAcceptableFile(contentType, body.byteLength);
-    if (!matchesDeclaredType(body, contentType)) {
-      throw new EvidenceError("BAD_TYPE", "That file is not the PDF or image it says it is.");
+  const caption = normalizeCaption(input.caption);
+  return database.transaction(async (tx) => {
+    const locked = tx as unknown as Database<Q>;
+    // The record check, insert and orphan cleanup must share one lock. A
+    // check-then-delete outside it can erase an original another finish keeps.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`evidence-upload:${id}`}, 0))`);
+    await requireActiveProfile(locked, userId);
+    const market = await loadMarket(locked, input.marketId);
+    if (!market) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
+    if (market.subjectUserId !== userId) {
+      throw new EvidenceError("NOT_SUBJECT", "Only the person a goal is about can send proof for it.");
     }
-    return await recordFile(database, userId, { id, marketId: input.marketId, path, contentType, bytes: body.byteLength, caption: normalizeCaption(input.caption) }, clock);
-  } catch (error) {
-    // Two finishes of the same upload can race; only an object no row points
-    // at is an orphan.
-    if (!(await isRecorded(database, id).catch(() => true))) await storage.discardOrphan(path);
-    throw error;
-  }
+    // Authorization precedes all storage access, including error cleanup.
+    if (await isRecorded(locked, id)) throw new EvidenceError("ALREADY_SENT", "That file was already sent.");
+    let body: Uint8Array;
+    try {
+      body = await storage.readOriginal(path);
+    } catch {
+      throw new EvidenceError("UPLOAD_MISSING", "The file did not finish uploading. Please try again.");
+    }
+    try {
+      assertAcceptableFile(contentType, body.byteLength);
+      if (!matchesDeclaredType(body, contentType)) {
+        throw new EvidenceError("BAD_TYPE", "That file is not the PDF or image it says it is.");
+      }
+    } catch (error) {
+      // Only invalid stored bytes establish that this object is disposable.
+      // Failed metadata, authorization or database writes must not erase a
+      // valid original that a retry may still finish.
+      if (!(await isRecorded(locked, id).catch(() => true))) await storage.discardOrphan(path);
+      throw error;
+    }
+    return recordFile(locked, userId, { id, marketId: input.marketId, path, contentType, bytes: body.byteLength, caption }, clock);
+  });
 }
 
 async function isRecorded<Q extends PgQueryResultHKT>(database: Database<Q>, id: string): Promise<boolean> {
