@@ -24,7 +24,16 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### Finish positions, one dark look everywhere, docs catch-up - 2026-09-23 (Claude Code)
+
+The owner said "okay just do whatever u need to do" after being asked whether to roll the dark market look out to every page. Visual design is delegated; this changes no product rule.
+
+1. **One theme.** Move the dark tokens from `.theme-dark` to `:root`, rewrite the light-only rules (white inputs, dark hero blocks with light text, light tints) for the dark surface, and delete the scoped overrides and the `:has()` canvas workaround, which a dark body makes unnecessary. Every page gets the market top bar and footer; `AppHeader` goes. Sign-in, sign-up, password pages, account, new goal, positions and all three review pages.
+2. **Finish positions** (next action 8, the items Codex listed): review the page line by line; the empty state links to the public feed; an elapsed objection window reads "Objections closed"; the explainer stops calling share counts play points. Add each goal's type and current chance to the private projection so a card can show the same thumbnail and probability bar as the feed. The chance is the market's public price, not a valuation of the holding: held cost stays distinct from sale value, as approved on 2026-09-19.
+3. **Copy that no longer matches the pilot switch.** Sign-up says "Confirm your email" and account setup says "Your email is confirmed" while confirmation is off. Make both follow `emailConfirmationRequired()`.
+4. **Docs.** README, MARKETS, DATA_MODEL and ROADMAP describe the positions page, the feed, evidence and the UI; DESIGN.md says the whole app is dark; refresh Current state and Next actions here, several of which are stale (evidence submission is listed as unbuilt).
+
+Verify: tests, typecheck, lint, build; every page checked in the browser at desktop and 375px against a fictional fixture, including a signed-in view. Signed-in pages cannot be reached without an Auth user, and preview scripts must not create one, so those are checked by rendering the page components against fixture data rather than by signing in.
 
 ## Deferred, to come back to
 
