@@ -8,11 +8,12 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "./provision";
 import { BAN_CANCEL_REASON, BAN_REJECT_REASON, banPerson, listPeople, unbanPerson } from "./moderation";
 import { isBanned } from "./standing";
+import { ownerQueue, ownerQueueOrNull } from "./owner-queue";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
 
-const { profiles, markets, wallets, positions, adminActions } = schema;
+const { profiles, markets, wallets, positions, adminActions, evidence } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
 const now = new Date("2026-09-24T12:00:00Z"), clock = () => now;
 let owner: string, subject: string, trader: string, other: string;
@@ -147,5 +148,18 @@ describe("the people list", () => {
     expect(people.find((p) => p.handle === "subject")).toMatchObject({ activeGoals: 1, bannedAt: null, isOwner: false });
     expect(people.find((p) => p.handle === "owner")?.isOwner).toBe(true);
     await expect(listPeople(db, trader)).rejects.toMatchObject({ code: "NOT_OWNER" });
+  });
+});
+
+describe("the owner's waiting count", () => {
+  it("counts goals to approve and proof to read, for the owner only", async () => {
+    expect(await ownerQueue(db, owner)).toBe(0);
+    await createGoalDraft(db, subject, { type: "club", club: "Chess Club", deadline: "2026-10-15" }, now);
+    const live = await goal(other);
+    await db.insert(evidence).values({ marketId: live, submittedBy: other, kind: "link", linkUrl: "https://example.com/proof" });
+    expect(await ownerQueue(db, owner)).toBe(2);
+    expect(await ownerQueue(db, trader)).toBeNull();
+    expect(await ownerQueueOrNull(db, null)).toBeNull();
+    expect(await ownerQueueOrNull(db, "not-a-uuid")).toBeNull();
   });
 });

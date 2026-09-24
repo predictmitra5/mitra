@@ -28,7 +28,7 @@ export async function uploadPhotoAction(_state: FormState, form: FormData): Prom
   return { success: "Photo saved." };
 }
 
-export async function removeOwnPhotoAction(_state: FormState): Promise<FormState> {
+export async function removeOwnPhotoAction(): Promise<FormState> {
   try {
     const identity = await currentIdentity();
     if (!identity) return signedOut;

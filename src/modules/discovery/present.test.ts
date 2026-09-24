@@ -9,6 +9,7 @@ import {
   percent,
   shortDate,
   thumbnailText,
+  tickerSymbol,
   volumeLabel,
 } from "./present";
 
@@ -90,7 +91,7 @@ describe("categories", () => {
   it("names each template, and treats anything else as a goal", () => {
     expect(categoryLabel("gpa")).toBe("Grades");
     expect(categoryLabel("internship")).toBe("Internships");
-    expect(categoryLabel("own_words")).toBe("Goal");
+    expect(categoryLabel("own_words")).toBe("Anything");
     expect(categoryLabel(null)).toBe("Goal");
     expect(categoryLabel("something-new")).toBe("Goal");
   });
@@ -157,5 +158,18 @@ describe("time labels", () => {
     expect(shortDate(new Date("2026-09-24T12:00:00Z"))).toBe("SEP 24");
     // 02:00 UTC on 1 October is still 30 September in New York.
     expect(shortDate(new Date("2026-10-01T02:00:00Z"))).toBe("SEP 30");
+  });
+});
+
+describe("ticker symbols", () => {
+  it("pairs the first name with the stake, like a stock symbol", () => {
+    expect(tickerSymbol("gpa", "Will Maya Chen earn at least a 3.8 GPA for Fall 2026?", "Maya Chen")).toBe("MAYA·3.8GPA");
+    expect(tickerSymbol("gym", "Will Luis Ortega deadlift 315 pounds by May 1, 2027?", "Luis Ortega")).toBe("LUIS·DEADLIFT");
+    expect(tickerSymbol("internship", "Will Priya receive a written internship offer from Google by March 1, 2027?", "Priya")).toBe("PRIYA·GOOGLE");
+    expect(tickerSymbol("own_words", "Will I run a half marathon?", "Sam Lee")).toBe("SAM·RUN");
+  });
+  it("survives names and questions it cannot use", () => {
+    expect(tickerSymbol(null, "", "")).toBe("GOAL");
+    expect(tickerSymbol("own_words", "???", "Zoë")).toBe("ZO");
   });
 });

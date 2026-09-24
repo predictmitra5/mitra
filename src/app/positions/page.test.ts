@@ -13,7 +13,7 @@ import { PositionsView } from "./positions-view";
 import { PositionsError, type PositionsPage } from "@/modules/account/positions";
 
 const fixture: PositionsPage = { total: 1, page: 1, pages: 1, goals: [{
-  marketId: "fixture-id", question: "Will Alex join the chess club?", goalType: "club", yesPrice: 0.62, displayName: "Alex", handle: "alex",
+  marketId: "fixture-id", question: "Will Alex join the chess club?", goalType: "club", yesPrice: 0.62, displayName: "Alex", handle: "alex", photoUpdatedAt: null,
   status: "open", deadlineAt: new Date("2026-10-01T03:59:00Z"), evidenceDeadlineAt: new Date("2026-10-08T03:59:00Z"),
   contestEndsAt: null, ruledOutcome: null, tradingOpen: true, contestOpen: false,
   yesSharesMicro: 1, noSharesMicro: 12_345_678, yesCostBasisMicro: 1, noCostBasisMicro: 4_567_890,

@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
+import { isUuid } from "@/modules/market/input";
 import { justAdded, rankMarkets, type FeedReason, type MarketSignals, type RankedMarket } from "./ranking";
 
 const { markets, profiles, trades, feedEvents, priceHistory } = schema;
@@ -23,6 +24,8 @@ export type FeedCard = {
   /** The subject's public display name and handle, as the market page shows them. */
   displayName: string;
   handle: string;
+  /** When their profile photo last changed, which versions its public URL; null without one. */
+  photoUpdatedAt: Date | null;
   yesPrice: number;
   tradingOpen: boolean;
   reason: FeedReason;
@@ -48,6 +51,7 @@ export type FeaturedGoal = FeedCard & { series: PricePoint[] };
 export type FeedPerson = {
   handle: string;
   displayName: string;
+  photoUpdatedAt: Date | null;
   openGoals: number;
 };
 
@@ -77,6 +81,7 @@ type FeedRow = MarketSignals & {
   goalType: string | null;
   displayName: string;
   handle: string;
+  photoUpdatedAt: Date | null;
   liquidityMicro: number;
   yesSharesMicro: number | null;
   noSharesMicro: number | null;
@@ -91,6 +96,7 @@ function toCard(row: RankedMarket<FeedRow>, now: Date): FeedCard {
     deadlineAt: row.deadlineAt,
     displayName: row.displayName,
     handle: row.handle,
+    photoUpdatedAt: row.photoUpdatedAt,
     yesPrice: price(
       toLmsr({
         liquidity: row.liquidityMicro / MICRO_PER_UNIT,
@@ -160,6 +166,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
       goalType: markets.goalType,
       displayName: profiles.displayName,
       handle: profiles.handle,
+      photoUpdatedAt: profiles.photoUpdatedAt,
       liquidityMicro: markets.liquidityMicro,
       yesSharesMicro: markets.yesSharesMicro,
       noSharesMicro: markets.noSharesMicro,
@@ -171,7 +178,8 @@ export async function readFeed<Q extends PgQueryResultHKT>(
     .innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
     .leftJoin(clickCounts, eq(clickCounts.marketId, markets.id))
     .leftJoin(tradeCounts, eq(tradeCounts.marketId, markets.id))
-    .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt)))
+    // A banned or withdrawn person's goals are being cancelled; never show them meanwhile.
+    .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt), isNull(profiles.bannedAt), isNull(profiles.withdrawnAt)))
     .limit(MAX_CARDS);
 
   const signals: FeedRow[] = rows
@@ -190,6 +198,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
       goalType: row.goalType,
       displayName: row.displayName,
       handle: row.handle,
+      photoUpdatedAt: row.photoUpdatedAt,
       liquidityMicro: row.liquidityMicro,
       yesSharesMicro: row.yesSharesMicro,
       noSharesMicro: row.noSharesMicro,
@@ -202,7 +211,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   for (const row of signals) {
     const existing = people.get(row.handle);
     if (existing) existing.openGoals += 1;
-    else people.set(row.handle, { handle: row.handle, displayName: row.displayName, openGoals: 1 });
+    else people.set(row.handle, { handle: row.handle, displayName: row.displayName, photoUpdatedAt: row.photoUpdatedAt, openGoals: 1 });
   }
 
   const cards = ranked.map((row) => toCard(row, now));
@@ -248,6 +257,51 @@ export async function readFeed<Q extends PgQueryResultHKT>(
       .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))
       .slice(0, RUNDOWN_COUNT),
   };
+}
+
+/** A goal's live numbers, for pages that refresh prices while open. */
+export type Quote = { id: string; yesBp: number; change24hBp: number; volumeMicro: number; tradingOpen: boolean };
+
+/** One request refreshes at most a full feed page. */
+export const MAX_QUOTES = MAX_CARDS;
+const QUOTABLE = ["open", "closed", "ruled", "settled", "cancelled"] as const;
+
+/**
+ * Live prices for goals a page is already showing (decided 2026-09-24: prices
+ * refresh about every 15 seconds). Read-only on purpose: it records no view or
+ * click, so a page polling it cannot inflate the counts the feed ranks by. It
+ * returns only numbers the goal's public page already shows.
+ */
+export async function readQuotes<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  ids: readonly string[],
+  now: Date = new Date(),
+): Promise<Quote[]> {
+  const list = [...new Set(ids)].filter(isUuid).slice(0, MAX_QUOTES);
+  if (list.length === 0) return [];
+  const rows = await database
+    .select({
+      id: markets.id, status: markets.status, deadlineAt: markets.deadlineAt, tradingClosedAt: markets.tradingClosedAt,
+      liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
+    })
+    .from(markets)
+    .where(and(inArray(markets.id, list), isNotNull(markets.approvedAt), inArray(markets.status, [...QUOTABLE])));
+  const priced = rows.filter((row) => row.yesSharesMicro !== null && row.noSharesMicro !== null);
+  const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
+  const info = await readMarketInformation(database, priced.map((row) => row.id), since);
+  return priced.map((row) => {
+    const yesBp = Math.round(price(toLmsr({
+      liquidity: row.liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: row.yesSharesMicro as number, noSharesMicro: row.noSharesMicro as number,
+    }), "YES") * 10_000);
+    const then = info.priceThen.get(row.id);
+    return {
+      id: row.id,
+      yesBp,
+      change24hBp: then === undefined ? 0 : yesBp - then,
+      volumeMicro: info.volume.get(row.id) ?? 0,
+      tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
+    };
+  });
 }
 
 /**

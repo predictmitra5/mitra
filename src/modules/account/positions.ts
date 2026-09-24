@@ -29,6 +29,8 @@ export interface HeldGoal {
   yesPrice: number | null;
   displayName: string;
   handle: string;
+  /** Versions the subject's public photo URL; null without a photo. */
+  photoUpdatedAt: Date | null;
   status: "open" | "closed" | "ruled";
   deadlineAt: Date;
   evidenceDeadlineAt: Date;
@@ -113,7 +115,7 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       const rows = await tx.select({
         marketId: markets.id, question: markets.question, goalType: markets.goalType,
         liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
-        displayName: profiles.displayName, handle: profiles.handle,
+        displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
         yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,

@@ -78,7 +78,7 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
     ruledAt: markets.ruledAt, contestEndsAt: markets.contestEndsAt, settledAt: markets.settledAt, cancelledAt: markets.cancelledAt,
-    displayName: profiles.displayName, handle: profiles.handle,
+    displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
   }).from(markets).innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
     .where(and(eq(markets.id, id), isNotNull(markets.approvedAt), inArray(markets.status, [...publicStatuses]))).limit(1);

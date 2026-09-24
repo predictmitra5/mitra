@@ -1,9 +1,11 @@
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readFeed, recordExposures, type Feed, type FeedCard } from "@/modules/discovery/feed";
+import { photoUrl } from "@/modules/account/photo-url";
 import type { CardData } from "./components/market/goal-card";
 import { MarketFooter, MarketHeader } from "./components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
+import { ownerQueueOrNull } from "@/modules/account/owner-queue";
 
 /*
  * The public home feed. Anyone may read this without an account. It shows only
@@ -23,6 +25,7 @@ function toCard(card: FeedCard): CardData {
     goalType: card.goalType,
     displayName: card.displayName,
     handle: card.handle,
+    photo: photoUrl(card.handle, card.photoUpdatedAt),
     yesPrice: card.yesPrice,
     tradingOpen: card.tradingOpen,
     deadlineAt: card.deadlineAt.toISOString(),
@@ -56,6 +59,8 @@ export default async function Home() {
     // A signed-out view is the correct fallback when identity cannot be read.
   }
 
+  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+
   const featured: FeaturedData[] = feed.featured.map((goal) => ({
     ...toCard(goal),
     series: goal.series.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp })),
@@ -63,12 +68,15 @@ export default async function Home() {
 
   return (
     <div className="market-shell">
-      <MarketHeader signedIn={!!identity} />
+      <MarketHeader signedIn={!!identity} ownerQueue={queue} />
       <main className="market-wrap">
         <FeedView
           cards={feed.cards.map(toCard)}
           justAdded={feed.justAdded.map(toCard)}
-          people={feed.people}
+          people={feed.people.map((person) => ({
+            handle: person.handle, displayName: person.displayName, openGoals: person.openGoals,
+            photo: photoUrl(person.handle, person.photoUpdatedAt),
+          }))}
           featured={featured}
           closingSoon={feed.closingSoon.map(toCard)}
           movers={feed.movers.map(toCard)}

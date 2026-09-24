@@ -10,37 +10,74 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
  * - A 2px step line. A market's price holds flat between trades, so a sloped
  *   line would draw movement that never happened.
  * - A 10% wash under the line, hairline solid gridlines one step off the surface.
- * - The series colour was validated for the dark surface (lightness band,
- *   chroma, contrast). Text never wears it: labels use the text tokens.
+ * - The series colours were validated for the dark surface (lightness band,
+ *   chroma, contrast). Text never wears them: labels use the text tokens.
  * - A crosshair snaps to the nearest point, with the value leading the tooltip.
  *   The same readout follows the keyboard, and a table carries every value, so
  *   nothing is reachable only by hovering.
+ *
+ * Since 2026-09-24 it reads like a stock chart: the current price large, the
+ * change over the chosen range beside it, and 1D, 1W, 1M and All. The line
+ * takes the validated YES colour when the range ended up, and the validated NO
+ * colour when it ended down, the way a stock app colours a rising or falling day.
  */
 
 export type ChartPoint = { at: string; yesBp: number };
 
 const PAD = { top: 14, right: 44, bottom: 26, left: 6 };
 const Y_TICKS = [0, 25, 50, 75, 100];
+const DAY_MS = 24 * 3_600_000;
+const RANGES = [
+  { key: "1D", label: "1D", ms: DAY_MS, words: "today" },
+  { key: "1W", label: "1W", ms: 7 * DAY_MS, words: "this week" },
+  { key: "1M", label: "1M", ms: 30 * DAY_MS, words: "this month" },
+  { key: "ALL", label: "All", ms: Infinity, words: "all time" },
+] as const;
+type RangeKey = (typeof RANGES)[number]["key"];
 
 const pct = (bp: number) => `${Math.round(bp / 100)}%`;
 const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 const clock = new Intl.DateTimeFormat("en-US", { hour: "numeric", timeZone: "America/New_York" });
 /** Under two days of history, three date ticks would all read the same date. */
-const SHORT_SPAN_MS = 2 * 24 * 3_600_000;
+const SHORT_SPAN_MS = 2 * DAY_MS;
 const moment = new Intl.DateTimeFormat("en-US", {
   month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York",
 });
 
+type Datum = { t: number; v: number };
+
+/**
+ * The points inside a range. The price in force when the range starts is
+ * carried to its left edge, because a price holds until the next trade.
+ */
+export function windowed(data: Datum[], rangeMs: number): Datum[] {
+  if (data.length === 0 || !Number.isFinite(rangeMs)) return data;
+  const end = data[data.length - 1].t;
+  const start = end - rangeMs;
+  if (data[0].t >= start) return data;
+  const inside = data.filter((p) => p.t >= start);
+  const before = [...data].reverse().find((p) => p.t < start);
+  const carried = before ? [{ t: start, v: before.v }] : [];
+  const out = [...carried, ...inside];
+  // A range with no trades in it is still a flat line across the range.
+  return out.length >= 2 ? out : [...out, { t: end, v: out[out.length - 1].v }];
+}
+
 export function PriceChart({
-  points, height = 220, label = "Chance of YES",
+  points, height = 220, label = "Chance of YES", header = false, ranges = false,
 }: {
   points: ChartPoint[];
   height?: number;
   label?: string;
+  /** The stock-app header: current price and the change over the range. */
+  header?: boolean;
+  /** 1D, 1W, 1M and All. */
+  ranges?: boolean;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(560);
   const [active, setActive] = useState<number | null>(null);
+  const [range, setRange] = useState<RangeKey>("ALL");
   const titleId = useId();
 
   // Measure the real width so strokes and text are drawn at 1:1. Three layers,
@@ -67,10 +104,12 @@ export function PriceChart({
     };
   }, []);
 
-  const data = useMemo(
+  const all = useMemo(
     () => points.map((p) => ({ t: new Date(p.at).getTime(), v: p.yesBp })).sort((a, b) => a.t - b.t),
     [points],
   );
+  const chosen = RANGES.find((r) => r.key === range) ?? RANGES[3];
+  const data = useMemo(() => windowed(all, chosen.ms), [all, chosen.ms]);
 
   const plotW = Math.max(40, width - PAD.left - PAD.right);
   const plotH = Math.max(40, height - PAD.top - PAD.bottom);
@@ -80,7 +119,7 @@ export function PriceChart({
   const x = (t: number) => PAD.left + ((t - t0) / span) * plotW;
   const y = (v: number) => PAD.top + (1 - v / 10_000) * plotH;
 
-  if (data.length < 2) {
+  if (all.length < 2) {
     return (
       <div className="chart-empty" role="img" aria-label={`${label}: not enough trading yet to draw a history.`}>
         Not enough trading yet to draw a history.
@@ -95,7 +134,10 @@ export function PriceChart({
 
   const last = data.at(-1)!;
   const first = data[0];
-  const shown = active === null ? null : data[active];
+  const shown = active === null ? null : data[Math.min(active, data.length - 1)];
+  const change = last.v - first.v;
+  const trend = change > 0 ? "up" : change < 0 ? "down" : "flat";
+  const movePoints = Math.abs(Math.round(change / 100));
 
   // Three evenly spaced ticks: dates normally, times of day for a short history.
   const tickFormat = span < SHORT_SPAN_MS ? clock : day;
@@ -130,15 +172,38 @@ export function PriceChart({
     }
   }
 
-  const change = last.v - first.v;
   const summary = `${label}: ${pct(first.v)} on ${day.format(first.t)}, ${pct(last.v)} now, `
-    + `${change === 0 ? "unchanged" : `${change > 0 ? "up" : "down"} ${Math.abs(Math.round(change / 100))} points`}.`;
+    + `${change === 0 ? "unchanged" : `${change > 0 ? "up" : "down"} ${movePoints} points`} ${chosen.words}.`;
 
   const tipLeft = shown ? Math.min(Math.max(x(shown.t), 70), width - 70) : 0;
 
   return (
-    <figure className="chart">
+    <figure className={`chart chart-${trend}`}>
       <figcaption className="chart-caption" id={titleId}>{label}</figcaption>
+      {(header || ranges) && (
+        <div className="chart-head">
+          {header && (
+            <div className="chart-now">
+              <strong>{pct(shown ? shown.v : last.v)}</strong>
+              <span className={`chart-delta chart-delta-${trend}`}>
+                {trend === "flat" ? "No change" : <><span aria-hidden="true">{trend === "up" ? "▲" : "▼"}</span> {movePoints} pts</>}
+                {" "}<span className="chart-delta-range">{chosen.words}</span>
+              </span>
+            </div>
+          )}
+          {ranges && (
+            <div className="chart-ranges" role="group" aria-label="Time range">
+              {RANGES.map((option) => (
+                <button key={option.key} type="button" aria-pressed={range === option.key}
+                  className={range === option.key ? "is-active" : undefined}
+                  onClick={() => { setRange(option.key); setActive(null); }}>
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div
         ref={wrap}
         className="chart-plot"
@@ -187,7 +252,7 @@ export function PriceChart({
           )}
           {!shown && (
             <g>
-              <circle className="chart-dot" cx={x(last.t)} cy={y(last.v)} r={4} />
+              <circle className="chart-dot chart-dot-live" cx={x(last.t)} cy={y(last.v)} r={4} />
             </g>
           )}
         </svg>
@@ -204,8 +269,8 @@ export function PriceChart({
         <table>
           <thead><tr><th scope="col">When (ET)</th><th scope="col">Chance of YES</th></tr></thead>
           <tbody>
-            {[...data].reverse().map((point) => (
-              <tr key={point.t}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td></tr>
+            {[...all].reverse().map((point, i) => (
+              <tr key={`${point.t}-${i}`}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td></tr>
             ))}
           </tbody>
         </table>

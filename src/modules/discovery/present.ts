@@ -18,7 +18,8 @@ const CATEGORY: Record<string, string> = {
   internship: "Internships",
   gym: "Gym",
   launch: "Launches",
-  own_words: "Goal",
+  // "Bet on literally anything" (2026-09-24): a goal in the person's own words.
+  own_words: "Anything",
   other: "Goal",
 };
 
@@ -88,6 +89,21 @@ export function cardTitle(goalType: string | null, question: string): string {
   if (!goalType || goalType === "own_words" || goalType === "other") return q;
   const trimmed = q.replace(/ by [^?]+\?$/i, "?");
   return trimmed.length >= 12 ? trimmed : q;
+}
+
+/**
+ * A stock-ticker symbol for the scrolling tape (2026-09-24): the first name and
+ * the stake's first word, as "MAYA·3.8GPA" or "LUIS·DEADLIFT". Decoration only;
+ * the full question is always one click away.
+ */
+export function tickerSymbol(goalType: string | null, question: string, displayName: string): string {
+  const first = (displayName.trim().split(/\s+/)[0] ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "GOAL";
+  const words = thumbnailText(goalType, question, displayName).toUpperCase().replace(/…/g, "")
+    .replace(/[^A-Z0-9.\s]/g, "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return first;
+  // A number reads better with its unit: "3.8 GPA" becomes "3.8GPA", not "3.8".
+  const stake = (/^\d/.test(words[0]) && words[1] ? words[0] + words[1] : words[0]).slice(0, 10);
+  return `${first}·${stake}`;
 }
 
 /** One or two letters for an avatar, from a display name. */

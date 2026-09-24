@@ -27,14 +27,14 @@ export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }
         <AuthForm mode={mode} />
       </section>
       <aside className="entry-story" aria-label="About Mitra">
-        <span className="eyebrow">BIG GOALS START SOMEWHERE</span>
+        <span className="eyebrow">BET ON LITERALLY ANYTHING</span>
         <h2>Your people.<br />Their next <em>move.</em></h2>
         <p className="story-description">Follow the goals. Read the evidence.<br />Make your own call.</p>
         <div className="goal-list" aria-label="Examples of goals">
-          <div><span>01</span><p>Finish the semester strong</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>02</span><p>Land the internship</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>03</span><p>Launch that idea</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>04</span><p>Hit a personal best</p><span aria-hidden="true">↗︎</span></div>
+          <div><span>01</span><p>Run the half marathon</p><span aria-hidden="true">↗︎</span></div>
+          <div><span>02</span><p>Launch the app</p><span aria-hidden="true">↗︎</span></div>
+          <div><span>03</span><p>Land the internship</p><span aria-hidden="true">↗︎</span></div>
+          <div><span>04</span><p>Visit five new countries</p><span aria-hidden="true">↗︎</span></div>
         </div>
         <p className="story-footnote">Your goals don’t have to fit in a box.</p>
       </aside>

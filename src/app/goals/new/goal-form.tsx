@@ -1,26 +1,38 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createGoal } from "@/modules/goals/actions";
 import type { FormState } from "@/modules/auth/policy";
 import type { GoalType } from "@/modules/goals/templates";
 
+// "Bet on literally anything" (decided 2026-09-24): a goal in your own words
+// comes first and is the default. The four templates stay as quick starts.
 const types: { value: GoalType; label: string; rule: string }[] = [
+  { value: "own_words", label: "Anything", rule: "Anything about your own life. Write the question and exactly what counts as YES. It has to be something you can't win or lose just by deciding to, and something the owner can check." },
   { value: "gpa", label: "GPA", rule: "Counts that semester's GPA once final grades post. Set the deadline to when grades post, not the last day of class." },
   { value: "internship", label: "Internship", rule: "Counts a written offer received before the deadline, even if you turn it down." },
   { value: "club", label: "Club", rule: "Counts the club's admission offer before the deadline, whether or not you join." },
   { value: "gym", label: "Gym", rule: "Proven by one uncut video you post publicly on Instagram, TikTok or YouTube before the deadline." },
-  { value: "own_words", label: "Something else", rule: "Write the question and exactly what counts as YES. The owner checks it's clear before it goes live." },
+];
+
+const IDEAS = [
+  "Will I run a half marathon?",
+  "Will I launch my app on the App Store?",
+  "Will I read 20 books this year?",
+  "Will I visit 5 new countries?",
+  "Will I hit 1,000 followers?",
+  "Will I learn to do a backflip?",
 ];
 
 export function GoalForm({ minDate }: { minDate: string }) {
   const [state, action, pending] = useActionState(createGoal, {} as FormState);
-  const [type, setType] = useState<GoalType>("gpa");
+  const [type, setType] = useState<GoalType>("own_words");
+  const question = useRef<HTMLInputElement>(null);
   const selected = types.find((option) => option.value === type)!;
 
   return <form action={action} className="auth-form" aria-busy={pending}>
     <fieldset className="type-picker">
-      <legend>What kind of goal?</legend>
+      <legend>Start from anything, or a quick start</legend>
       {types.map((option) => <label key={option.value} className="type-option">
         <input type="radio" name="type" value={option.value} checked={type === option.value} onChange={() => setType(option.value)} />
         <span>{option.label}</span>
@@ -36,7 +48,10 @@ export function GoalForm({ minDate }: { minDate: string }) {
     {type === "club" && <div className="field"><label htmlFor="club">Club</label><input id="club" name="club" placeholder="Consulting Club" minLength={2} maxLength={80} required /></div>}
     {type === "gym" && <div className="field"><label htmlFor="achievement">Achievement</label><input id="achievement" name="achievement" placeholder="bench press 225 lb" minLength={3} maxLength={120} required aria-describedby="achievement-hint" /><p id="achievement-hint" className="field-hint">Finish the sentence “Will you ___ by the deadline?”</p></div>}
     {type === "own_words" && <>
-      <div className="field"><label htmlFor="question">Question</label><input id="question" name="question" placeholder="Will I launch my study app?" minLength={10} maxLength={200} required /></div>
+      <div className="field"><label htmlFor="question">Question</label><input ref={question} id="question" name="question" placeholder="Will I run a half marathon before graduation?" minLength={10} maxLength={200} required /></div>
+      <div className="idea-row" aria-label="Ideas to start from">
+        {IDEAS.map((idea) => <button key={idea} type="button" className="idea" onClick={() => { if (question.current) { question.current.value = idea; question.current.focus(); } }}>{idea}</button>)}
+      </div>
       <div className="field"><label htmlFor="criteria">What counts as YES</label><textarea id="criteria" name="criteria" rows={3} minLength={20} maxLength={1000} placeholder="YES if the app is live on the App Store before the deadline." required /></div>
     </>}
 

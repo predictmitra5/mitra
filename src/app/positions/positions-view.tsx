@@ -3,6 +3,7 @@ import type { HeldGoal, PositionsPage } from "@/modules/account/positions";
 import { formatMicro } from "@/modules/market/input";
 import { percent } from "@/modules/discovery/present";
 import { Avatar, ProbabilityBar, Thumbnail } from "@/app/components/market/goal-card";
+import { photoUrl } from "@/modules/account/photo-url";
 
 const date = (value: Date) => new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York",
@@ -43,16 +44,17 @@ export function PositionsView({ data, now }: { data: PositionsPage; now: Date })
         <ul className="position-list">{data.goals.map((goal) => {
           const href = `/markets/${goal.marketId}`;
           const next = nextDate(goal);
+          const photo = photoUrl(goal.handle, goal.photoUpdatedAt);
           return <li key={goal.marketId} className="position-card">
             <div className="position-top">
               {/* The title below is the link; this copy is for pointers only. */}
               <Link className="gcard-thumb" href={href} prefetch={false} tabIndex={-1} aria-hidden="true">
                 <Thumbnail goalType={goal.goalType} question={goal.question} displayName={goal.displayName}
-                  deadlineAt={goal.deadlineAt.toISOString()} tradingOpen={goal.tradingOpen} now={now} />
+                  deadlineAt={goal.deadlineAt.toISOString()} tradingOpen={goal.tradingOpen} now={now} photo={photo} seed={goal.marketId} />
               </Link>
               <div className="position-head">
                 <span className={`status-pill ${goal.tradingOpen ? "status-open" : ""}`}>{status(goal)}</span>
-                <span className="position-person"><Avatar name={goal.displayName} size={22} />{goal.displayName} <span>@{goal.handle}</span></span>
+                <span className="position-person"><Avatar name={goal.displayName} photo={photo} size={22} />{goal.displayName} <span>@{goal.handle}</span></span>
                 <h3><Link href={href} prefetch={false}>{goal.question}</Link></h3>
                 {goal.yesPrice !== null && <div className="position-chance">
                   <span><strong>{percent(goal.yesPrice)}%</strong> {goal.tradingOpen ? "chance of YES" : "chance of YES when trading closed"}</span>

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: { default: "Mitra", template: "%s · Mitra" },
-  description: "Follow people's goals and make informed predictions with play money. Ohio State early access.",
+  description: "Bet on literally anything your friends are going for, with play money. Ohio State early access.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

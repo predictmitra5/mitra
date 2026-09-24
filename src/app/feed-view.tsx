@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { cardTitle, categoryLabel, closesIn, shortDate, volumeLabel } from "@/modules/discovery/present";
 import { Avatar, Change, GoalCard, PricePills, RundownRow, Thumbnail, type CardData } from "./components/market/goal-card";
 import { PriceChart, type ChartPoint } from "./components/market/price-chart";
+import { TickerTape } from "./components/market/ticker-tape";
+import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
  * The public home feed, redesigned 2026-09-22 (docs/DESIGN.md). Structure is
@@ -14,15 +16,19 @@ import { PriceChart, type ChartPoint } from "./components/market/price-chart";
  *
  * What stays as decided on 2026-09-19: tabs by person, a Just added strip, the
  * ranking order, and a dismissible account prompt after two minutes.
+ *
+ * Added 2026-09-24: the motto, a scrolling ticker tape, and live prices. Prices
+ * refresh from the quote store while the page is visible; the ranking order
+ * itself stays as the server sent it, so cards never jump under a finger.
  */
 
 export type FeaturedData = CardData & { series: ChartPoint[] };
-export type PersonTab = { handle: string; displayName: string; openGoals: number };
+export type PersonTab = { handle: string; displayName: string; openGoals: number; photo: string | null };
 
 const PROMPT_AFTER_MS = 2 * 60 * 1000;
 const PROMPT_DISMISSED_KEY = "mitra.signup-prompt-dismissed";
 
-function Featured({ goals, now }: { goals: FeaturedData[]; now: Date }) {
+function Featured({ goals, now, live }: { goals: FeaturedData[]; now: Date; live: ReadonlyMap<string, LiveQuote> }) {
   const [index, setIndex] = useState(0);
   if (goals.length === 0) return null;
   const goal = goals[Math.min(index, goals.length - 1)];
@@ -47,7 +53,7 @@ function Featured({ goals, now }: { goals: FeaturedData[]; now: Date }) {
       <div className="hero-body">
         <div className="hero-main">
           <div className="hero-person">
-            <Avatar name={goal.displayName} size={40} />
+            <Avatar name={goal.displayName} photo={goal.photo} size={40} />
             <span><strong>{goal.displayName}</strong><span>@{goal.handle}</span></span>
           </div>
           <h2 className="hero-title"><Link href={href} prefetch={false}>{cardTitle(goal.goalType, goal.question)}</Link></h2>
@@ -63,11 +69,19 @@ function Featured({ goals, now }: { goals: FeaturedData[]; now: Date }) {
           </p>
         </div>
         <div className="hero-chart">
-          <PriceChart key={goal.id} points={goal.series} height={230} />
+          <PriceChart key={goal.id} points={withLivePoint(goal.series, live.get(goal.id))} height={200} ranges />
         </div>
       </div>
     </section>
   );
+}
+
+/** The chart ends at the live price once a poll brings a newer one. */
+function withLivePoint(series: ChartPoint[], quote: LiveQuote | undefined): ChartPoint[] {
+  if (!quote) return series;
+  const last = series.at(-1);
+  if (last && last.yesBp === quote.yesBp) return series;
+  return [...series, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }];
 }
 
 function Upcoming({ goals, now }: { goals: CardData[]; now: Date }) {
@@ -86,6 +100,8 @@ function Upcoming({ goals, now }: { goals: CardData[]; now: Date }) {
                 deadlineAt={goal.deadlineAt}
                 tradingOpen={goal.tradingOpen}
                 now={now}
+                photo={goal.photo}
+                seed={goal.id}
               />
               <span className="strip-date">Closes {shortDate(new Date(goal.deadlineAt))}</span>
               <span className="strip-title">{cardTitle(goal.goalType, goal.question)}</span>
@@ -131,6 +147,19 @@ export function FeedView({
   const [person, setPerson] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
 
+  // One poll for every goal on the page, however many lists it appears in.
+  const ids = useMemo(
+    () => [...new Set([...cards, ...featured, ...justAdded, ...closingSoon, ...movers].map((card) => card.id))],
+    [cards, featured, justAdded, closingSoon, movers],
+  );
+  const live = useLiveQuotes(ids);
+  const flashes = useMemo(() => {
+    const out = new Map<string, "up" | "down" | null>();
+    for (const card of [...cards, ...featured]) out.set(card.id, flashFor(card.yesPrice, live.get(card.id)));
+    return out;
+  }, [cards, featured, live]);
+  const lv = <T extends CardData>(card: T): T => withQuote(card, live);
+
   useEffect(() => {
     if (signedIn) return;
     try {
@@ -160,12 +189,24 @@ export function FeedView({
     );
   }
 
-  const byPerson = (list: CardData[]) => (person ? list.filter((card) => card.handle === person) : list);
+  const byPerson = (list: CardData[]) => (person ? list.filter((card) => card.handle === person) : list).map(lv);
   const shown = byPerson(cards);
   const personName = people.find((p) => p.handle === person)?.displayName ?? person;
 
   return (
     <>
+      <TickerTape cards={cards.map(lv)} flashes={flashes} />
+
+      <section className="motto" aria-labelledby="motto-title">
+        <div>
+          <h1 id="motto-title" className="motto-title">Bet on literally anything.</h1>
+          <p>Your friends put up their own goals, from grades to marathons to startups. You call it. Play money only.</p>
+        </div>
+        <Link className="btn btn-accent motto-cta" href={signedIn ? "/goals/new" : "/sign-up"}>
+          {signedIn ? "Post a goal" : "Join with 1,000 play points"}
+        </Link>
+      </section>
+
       {people.length > 0 && (
         <nav className="chips" aria-label="Filter goals by person">
           <button type="button" className={person === null ? "chip is-active" : "chip"} onClick={() => setPerson(null)}>
@@ -179,7 +220,7 @@ export function FeedView({
               onClick={() => setPerson(entry.handle)}
               aria-pressed={person === entry.handle}
             >
-              <Avatar name={entry.displayName} size={22} />
+              <Avatar name={entry.displayName} photo={entry.photo} size={22} />
               {entry.displayName}
               <span className="chip-count">{entry.openGoals}</span>
             </button>
@@ -189,7 +230,7 @@ export function FeedView({
 
       {cards.length === 0 ? (
         <section className="panel feed-empty">
-          <h1>No goals are open yet.</h1>
+          <h2>No goals are open yet.</h2>
           <p>
             Goals appear here once someone writes one about themselves and it is approved.
             {signedIn ? " Yours can be the first." : " Create an account to add yours."}
@@ -201,7 +242,7 @@ export function FeedView({
       ) : (
         <div className="feed-layout">
           <div className="feed-main">
-            {person === null && <Featured goals={featured} now={now} />}
+            {person === null && <Featured goals={featured.map(lv)} now={now} live={live} />}
 
             {person === null && (
               <section className="trust" aria-label="How Mitra works">
@@ -211,7 +252,7 @@ export function FeedView({
               </section>
             )}
 
-            {person === null && <Upcoming goals={justAdded} now={now} />}
+            {person === null && <Upcoming goals={justAdded.map(lv)} now={now} />}
 
             <section aria-labelledby="grid-title">
               <h2 id="grid-title" className="section-title">{person ? `${personName}'s goals` : "Open goals"}</h2>
@@ -219,7 +260,7 @@ export function FeedView({
                 <p className="muted">No open goals for this person right now.</p>
               ) : (
                 <div className="grid">
-                  {shown.map((card) => <GoalCard key={card.id} card={card} now={now} />)}
+                  {shown.map((card) => <GoalCard key={card.id} card={card} now={now} flash={flashes.get(card.id)} />)}
                 </div>
               )}
             </section>
@@ -229,13 +270,13 @@ export function FeedView({
             {closingSoon.length > 0 && (
               <section className="panel rundown">
                 <h2>Closing soon</h2>
-                <ul>{byPerson(closingSoon).map((card) => <RundownRow key={card.id} card={card} now={now} show="deadline" />)}</ul>
+                <ul>{byPerson(closingSoon).map((card) => <RundownRow key={card.id} card={card} now={now} show="deadline" flash={flashes.get(card.id)} />)}</ul>
               </section>
             )}
             {movers.length > 0 && (
               <section className="panel rundown">
                 <h2>Moving today</h2>
-                <ul>{byPerson(movers).map((card) => <RundownRow key={card.id} card={card} now={now} show="change" />)}</ul>
+                <ul>{byPerson(movers).map((card) => <RundownRow key={card.id} card={card} now={now} show="change" flash={flashes.get(card.id)} />)}</ul>
               </section>
             )}
           </aside>

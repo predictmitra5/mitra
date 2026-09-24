@@ -81,7 +81,7 @@ export async function createGoalDraft<Q extends PgQueryResultHKT>(
 export async function listPendingDrafts<Q extends PgQueryResultHKT>(database: Database<Q>, actorUserId: string) {
   await requireOwner(database, actorUserId);
   return database
-    .select({ market: markets, subject: { handle: profiles.handle, displayName: profiles.displayName } })
+    .select({ market: markets, subject: { handle: profiles.handle, displayName: profiles.displayName, photoUpdatedAt: profiles.photoUpdatedAt } })
     .from(markets)
     .innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
     .where(eq(markets.status, "draft"))

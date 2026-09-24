@@ -8,7 +8,7 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
-import { readFeed, readPriceSeries, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
+import { readFeed, readPriceSeries, readQuotes, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
 import { CAPPED_SLOTS, MAX_PER_SUBJECT_IN_TOP } from "./ranking";
 import { withFixturePhoto } from "@/test/photo-fixture";
 
@@ -98,8 +98,8 @@ describe("the public feed", () => {
 
     const feed = await readFeed(db, now);
     expect(feed.people).toEqual([
-      { handle: "alice", displayName: "alice", openGoals: 2 },
-      { handle: "bob", displayName: "bob", openGoals: 1 },
+      { handle: "alice", displayName: "alice", openGoals: 2, photoUpdatedAt: new Date("2026-09-01T12:00:00Z") },
+      { handle: "bob", displayName: "bob", openGoals: 1, photoUpdatedAt: new Date("2026-09-01T12:00:00Z") },
     ]);
   });
 
@@ -329,5 +329,43 @@ describe("price series", () => {
   it("leaves a short series alone", () => {
     const short = [{ at: new Date(0), yesBp: 1 }, { at: new Date(1), yesBp: 2 }];
     expect(thinSeries(short, 100)).toEqual(short);
+  });
+});
+
+describe("banned people", () => {
+  it("leave the feed at once, even before their goals are cancelled", async () => {
+    await openGoal(alice);
+    const kept = await openGoal(bob);
+    await db.update(profiles).set({ bannedAt: now }).where(eq(profiles.id, alice));
+    const feed = await readFeed(db, now);
+    expect(feed.cards.map((card) => card.id)).toEqual([kept]);
+    expect(feed.people.map((person) => person.handle)).toEqual(["bob"]);
+  });
+});
+
+describe("live quotes", () => {
+  it("match what the feed shows, and record nothing, so polling cannot inflate the ranking", async () => {
+    const id = await openGoal(alice);
+    await trade(bob, id);
+    const card = (await readFeed(db, now)).cards[0];
+    const before = await db.select().from(feedEvents);
+    const [quote] = await readQuotes(db, [id], now);
+    expect(quote).toEqual({
+      id, yesBp: Math.round(card.yesPrice * 10_000), change24hBp: card.change24hBp, volumeMicro: card.volumeMicro, tradingOpen: true,
+    });
+    await readQuotes(db, [id, id, id], now);
+    expect(await db.select().from(feedEvents)).toHaveLength(before.length);
+  });
+
+  it("returns nothing for drafts, unknown ids or anything that is not an id", async () => {
+    const draft = await createGoalDraft(db, alice, { type: "club", club: "Chess Club", deadline: "2026-10-01" }, now);
+    expect(await readQuotes(db, [draft.id, randomUUID(), "'; drop table markets; --", ""], now)).toEqual([]);
+    expect(await readQuotes(db, [], now)).toEqual([]);
+  });
+
+  it("keeps quoting a goal after trading closes, marked as closed", async () => {
+    const id = await openGoal(alice, "Chess Club", "2026-09-20");
+    const [after] = await readQuotes(db, [id], new Date("2026-09-22T12:00:00Z"));
+    expect(after).toMatchObject({ id, tradingOpen: false });
   });
 });

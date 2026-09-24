@@ -10,12 +10,14 @@ import { readPriceSeries, recordClick } from "@/modules/discovery/feed";
 import { canSubmit, listForSubject, listPublished } from "@/modules/evidence/service";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { ProbabilityBar } from "@/app/components/market/goal-card";
+import { Avatar } from "@/app/components/market/goal-card";
+import { photoUrl } from "@/modules/account/photo-url";
 import { categoryLabel } from "@/modules/discovery/present";
-import { PriceChart } from "@/app/components/market/price-chart";
+import { LiveChart, LivePrices } from "./live-market";
 import { TradeForm } from "./trade-form";
 import { ObjectionForm } from "./objection-form";
 import { EvidenceForm } from "./evidence-form";
+import { ownerQueueOrNull } from "@/modules/account/owner-queue";
 
 // This page includes the current user's holdings: never put it in a shared cache.
 export const dynamic = "force-dynamic";
@@ -84,22 +86,19 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
     // Leave the chart empty; the prices above are still correct.
   }
 
-  return <div className="market-shell"><MarketHeader signedIn={!!identity} /><main className="market-main">
+  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  return <div className="market-shell"><MarketHeader signedIn={!!identity} ownerQueue={queue} /><main className="market-main">
     <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗︎</Link><Link href="/account">Your account ↗︎</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
     <div className="market-layout">
       <div className="market-story">
         <section className="market-hero">
           <div className="review-meta"><span className={`status-pill ${open ? "status-open" : ""}`}>{status}</span><span>{categoryLabel(market.goalType)}</span></div>
-          <p className="market-person">{market.displayName} <span>@{market.handle}</span></p>
+          <p className="market-person"><Avatar name={market.displayName} photo={photoUrl(market.handle, market.photoUpdatedAt)} size={32} />{market.displayName} <span>@{market.handle}</span></p>
           <h1>{market.question}</h1>
-          <div className="market-prices" aria-label="Last market share prices">
-            <div><span>YES</span><strong>{(market.yesPrice * 100).toFixed(2)}<small>¢</small></strong></div>
-            <div><span>NO</span><strong>{((1 - market.yesPrice) * 100).toFixed(2)}<small>¢</small></strong></div>
-          </div>
-          <ProbabilityBar yesPrice={market.yesPrice} />
+          <LivePrices id={market.id} yesPrice={market.yesPrice} />
           <p className="market-price-note">{open ? "100¢ = 1 play point. A share pays 1 point if its outcome wins, and 0 if it loses. These are current prices; your preview shows the full trade cost." : "These are the last trading prices, not a final payout. The outcome and any refund appear below."}</p>
         </section>
-        <section className="market-rules market-chart"><PriceChart points={series} height={240} /></section>
+        <section className="market-rules market-chart"><LiveChart id={market.id} points={series} height={240} /></section>
         {market.ruledOutcome && market.status !== "cancelled" && <section className="market-rules ruling-box">
           <span className="eyebrow">{market.status === "settled" ? "FINAL OUTCOME" : "OWNER RULING"}</span>
           <h2>{market.ruledOutcome.toUpperCase()} · {market.status === "settled" ? "Payout complete" : "Open to objections"}</h2>

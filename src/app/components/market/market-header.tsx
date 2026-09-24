@@ -1,7 +1,13 @@
 import Link from "next/link";
 
-/** The dark top bar for the market surfaces, in the shape of Kalshi's. */
-export function MarketHeader({ signedIn }: { signedIn: boolean }) {
+/**
+ * The dark top bar, in the shape of Kalshi's, on every page.
+ *
+ * `ownerQueue` is set only for the owner: how many goals and pieces of proof
+ * are waiting. The owner link stays visible on a phone, where the other links
+ * collapse, because nothing else tells the owner something is waiting.
+ */
+export function MarketHeader({ signedIn, ownerQueue = null }: { signedIn: boolean; ownerQueue?: number | null }) {
   return (
     <header className="topbar">
       <Link className="topbar-brand" href="/">
@@ -12,6 +18,12 @@ export function MarketHeader({ signedIn }: { signedIn: boolean }) {
       <nav className="topbar-actions" aria-label="Account">
         {signedIn ? (
           <>
+            {ownerQueue !== null && (
+              <Link className="btn btn-ghost owner-link" href="/review" aria-label={ownerQueue > 0 ? `Owner review: ${ownerQueue} waiting` : "Owner review"}>
+                Review
+                {ownerQueue > 0 && <span className="owner-badge" aria-hidden="true">{ownerQueue}</span>}
+              </Link>
+            )}
             <Link className="topbar-link" href="/goals/new">Write a goal</Link>
             <Link className="topbar-link" href="/positions" prefetch={false}>Your predictions</Link>
             <Link className="btn btn-ghost" href="/account">Account</Link>
@@ -30,8 +42,8 @@ export function MarketHeader({ signedIn }: { signedIn: boolean }) {
 export function MarketFooter() {
   return (
     <footer className="market-footer">
-      <span>Play money. Real goals.</span>
-      <span>No deposits. No cash value.</span>
+      <span>Bet on literally anything.</span>
+      <span>Play money. No deposits. No cash value.</span>
     </footer>
   );
 }
