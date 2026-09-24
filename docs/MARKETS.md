@@ -48,7 +48,7 @@ Still open: fees (none proposed), minimum trade size, rounding presentation, and
 
 ## User-provided goals and contract questions
 
-The initial community is friends and Ohio State students. The user explicitly wants a broad range of goals. Templates for GPA, club, internship and gym goals were decided on 2026-09-16. Launch goals have no template yet and use the subject's own wording.
+The initial community is friends and Ohio State students. The user explicitly wants a broad range of goals. Templates for GPA, club, internship and gym goals were decided on 2026-09-16, and a Running template on 2026-09-24. Launch and music goals have no template yet and use the subject's own wording; the owner plans a music template later. Each template also sets the goal's tab on the feed (Grades, Clubs, Internships, Gym, Running); goals in the subject's own words appear under Anything.
 
 | Goal type | Template wording | What counts as YES | Proof the owner reviews |
 | --- | --- | --- | --- |
@@ -56,6 +56,7 @@ The initial community is friends and Ohio State students. The user explicitly wa
 | Club admission | Will [name] be offered admission to [club] by [date]? | Receiving the club's admission offer before the deadline, whether or not they join | The admission message |
 | Internship | Will [name] receive a written internship offer from [company] by [date]? | A written offer dated before the deadline, even if declined | The offer email or letter |
 | Gym | Will [name] [achievement] by [date]? | One uncut video of the achievement, posted publicly before the deadline | A public Instagram, TikTok or YouTube link; the app stores no video |
+| Running | Will [name] run [a 5K / a 10K / a half marathon / a marathon / an N-mile race] [in under a target time] by [date]? | Finishing a race of that distance on or before the deadline, under the target time if one is set. Chip time counts when the results list it, otherwise the official finish time. A run logged only in an app or on a watch does not count | A link to the race's official published results page |
 | Launch | No template yet | Not decided: what exists, who can access it, what qualifies as launched | Judged from the subject's own wording at approval |
 
 Private student records or offer letters must not become public by default. Market pages are public and may be indexed by search engines, so define exactly what the reviewer needs and what a public outcome explanation reveals. Missing proof by the evidence deadline resolves NO; see Lifecycle below.

@@ -141,3 +141,46 @@ The owner said to go ahead after being asked whether to roll the look out everyw
 - **The chart** now reads like a stock chart: the current price large, the change over the chosen range, and 1D, 1W, 1M and All. The line takes the validated YES colour when the range ended up and the validated NO colour when it ended down; both colours passed the palette checks earlier, so no new colour was introduced.
 - **Live prices** every 15 seconds while visible. A price that moves pulses once, lime up or violet down, behind the number; the arrow and the number carry the direction, and the pulse is off for reduced motion. Ranking order does not change live, so cards never jump under a finger.
 - **Owner:** a "Review" button with a count in the top bar, visible on a phone too; the People page lists everyone with their photo, standing and live goals.
+
+---
+
+## 9. The Kalshi direction (2026-09-24)
+
+The owner said the app "needs to look more like kalshi, not tiktok", picked a direction on the Mitra UI canvas ("Kalshi direction" page, boards `K*.dc.html`) and asked for it to be built. The decisions and the owner's words are in DECISIONS.md, 2026-09-24. This section supersedes the card anatomy of section 2, the colours of section 4, the tabs and search points of section 5, and the ticker, flash colours and motto band of section 8.
+
+### Tokens
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Page | `#0e0f11` | Background |
+| Surface | `#15171a` | Cards, panels, inputs' surround |
+| Raised | `#1c1f23` | Selected range button |
+| Divider | `#24272c` | Hairlines, card borders, chart gridlines (dashed 2/4) |
+| Strong divider | `#30343a` | Inputs and secondary buttons |
+| Text | `#eceef1` | Primary |
+| Soft text | `#c9ccd2` | Rules paragraph |
+| Muted | `#9097a1` | Labels, meta, ticks |
+| Yes / up | `#34c77b` on `#10251a` | Yes buttons, rises, the chart when it ended up |
+| No / down | `#f2545b` on `#2a1517` | No buttons, falls, the chart when it ended down |
+| Lime | `#d2f24a` with `#141a00` text | Main actions only: Post a goal, Buy |
+
+Inter at 400/500/600/700 with tabular numbers everywhere. Radii: 12px cards, 8px buttons and inputs, 6px photo squares. No gradients, no shadows, no generated thumbnail art on the feed.
+
+The owner chose green for Yes and red for No and waived the colour-blindness concern. Direction never rests on colour alone: every change carries ▲ or ▼, and every button says Yes or No in words.
+
+### Feed
+
+- **Header:** "mitra" wordmark and the motto, search, Goals and Positions, the viewer's points, a lime "Post a goal" and their photo; Log in and Sign up when signed out; the owner's Review count stays. On a phone: wordmark, points and photo; the search sits under the header.
+- **Ticker:** one still row of first name and stake, chance and today's change. Scrolls sideways by hand; it no longer moves on its own.
+- **Tabs:** Anything (every goal), Gym, Grades, Internships, Clubs, Running, Closing soon (every open goal, soonest close first). Music is hidden until it has a template.
+- **Search:** filters the cards as you type, on the question, name and handle. The text lives in the address (`/?q=`), updated without reloading, so a search from any page lands on the filtered feed and typing records no extra exposures.
+- **Featured goal:** the open goal that moved most in the last 24 hours, with its chart over that day, its volume and close date, and Yes and No. On a desktop, the Closing soon list sits beside it.
+- **Cards:** photo square, category · name, the question, a large chance, today's change to one decimal and time left, and Yes and No buttons with prices that open the goal with that side chosen.
+
+### Goal page
+
+Breadcrumb, person, question; the chance large in Yes green with the change over the chosen range; the step chart with dashed gridlines and 1D, 1W, 1M and All; volume, close date and the No price; the rules with the four dates; proof as a dated list, newest first, of the owner's verified statements and the opening. The trade panel sits on the right on a desktop and in a bottom sheet on a phone, opened from a Buy Yes / Buy No bar. It estimates shares and "To win" with the market maker's formula at the current price, and the lime button leads to the existing exact preview and confirmation.
+
+### Account
+
+Name and handle, available points large, points in positions with the gain or loss, refills left, the top-up, positions valued at today's price with the change since bought, your goals with their status wording, owner tools for the owner, the photo and sign out.

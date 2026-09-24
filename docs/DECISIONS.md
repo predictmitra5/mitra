@@ -417,3 +417,34 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Stock-ticker look and live prices (technical and visual, delegated).** The goal chart gets a stock app's shape: the current price large, the change over the chosen range, and range buttons. A scrolling ticker tape of goals and prices runs across the feed. Prices refresh about every 15 seconds while a page is visible, through a read-only endpoint that records nothing, so refreshing cannot inflate the feed's view and click counts.
 
 **Not inferred:** no per-viewer personalization, no appeals process for bans, no notifications by email or phone, no posting about other people.
+
+## 2026-09-24 - The Kalshi direction: look, feed, goal page, account and a Running template
+
+**User instruction:** earlier the same day, "needs to look more like kalshi, not tiktok". The owner then picked from the "Kalshi direction" page of the Mitra UI canvas (https://claude.ai/artifact/1ENk5mB8fg6zCxhwGYr7yh) and asked for it to be built: "Build the 'Kalshi direction' redesign into Mitra", with screen pictures in `Documents\Mitra design images`, the canvas boards as the exact reference, and "The people and photos in the designs are made up. Use the app's real data." On colour: "let no be red and green be yes"; the owner waved off colour-blindness caveats.
+
+**Confirmed, in the owner's list:**
+
+- **Look:** calm and data-first, like Kalshi's dark mode. Flat surfaces, thin dividers, no gradients or stickers. Inter with tabular numbers. The dark theme stays.
+- **Colours**, replacing YES `#82a000` and NO `#796ae5`: Yes and upward moves are green `#34c77b`; No and downward moves are red `#f2545b`. Buttons always say "Yes" or "No" in words. Lime `#d2f24a` is only for main action buttons (Post a goal, Buy).
+- **Feed:** framed cards, four across on a desktop and one on a phone. Each card has the person's photo as a small square at the top left, the category, the name and the question, a large "% chance" on the right, today's change and time left in small text, and Yes and No buttons showing the price. Above the cards: a slim, quiet price ticker; category tabs (Anything, Gym, Grades, Internships, Clubs, Running, Music, Closing soon); a search bar for goals and people. The desktop feed also has a featured goal with a chart and a Closing soon list.
+- **Goal page:** a large "71% chance" headline with today's change, above a large line chart with 1D, 1W, 1M and All. Below: volume and close date, the rules, and proof as a dated list of the owner's verified statements. Desktop: a sticky trade panel on the right with Buy/Sell, a Yes/No toggle, an amount in points with +10, +25 and Max, a "To win" estimate and a lime Buy button. Phone: a bottom bar with Buy Yes and Buy No that opens the trade panel as a bottom sheet.
+- **Prices** keep the current unit: "Yes 71¢".
+- **Account page:** available points and the "Top up to 1,000" refill; positions with gain or loss since bought; the person's own goals, where a pending one says "Waiting for the owner to approve it" and an open one says "you can't trade your own goal". The header has a lime "Post a goal" button.
+- **New features:** search and the new tabs; today's change on cards, the ticker and the goal page; volume ("pts traded"); "To win" and quick amounts in the trade panel; the phone buy sheet; gain or loss per position; the dated proof list; the "Post a goal" button in the header.
+- **Kept unchanged:** a profile photo on every goal; no trader counts anywhere; play money only, points and never dollars; the owner approves every goal and nobody bets on their own goal; the motto "Bet on literally anything" in the header and footer; the 100-point limit per goal and two top-ups to 1,000 a month.
+
+**Interview answers the same day** (recommended options unless stated):
+
+- **Where search results go: "Filter the feed".** The cards narrow as you type, matching the question, the person's name or their handle. Searching from another page returns to the feed with the search filled in. No results page.
+- **What "today" means: "Last 24 hours".** Today's change compares the price now with the price exactly 24 hours earlier, rolling, as the app already computed it. It does not reset at midnight.
+- **The Closing soon tab: "All open, soonest first".** Every open goal, sorted by when trading closes. It is never empty.
+- **How goals reach the Running and Music tabs: "New Running and Music templates"**, not the recommended "poster picks a tab". Goals in a person's own words stay under Anything; the Anything tab shows every goal.
+- **Running, what counts as Yes: "Official race result only"**, not the recommended race-or-GPS option. Only a race's published results page counts; a run logged in an app or on a watch does not. **When the results list both, chip time counts; otherwise the official finish time** (asked after the first answer).
+- **Music: "rremoeve this goal for now. we have an method for micro macro trades i willa d later".** No Music template for now, and **the Music tab is hidden** until Music goals exist (asked after that answer).
+- **Just added, trust notes and Moving today: "Drop them, as designed".** This withdraws the Just added row decided on 2026-09-19. New goals still get the ranking's 48-hour head start. The featured goal becomes the one moving most today.
+
+**Supersedes:** tabs by person (2026-09-19), which become tabs by category; "no search" (2026-09-19); the Just added row (2026-09-19); the validated YES and NO colours and the lime-and-violet price flashes (2026-09-22 and 2026-09-24, both delegated); the scrolling ticker tape (2026-09-24, delegated), which becomes a still row.
+
+**Technical choices under delegation, recorded so they are not mistaken for owner rules:** a position's value is its shares at the current price, which is how Kalshi shows it and how the boards' numbers are computed; it can be more than selling would return at that moment, because a sale moves the price. The trade panel's estimate applies the market maker's formula at the current public price, so it includes price impact; the server's preview remains the exact figure. A goal with no movement in 24 hours can still be featured when nothing else moved.
+
+**Not built, though drawn on the boards:** a Trade history link on the account page, which is not on the owner's feature list, and editing the display name, which does not exist.
