@@ -24,7 +24,24 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-09-24 - Kalshi-direction redesign (Claude Code)
+
+**What:** rebuild the feed, goal page and account page to the "Kalshi direction" page of the Mitra UI canvas (boards KFeedDesktop, KFeedPhone, KGoalDesktop, KGoalPhone, KGoalSheet, KAccount; https://claude.ai/artifact/1ENk5mB8fg6zCxhwGYr7yh) and the owner's six screen pictures in `Documents\Mitra design images`, with the app's real data. The people and photos on the boards are made up.
+
+**Relies on:** the owner's decisions of 2026-09-24, recorded in DECISIONS.md as the first step of this change: the calm, flat, Inter look on the dark theme; Yes/up green `#34c77b` and No/down red `#f2545b` replacing `#82a000`/`#796ae5`, with lime only on main actions; framed feed cards; category tabs, search and a quiet ticker; the goal page with the headline above the chart, a trade panel and the phone sheet; prices as "Yes 71¢"; the account page. The owner's answers: search filters the feed as you type; "today" is the last 24 hours, rolling; the Closing soon tab is every open goal, soonest close first; a Running template where only an official race result counts, chip time when listed; no Music template or tab for now; the Just added row, trust notes and Moving today list are dropped. Unchanged: a photo on every goal, no trader counts, points only, owner approval, no betting on your own goal, the motto in header and footer, the 100-point limit and two refills a month.
+
+**Steps:**
+
+1. Docs: DECISIONS.md entry with the owner's words; DESIGN.md section 9 superseding the colours, card, tabs and search parts of sections 2, 4 and 5; MARKETS.md gains the Running template.
+2. Tokens and type: Inter with tabular numbers, the new colour tokens, flat surfaces with thin dividers.
+3. Header and footer on every page: wordmark and motto, search, Goals, Positions, points, lime "Post a goal", avatar; the owner's Review count kept; Log in and Sign up when signed out.
+4. Discovery: `readFeed` returns the ranked cards, one featured goal (the open goal that moved most in 24 hours, else the top traded one) and the Closing soon list; the Just added, people and movers lists go. Tabs by category and search filter the loaded cards in the browser, with the search in the URL. A static ticker on the feed and goal page. Ranking is unchanged.
+5. Goal page: the chance headline with the change over the chosen range, the chart with 1D/1W/1M/All, volume, close date and No price, rules with dates, proof as a dated list (owner statements by publication date, plus approval and opening price), and a sticky trade panel: Buy/Sell, Yes/No, amount with +10/+25/Max, an estimate with "To win", and a lime Buy that leads to the existing preview and confirmation. Your position with gain or loss. On a phone, a bottom bar opens the panel as a sheet. Rulings, objections and the proof form stay, restyled.
+6. Account: name, available points, points in positions with gain or loss, refills left, the top-up, positions, your goals with their status wording, owner tools, photo and sign out. `/positions` uses the same list with paging.
+7. Running template in `templates.ts`, the goal form and the category list, with tests.
+8. Tests, typecheck, lint and build; the preview scripts updated; screenshots of the three pages at desktop and phone width.
+
+**Technical choices under delegation:** a position's value is its shares at the current price, as Kalshi shows it and as the boards' numbers are computed; the estimate uses the LMSR at the current public price and the market's liquidity, so it includes price impact, and the server's preview stays the exact figure; typing in search updates the address without reloading the page, so it cannot inflate feed exposures.
 
 ## Deferred, to come back to
 
