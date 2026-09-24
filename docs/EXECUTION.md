@@ -36,6 +36,8 @@ Implements DECISIONS.md, 2026-09-24. Built in this order, each step tested befor
 6. **Owner queue count** in the top bar.
 7. Docs and verification: tests, typecheck, lint, build, both previews at desktop and phone width, the live database checked afterwards.
 
+**Plan change, found while building photo upload:** server actions accept at most 1 MB by default, so proof uploads above 1 MB (the form promises 10 MB) have always failed, and so would most phone photos. Set `experimental.serverActions.bodySizeLimit` and `experimental.proxyClientMaxBodySize` to 11 MB in `next.config.ts`: the 10 MB proof limit plus multipart overhead. The services' own size checks are unchanged and still refuse anything larger.
+
 ## Deferred, to come back to
 
 Things the owner has asked for and consciously postponed. Each needs its own decision or slice; none is forgotten.
