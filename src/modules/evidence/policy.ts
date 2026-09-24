@@ -134,6 +134,22 @@ export function normalizeCaption(value: unknown): string | null {
 }
 
 /**
+ * Whether a file's first bytes are what its declared type says (2026-09-24).
+ * Files now reach storage straight from the browser, so the declared type is
+ * only a claim until the server has read the file back and checked it.
+ */
+export function matchesDeclaredType(bytes: Uint8Array, contentType: string): boolean {
+  const starts = (signature: number[], offset = 0) => signature.every((byte, i) => bytes[offset + i] === byte);
+  switch (contentType) {
+    case "application/pdf": return starts([0x25, 0x50, 0x44, 0x46]); // %PDF
+    case "image/png": return starts([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case "image/jpeg": return starts([0xff, 0xd8, 0xff]);
+    case "image/webp": return starts([0x52, 0x49, 0x46, 0x46]) && starts([0x57, 0x45, 0x42, 0x50], 8); // RIFF....WEBP
+    default: return false;
+  }
+}
+
+/**
  * Where an original is stored. Keyed by market and a fresh id so one subject
  * cannot overwrite another's file, and never by anything the browser supplies:
  * an uploaded filename is attacker-controlled and would be a path traversal.

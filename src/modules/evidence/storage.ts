@@ -48,6 +48,19 @@ export async function putOriginal(path: string, body: ArrayBuffer | Uint8Array, 
   if (error) throw new StorageError("That file could not be stored. Please try again.");
 }
 
+/**
+ * A one-time link the subject's browser uploads an original to (2026-09-24),
+ * because Vercel refuses request bodies over 4.5 MB. It is for this one path
+ * only, cannot overwrite an existing object, and lasts two hours (Supabase's
+ * fixed lifetime). The bucket's own type and size limits still apply, and
+ * nothing is recorded until the server has read the file back and checked it.
+ */
+export async function createOriginalUploadUrl(path: string): Promise<string> {
+  const { data, error } = await storage().storage.from(ORIGINALS_BUCKET).createSignedUploadUrl(path, { upsert: false });
+  if (error || !data) throw new StorageError("An upload could not be started. Please try again.");
+  return data.signedUrl;
+}
+
 /** Reads an original into memory. Server-side only; never hand this to a browser. */
 export async function readOriginal(path: string): Promise<Uint8Array> {
   const { data, error } = await storage().storage.from(ORIGINALS_BUCKET).download(path);

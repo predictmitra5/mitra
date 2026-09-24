@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
-import { EvidenceError, MAX_FILE_BYTES } from "./policy";
-import { submitFile, submitLink } from "./service";
-import { discardOrphan, putOriginal } from "./storage";
+import { EvidenceError } from "./policy";
+import { beginFileUpload, completeFileUpload, submitLink } from "./service";
+import { createOriginalUploadUrl, discardOrphan, readOriginal } from "./storage";
 
 export type EvidenceResult = { ok: true } | { ok: false; error: string; code: string };
 
@@ -38,27 +38,37 @@ export async function attachLink(marketId: string, form: FormData): Promise<Evid
   return { ok: true };
 }
 
-export async function attachFile(marketId: string, form: FormData): Promise<EvidenceResult> {
+export type UploadStart =
+  | { ok: true; uploadId: string; contentType: string; url: string }
+  | { ok: false; error: string; code: string };
+
+/**
+ * Step 1 of sending a document (2026-09-24): check the person, the goal and the
+ * file's declared type and size, and hand back a one-time link to upload it to.
+ * Files go straight to storage because Vercel refuses request bodies over 4.5 MB.
+ */
+export async function startFileUpload(marketId: string, file: { contentType: string; bytes: number }): Promise<UploadStart> {
   try {
     const identity = await currentIdentity();
     if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your Ohio State email to send proof.");
+    const start = await beginFileUpload(getDb(), identity.id, { marketId, contentType: file?.contentType, bytes: file?.bytes });
+    return { ok: true, uploadId: start.id, contentType: start.contentType, url: await createOriginalUploadUrl(start.path) };
+  } catch (error) {
+    return failure(error) as UploadStart;
+  }
+}
 
-    const file = form.get("file");
-    if (!(file instanceof File) || file.size === 0) {
-      throw new EvidenceError("BAD_FILE", "Choose an image to send.");
-    }
-    // Check the size before reading the body into memory.
-    if (file.size > MAX_FILE_BYTES) {
-      throw new EvidenceError("TOO_LARGE", "Images must be 10 MB or smaller.");
-    }
-
-    const body = new Uint8Array(await file.arrayBuffer());
-    await submitFile(
-      getDb(),
-      identity.id,
-      { marketId, contentType: file.type, bytes: file.size, body, caption: form.get("caption") },
-      { putOriginal, discardOrphan },
-    );
+/** Step 3: the browser has uploaded the file. Check it and record it. */
+export async function finishFileUpload(
+  marketId: string,
+  upload: { uploadId: string; contentType: string; caption?: string },
+): Promise<EvidenceResult> {
+  try {
+    const identity = await currentIdentity();
+    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your Ohio State email to send proof.");
+    await completeFileUpload(getDb(), identity.id,
+      { marketId, id: upload?.uploadId, contentType: upload?.contentType, caption: upload?.caption },
+      { readOriginal, discardOrphan });
   } catch (error) {
     return failure(error);
   }

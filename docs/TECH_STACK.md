@@ -1,6 +1,6 @@
 # Technical foundation
 
-Selected: 2026-09-15, under the user's explicit delegation of technical choices. Scaffolded the same day (see Implemented foundation). Nothing is hosted.
+Selected: 2026-09-15, under the user's explicit delegation of technical choices. Scaffolded the same day (see Implemented foundation). Hosting: Vercel, chosen by the owner on 2026-09-24, private behind Vercel Authentication at first; functions run in `yul1` (Montréal), the same AWS region as the Supabase database (ca-central-1). See README.md, Deploying on Vercel.
 
 ## Selected components
 
@@ -14,7 +14,7 @@ Selected: 2026-09-15, under the user's explicit delegation of technical choices.
 | Initial deployment shape | One web application with separate domain modules | Reduce coordination while keeping market, information and discovery responsibilities distinct |
 | AI goal suggestions | Anthropic Claude API (model `claude-haiku-4-5`), called only from server code | The user chose AI-written goal suggestions alongside templates (2026-09-15). Drafting a few goal options from a short profile is a small, structured task, so the cheapest current Claude model fits: $1 per million input tokens and $5 per million output. Do not use an Opus- or Fable-tier model here. Google's Gemini Flash-Lite is cheaper still but adds a second provider and account for a few cents a month at pilot scale. The user creates the API key and billing account; prompt, inputs sent, retention and spending limits are set at implementation |
 
-No separate API service, ML service, analytics SaaS, background-job system or hosting subscription is selected.
+No separate API service, ML service, analytics SaaS or background-job system is selected. Vercel's free Hobby plan is expected for the pilot; the plan is the owner's choice.
 
 ## Implemented foundation (2026-09-15)
 
@@ -52,7 +52,7 @@ A separate backend could be useful for future long-running processing, but adds 
 - Storage supports row-level access policies. Service credentials bypass these protections and must remain server-only. A server using privileged access must enforce user permissions explicitly. [Official storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 - Drizzle supports explicit transactions/isolation and generated migrations. The eventual ledger still needs application invariants, constraints, retry handling and concurrency tests. [Transactions](https://orm.drizzle.team/docs/transactions), [migrations](https://orm.drizzle.team/docs/migrations)
 
-Server actions accept 1 MB by default. Since 2026-09-24 `next.config.ts` raises `serverActions.bodySizeLimit` and `proxyClientMaxBodySize` to 11 MB for uploads (proof up to 10 MB, photos up to 8 MB); before that, any proof above 1 MB was refused. Each service still enforces its own limit. A host may impose its own request-size cap; check it at deployment.
+Uploads never pass through the app's own server (since 2026-09-24). Vercel refuses request bodies over 4.5 MB, while proof may be 10 MB and photos 8 MB, so a server action hands the browser a one-time Supabase signed upload link for one path (it lasts two hours and cannot overwrite), the browser sends the file straight to storage, and a second action reads it back and checks it before recording it. Server actions are back at Next.js's default 1 MB limit. Supabase Storage answers browsers' cross-origin checks for these uploads; verified with a probe on 2026-09-24. (Before 2026-09-24 the limits were raised to 11 MB for uploads through actions; before that, any proof above 1 MB was refused.)
 
 Do not assume hosted request handlers support indefinitely running jobs or persistent connections. Select that infrastructure only when verification rechecks, asynchronous review or other concrete requirements justify it.
 
@@ -60,4 +60,4 @@ Do not assume hosted request handlers support indefinitely running jobs or persi
 
 Market mechanics, economy parameters, subject consent, outcome resolution, evidence retention, ranking formula, data schemas and reviewer autonomy remain product choices. The user has accepted public and private evidence categories; they have not approved a particular file-retention policy or external AI processing of that evidence.
 
-The owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and placed the credentials in `.env.local` themselves; all four connections were verified. No deployment, paid hosting tier or upload bucket exists yet.
+The owner created the Supabase project and a workspace-scoped Claude API key on 2026-09-15 and placed the credentials in `.env.local` themselves; all four connections were verified. Storage buckets exist since 2026-09-19 and 2026-09-24 (see README.md). Deployment is prepared for Vercel; the owner creates the project and enters the keys.

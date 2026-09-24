@@ -40,7 +40,7 @@ const stubs = {
     export const ORIGINALS_BUCKET = "evidence-originals"; export const ORIGINAL_VIEW_SECONDS = 300;
     export class StorageError extends Error {}
     const offline = async () => { throw new StorageError("No storage in the preview."); };
-    export const putOriginal = offline, readOriginal = offline, discardOrphan = offline;
+    export const putOriginal = offline, readOriginal = offline, discardOrphan = offline, createOriginalUploadUrl = offline;
     export async function signedOriginalUrl() { return "#fictional-original"; }`,
   "next/navigation": `
     export function redirect(to) { const e = new Error("redirect"); e.previewRedirect = to; throw e; }

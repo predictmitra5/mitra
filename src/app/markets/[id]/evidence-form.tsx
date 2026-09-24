@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { attachFile, attachLink } from "@/modules/evidence/actions";
+import { attachLink, finishFileUpload, startFileUpload, type EvidenceResult } from "@/modules/evidence/actions";
+import { putToSignedUrl } from "@/app/components/direct-upload";
 import type { SubjectEvidence } from "@/modules/evidence/service";
 
 const statusLabel: Record<SubjectEvidence["status"], string> = {
@@ -33,12 +34,25 @@ export function EvidenceForm({
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
+  /** Asks for an upload link, sends the file straight to storage, then has the server check and record it. */
+  async function sendFile(form: FormData): Promise<EvidenceResult> {
+    const file = form.get("file");
+    if (!(file instanceof File) || file.size === 0) return { ok: false, code: "BAD_FILE", error: "Choose a document to send." };
+    const start = await startFileUpload(marketId, { contentType: file.type, bytes: file.size });
+    if (!start.ok) return start;
+    if (!(await putToSignedUrl(start.url, file, start.contentType))) {
+      return { ok: false, code: "UPLOAD_FAILED", error: "The upload did not finish. Check your connection and try again." };
+    }
+    const caption = form.get("caption");
+    return finishFileUpload(marketId, { uploadId: start.uploadId, contentType: start.contentType, caption: typeof caption === "string" ? caption : "" });
+  }
+
   function submit(form: FormData) {
     setError("");
     setSuccess("");
     startTransition(async () => {
       try {
-        const result = mode === "file" ? await attachFile(marketId, form) : await attachLink(marketId, form);
+        const result = mode === "file" ? await sendFile(form) : await attachLink(marketId, form);
         if (result.ok) {
           setSuccess("Sent. The owner reviews it before anything appears on this page.");
           formRef.current?.reset();

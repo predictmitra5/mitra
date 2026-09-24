@@ -6,6 +6,8 @@
 //   evidence-originals  private  what the subject actually sent, owner-only (2026-09-19)
 //   profile-photos      private  re-encoded profile photos (2026-09-24), served
 //                                only through the app's /photos route
+//   photo-uploads       private  originals uploaded from the browser (2026-09-24),
+//                                kept only until checked and re-encoded
 //
 // There is deliberately no public bucket. Since the revision of 2026-09-19 no
 // uploaded document is ever published: what goes public is a statement the
@@ -39,6 +41,15 @@ const wanted = [
     allowedMimeTypes: ["image/webp"],
     fileSizeLimit: 1024 * 1024,
     why: "photos are served through the app, so a ban or withdrawal stops them at once",
+  },
+  {
+    id: "photo-uploads",
+    public: false,
+    // Browsers upload the original here, because Vercel refuses request bodies
+    // over 4.5 MB. The app reads it, checks it and deletes it.
+    allowedMimeTypes: IMAGE_TYPES,
+    fileSizeLimit: 8 * 1024 * 1024,
+    why: "holds originals with their metadata, including location, until the app strips it",
   },
 ];
 

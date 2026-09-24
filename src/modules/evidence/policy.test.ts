@@ -210,3 +210,24 @@ describe("storage paths", () => {
     expect(originalStoragePath(marketId, evidenceId, "application/pdf")).toMatch(/original\.pdf$/);
   });
 });
+
+describe("file signatures", () => {
+  it("accepts a file whose first bytes match its declared type", async () => {
+    const { matchesDeclaredType } = await import("./policy");
+    expect(matchesDeclaredType(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]), "application/pdf")).toBe(true);
+    expect(matchesDeclaredType(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]), "image/png")).toBe(true);
+    expect(matchesDeclaredType(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), "image/jpeg")).toBe(true);
+    const webp = new Uint8Array([0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x45, 0x42, 0x50]);
+    expect(matchesDeclaredType(webp, "image/webp")).toBe(true);
+  });
+
+  it("refuses a file that is not what it claims, or too short to tell", async () => {
+    const { matchesDeclaredType } = await import("./policy");
+    const html = new TextEncoder().encode("<html><script>");
+    for (const type of ["application/pdf", "image/png", "image/jpeg", "image/webp"]) expect(matchesDeclaredType(html, type)).toBe(false);
+    expect(matchesDeclaredType(new Uint8Array([0x25, 0x50, 0x44, 0x46]), "image/png")).toBe(false);
+    expect(matchesDeclaredType(new Uint8Array([0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x41, 0x56, 0x45]), "image/webp")).toBe(false);
+    expect(matchesDeclaredType(new Uint8Array([]), "application/pdf")).toBe(false);
+    expect(matchesDeclaredType(new Uint8Array([0x25, 0x50, 0x44, 0x46]), "image/gif")).toBe(false);
+  });
+});

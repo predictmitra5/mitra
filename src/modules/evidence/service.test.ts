@@ -8,7 +8,7 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { EvidenceError } from "./policy";
-import { canSubmit, listForOwner, listForSubject, listPublished, submitFile, submitLink } from "./service";
+import { beginFileUpload, canSubmit, completeFileUpload, listForOwner, listForSubject, listPublished, submitFile, submitLink } from "./service";
 import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, markets, evidence } = schema;
@@ -186,6 +186,87 @@ describe("attaching a file", () => {
       { marketId, contentType: "image/png", bytes: png.byteLength, body: png }, storage, clock))
       .rejects.toThrow(/at most/i);
     expect(storage.putOriginal).not.toHaveBeenCalled();
+  });
+});
+
+describe("uploading straight to storage (2026-09-24)", () => {
+  /** A bucket the browser uploads to directly; the server only reads it back. */
+  function uploadedBucket() {
+    const objects = new Map<string, Uint8Array>();
+    const discarded: string[] = [];
+    return {
+      objects, discarded,
+      readOriginal: vi.fn(async (path: string) => { const found = objects.get(path); if (!found) throw new Error("missing"); return found; }),
+      discardOrphan: vi.fn(async (path: string) => { objects.delete(path); discarded.push(path); }),
+    };
+  }
+
+  it("checks the person and the goal before naming a path, and stores nothing itself", async () => {
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "application/pdf", bytes: 2_000_000 }, clock);
+    expect(start.path).toBe(`${marketId}/${start.id}/original.pdf`);
+    await expect(beginFileUpload(db, stranger, { marketId, contentType: "application/pdf", bytes: 10 }, clock)).rejects.toThrow(/only the person/i);
+    await expect(beginFileUpload(db, subject, { marketId, contentType: "application/pdf", bytes: 11 * 1024 * 1024 }, clock)).rejects.toThrow(/10 MB/);
+    await expect(beginFileUpload(db, subject, { marketId, contentType: "text/html", bytes: 10 }, clock)).rejects.toThrow(/PDF, or a PNG/);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(0);
+  });
+
+  it("records a file the browser uploaded, at the path the server worked out, with its real size", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 999 }, clock);
+    bucket.objects.set(start.path, png);
+    const { id } = await completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png", caption: "Transcript" }, bucket, clock);
+    const [row] = await listForOwner(db, owner, marketId);
+    expect(row).toMatchObject({ id, kind: "file", originalPath: start.path, caption: "Transcript", status: "submitted" });
+    const [stored] = await db.select().from(evidence).where(eq(evidence.id, id));
+    expect(stored.originalBytes).toBe(png.byteLength);
+    expect(bucket.discarded).toEqual([]);
+  });
+
+  it("says so when the upload never arrived, and records nothing", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 12 }, clock);
+    await expect(completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
+      .rejects.toThrow(/did not finish uploading/i);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(0);
+  });
+
+  it("discards a file that is not what it claims to be, or is too big once it arrives", async () => {
+    const bucket = uploadedBucket();
+    const disguised = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 12 }, clock);
+    bucket.objects.set(disguised.path, new TextEncoder().encode("<html><script>alert(1)</script>"));
+    await expect(completeFileUpload(db, subject, { marketId, id: disguised.id, contentType: "image/png" }, bucket, clock))
+      .rejects.toThrow(/not the PDF or image it says/i);
+
+    const huge = await beginFileUpload(db, subject, { marketId, contentType: "application/pdf", bytes: 100 }, clock);
+    const big = new Uint8Array(10 * 1024 * 1024 + 1); big.set([0x25, 0x50, 0x44, 0x46]);
+    bucket.objects.set(huge.path, big);
+    await expect(completeFileUpload(db, subject, { marketId, id: huge.id, contentType: "application/pdf" }, bucket, clock))
+      .rejects.toThrow(/10 MB/);
+
+    expect(bucket.discarded).toEqual([disguised.path, huge.path]);
+    expect(await listForOwner(db, owner, marketId)).toHaveLength(0);
+  });
+
+  it("never lets finishing again, or finishing someone else's goal, delete a kept original", async () => {
+    const bucket = uploadedBucket();
+    const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 12 }, clock);
+    bucket.objects.set(start.path, png);
+    await completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock);
+    // Proof is kept permanently: a repeat must fail without touching the file.
+    await expect(completeFileUpload(db, subject, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
+      .rejects.toThrow(/already sent/i);
+    await expect(completeFileUpload(db, stranger, { marketId, id: start.id, contentType: "image/png" }, bucket, clock))
+      .rejects.toThrow(/already sent/i);
+    expect(bucket.discarded).toEqual([]);
+    expect(bucket.objects.has(start.path)).toBe(true);
+  });
+
+  it("refuses ids and types that are not its own shape before reading anything", async () => {
+    const bucket = uploadedBucket();
+    for (const bad of [{ id: "../../etc/passwd", contentType: "image/png" }, { id: randomUUID(), contentType: "image/svg+xml" }]) {
+      await expect(completeFileUpload(db, subject, { marketId, ...bad }, bucket, clock)).rejects.toThrow(/could not be read/i);
+    }
+    expect(bucket.readOriginal).not.toHaveBeenCalled();
   });
 });
 

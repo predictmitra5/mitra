@@ -26,6 +26,12 @@ const { profiles, adminActions } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export const PHOTO_BUCKET = "profile-photos";
+/**
+ * Where a browser uploads the original (2026-09-24), because Vercel refuses
+ * request bodies over 4.5 MB. Private; each object lives only until the server
+ * has checked and re-encoded it, and is then deleted whatever the outcome.
+ */
+export const PHOTO_UPLOAD_BUCKET = "photo-uploads";
 export const PHOTO_SIZE = 512;
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 export const MIN_PHOTO_SIDE = 200;
@@ -86,6 +92,66 @@ async function removeObject(path: string | null) {
     await storage().storage.from(PHOTO_BUCKET).remove([path]);
   } catch {
     // An orphaned photo is invisible: nothing points at it any more.
+  }
+}
+
+/** Where one person's upload waits. Worked out from the signed-in id, never taken from the browser. */
+function stagingPath(userId: string, uploadId: string): string {
+  return `${userId}/${uploadId}`;
+}
+
+/**
+ * Step 1 of a new photo: may this person upload this file? Returns a one-time
+ * link for the browser to send it to. Nothing is checked for AI labels yet:
+ * that needs the file itself, in step 3.
+ */
+export async function beginPhotoUpload<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  userId: string,
+  file: { contentType: unknown; bytes: unknown },
+): Promise<{ uploadId: string; url: string }> {
+  if (!isUuid(userId)) throw new PhotoError("PROFILE_REQUIRED", "Finish setting up your profile first.");
+  const [profile] = await database.select().from(profiles).where(eq(profiles.id, userId)).limit(1);
+  if (!profile || !profile.adultConfirmedAt || isInactive(profile)) {
+    throw new PhotoError("PROFILE_REQUIRED", "Finish setting up your profile first.");
+  }
+  if (typeof file.contentType !== "string" || !(ACCEPTED_PHOTO_TYPES as readonly string[]).includes(file.contentType)) {
+    throw new PhotoError("INVALID_FILE", "Use a JPEG, PNG or WebP photo.");
+  }
+  if (typeof file.bytes !== "number" || !Number.isFinite(file.bytes) || file.bytes <= 0 || file.bytes > MAX_PHOTO_BYTES) {
+    throw new PhotoError("INVALID_FILE", "Photos can be up to 8 MB.");
+  }
+  const uploadId = randomUUID();
+  const { data, error } = await storage().storage.from(PHOTO_UPLOAD_BUCKET).createSignedUploadUrl(stagingPath(userId, uploadId), { upsert: false });
+  if (error || !data) throw new PhotoError("UNAVAILABLE", "Your photo could not be uploaded. Please try again.");
+  return { uploadId, url: data.signedUrl };
+}
+
+/**
+ * Step 3: the browser has uploaded the original. Read it, then check and save
+ * it exactly as a direct upload would be. The staging copy is always deleted,
+ * so an original with its metadata never outlives this call.
+ */
+export async function completePhotoUpload<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  userId: string,
+  upload: { uploadId: unknown; contentType: unknown },
+  now: Date = new Date(),
+): Promise<Date> {
+  if (!isUuid(userId) || !isUuid(upload.uploadId)) throw new PhotoError("INVALID_FILE", "That file could not be read as a photo.");
+  const path = stagingPath(userId, upload.uploadId);
+  const bucket = storage().storage.from(PHOTO_UPLOAD_BUCKET);
+  try {
+    const { data, error } = await bucket.download(path);
+    if (error || !data) throw new PhotoError("UNAVAILABLE", "The photo did not finish uploading. Please try again.");
+    const bytes = new Uint8Array(await data.arrayBuffer());
+    return await setProfilePhoto(database, userId, bytes, typeof upload.contentType === "string" ? upload.contentType : "", now);
+  } finally {
+    try {
+      await bucket.remove([path]);
+    } catch {
+      // A leftover staging object is private and unreferenced.
+    }
   }
 }
 

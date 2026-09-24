@@ -3,10 +3,13 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isInactive } from "@/modules/account/standing";
+import { isUuid } from "@/modules/market/input";
 import {
   EvidenceError,
   assertAcceptableFile,
   assertMaySubmit,
+  isAcceptedUploadType,
+  matchesDeclaredType,
   normalizeCaption,
   normalizeLink,
   originalStoragePath,
@@ -140,11 +143,92 @@ export async function submitLink<Q extends PgQueryResultHKT>(
   });
 }
 
-/**
- * Attaches an image. The object is stored before the row is written, so a row
- * always points at a real file; if the row cannot be written the object is
- * discarded. The reverse order would leave the owner reviewing a missing image.
+/*
+ * Attaching a document happens in three steps since 2026-09-24, because
+ * Vercel refuses request bodies over 4.5 MB and proof may be 10 MB:
+ *
+ *   1. beginFileUpload checks the person, the goal and the declared type and
+ *      size, and names a fresh path. Nothing is stored.
+ *   2. The browser sends the file to that path through a one-time signed link.
+ *   3. completeFileUpload reads the object back, checks its real size and its
+ *      file signature, re-checks eligibility and writes the row. If anything
+ *      fails the object is discarded, so a row always points at a checked file.
+ *
+ * submitFile runs the same three steps in one call, for a caller that already
+ * holds the bytes.
  */
+
+export type FileUploadStart = { id: string; path: string; contentType: AcceptedUploadType };
+
+/** Step 1: may this person attach this file to this goal? Names where it goes. */
+export async function beginFileUpload<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  userId: string,
+  input: { marketId: string; contentType: unknown; bytes: unknown },
+  clock: Clock = () => new Date(),
+): Promise<FileUploadStart> {
+  assertAcceptableFile(input.contentType, input.bytes);
+  // The assertion narrows the argument, not the property it came from.
+  const contentType = input.contentType as AcceptedUploadType;
+  // Check eligibility before anything can be stored, so a stranger cannot make
+  // this app accept a file by guessing a goal id.
+  const precheck = await loadMarket(database, input.marketId);
+  if (!precheck) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
+  assertMaySubmit(precheck, userId, await countFor(database, input.marketId), clock());
+  const id = randomUUID();
+  return { id, path: originalStoragePath(input.marketId, id, contentType), contentType };
+}
+
+/**
+ * Step 3: the file is at its path. The path is worked out again here from the
+ * goal, the upload id and the type, never taken from the browser.
+ */
+export async function completeFileUpload<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  userId: string,
+  input: { marketId: string; id: unknown; contentType: unknown; caption?: unknown },
+  storage: {
+    readOriginal: (path: string) => Promise<Uint8Array>;
+    discardOrphan: (path: string) => Promise<void>;
+  },
+  clock: Clock = () => new Date(),
+): Promise<{ id: string }> {
+  if (!isAcceptedUploadType(input.contentType) || !isUuid(input.id) || !isUuid(input.marketId)) {
+    throw new EvidenceError("BAD_FILE", "That file could not be read.");
+  }
+  const id = input.id;
+  const contentType = input.contentType;
+  const path = originalStoragePath(input.marketId, id, contentType);
+  // An id that is already recorded names a kept original. Finishing it again
+  // must fail without touching the file: proof is retained permanently, and a
+  // failure below would otherwise discard it.
+  if (await isRecorded(database, id)) throw new EvidenceError("ALREADY_SENT", "That file was already sent.");
+  let body: Uint8Array;
+  try {
+    body = await storage.readOriginal(path);
+  } catch {
+    throw new EvidenceError("UPLOAD_MISSING", "The file did not finish uploading. Please try again.");
+  }
+  try {
+    assertAcceptableFile(contentType, body.byteLength);
+    if (!matchesDeclaredType(body, contentType)) {
+      throw new EvidenceError("BAD_TYPE", "That file is not the PDF or image it says it is.");
+    }
+    return await recordFile(database, userId, { id, marketId: input.marketId, path, contentType, bytes: body.byteLength, caption: normalizeCaption(input.caption) }, clock);
+  } catch (error) {
+    // Two finishes of the same upload can race; only an object no row points
+    // at is an orphan.
+    if (!(await isRecorded(database, id).catch(() => true))) await storage.discardOrphan(path);
+    throw error;
+  }
+}
+
+async function isRecorded<Q extends PgQueryResultHKT>(database: Database<Q>, id: string): Promise<boolean> {
+  const [row] = await database.select({ id: evidence.id }).from(evidence).where(eq(evidence.id, id)).limit(1);
+  return !!row;
+}
+
+/** All three steps in one call, for a caller that already holds the bytes. */
 export async function submitFile<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   userId: string,
@@ -155,55 +239,48 @@ export async function submitFile<Q extends PgQueryResultHKT>(
   },
   clock: Clock = () => new Date(),
 ): Promise<{ id: string }> {
-  assertAcceptableFile(input.contentType, input.bytes);
-  // The assertion narrows the argument, not the property it came from.
-  const contentType = input.contentType as AcceptedUploadType;
-  const bytes = input.bytes as number;
-  const caption = normalizeCaption(input.caption);
   // The declared size must match what actually arrived, so a small declared
   // size cannot smuggle a large body past the limit.
-  if (input.body.byteLength !== bytes) {
+  if (typeof input.bytes === "number" && input.body.byteLength !== input.bytes) {
     throw new EvidenceError("BAD_FILE", "That file could not be read.");
   }
+  const start = await beginFileUpload(database, userId, input, clock);
+  await storage.putOriginal(start.path, input.body, start.contentType);
+  return completeFileUpload(database, userId, { marketId: input.marketId, id: start.id, contentType: start.contentType, caption: input.caption },
+    { readOriginal: async () => input.body, discardOrphan: storage.discardOrphan }, clock);
+}
 
-  // Check eligibility before touching storage, so a stranger cannot make this
-  // app write a file by guessing a goal id.
-  const precheck = await loadMarket(database, input.marketId);
-  if (!precheck) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
-  assertMaySubmit(precheck, userId, await countFor(database, input.marketId), clock());
+/** Writes the row for a checked file, re-checking eligibility under the lock. */
+async function recordFile<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  userId: string,
+  file: { id: string; marketId: string; path: string; contentType: AcceptedUploadType; bytes: number; caption: string | null },
+  clock: Clock,
+): Promise<{ id: string }> {
+  const { id, marketId, path, contentType, bytes, caption } = file;
+  return database.transaction(async (tx) => {
+    await requireActiveProfile(tx as unknown as Database<Q>, userId);
+    // Re-read under the lock: the window may have closed while the file uploaded.
+    const market = await loadMarket(tx as unknown as Database<Q>, marketId);
+    if (!market) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
+    const existing = await countFor(tx as unknown as Database<Q>, marketId);
+    assertMaySubmit(market, userId, existing, clock());
 
-  const id = randomUUID();
-  const path = originalStoragePath(input.marketId, id, contentType);
-  await storage.putOriginal(path, input.body, contentType);
-
-  try {
-    return await database.transaction(async (tx) => {
-      await requireActiveProfile(tx as unknown as Database<Q>, userId);
-      // Re-read under the lock: the window may have closed while the file uploaded.
-      const market = await loadMarket(tx as unknown as Database<Q>, input.marketId);
-      if (!market) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
-      const existing = await countFor(tx as unknown as Database<Q>, input.marketId);
-      assertMaySubmit(market, userId, existing, clock());
-
-      const [row] = await tx
-        .insert(evidence)
-        .values({
-          id,
-          marketId: input.marketId,
-          submittedBy: userId,
-          kind: "file",
-          originalPath: path,
-          originalContentType: contentType,
-          originalBytes: bytes,
-          caption,
-        })
-        .returning({ id: evidence.id });
-      return { id: row.id };
-    });
-  } catch (error) {
-    await storage.discardOrphan(path);
-    throw error;
-  }
+    const [row] = await tx
+      .insert(evidence)
+      .values({
+        id,
+        marketId,
+        submittedBy: userId,
+        kind: "file",
+        originalPath: path,
+        originalContentType: contentType,
+        originalBytes: bytes,
+        caption,
+      })
+      .returning({ id: evidence.id });
+    return { id: row.id };
+  });
 }
 
 /** Everything attached to a goal, for the owner's review. Requires the owner. */

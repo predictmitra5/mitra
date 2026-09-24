@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import type { FormState } from "@/modules/auth/policy";
-import { PhotoError, removeProfilePhoto, setProfilePhoto } from "./photos";
+import { beginPhotoUpload, completePhotoUpload, PhotoError, removeProfilePhoto } from "./photos";
 
 const signedOut = { error: "Sign in to change your photo." };
 
@@ -13,13 +13,30 @@ function refresh() {
   revalidatePath("/", "layout");
 }
 
-export async function uploadPhotoAction(_state: FormState, form: FormData): Promise<FormState> {
+export type PhotoUploadStart = { ok: true; uploadId: string; url: string } | { ok: false; error: string };
+
+/**
+ * Step 1 of a new photo (2026-09-24): a one-time link to upload the original
+ * to, because Vercel refuses request bodies over 4.5 MB.
+ */
+export async function startPhotoUpload(file: { contentType: string; bytes: number }): Promise<PhotoUploadStart> {
+  try {
+    const identity = await currentIdentity();
+    if (!identity) return { ok: false, ...signedOut };
+    const start = await beginPhotoUpload(getDb(), identity.id, { contentType: file?.contentType, bytes: file?.bytes });
+    return { ok: true, ...start };
+  } catch (error) {
+    if (error instanceof PhotoError) return { ok: false, error: error.message };
+    return { ok: false, error: "Your photo could not be uploaded. Please try again." };
+  }
+}
+
+/** Step 3: check the uploaded original for AI labels, re-encode it and save it. */
+export async function finishPhotoUpload(upload: { uploadId: string; contentType: string }): Promise<FormState> {
   try {
     const identity = await currentIdentity();
     if (!identity) return signedOut;
-    const file = form.get("photo");
-    if (!(file instanceof File) || file.size === 0) return { error: "Choose a photo first." };
-    await setProfilePhoto(getDb(), identity.id, new Uint8Array(await file.arrayBuffer()), file.type);
+    await completePhotoUpload(getDb(), identity.id, { uploadId: upload?.uploadId, contentType: upload?.contentType });
   } catch (error) {
     if (error instanceof PhotoError) return { error: error.message };
     return { error: "Your photo could not be saved. Please try again." };

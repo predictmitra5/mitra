@@ -13,7 +13,8 @@ import { photoUrl } from "./photo-url";
 const bucket = vi.hoisted(() => ({ objects: new Map<string, Uint8Array>(), removed: [] as string[] }));
 vi.mock("server-only", () => ({}));
 vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({ storage: { from: () => ({
+  createClient: () => ({ storage: { from: (name: string) => ({
+    createSignedUploadUrl: async (path: string) => ({ data: { signedUrl: `https://storage.example.test/${name}/${path}?token=t`, path, token: "t" }, error: null }),
     upload: async (path: string, body: Uint8Array) => { bucket.objects.set(path, new Uint8Array(body)); return { error: null }; },
     remove: async (paths: string[]) => { for (const p of paths) { bucket.objects.delete(p); bucket.removed.push(p); } return { error: null }; },
     download: async (path: string) => {
@@ -23,7 +24,7 @@ vi.mock("@supabase/supabase-js", () => ({
   }) } }),
 }));
 
-import { preparePhoto, readPhotoByHandle, removeProfilePhoto, setProfilePhoto } from "./photos";
+import { beginPhotoUpload, completePhotoUpload, preparePhoto, readPhotoByHandle, removeProfilePhoto, setProfilePhoto } from "./photos";
 import { provisionAccount } from "./provision";
 import { banPerson } from "./moderation";
 
@@ -146,6 +147,42 @@ describe("setting and removing photos", () => {
     await banPerson(db, owner, person, "Spam account.", () => now);
     expect(await readPhotoByHandle(db, "person")).toBeNull();
     expect(await readPhotoByHandle(db, "../etc")).toBeNull();
+  });
+
+  it("hands out a one-time upload link only for an allowed photo from an active profile (2026-09-24)", async () => {
+    const start = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 3_000_000 });
+    expect(start.url).toBe(`https://storage.example.test/photo-uploads/${person}/${start.uploadId}?token=t`);
+    await expect(beginPhotoUpload(db, person, { contentType: "image/gif", bytes: 10 })).rejects.toMatchObject({ code: "INVALID_FILE" });
+    await expect(beginPhotoUpload(db, person, { contentType: "image/png", bytes: 9 * 1024 * 1024 })).rejects.toMatchObject({ code: "INVALID_FILE" });
+    await banPerson(db, owner, other, "Spam account.", () => now);
+    await expect(beginPhotoUpload(db, other, { contentType: "image/png", bytes: 10 })).rejects.toMatchObject({ code: "PROFILE_REQUIRED" });
+  });
+
+  it("checks and saves an uploaded original, then deletes the staged copy whatever happens", async () => {
+    const good = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 });
+    bucket.objects.set(`${person}/${good.uploadId}`, await photo());
+    await completePhotoUpload(db, person, { uploadId: good.uploadId, contentType: "image/jpeg" }, now);
+    const saved = (await row(person)).photoPath!;
+    expect((await sharp(bucket.objects.get(saved)!).metadata()).format).toBe("webp");
+    expect(bucket.objects.has(`${person}/${good.uploadId}`)).toBe(false);
+
+    const labelled = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 });
+    bucket.objects.set(`${person}/${labelled.uploadId}`, await jpegWithXmp("trainedAlgorithmicMedia"));
+    await expect(completePhotoUpload(db, person, { uploadId: labelled.uploadId, contentType: "image/jpeg" }, now))
+      .rejects.toMatchObject({ code: "AI_LABELLED" });
+    expect(bucket.objects.has(`${person}/${labelled.uploadId}`)).toBe(false);
+    expect((await row(person)).photoPath).toBe(saved);
+  });
+
+  it("only ever reads the signed-in person's own staged upload", async () => {
+    const theirs = await beginPhotoUpload(db, other, { contentType: "image/jpeg", bytes: 1 });
+    bucket.objects.set(`${other}/${theirs.uploadId}`, await photo());
+    await expect(completePhotoUpload(db, person, { uploadId: theirs.uploadId, contentType: "image/jpeg" }, now))
+      .rejects.toMatchObject({ code: "UNAVAILABLE" });
+    expect((await row(person)).photoPath).toBeNull();
+    expect(bucket.objects.has(`${other}/${theirs.uploadId}`)).toBe(true);
+    await expect(completePhotoUpload(db, person, { uploadId: "../other", contentType: "image/jpeg" }, now))
+      .rejects.toMatchObject({ code: "INVALID_FILE" });
   });
 
   it("builds a versioned URL, and none without a photo", () => {

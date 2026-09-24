@@ -86,7 +86,7 @@ These are dashboard settings in your Supabase project. The app never changes the
 
 ## Evidence storage
 
-Proof and profile photos need two private Supabase Storage buckets. Run this once per environment; it is safe to repeat, and it verifies each bucket's privacy rather than trusting the setting:
+Proof and profile photos need three private Supabase Storage buckets. Run this once per environment; it is safe to repeat, and it verifies each bucket's privacy rather than trusting the setting:
 
 ```bash
 node --env-file=.env.local scripts/setup-evidence-storage.mjs
@@ -94,10 +94,39 @@ node --env-file=.env.local scripts/setup-evidence-storage.mjs
 
 - `evidence-originals` is **private**. It holds what a subject actually sent. Nothing in it is ever served by URL; the owner reads it through a link that expires in five minutes.
 - `profile-photos` is **private** and accepts only the WebP the app produces. Photos reach browsers through the app's `/photos` route, so a ban or withdrawal stops them at once.
+- `photo-uploads` is **private**. A browser uploads the original photo here; the app reads it, checks it for AI labels, re-encodes it into `profile-photos` and deletes it.
+
+Files go from the browser straight to storage through one-time signed upload links, because Vercel refuses request bodies over 4.5 MB. The app checks each file after it arrives (its real size, and for proof its file signature) before recording it.
 
 There is deliberately no public bucket: no uploaded document is ever published, so there is nowhere for one to be published to. If an earlier `evidence-public` bucket still exists in your project, it is unused and can be deleted.
 
 If that script reports wrong privacy on the bucket, fix it in the Supabase dashboard before accepting any upload.
+
+## Deploying on Vercel
+
+Decided 2026-09-24: Vercel, **private at first** (see DECISIONS.md). Every deployment, production included, sits behind Vercel's own login until email confirmation is back on, because with confirmation off anyone could sign up with another student's `@osu.edu` address. Testers get a shareable link.
+
+Only you can do these steps: they create an account and handle the keys. Nothing here goes into Git.
+
+1. **Create the Vercel account.** At vercel.com, sign up with **Continue with GitHub**, using the GitHub account that owns `wuckyduckylol/mitra`. The free Hobby plan is for personal, non-commercial use, which fits a play-money pilot.
+2. **Import the project.** Add New, then Project, then import `mitra`. Vercel detects Next.js; leave the build settings alone. `vercel.json` already runs the app in `yul1` (Montréal), next to the database, and `package.json` asks for Node 24.
+3. **Add the environment variables** before the first deploy, for Production and Preview. Copy each value from your `.env.local` (open it in Notepad):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY`
+   - `DATABASE_URL` (the transaction pooler, port 6543)
+   - `ANTHROPIC_API_KEY` (optional: it only suggests wording when you review proof)
+   - `ANTHROPIC_MODEL`: `claude-haiku-4-5`
+   - `AUTH_REQUIRE_EMAIL_CONFIRMATION`: `false`, while confirmation is off
+   `DIRECT_DATABASE_URL` is not needed there: migrations run from your computer.
+4. **Deploy**, then copy the production address Vercel gives the project, such as `https://mitra-abc123.vercel.app`.
+5. **Set `APP_URL`** to that address in the project's environment variables, then redeploy (Deployments, the three dots on the latest one, Redeploy). Sign-up and password reset need it.
+6. **Lock it.** Settings, Deployment Protection: turn on **Vercel Authentication** and choose **All Deployments**, so production is covered too. Check it in a private window: you should get Vercel's login, not Mitra.
+7. **Let testers in.** Open the deployment and use **Share** to make a shareable link. Anyone with it gets past Vercel's login; they still sign in to Mitra as usual.
+8. **Tell Supabase about the address.** Supabase, Authentication, URL Configuration: set Site URL to the production address, and add `<address>/auth/callback` and `<address>/auth/recovery` to Redirect URLs.
+9. **Storage.** The `photo-uploads` bucket was created on 2026-09-24. On another Supabase project, run the storage script above first.
+
+To go public later: restore email confirmation (Supabase Auth setup above), delete `AUTH_REQUIRE_EMAIL_CONFIRMATION` from Vercel, redeploy, then turn Deployment Protection off.
 
 ## Database migrations
 
