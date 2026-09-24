@@ -10,7 +10,7 @@ Record useful conclusions, evidence, decisions, and concise rationales; do not r
 
 The user supplied `Prediction_Market_MVP_Master_Prompt.pdf` (18 pages) and requested a deep review, questions, and candid recommendations for specialized skills before building. The source was fully text-extracted and every page visually inspected on 2026-09-15. The PDF is preserved unchanged.
 
-Sessions so far ran in Codex and Claude Code. This file, not chat history, carries project state.
+Sessions up to 2026-09-22 ran in Codex and Claude Code. From 2026-09-23 the owner has made Claude Code the only agent on this project. This file, not chat history, carries project state.
 
 ## Working rule: record before and after every change
 
@@ -24,13 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Take over from Codex - 2026-09-23 (Claude Code)
-
-- The owner asked to remove Codex's work and have Claude Code work on the project alone: "can u remove codex work and just u work on it".
-- Codex's open In progress entry ("Finish positions integration and verification", 2026-09-21) left five files edited and uncommitted for two days: `README.md`, `docs/DATA_MODEL.md`, `docs/MARKETS.md`, `docs/ROADMAP.md` and `src/app/positions/positions-view.tsx`. Set them aside with `git stash` rather than discarding them, so nothing is lost if the owner changes their mind, and close Codex's entry.
-- Committed work stays. The positions page itself was committed in 3ce54f6 and works; removing committed history would take out most of the app, which Codex and Claude Code built together.
-- The finishing items Codex had listed become Claude Code's, to redo and verify later: the empty state should link to the public feed, an elapsed objection window should read "Objections closed", and README, MARKETS, DATA_MODEL and ROADMAP need the positions, feed and evidence work described.
-- Record that Claude Code is now the only agent. No code, schema, dependency or configuration changes.
+None.
 
 ## Deferred, to come back to
 
@@ -170,7 +164,7 @@ Refreshed 2026-09-19. Items 1 to 3 of the previous list are done or superseded: 
 5. AI goal suggestions on `claude-haiku-4-5`, telling subjects their input goes to an AI provider.
 6. Research collusion and related-party controls for small social groups and bring options back to the owner.
 7. Hold the discovery interview (D08, D09) before any per-viewer measurement or personalization. The current feed deliberately records no viewer identity.
-8. Review the positions page, which a second agent built and this session committed without a line-by-line read.
+8. Finish the positions page, which a second agent built and was committed without a line-by-line read: review it, point its empty state at the public feed instead of "open a shared market link", label an elapsed objection window "Objections closed", and bring README, MARKETS, DATA_MODEL and ROADMAP up to date with the positions, feed, evidence and UI work. Codex had started this; its unfinished edits are set aside in the Git stash (see the 2026-09-23 session history).
 
 Deferred by the owner, with what each needs, in the Deferred section above: profile pictures, restoring email confirmation, evidence submission.
 ## Validation and known limitations
@@ -389,3 +383,9 @@ Found and fixed while checking, each of which would have shipped:
 Deliberately not built, each an undecided product question: search, photographs in thumbnails (the deferred profile picture question), category tabs, and trader counts, which could identify someone in a small group. Play-point volume is a new public disclosure, recorded as such in DESIGN.md.
 
 Worked alongside the other agent's open positions entry without touching its five uncommitted files, and committed by explicit path. README and ROADMAP updates for this slice wait until that entry closes. Account, review and positions pages keep the light theme until the owner approves this look.
+
+### 2026-09-23 - Took over from Codex (Claude Code)
+
+The owner asked to remove Codex's work and have Claude Code work alone. Codex's positions entry had been open since 2026-09-21 with five files edited and uncommitted. Those edits were set aside, not deleted: `git stash list` shows them as "codex: unfinished positions finish, set aside 2026-09-23", and `git stash pop` would bring them back. Its In progress entry is closed and its remaining items are next action 8.
+
+Committed work is unchanged. The positions page (3ce54f6) and everything else Codex built earlier stay, because removing them would take out most of the app. The working tree is clean.
