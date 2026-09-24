@@ -24,7 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### Previews on a phone - 2026-09-24 (Claude Code)
+
+- The owner asked for commands to run the app "for phone as well". `npm run dev` and `npm start` already listen on the local network (Next.js defaults to 0.0.0.0), but both fictional previews listen only on 127.0.0.1, so a phone cannot open them, and the real database has no goals to look at.
+- Add `--phone` to `scripts/preview-feed.mjs` and `scripts/preview-signed-in.mjs`: listen on all interfaces and print the laptop's network addresses to type into the phone. Default behaviour stays local-only. Fictional data only; no Auth users, no live rows.
+- For the real app on a phone, recommend the production server (`npm run build`, then `npm start`): the dev server blocks its own scripts for any origin other than localhost unless `allowedDevOrigins` is set, which would leave a phone with an unscripted page.
+- Found while checking: Windows Firewall already allows Node inbound on Public networks, and this laptop is on eduroam, marked Public. Whenever a server listens on all interfaces, other devices on campus Wi-Fi may be able to reach it. That is a system security setting for the owner to change, not the agent; recorded and reported.
+- README gets a short "On your phone" section. No app code, schema, dependency or configuration changes.
 
 ## Deferred, to come back to
 
