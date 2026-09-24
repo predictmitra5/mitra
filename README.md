@@ -42,6 +42,22 @@ npm run dev
 
 Then open http://localhost:3000.
 
+## On your phone
+
+The phone and the computer must be on the same Wi-Fi. Campus Wi-Fi such as eduroam may stop devices from reaching each other; a home network works, or connect the computer to the phone's hotspot.
+
+With fictional goals, after `npm run build`:
+
+```bash
+node --env-file=.env.local scripts/preview-feed.mjs --phone
+```
+
+It prints an address such as `http://192.168.1.20:3100` to type into the phone. `node scripts/preview-signed-in.mjs --phone` does the same for the signed-in pages, on port 3120.
+
+The real app: run `npm run build`, then `npm start`, and open `http://<the computer's address>:3000` on the phone. `ipconfig` shows the address as "IPv4 Address". Use `npm start` rather than `npm run dev`: the dev server refuses to send its scripts to any address but localhost, so the phone would get a page that never comes alive.
+
+While any of these runs, anyone on the same network can open it. On this computer Windows Firewall allows Node on public networks too (Windows Security, Firewall & network protection, Allow an app through firewall), so on campus Wi-Fi that can mean anyone nearby. Stop the server when you are done.
+
 ## Supabase Auth setup
 
 These are dashboard settings in your Supabase project. The app never changes them. Menu names can shift between dashboard versions.

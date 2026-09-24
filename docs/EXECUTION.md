@@ -24,13 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Previews on a phone - 2026-09-24 (Claude Code)
-
-- The owner asked for commands to run the app "for phone as well". `npm run dev` and `npm start` already listen on the local network (Next.js defaults to 0.0.0.0), but both fictional previews listen only on 127.0.0.1, so a phone cannot open them, and the real database has no goals to look at.
-- Add `--phone` to `scripts/preview-feed.mjs` and `scripts/preview-signed-in.mjs`: listen on all interfaces and print the laptop's network addresses to type into the phone. Default behaviour stays local-only. Fictional data only; no Auth users, no live rows.
-- For the real app on a phone, recommend the production server (`npm run build`, then `npm start`): the dev server blocks its own scripts for any origin other than localhost unless `allowedDevOrigins` is set, which would leave a phone with an unscripted page.
-- Found while checking: Windows Firewall already allows Node inbound on Public networks, and this laptop is on eduroam, marked Public. Whenever a server listens on all interfaces, other devices on campus Wi-Fi may be able to reach it. That is a system security setting for the owner to change, not the agent; recorded and reported.
-- README gets a short "On your phone" section. No app code, schema, dependency or configuration changes.
+None.
 
 ## Deferred, to come back to
 
@@ -197,6 +191,7 @@ Operational notes for whoever works on this next:
 
 - Load `.env.local` with `node --env-file=.env.local`, never by sourcing it in a shell: values can contain characters a shell expands, which silently corrupts connection strings.
 - Supabase's direct database host is IPv6-only and fails on this machine. Migrations use the session pooler (`DIRECT_DATABASE_URL`, port 5432); the app uses the transaction pooler (`DATABASE_URL`, port 6543).
+- Security: Windows Firewall on the development machine allows Node inbound on Public networks, found 2026-09-24. The machine is usually on eduroam, marked Public, and Next.js listens on all interfaces by default, so a running `npm run dev` or `npm start` may be reachable by others on campus Wi-Fi. A system setting for the owner: allow Node on Private networks only (Windows Security, Firewall & network protection, Allow an app through firewall).
 - Security: the database password appeared in assistant command output twice on 2026-09-15. The owner chose not to reset it. Reset it before any real users join, then update both connection strings.
 
 ## Session history
@@ -421,3 +416,11 @@ Found while checking, each of which would have shipped:
 Verified: 412 tests pass with 17 skipped (hosted-only); typecheck, lint and production build pass. Every page checked in the browser against fictional data: sign-up and the feed on the production build; account (trader, owner, and a new sign-up with no profile), new goal, positions, the review queue, outcomes, and goal pages as a trader, the owner and the subject with the proof form, in the signed-in preview. At 375px none of the eleven signed-in views scrolls sideways. A non-owner opening the review queue gets not found. Afterwards no preview schema remains and the live database holds one profile, no markets and no feed events.
 
 Limits: the signed-in preview renders pages without running their scripts, so the chart shows its pre-measurement size there and forms do not submit. Nothing here was done with a real account.
+
+### 2026-09-24 - Previews on a phone (Claude Code)
+
+The owner asked for the commands to run the app "for phone as well". Both fictional previews gained `--phone`: listen on all interfaces and print the computer's network addresses. The feed preview's `--dev` mode now binds to 127.0.0.1 like the default, and refuses `--phone`, because the dev server blocks its own scripts for any origin but localhost. README has an "On your phone" section; for the real app it recommends `npm run build` then `npm start`.
+
+Verified through the computer's own network address (172.28.112.19) at phone width: the signed-in preview returns pages; the feed preview serves its scripts, the carousel advances, the chart measures itself to the screen (viewBox 307 wide) and nothing scrolls sideways. Not verified from a real phone, and not whether eduroam lets two devices reach each other. `--cleanup` removed the feed preview's schema after the harness stopped it; afterwards no preview schema remained and the live database held one profile, no markets and no feed events.
+
+Found: Windows Firewall allows Node on Public networks; recorded under Validation and known limitations for the owner to change.

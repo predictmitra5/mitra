@@ -7,12 +7,14 @@
 // Run after `npm run build` (the stylesheet comes from the build):
 //   node scripts/preview-signed-in.mjs
 // then open http://127.0.0.1:3120. Stop with Ctrl+C or "stop" on stdin.
+// Add --phone to open it from a phone on the same Wi-Fi; the addresses are printed.
 // Forms render but do not submit: this checks how pages look, not what they do.
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { networkInterfaces } from "node:os";
 import { build } from "esbuild";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PGlite } from "@electric-sql/pglite";
@@ -22,6 +24,7 @@ import { eq, sql } from "drizzle-orm";
 
 const project = process.cwd();
 const PORT = 3120;
+const phoneMode = process.argv.includes("--phone");
 
 // ------------------------------------------------------------ stand-ins
 // Only what cannot run outside Next.js or would reach a real service.
@@ -204,7 +207,12 @@ const server = createServer(async (request, response) => {
     response.end(`${url.pathname} as ${persona.label}: ${where}`);
   }
 });
-server.listen(PORT, "127.0.0.1", () => console.log(`Fictional signed-in preview: http://127.0.0.1:${PORT}. Type stop to close.`));
+server.listen(PORT, phoneMode ? "0.0.0.0" : "127.0.0.1", () => {
+  console.log(`Fictional signed-in preview: http://127.0.0.1:${PORT}. Type stop to close.`);
+  if (!phoneMode) return;
+  for (const address of Object.values(networkInterfaces()).flat().filter((a) => a && a.family === "IPv4" && !a.internal).map((a) => a.address)) console.log(`On a phone on the same Wi-Fi: http://${address}:${PORT}`);
+  console.log("Anyone else on this network can open it too while it runs. Fictional data only.");
+});
 async function stop() { server.close(); await memory.close(); process.exit(0); }
 process.on("SIGINT", stop); process.on("SIGTERM", stop);
 process.stdin.setEncoding("utf8");

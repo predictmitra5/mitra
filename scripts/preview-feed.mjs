@@ -3,6 +3,7 @@
 //   node --env-file=.env.local scripts/preview-feed.mjs          (after npm run build)
 //   node --env-file=.env.local scripts/preview-feed.mjs --dev    (hot reload; stop npm run dev first)
 //   node --env-file=.env.local scripts/preview-feed.mjs --cleanup (remove fixtures a killed run left)
+//   node --env-file=.env.local scripts/preview-feed.mjs --phone   (also reachable from a phone on the same Wi-Fi)
 //
 // Seeds seven fictional people and fourteen goals, with price paths, trades for
 // volume and recent movement, into an isolated, disposable schema, then serves
@@ -12,6 +13,7 @@
 // no chance to clean up; --cleanup then removes every preview schema.
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { networkInterfaces } from "node:os";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import postgres from "postgres";
 
@@ -34,6 +36,10 @@ if (process.argv.includes("--cleanup")) {
 }
 
 const devMode = process.argv.includes("--dev");
+// A phone is another origin, and the dev server blocks its own scripts for
+// other origins, so phone mode serves the built app.
+const phoneMode = process.argv.includes("--phone");
+if (phoneMode && devMode) throw new Error("--phone serves the built app: run npm run build, then use --phone without --dev.");
 const name = `mitra_feed_preview_${randomUUID().replaceAll("-", "")}`;
 const connection = new URL(process.env.DIRECT_DATABASE_URL);
 connection.searchParams.set("search_path", name);
@@ -202,12 +208,16 @@ try {
 
   const port = "3100";
   const args = devMode
-    ? ["node_modules/next/dist/bin/next", "dev", "--port", port]
-    : ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", port];
+    ? ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", port]
+    : ["node_modules/next/dist/bin/next", "start", "--hostname", phoneMode ? "0.0.0.0" : "127.0.0.1", "--port", port];
   server = spawn(process.execPath, args, {
     env: { ...process.env, DATABASE_URL: connection.toString() }, stdio: ["ignore", "inherit", "inherit"], windowsHide: true,
   });
   console.log(`Fictional feed preview${devMode ? " (dev, hot reload)" : ""}: http://localhost:${port}/`);
+  if (phoneMode) {
+    for (const address of Object.values(networkInterfaces()).flat().filter((a) => a && a.family === "IPv4" && !a.internal).map((a) => a.address)) console.log(`On a phone on the same Wi-Fi: http://${address}:${port}/`);
+    console.log("Anyone else on this network can open it too while it runs. Fictional data only.");
+  }
   console.log(`${goals.length} goals across ${people.length} people, ${tradeCount} trades, ${pointCount} price points.`);
   console.log("Signed out, so the sign-in prompt appears after two minutes of browsing.");
   console.log("Press Ctrl+C or send 'stop' on stdin to stop and remove the isolated fixture.");
