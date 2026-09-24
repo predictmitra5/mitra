@@ -38,7 +38,9 @@ afterAll(async () => {
 async function addProfile(handle: string, isOwner: number, extra: Partial<typeof profiles.$inferInsert> = {}) {
   const id = randomUUID();
   await database.insert(profiles).values({
-    id, handle, displayName: handle[0].toUpperCase() + handle.slice(1), isOwner, adultConfirmedAt: now, ...extra,
+    id, handle, displayName: handle[0].toUpperCase() + handle.slice(1), isOwner, adultConfirmedAt: now,
+    // Posting a goal requires a profile photo (2026-09-24).
+    photoPath: `${id}/fixture.webp`, photoUpdatedAt: now, ...extra,
   });
   return id;
 }
@@ -48,6 +50,12 @@ async function expectGoalError(promise: Promise<unknown>, code: GoalError["code"
 }
 
 describe("createGoalDraft", () => {
+  it("requires a profile photo before posting, whatever the form sent", async () => {
+    const noPhoto = await addProfile("nophoto", 0, { photoPath: null, photoUpdatedAt: null });
+    await expectGoalError(createGoalDraft(database, noPhoto, { type: "club", club: "Chess Club", deadline: "2026-12-01" }, now), "PHOTO_REQUIRED");
+    expect(await database.select().from(markets).where(eq(markets.subjectUserId, noPhoto))).toHaveLength(0);
+  });
+
   it("creates a draft with no pricing until the owner approves it", async () => {
     const draft = await createGoalDraft(database, jake, internship, now);
     expect(draft.status).toBe("draft");

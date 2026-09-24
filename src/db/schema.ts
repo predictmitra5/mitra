@@ -61,6 +61,10 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "change_ruling",
   "settle",
   "cancel",
+  // People, decided 2026-09-24. The target person is in details.targetUserId.
+  "ban",
+  "unban",
+  "remove_photo",
 ]);
 
 export const profiles = pgTable(
@@ -73,6 +77,14 @@ export const profiles = pgTable(
     adultConfirmedAt: timestamp("adult_confirmed_at", { withTimezone: true }), // explicit self-confirmation, not age verification
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }), // set on leaving; cancels open markets
+    // Profile photo, decided 2026-09-24: required to post a goal. The path is in
+    // the private profile-photos bucket; the time versions the public URL.
+    photoPath: text("photo_path"),
+    photoUpdatedAt: timestamp("photo_updated_at", { withTimezone: true }),
+    // Ban, decided 2026-09-24. Set by the owner; the reason is private to them.
+    bannedAt: timestamp("banned_at", { withTimezone: true }),
+    bannedBy: uuid("banned_by"),
+    banReason: text("ban_reason"),
   },
   (table) => [uniqueIndex("profiles_handle_key").on(table.handle)],
 );

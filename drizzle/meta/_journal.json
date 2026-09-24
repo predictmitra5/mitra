@@ -71,6 +71,13 @@
       "when": 1789857006971,
       "tag": "0009_verified_statement",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790231423174,
+      "tag": "0010_people_photos_bans",
+      "breakpoints": true
     }
   ]
 }

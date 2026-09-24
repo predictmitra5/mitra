@@ -1,9 +1,11 @@
 // Run once per environment: node --env-file=.env.local scripts/setup-evidence-storage.mjs
 //
-// Creates the one bucket the evidence decision of 2026-09-19 requires, and
-// verifies its privacy afterwards rather than trusting the create call.
+// Creates the buckets the app needs, and verifies their privacy afterwards
+// rather than trusting the create call.
 //
-//   evidence-originals  private  what the subject actually sent, owner-only
+//   evidence-originals  private  what the subject actually sent, owner-only (2026-09-19)
+//   profile-photos      private  re-encoded profile photos (2026-09-24), served
+//                                only through the app's /photos route
 //
 // There is deliberately no public bucket. Since the revision of 2026-09-19 no
 // uploaded document is ever published: what goes public is a statement the
@@ -29,6 +31,14 @@ const wanted = [
     allowedMimeTypes: [...IMAGE_TYPES, "application/pdf"],
     fileSizeLimit: MAX_BYTES,
     why: "holds people's actual documents; must never be readable without server-side authorisation",
+  },
+  {
+    id: "profile-photos",
+    public: false,
+    // The app stores only the WebP it re-encoded itself, so nothing else is allowed.
+    allowedMimeTypes: ["image/webp"],
+    fileSizeLimit: 1024 * 1024,
+    why: "photos are served through the app, so a ban or withdrawal stops them at once",
   },
 ];
 
@@ -87,8 +97,8 @@ for (const bucket of wanted) {
 }
 
 if (failed) {
-  console.error("\nEvidence storage is not correctly configured. Do not accept uploads until it is.");
+  console.error("\nStorage is not correctly configured. Do not accept uploads until it is.");
   process.exitCode = 1;
 } else {
-  console.log("\nEvidence storage is ready. Every uploaded document is private and stays that way.");
+  console.log("\nStorage is ready. Proof and photos are private and reach browsers only through the app.");
 }

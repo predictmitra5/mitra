@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
+import { isInactive } from "@/modules/account/standing";
 import {
   EvidenceError,
   assertAcceptableFile,
@@ -82,11 +83,11 @@ async function loadMarket<Q extends PgQueryResultHKT>(database: Database<Q>, mar
 
 async function requireActiveProfile<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string) {
   const [profile] = await database
-    .select({ id: profiles.id, withdrawnAt: profiles.withdrawnAt, adultConfirmedAt: profiles.adultConfirmedAt })
+    .select({ id: profiles.id, withdrawnAt: profiles.withdrawnAt, bannedAt: profiles.bannedAt, adultConfirmedAt: profiles.adultConfirmedAt })
     .from(profiles)
     .where(eq(profiles.id, userId))
     .for("share");
-  if (!profile || profile.withdrawnAt || !profile.adultConfirmedAt) {
+  if (!profile || isInactive(profile) || !profile.adultConfirmedAt) {
     throw new EvidenceError("NOT_ELIGIBLE", "Finish setting up your account before sending proof.");
   }
   return profile;
@@ -95,10 +96,10 @@ async function requireActiveProfile<Q extends PgQueryResultHKT>(database: Databa
 /** Throws unless this person is the active owner. */
 export async function requireEvidenceOwner<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string) {
   const [profile] = await database
-    .select({ id: profiles.id, isOwner: profiles.isOwner, withdrawnAt: profiles.withdrawnAt })
+    .select({ id: profiles.id, isOwner: profiles.isOwner, withdrawnAt: profiles.withdrawnAt, bannedAt: profiles.bannedAt })
     .from(profiles)
     .where(eq(profiles.id, userId));
-  if (!profile || profile.withdrawnAt || profile.isOwner !== 1) {
+  if (!profile || isInactive(profile) || profile.isOwner !== 1) {
     throw new EvidenceError("NOT_OWNER", "This is not available.");
   }
   return profile;

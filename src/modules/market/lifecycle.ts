@@ -3,6 +3,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "./input";
 import { EMPTY_POSITION } from "./position";
+import { isInactive } from "@/modules/account/standing";
 
 const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -68,7 +69,7 @@ async function activeProfile<Q extends PgQueryResultHKT>(database: Database<Q>, 
   if (!isUuid(userId)) throw new LifecycleError("PROFILE_REQUIRED", "Sign in and complete your active profile first.");
   const query = database.select().from(profiles).where(eq(profiles.id, userId));
   const [profile] = await (lock ? query.for("share") : query);
-  if (!profile || profile.withdrawnAt || !profile.adultConfirmedAt) {
+  if (!profile || isInactive(profile) || !profile.adultConfirmedAt) {
     throw new LifecycleError("PROFILE_REQUIRED", "Sign in and complete your active profile first.");
   }
   return profile;

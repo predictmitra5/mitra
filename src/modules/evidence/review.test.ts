@@ -10,6 +10,7 @@ import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { EvidenceError, MAX_STATEMENT_LENGTH } from "./policy";
 import { listPublished, submitFile, submitLink } from "./service";
 import { loadForReview, publishEvidence, rejectEvidence } from "./review";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, evidence } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -49,6 +50,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixturePhoto(db, id);
   return id;
 }
 

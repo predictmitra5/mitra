@@ -5,6 +5,7 @@ import { ECONOMY } from "@/modules/market/economy";
 import { stateAtProbability } from "@/modules/market/lmsr";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { buildGoalDraft, GoalInputError, type GoalInput } from "./templates";
+import { isInactive } from "@/modules/account/standing";
 
 const { profiles, markets, adminActions, priceHistory } = schema;
 
@@ -18,6 +19,7 @@ export type GoalErrorCode =
   | "NOT_A_DRAFT"
   | "DEADLINE_PASSED"
   | "SUBJECT_WITHDRAWN"
+  | "PHOTO_REQUIRED"
   | "UNAVAILABLE";
 
 /** Safe to show to users; database errors never become UI text. */
@@ -44,8 +46,13 @@ export async function createGoalDraft<Q extends PgQueryResultHKT>(
   now: Date = new Date(),
 ) {
   const [profile] = await database.select().from(profiles).where(eq(profiles.id, subjectUserId)).limit(1);
-  if (!profile || profile.withdrawnAt || !profile.adultConfirmedAt) {
+  if (!profile || isInactive(profile) || !profile.adultConfirmedAt) {
     throw new GoalError("PROFILE_REQUIRED", "Finish setting up your profile before creating a goal.");
+  }
+  // Decided 2026-09-24: everyone posting a goal has a profile photo. Checked
+  // here, not only in the form, so no path can post without one.
+  if (!profile.photoPath) {
+    throw new GoalError("PHOTO_REQUIRED", "Add a profile photo before posting a goal.");
   }
 
   let draft;
@@ -115,8 +122,8 @@ export async function approveDraft<Q extends PgQueryResultHKT>(
       throw new GoalError("DEADLINE_PASSED", "This goal's deadline has already passed. Reject it instead.");
     }
     const [subject] = await tx.select().from(profiles).where(eq(profiles.id, market.subjectUserId)).limit(1);
-    if (!subject || subject.withdrawnAt) {
-      throw new GoalError("SUBJECT_WITHDRAWN", "The person behind this goal has left the app.");
+    if (!subject || isInactive(subject)) {
+      throw new GoalError("SUBJECT_WITHDRAWN", "The person behind this goal can no longer use the app.");
     }
 
     const lmsr = stateAtProbability(market.liquidityMicro / MICRO_PER_UNIT, openingProbabilityBp / 10_000);
@@ -178,7 +185,7 @@ export async function rejectDraft<Q extends PgQueryResultHKT>(
 
 async function requireOwner<Q extends PgQueryResultHKT>(database: Database<Q>, actorUserId: string) {
   const [actor] = await database.select().from(profiles).where(eq(profiles.id, actorUserId)).limit(1);
-  if (!actor || actor.isOwner !== 1 || actor.withdrawnAt) {
+  if (!actor || actor.isOwner !== 1 || isInactive(actor)) {
     throw new GoalError("NOT_OWNER", "Only the app owner can review goals.");
   }
   return actor;

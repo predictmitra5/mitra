@@ -12,6 +12,7 @@ import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade, readPublicMarket } from "./service";
 import { advanceDueMarkets, advanceMarket, applyOwnerCommand, CONTEST_WINDOW_MS, readObjections, submitObjection, type OwnerCommand } from "./lifecycle";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, wallets, markets, positions, trades, ledgerEntries, adminActions, contests, priceHistory } = schema;
 const start = new Date("2026-09-18T12:00:00Z");
@@ -51,7 +52,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function account(handle: string) {
-  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); return id;
+  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); await withFixturePhoto(database, id); return id;
 }
 async function open() {
   const draft = await createGoalDraft(database, subject, { type: "club", club: "Chess Club", deadline: "2026-10-01" }, start);

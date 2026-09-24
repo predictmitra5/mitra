@@ -9,6 +9,7 @@ import { EMPTY_POSITION, remainingAllowance } from "./position";
 import { toLmsr, type MarketMakerState } from "./quote";
 import { planBuy, planSell } from "./trade";
 import { MICRO_PER_UNIT } from "./units";
+import { isInactive } from "@/modules/account/standing";
 
 const { markets, profiles, wallets, positions, trades, ledgerEntries, priceHistory, marketOutcomeDeciders } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -101,7 +102,7 @@ const rejectionMessages: Record<string, string> = {
 export async function readTrader<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, marketId: string) {
   const [profile] = await database.select().from(profiles).where(eq(profiles.id, userId));
   const [wallet] = await database.select().from(wallets).where(eq(wallets.userId, userId));
-  if (!profile || profile.withdrawnAt || !profile.adultConfirmedAt || !wallet) return null;
+  if (!profile || isInactive(profile) || !profile.adultConfirmedAt || !wallet) return null;
   const [market] = await database.select().from(markets).where(eq(markets.id, marketId));
   if (!market) return null;
   const deciders = await database.select({ userId: marketOutcomeDeciders.userId }).from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, marketId));
@@ -125,7 +126,7 @@ async function transaction<Q extends PgQueryResultHKT, T>(database: Database<Q>,
 
 async function lockAccount<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: string) {
   const [profile] = await tx.select().from(profiles).where(eq(profiles.id, userId)).for("share");
-  if (!profile || profile.withdrawnAt || !profile.adultConfirmedAt) {
+  if (!profile || isInactive(profile) || !profile.adultConfirmedAt) {
     throw new TradingError("PROFILE_REQUIRED", "Complete your active profile and 18+ confirmation before trading.");
   }
 }
@@ -134,7 +135,7 @@ async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
   const [market] = await tx.select().from(markets).where(eq(markets.id, input.marketId)).for("update");
   if (!market || !market.approvedAt) throw new TradingError("NOT_FOUND", "This goal is not available.");
   const [subject] = await tx.select().from(profiles).where(eq(profiles.id, market.subjectUserId)).for("share");
-  if (!subject || subject.withdrawnAt) throw new TradingError("CLOSED", "This goal is no longer open for trading.");
+  if (!subject || isInactive(subject)) throw new TradingError("CLOSED", "This goal is no longer open for trading.");
   const [wallet] = await tx.select().from(wallets).where(eq(wallets.userId, userId)).for("update");
   if (!wallet) throw new TradingError("PROFILE_REQUIRED", "Your account needs review before you can trade.");
   // Read the clock after waiting for locks. A request queued before the deadline

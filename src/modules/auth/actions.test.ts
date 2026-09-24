@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   createAuthClient: vi.fn(),
+  isBanned: vi.fn(),
   redirect: vi.fn(),
   revalidatePath: vi.fn(),
   auth: {
@@ -17,6 +18,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("server-only", () => ({}));
 vi.mock("./server", () => ({ createAuthClient: mocks.createAuthClient }));
+vi.mock("@/db/client", () => ({ getDb: () => "database" }));
+vi.mock("@/modules/account/standing", () => ({ isBanned: mocks.isBanned }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
@@ -66,6 +69,7 @@ beforeEach(() => {
   mocks.auth.signOut.mockResolvedValue({ error: null });
   mocks.auth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
   mocks.auth.updateUser.mockResolvedValue({ data: { user }, error: null });
+  mocks.isBanned.mockResolvedValue(false);
 });
 
 afterEach(() => vi.unstubAllEnvs());
@@ -93,6 +97,22 @@ describe("auth server actions", () => {
     expect(mocks.auth.getUser.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.auth.signInWithPassword.mock.invocationCallOrder[0]);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/account");
+  });
+
+  it("refuses a banned account and signs its session back out", async () => {
+    mocks.isBanned.mockResolvedValue(true);
+    expect(await signIn({}, form())).toEqual({ error: "This account has been banned from Mitra." });
+    expect(mocks.isBanned).toHaveBeenCalledWith("database", user.id);
+    expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("refuses sign-in when it cannot check for a ban, rather than letting one through", async () => {
+    mocks.isBanned.mockRejectedValue(new Error("database down"));
+    const result = await signIn({}, form());
+    expect(result).toHaveProperty("error");
+    expect(JSON.stringify(result)).not.toContain("database down");
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
   it("does not trust the successful login payload when server validation fails", async () => {

@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { ECONOMY } from "@/modules/market/economy";
 import { isUuid } from "@/modules/market/input";
 import { calendarMonth, refillDecision, type RefillDecision } from "@/modules/market/refill";
+import { isInactive } from "@/modules/account/standing";
 
 const { profiles, wallets, ledgerEntries } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -39,7 +40,7 @@ async function activeProfile<Q extends PgQueryResultHKT>(database: Database<Q>, 
   if (!isUuid(userId)) throw new RefillError("PROFILE_REQUIRED", "Sign in and complete your active profile first.");
   const query = database.select().from(profiles).where(eq(profiles.id, userId));
   const [profile] = await (lock ? query.for("share") : query);
-  if (!profile || !profile.adultConfirmedAt || profile.withdrawnAt) {
+  if (!profile || !profile.adultConfirmedAt || isInactive(profile)) {
     throw new RefillError("PROFILE_REQUIRED", "Sign in and complete your active profile first.");
   }
 }

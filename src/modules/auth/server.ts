@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { authConfig, emailConfirmationRequired } from "./config";
 import { eligibleIdentity } from "./policy";
+import { getDb } from "@/db/client";
+import { isBanned } from "@/modules/account/standing";
 
 export async function createAuthClient(readOnly = false) {
   const { url, key } = authConfig();
@@ -24,5 +26,15 @@ export async function createAuthClient(readOnly = false) {
 export const currentIdentity = cache(async () => {
   const client = await createAuthClient(true);
   const { data, error } = await client.auth.getUser();
-  return error ? null : eligibleIdentity(data.user, emailConfirmationRequired());
+  const identity = error ? null : eligibleIdentity(data.user, emailConfirmationRequired());
+  if (!identity) return null;
+  // A banned person is treated as signed out everywhere (decided 2026-09-24).
+  // If the lookup fails, the identity stands: every service checks the ban
+  // again before it writes anything, so failing open here unlocks no action.
+  try {
+    if (await isBanned(getDb(), identity.id)) return null;
+  } catch {
+    // Fall through; see above.
+  }
+  return identity;
 });

@@ -6,6 +6,7 @@ import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
+import { isInactive } from "@/modules/account/standing";
 
 const { profiles, positions, markets } = schema;
 export const POSITIONS_PAGE_SIZE = 20;
@@ -59,9 +60,9 @@ export function positionsPageNumber(value: string | string[] | undefined): numbe
 
 async function activeProfile<Q extends PgQueryResultHKT>(database: PgDatabase<Q, typeof schema>, userId: string) {
   if (!isUuid(userId)) throw new PositionsError("PROFILE_REQUIRED", "Complete your active account before viewing predictions.");
-  const [profile] = await database.select({ adultConfirmedAt: profiles.adultConfirmedAt, withdrawnAt: profiles.withdrawnAt })
+  const [profile] = await database.select({ adultConfirmedAt: profiles.adultConfirmedAt, withdrawnAt: profiles.withdrawnAt, bannedAt: profiles.bannedAt })
     .from(profiles).where(eq(profiles.id, userId));
-  if (!profile?.adultConfirmedAt || profile.withdrawnAt) {
+  if (!profile?.adultConfirmedAt || isInactive(profile)) {
     throw new PositionsError("PROFILE_REQUIRED", "Complete your active account before viewing predictions.");
   }
 }

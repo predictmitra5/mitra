@@ -11,6 +11,7 @@ export type AccountErrorCode =
   | "ADULT_CONFIRMATION_REQUIRED"
   | "HANDLE_TAKEN"
   | "ACCOUNT_WITHDRAWN"
+  | "ACCOUNT_BANNED"
   | "ACCOUNT_INCONSISTENT"
   | "ACCOUNT_UNAVAILABLE";
 
@@ -136,6 +137,9 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
       if (!profile) throw inconsistentAccount();
       if (profile.withdrawnAt) {
         throw new AccountError("ACCOUNT_WITHDRAWN", "This account has been withdrawn. Contact the app owner for help.");
+      }
+      if (profile.bannedAt) {
+        throw new AccountError("ACCOUNT_BANNED", "This account has been banned.");
       }
 
       // Keep the order profile -> wallet for future withdrawal/trading writers.

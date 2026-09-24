@@ -13,6 +13,7 @@ import { ECONOMY } from "@/modules/market/economy";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { claimRefill, readRefillStatus, RefillError } from "./refill";
 import { provisionAccount } from "./provision";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, wallets, ledgerEntries } = schema;
 const hosted = process.env.MITRA_HOSTED_TEST === "1";
@@ -69,6 +70,7 @@ afterAll(async () => {
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixturePhoto(database, id);
   return id;
 }
 

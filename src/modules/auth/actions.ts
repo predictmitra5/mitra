@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getDb } from "@/db/client";
+import { isBanned } from "@/modules/account/standing";
 import { createAuthClient } from "./server";
 import { appOrigin, emailConfirmationRequired } from "./config";
 import { canonicalUniversityEmail, eligibleIdentity, passwordError, type FormState } from "./policy";
@@ -25,11 +27,18 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
         : "Unable to sign in. Check your email and password." };
     }
     const verified = await client.auth.getUser();
-    if (verified.error || !eligibleIdentity(verified.data.user, confirming)) {
+    const identity = verified.error ? null : eligibleIdentity(verified.data.user, confirming);
+    if (!identity) {
       await client.auth.signOut({ scope: "local" });
       return { error: confirming
         ? "Sign in with a confirmed @osu.edu account to continue."
         : "Sign in with an @osu.edu account to continue." };
+    }
+    // Banned accounts cannot sign in (decided 2026-09-24). A failed lookup
+    // refuses sign-in rather than letting a banned person through.
+    if (await isBanned(getDb(), identity.id)) {
+      await client.auth.signOut({ scope: "local" });
+      return { error: "This account has been banned from Mitra." };
     }
   } catch { return unavailable; }
   revalidatePath("/", "layout");

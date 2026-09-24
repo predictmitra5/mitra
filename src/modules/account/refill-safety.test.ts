@@ -13,6 +13,7 @@ import { claimRefill, readRefillStatus } from "./refill";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { advanceMarket, applyOwnerCommand } from "@/modules/market/lifecycle";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, wallets, ledgerEntries, markets, positions } = schema;
 const start = new Date("2026-09-18T12:00:00Z"), target = 1_000_000_000;
@@ -51,7 +52,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function account(handle: string) {
-  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); return id;
+  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); await withFixturePhoto(database, id); return id;
 }
 async function balance(user = alice) { return (await database.select().from(wallets).where(eq(wallets.userId, user)))[0].balanceMicro; }
 async function refills(user = alice) { return database.select().from(ledgerEntries).where(and(eq(ledgerEntries.userId, user), eq(ledgerEntries.kind, "refill"))); }

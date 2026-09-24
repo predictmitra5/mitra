@@ -9,6 +9,7 @@ import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { EvidenceError } from "./policy";
 import { canSubmit, listForOwner, listForSubject, listPublished, submitFile, submitLink } from "./service";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, markets, evidence } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -51,6 +52,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixturePhoto(db, id);
   return id;
 }
 

@@ -10,6 +10,7 @@ import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { readFeed, readPriceSeries, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
 import { CAPPED_SLOTS, MAX_PER_SUBJECT_IN_TOP } from "./ranking";
+import { withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, markets, feedEvents, priceHistory } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -35,6 +36,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixturePhoto(db, id);
   return id;
 }
 
