@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-09-21
+Last updated: 2026-09-24
 
 ## Read this first
 
@@ -164,7 +164,7 @@ Refreshed 2026-09-23. Evidence submission and the positions page, items 2 and 8 
 
 1. **Walk the whole flow with real accounts.** The owner's own account has no profile photo yet and needs one before posting a goal. Then the owner and one friend: write a goal, approve it at `/review`, trade it from the friend's account (a subject cannot trade their own goal), send proof, rule, and let the payout run. Every piece is tested and every page has been looked at with fictional data, but no real account has done this end to end. Needs no decisions, only the owner and a second person.
 2. **Deployment.** The app runs only on the owner's machine, so the public feed reaches nobody. Choosing a host is the owner's call (cost and account); the owner creates the account and pastes the environment values. Deployment also settles periodic processing of due closes and payouts, which currently run only when a relevant page is opened.
-3. **Before anyone outside the owner's circle joins:** restore email confirmation (needs an SMTP sender; see Deferred and README) and reset the database password that appeared in command output on 2026-09-15 (see Validation and known limitations).
+3. **Before anyone outside the owner's circle joins:** restore email confirmation (needs an SMTP sender; see Deferred and README). The database password that appeared in command output on 2026-09-15 was reset on 2026-09-24.
 4. Account withdrawal and its automatic cancellations and proof deletion. Ask how outcome deciders should be identified and assigned; stored deciders are already barred from trading.
 5. AI goal suggestions on `claude-haiku-4-5`. Needs the owner's answers first: what a subject types in, the wording that tells them it goes to an AI company, and whether it is kept (DECISIONS.md, 2026-09-15, still open).
 6. Research collusion and related-party controls for small social groups and bring options back to the owner.
@@ -192,7 +192,9 @@ Operational notes for whoever works on this next:
 - Load `.env.local` with `node --env-file=.env.local`, never by sourcing it in a shell: values can contain characters a shell expands, which silently corrupts connection strings.
 - Supabase's direct database host is IPv6-only and fails on this machine. Migrations use the session pooler (`DIRECT_DATABASE_URL`, port 5432); the app uses the transaction pooler (`DATABASE_URL`, port 6543).
 - Security: Windows Firewall on the development machine allows Node inbound on Public networks, found 2026-09-24. The machine is usually on eduroam, marked Public, and Next.js listens on all interfaces by default, so a running `npm run dev` or `npm start` may be reachable by others on campus Wi-Fi. A system setting for the owner: allow Node on Private networks only (Windows Security, Firewall & network protection, Allow an app through firewall).
-- Security: the database password appeared in assistant command output twice on 2026-09-15. The owner chose not to reset it. Reset it before any real users join, then update both connection strings.
+- Security: the database password appeared in assistant command output twice on 2026-09-15. The owner reset it on 2026-09-24, before sharing access with collaborators, and updated both connection strings; both were confirmed to connect.
+- After a database password reset, the transaction pooler (port 6543) briefly refused the new password with error 28P01 while the session pooler (port 5432) already accepted it. It cleared within a couple of minutes, as Supabase documents. Wait before resetting again: repeated resets make the delay longer.
+- Sharing credentials with collaborators: never through Git. Invite each person to the Supabase organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
 
@@ -448,3 +450,9 @@ Found while building and checking, each of which would have shipped:
 Verified: 446 tests pass with 17 skipped (hosted-only), 34 of them new; typecheck, lint and production build pass. In the signed-in preview at phone width: the feed with photos, tape and motto; the People page with a banned person showing initials; the review queue with photos; the photo step before the goal form; the goal form with "Anything" first; a goal page with the chart header. On the real production server against the fictional feed: a goal's price was moved in the database twice and the open feed and goal page updated within 15 seconds without reloading, flashing upward, with the chart header and table following; twelve polls recorded no views (205 events before and after); range buttons, desktop layout at 1280 (three columns, sidebar beside, no overflow) and the fall back to initials. Afterwards no preview schema remained and the live database held one profile, no markets and no feed events.
 
 Limits: no real camera photo or real generator output was put through the AI-label check; its tests use synthetic XMP and metadata. A real upload through the form into Supabase has not been done; the bucket was probed directly and the service tested against a stand-in. Sign-in refusal for a banned account is tested with mocks, not a real banned account. The owner's account has no photo yet.
+
+### 2026-09-24 - Database password reset for collaborators (Claude Code)
+
+The owner asked how to share `.env.local` with collaborators on GitHub. Advised against committing it, even to the private repository, and recommended inviting each person to Supabase instead; the steps are under Operational notes. Before sharing, the owner reset the database password that leaked on 2026-09-15 and updated both connection strings in `.env.local` themselves; no credential was shown to or typed by the assistant. Both connection strings were checked by a script that printed only whether each connected. The app's transaction pooler refused the new password at first and accepted it about two minutes later.
+
+The Kalshi-direction redesign is paused on two owner questions: whether the Music tab is hidden or shown empty while no Music template exists, and whether chip time or the official finish time counts for Running goals. The answers given so far are not yet recorded in DECISIONS.md, because recording them is part of that change's plan.
