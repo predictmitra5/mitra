@@ -6,7 +6,7 @@ import { readMigrationFiles } from "drizzle-orm/migrator";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "./provision";
-import { loadPositions, readPositions, positionsPageNumber, POSITIONS_PAGE_SIZE } from "./positions";
+import { loadPositions, readPositions, positionsPageNumber, POSITIONS_PAGE_SIZE, valueHolding } from "./positions";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
@@ -81,8 +81,32 @@ describe("private positions", () => {
     expect(theirs.yesPrice).toBe(live); expect(live).toBeGreaterThan(before.yesPrice!);
     for (const internal of ["liquidityMicro", "marketYesMicro", "marketNoMicro"]) expect(mine).not.toHaveProperty(internal);
   });
+  it("values each side at today's price, with the gain or loss since bought", () => {
+    const value = valueHolding({ yesPrice: 0.71, yesSharesMicro: 66_300_000, noSharesMicro: 10_000_000, yesCostBasisMicro: 39_800_000, noCostBasisMicro: 4_000_000 });
+    // The boards' own numbers: 66.3 Yes shares at 71¢ are worth 47.1 points.
+    expect(value?.sides).toEqual([
+      { side: "yes", sharesMicro: 66_300_000, costMicro: 39_800_000, valueMicro: 47_073_000, gainMicro: 7_273_000 },
+      { side: "no", sharesMicro: 10_000_000, costMicro: 4_000_000, valueMicro: 2_900_000, gainMicro: -1_100_000 },
+    ]);
+    expect(value).toMatchObject({ valueMicro: 49_973_000, costMicro: 43_800_000, gainMicro: 6_173_000 });
+    expect(valueHolding({ yesPrice: null, yesSharesMicro: 1, noSharesMicro: 0, yesCostBasisMicro: 1, noCostBasisMicro: 0 })).toBeNull();
+    expect(valueHolding({ yesPrice: 0.5, yesSharesMicro: 0, noSharesMicro: 0, yesCostBasisMicro: 0, noCostBasisMicro: 0 })?.sides).toEqual([]);
+  });
+  it("totals every holding on every page, not only the page shown", async () => {
+    await trade(trader, "YES", "buy", 20_000_000);
+    const second = await open("2026-11-01");
+    await trade(trader, "NO", "buy", 10_000_000, second);
+    const page = await readPositions(db, trader, 1, clock);
+    const expected = page.goals.map((goal) => valueHolding(goal)!).reduce((sum, v) => ({
+      valueMicro: sum.valueMicro + v.valueMicro, costMicro: sum.costMicro + v.costMicro, gainMicro: sum.gainMicro + v.gainMicro,
+    }), { valueMicro: 0, costMicro: 0, gainMicro: 0 });
+    expect(page.totals).toEqual(expected);
+    // Held cost is exactly what was paid, and buying moves the price, so the first buyer shows a gain on paper.
+    expect(page.totals.costMicro).toBe(30_000_000);
+    expect((await readPositions(db, other, 1, clock)).totals).toEqual({ valueMicro: 0, costMicro: 0, gainMicro: 0 });
+  });
   it("removes fully sold positions and handles accounts without trades", async () => {
-    expect(await readPositions(db, trader, 1, clock)).toEqual({ goals: [], total: 0, page: 1, pages: 1 });
+    expect(await readPositions(db, trader, 1, clock)).toEqual({ goals: [], total: 0, page: 1, pages: 1, totals: { valueMicro: 0, costMicro: 0, gainMicro: 0 } });
     const bought = await trade(); await trade(trader, "YES", "sell", bought.sharesMicro);
     expect((await readPositions(db, trader, 999, clock)).total).toBe(0);
     expect((await readPositions(db, trader, 999, clock)).page).toBe(1);
@@ -121,7 +145,7 @@ describe("private positions", () => {
     expect([...first.goals, ...second.goals].map((g) => g.marketId)).toEqual(expected);
     expect((await readPositions(db, trader, 999999, clock)).page).toBe(2);
     await db.update(positions).set({ yesSharesMicro: 0, yesCostBasisMicro: 0 }).where(eq(positions.userId, trader));
-    expect(await readPositions(db, trader, 2, clock)).toEqual({ goals: [], page: 1, pages: 1, total: 0 });
+    expect(await readPositions(db, trader, 2, clock)).toEqual({ goals: [], page: 1, pages: 1, total: 0, totals: { valueMicro: 0, costMicro: 0, gainMicro: 0 } });
   });
   it("uses exact cutoff states even before a stored transition has run", async () => {
     await trade(); const goal = await market();

@@ -2,77 +2,61 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { cardTitle, categoryLabel, closesIn, shortDate, volumeLabel } from "@/modules/discovery/present";
-import { Avatar, Change, GoalCard, PricePills, RundownRow, Thumbnail, type CardData } from "./components/market/goal-card";
+import { useSearchParams } from "next/navigation";
+import { browse, FEED_TABS, isFeedTab, tabLabel, type FeedTab } from "@/modules/discovery/browse";
+import { categoryLabel, percent, volumeLabel } from "@/modules/discovery/present";
+import { Avatar, Change, ClosingRow, GoalCard, PriceButtons, type CardData } from "./components/market/goal-card";
 import { PriceChart, type ChartPoint } from "./components/market/price-chart";
-import { TickerTape } from "./components/market/ticker-tape";
+import { Ticker } from "./components/market/ticker";
 import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
- * The public home feed, redesigned 2026-09-22 (docs/DESIGN.md). Structure is
- * Kalshi's: a featured goal with its chart, a rundown down the side, an upcoming
- * strip, then the grid. Cards take YouTube's thumbnail-and-title shape and
- * GoFundMe's single glanceable bar.
+ * The public home feed in the Kalshi direction (2026-09-24, DECISIONS.md and
+ * docs/DESIGN.md section 9): a quiet ticker, category tabs and search, the goal
+ * moving most today with its chart, the Closing soon list beside it on a
+ * desktop, then every goal as a framed card, four across or one on a phone.
  *
- * What stays as decided on 2026-09-19: tabs by person, a Just added strip, the
- * ranking order, and a dismissible account prompt after two minutes.
- *
- * Added 2026-09-24: the motto, a scrolling ticker tape, and live prices. Prices
- * refresh from the quote store while the page is visible; the ranking order
- * itself stays as the server sent it, so cards never jump under a finger.
+ * Tabs and search only narrow the goals already loaded, and live in the
+ * address (?tab=, ?q=) without reloading, so they record no extra views. The
+ * ranking order stays as the server sent it, so cards never jump under a finger.
+ * Kept from 2026-09-19: a dismissible account prompt after two minutes.
  */
 
-export type FeaturedData = CardData & { series: ChartPoint[] };
-export type PersonTab = { handle: string; displayName: string; openGoals: number; photo: string | null };
+export type FeaturedData = CardData & { series: ChartPoint[]; moving: boolean };
 
 const PROMPT_AFTER_MS = 2 * 60 * 1000;
 const PROMPT_DISMISSED_KEY = "mitra.signup-prompt-dismissed";
+const closeDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
-function Featured({ goals, now, live }: { goals: FeaturedData[]; now: Date; live: ReadonlyMap<string, LiveQuote> }) {
-  const [index, setIndex] = useState(0);
-  if (goals.length === 0) return null;
-  const goal = goals[Math.min(index, goals.length - 1)];
+function Featured({ goal, live }: { goal: FeaturedData; live: ReadonlyMap<string, LiveQuote> }) {
   const href = `/markets/${goal.id}`;
-  const step = (by: number) => setIndex((i) => (i + by + goals.length) % goals.length);
-
+  const quote = live.get(goal.id);
+  const card = withQuote(goal, live);
+  const flash = flashFor(goal.yesPrice, quote);
   return (
-    <section className="hero" aria-roledescription="carousel" aria-label="Featured goals">
-      <div className="hero-top">
-        <span className="hero-kicker">
-          <span className="hero-kicker-dot" aria-hidden="true" />
-          {categoryLabel(goal.goalType)}
-        </span>
-        {goals.length > 1 && (
-          <div className="hero-nav">
-            <button type="button" onClick={() => step(-1)} aria-label="Previous featured goal">&lsaquo;</button>
-            <span aria-live="polite">{index + 1} of {goals.length}</span>
-            <button type="button" onClick={() => step(1)} aria-label="Next featured goal">&rsaquo;</button>
-          </div>
-        )}
-      </div>
-      <div className="hero-body">
-        <div className="hero-main">
-          <div className="hero-person">
-            <Avatar name={goal.displayName} photo={goal.photo} size={40} />
-            <span><strong>{goal.displayName}</strong><span>@{goal.handle}</span></span>
-          </div>
-          <h2 className="hero-title"><Link href={href} prefetch={false}>{cardTitle(goal.goalType, goal.question)}</Link></h2>
-          <div className="hero-odds">
-            <PricePills yesPrice={goal.yesPrice} href={href} />
-          </div>
-          <p className="hero-meta">
-            <span>{volumeLabel(goal.volumeMicro)}</span>
-            <span aria-hidden="true">&middot;</span>
-            <span>{goal.tradingOpen ? closesIn(new Date(goal.deadlineAt), now) : "Trading closed"}</span>
-            <span aria-hidden="true">&middot;</span>
-            <span>Today <Change bp={goal.change24hBp} /></span>
-          </p>
-        </div>
-        <div className="hero-chart">
-          <PriceChart key={goal.id} points={withLivePoint(goal.series, live.get(goal.id))} height={200} ranges />
+    <article className="featured" aria-labelledby="featured-title">
+      <div className="featured-top">
+        <Avatar name={goal.displayName} photo={goal.photo} shape="square" />
+        <div className="featured-head">
+          <span className="kicker">
+            {goal.moving ? "Moving most today · " : ""}{categoryLabel(goal.goalType)} &middot; {goal.displayName}
+          </span>
+          <Link id="featured-title" className="featured-title" href={href} prefetch={false}>{goal.question}</Link>
         </div>
       </div>
-    </section>
+      <div className="featured-stats">
+        <p className="featured-odds">
+          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>
+            {percent(card.yesPrice)}%
+          </strong>
+          <span className="featured-chance">chance</span>
+          <span className="featured-change"><Change bp={card.change24hBp} when="today" /> <span aria-hidden="true">today</span></span>
+        </p>
+        <p className="featured-meta">{volumeLabel(card.volumeMicro)} &middot; closes {closeDate.format(new Date(goal.deadlineAt))}</p>
+      </div>
+      <PriceChart key={goal.id} variant="card" points={withLivePoint(goal.series, quote)} initialRange={goal.moving ? "1D" : "ALL"} />
+      <PriceButtons id={goal.id} yesPrice={card.yesPrice} size="large" />
+    </article>
   );
 }
 
@@ -84,36 +68,6 @@ function withLivePoint(series: ChartPoint[], quote: LiveQuote | undefined): Char
   return [...series, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }];
 }
 
-function Upcoming({ goals, now }: { goals: CardData[]; now: Date }) {
-  if (goals.length === 0) return null;
-  return (
-    <section className="strip" aria-labelledby="strip-title">
-      <h2 id="strip-title" className="section-title">Just added</h2>
-      <ul className="strip-row">
-        {goals.map((goal) => (
-          <li key={goal.id}>
-            <Link className="strip-card" href={`/markets/${goal.id}`} prefetch={false}>
-              <Thumbnail
-                goalType={goal.goalType}
-                question={goal.question}
-                displayName={goal.displayName}
-                deadlineAt={goal.deadlineAt}
-                tradingOpen={goal.tradingOpen}
-                now={now}
-                photo={goal.photo}
-                seed={goal.id}
-              />
-              <span className="strip-date">Closes {shortDate(new Date(goal.deadlineAt))}</span>
-              <span className="strip-title">{cardTitle(goal.goalType, goal.question)}</span>
-              <span className="strip-who">{goal.displayName}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function SignUpPrompt({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className="feed-prompt" role="dialog" aria-modal="false" aria-labelledby="feed-prompt-title">
@@ -121,8 +75,8 @@ function SignUpPrompt({ onDismiss }: { onDismiss: () => void }) {
         <h2 id="feed-prompt-title">Want to make a call?</h2>
         <p>Browsing is open to everyone. Predicting needs an account, which comes with 1,000 play points. No deposits, no cash value.</p>
         <div className="feed-prompt-actions">
-          <Link className="btn btn-accent" href="/sign-up">Create an account</Link>
-          <Link className="feed-prompt-secondary" href="/sign-in">Sign in</Link>
+          <Link className="btn btn-lime" href="/sign-up">Create an account</Link>
+          <Link className="feed-prompt-secondary" href="/sign-in">Log in</Link>
         </div>
       </div>
       <button type="button" className="feed-prompt-close" onClick={onDismiss} aria-label="Dismiss">&times;</button>
@@ -131,34 +85,33 @@ function SignUpPrompt({ onDismiss }: { onDismiss: () => void }) {
 }
 
 export function FeedView({
-  cards, justAdded, people, featured, closingSoon, movers, signedIn, unavailable, nowIso,
+  cards, featured, closingSoon, signedIn, unavailable, nowIso,
 }: {
   cards: CardData[];
-  justAdded: CardData[];
-  people: PersonTab[];
-  featured: FeaturedData[];
+  featured: FeaturedData | null;
   closingSoon: CardData[];
-  movers: CardData[];
   signedIn: boolean;
   unavailable: boolean;
   nowIso: string;
 }) {
   const now = new Date(nowIso);
-  const [person, setPerson] = useState<string | null>(null);
+  const params = useSearchParams();
+  const query = (params.get("q") ?? "").slice(0, 80);
+  const requested = params.get("tab");
+  const tab: FeedTab = isFeedTab(requested) ? requested : "anything";
   const [showPrompt, setShowPrompt] = useState(false);
 
   // One poll for every goal on the page, however many lists it appears in.
   const ids = useMemo(
-    () => [...new Set([...cards, ...featured, ...justAdded, ...closingSoon, ...movers].map((card) => card.id))],
-    [cards, featured, justAdded, closingSoon, movers],
+    () => [...new Set([...cards, ...closingSoon, ...(featured ? [featured] : [])].map((card) => card.id))],
+    [cards, closingSoon, featured],
   );
   const live = useLiveQuotes(ids);
   const flashes = useMemo(() => {
     const out = new Map<string, "up" | "down" | null>();
-    for (const card of [...cards, ...featured]) out.set(card.id, flashFor(card.yesPrice, live.get(card.id)));
+    for (const card of cards) out.set(card.id, flashFor(card.yesPrice, live.get(card.id)));
     return out;
-  }, [cards, featured, live]);
-  const lv = <T extends CardData>(card: T): T => withQuote(card, live);
+  }, [cards, live]);
 
   useEffect(() => {
     if (signedIn) return;
@@ -180,108 +133,92 @@ export function FeedView({
     }
   }
 
-  if (unavailable) {
-    return (
-      <section className="panel feed-empty">
-        <h1>Goals are temporarily unavailable.</h1>
-        <p>Please try again shortly.</p>
-      </section>
-    );
+  function pickTab(next: FeedTab, event: React.MouseEvent) {
+    event.preventDefault();
+    const address = new URLSearchParams(window.location.search);
+    if (next === "anything") address.delete("tab");
+    else address.set("tab", next);
+    const search = address.toString();
+    window.history.replaceState(null, "", search ? `/?${search}` : "/");
   }
 
-  const byPerson = (list: CardData[]) => (person ? list.filter((card) => card.handle === person) : list).map(lv);
-  const shown = byPerson(cards);
-  const personName = people.find((p) => p.handle === person)?.displayName ?? person;
+  const tabHref = (key: FeedTab) => {
+    const address = new URLSearchParams();
+    if (key !== "anything") address.set("tab", key);
+    if (query) address.set("q", query);
+    const search = address.toString();
+    return search ? `/?${search}` : "/";
+  };
+
+  const browsing = tab !== "anything" || query.trim() !== "";
+  const shown = browse(cards.map((card) => withQuote(card, live)), tab, query);
+  const heading = query.trim() ? `Results for “${query.trim()}”` : tab === "anything" ? "All goals" : tabLabel(tab);
 
   return (
     <>
-      <TickerTape cards={cards.map(lv)} flashes={flashes} />
-
-      <section className="motto" aria-labelledby="motto-title">
-        <div>
-          <h1 id="motto-title" className="motto-title">Bet on literally anything.</h1>
-          <p>Your friends put up their own goals, from grades to marathons to startups. You call it. Play money only.</p>
-        </div>
-        <Link className="btn btn-accent motto-cta" href={signedIn ? "/goals/new" : "/sign-up"}>
-          {signedIn ? "Post a goal" : "Join with 1,000 play points"}
-        </Link>
-      </section>
-
-      {people.length > 0 && (
-        <nav className="chips" aria-label="Filter goals by person">
-          <button type="button" className={person === null ? "chip is-active" : "chip"} onClick={() => setPerson(null)}>
-            Everyone
-          </button>
-          {people.map((entry) => (
-            <button
-              key={entry.handle}
-              type="button"
-              className={person === entry.handle ? "chip is-active" : "chip"}
-              onClick={() => setPerson(entry.handle)}
-              aria-pressed={person === entry.handle}
-            >
-              <Avatar name={entry.displayName} photo={entry.photo} size={22} />
-              {entry.displayName}
-              <span className="chip-count">{entry.openGoals}</span>
-            </button>
+      <Ticker cards={cards} />
+      <nav className="tabs" aria-label="Categories">
+        <ul>
+          {FEED_TABS.map((entry) => (
+            <li key={entry.key}>
+              <Link href={tabHref(entry.key)} prefetch={false} scroll={false} aria-current={tab === entry.key ? "page" : undefined}
+                onClick={(event) => pickTab(entry.key, event)}>
+                {entry.label}
+              </Link>
+            </li>
           ))}
-        </nav>
-      )}
+        </ul>
+      </nav>
 
-      {cards.length === 0 ? (
-        <section className="panel feed-empty">
-          <h2>No goals are open yet.</h2>
-          <p>
-            Goals appear here once someone writes one about themselves and it is approved.
-            {signedIn ? " Yours can be the first." : " Create an account to add yours."}
-          </p>
-          <Link className="btn btn-accent" href={signedIn ? "/goals/new" : "/sign-up"}>
-            {signedIn ? "Write a goal" : "Create an account"}
-          </Link>
-        </section>
-      ) : (
-        <div className="feed-layout">
-          <div className="feed-main">
-            {person === null && <Featured goals={featured.map(lv)} now={now} live={live} />}
-
-            {person === null && (
-              <section className="trust" aria-label="How Mitra works">
-                <div><strong>Play money only</strong><span>1,000 points to start. No deposits, no cash value.</span></div>
-                <div><strong>Proof, checked by a person</strong><span>Outcomes rest on a statement written after reading the evidence.</span></div>
-                <div><strong>No betting on yourself</strong><span>Nobody trades a goal about their own life.</span></div>
-              </section>
+      <main className="feed">
+        {unavailable ? (
+          <section className="feed-empty">
+            <h1>Goals are temporarily unavailable.</h1>
+            <p>Please try again shortly.</p>
+          </section>
+        ) : cards.length === 0 ? (
+          <section className="feed-empty">
+            <h1>No goals are open yet.</h1>
+            <p>
+              Goals appear here once someone posts one about themselves and the owner approves it.
+              {signedIn ? " Yours can be the first." : " Create an account to add yours."}
+            </p>
+            <Link className="btn btn-lime" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
+          </section>
+        ) : (
+          <>
+            <h1 className="sr-only">Bet on literally anything</h1>
+            {!browsing && featured && (
+              <div className="feed-top">
+                <Featured goal={featured} live={live} />
+                {closingSoon.length > 0 && (
+                  <section className="closing" aria-labelledby="closing-title">
+                    <h2 id="closing-title">Closing soon</h2>
+                    <ul>
+                      {closingSoon.map((card) => (
+                        <ClosingRow key={card.id} card={withQuote(card, live)} now={now} flash={flashes.get(card.id)} />
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </div>
             )}
 
-            {person === null && <Upcoming goals={justAdded.map(lv)} now={now} />}
-
-            <section aria-labelledby="grid-title">
-              <h2 id="grid-title" className="section-title">{person ? `${personName}'s goals` : "Open goals"}</h2>
+            <section className="feed-grid" aria-labelledby="grid-title">
+              <h2 id="grid-title">{heading}</h2>
               {shown.length === 0 ? (
-                <p className="muted">No open goals for this person right now.</p>
+                <p className="muted">
+                  {query.trim() ? `No goals match “${query.trim()}”${tab === "anything" ? "" : ` in ${tabLabel(tab)}`}.` : `No ${tabLabel(tab)} goals are open right now.`}
+                </p>
               ) : (
                 <div className="grid">
                   {shown.map((card) => <GoalCard key={card.id} card={card} now={now} flash={flashes.get(card.id)} />)}
                 </div>
               )}
             </section>
-          </div>
-
-          <aside className="feed-side" aria-label="Rundown">
-            {closingSoon.length > 0 && (
-              <section className="panel rundown">
-                <h2>Closing soon</h2>
-                <ul>{byPerson(closingSoon).map((card) => <RundownRow key={card.id} card={card} now={now} show="deadline" flash={flashes.get(card.id)} />)}</ul>
-              </section>
-            )}
-            {movers.length > 0 && (
-              <section className="panel rundown">
-                <h2>Moving today</h2>
-                <ul>{byPerson(movers).map((card) => <RundownRow key={card.id} card={card} now={now} show="change" flash={flashes.get(card.id)} />)}</ul>
-              </section>
-            )}
-          </aside>
-        </div>
-      )}
+          </>
+        )}
+      </main>
 
       {showPrompt && <SignUpPrompt onDismiss={dismissPrompt} />}
     </>

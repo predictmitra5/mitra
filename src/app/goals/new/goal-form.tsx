@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { createGoal } from "@/modules/goals/actions";
 import type { FormState } from "@/modules/auth/policy";
-import type { GoalType } from "@/modules/goals/templates";
+import type { GoalType, RaceDistance } from "@/modules/goals/templates";
 
 // "Bet on literally anything" (decided 2026-09-24): a goal in your own words
 // comes first and is the default. The four templates stay as quick starts.
@@ -13,6 +13,15 @@ const types: { value: GoalType; label: string; rule: string }[] = [
   { value: "internship", label: "Internship", rule: "Counts a written offer received before the deadline, even if you turn it down." },
   { value: "club", label: "Club", rule: "Counts the club's admission offer before the deadline, whether or not you join." },
   { value: "gym", label: "Gym", rule: "Proven by one uncut video you post publicly on Instagram, TikTok or YouTube before the deadline." },
+  { value: "running", label: "Running", rule: "Only a race's official published results count, not a run logged in an app or on a watch. With a target time, chip time counts when the results list it." },
+];
+
+const DISTANCES: { value: RaceDistance; label: string }[] = [
+  { value: "5k", label: "5K" },
+  { value: "10k", label: "10K" },
+  { value: "half", label: "Half marathon" },
+  { value: "marathon", label: "Marathon" },
+  { value: "miles", label: "Other distance" },
 ];
 
 const IDEAS = [
@@ -27,6 +36,7 @@ const IDEAS = [
 export function GoalForm({ minDate }: { minDate: string }) {
   const [state, action, pending] = useActionState(createGoal, {} as FormState);
   const [type, setType] = useState<GoalType>("own_words");
+  const [distance, setDistance] = useState<RaceDistance>("5k");
   const question = useRef<HTMLInputElement>(null);
   const selected = types.find((option) => option.value === type)!;
 
@@ -47,6 +57,17 @@ export function GoalForm({ minDate }: { minDate: string }) {
     {type === "internship" && <div className="field"><label htmlFor="company">Company</label><input id="company" name="company" placeholder="Google" minLength={2} maxLength={80} required /></div>}
     {type === "club" && <div className="field"><label htmlFor="club">Club</label><input id="club" name="club" placeholder="Consulting Club" minLength={2} maxLength={80} required /></div>}
     {type === "gym" && <div className="field"><label htmlFor="achievement">Achievement</label><input id="achievement" name="achievement" placeholder="bench press 225 lb" minLength={3} maxLength={120} required aria-describedby="achievement-hint" /><p id="achievement-hint" className="field-hint">Finish the sentence “Will you ___ by the deadline?”</p></div>}
+    {type === "running" && <>
+      <fieldset className="type-picker">
+        <legend>Race distance</legend>
+        {DISTANCES.map((option) => <label key={option.value} className="type-option">
+          <input type="radio" name="distance" value={option.value} checked={distance === option.value} onChange={() => setDistance(option.value)} />
+          <span>{option.label}</span>
+        </label>)}
+      </fieldset>
+      {distance === "miles" && <div className="field"><label htmlFor="miles">Distance in miles</label><input id="miles" name="miles" inputMode="decimal" placeholder="10" pattern="\d{1,3}(\.\d)?" required /></div>}
+      <div className="field"><label htmlFor="time">Target time <span className="muted">(optional)</span></label><input id="time" name="time" inputMode="numeric" placeholder="25:00 or 1:59:00" pattern="(\d{1,2}:)?\d{1,2}:\d{2}" aria-describedby="time-hint" /><p id="time-hint" className="field-hint">Leave it blank to count finishing the race at any time.</p></div>
+    </>}
     {type === "own_words" && <>
       <div className="field"><label htmlFor="question">Question</label><input ref={question} id="question" name="question" placeholder="Will I run a half marathon before graduation?" minLength={10} maxLength={200} required /></div>
       <div className="idea-row" aria-label="Ideas to start from">

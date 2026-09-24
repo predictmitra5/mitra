@@ -1,79 +1,99 @@
 import { describe, expect, it } from "vitest";
 import {
-  ago,
   cardTitle,
   categoryLabel,
   changeLabel,
-  closesIn,
+  closesInWords,
   initials,
   percent,
-  shortDate,
-  thumbnailText,
-  tickerSymbol,
+  pointsText,
+  stakeText,
+  tickerLabel,
+  timeLeft,
   volumeLabel,
 } from "./present";
 
 const now = new Date("2026-09-22T16:00:00Z");
 const hour = 3_600_000;
 
-describe("thumbnail text, the stake in as few words as possible", () => {
-  it("pulls the GPA out of a grades goal", () => {
-    expect(thumbnailText("gpa", "Will Maya earn at least a 3.8 GPA for Fall 2026?")).toBe("3.8 GPA");
-    expect(thumbnailText("gpa", "Will Maya earn at least an 4.0 GPA for Spring 2027?")).toBe("4.0 GPA");
+describe("the stake, in as few words as possible", () => {
+  it("pulls the GPA out of a grades goal, without a trailing zero", () => {
+    expect(stakeText("gpa", "Will Maya earn at least a 3.80 GPA for Fall 2026?")).toBe("3.8 GPA");
+    expect(stakeText("gpa", "Will Maya earn at least an 4.00 GPA for Spring 2027?")).toBe("4 GPA");
   });
 
   it("pulls the club out of a club goal", () => {
-    expect(thumbnailText("club", "Will Andre be offered admission to Chess Club by November 1, 2026?"))
-      .toBe("Chess Club");
+    expect(stakeText("club", "Will Andre be offered admission to Chess Club by November 1, 2026?")).toBe("Chess Club");
   });
 
   it("names the company for an internship goal", () => {
-    expect(thumbnailText("internship", "Will Priya receive a written internship offer from Google by March 1, 2027?"))
-      .toBe("Google internship");
+    expect(stakeText("internship", "Will Priya receive a written internship offer from Google by March 1, 2027?"))
+      .toBe("Google offer");
   });
 
-  it("keeps the achievement for a gym goal", () => {
-    expect(thumbnailText("gym", "Will Luis deadlift 315 pounds by December 15, 2026?")).toBe("Deadlift 315 pounds");
-    expect(thumbnailText("gym", "Will Luis run a sub-25-minute 5K by December 15, 2026?")).toBe("Run a sub-25-minute 5K");
+  it("keeps the achievement for a gym goal, as written", () => {
+    expect(stakeText("gym", "Will Luis deadlift 315 pounds by December 15, 2026?")).toBe("deadlift 315 pounds");
+    expect(stakeText("gym", "Will Luis run a sub-25-minute 5K by December 15, 2026?")).toBe("run a sub-25-minute 5K");
   });
 
   it("never takes a surname as part of the achievement", () => {
     // Real display names have two words; the template writes the full name.
-    expect(thumbnailText("gym", "Will Sam Rivera bench press 225 lb by September 14, 2026?", "Sam Rivera")).toBe("Bench press 225 lb");
-    expect(thumbnailText("gym", "Will Sam Rivera hold a 3-minute plank by May 1, 2027?", "Sam Rivera")).toBe("Hold a 3-minute plank");
-    expect(thumbnailText("gym", "Will Maya Chen Lopez deadlift 315 pounds by May 1, 2027?", "Maya Chen Lopez")).toBe("Deadlift 315 pounds");
+    expect(stakeText("gym", "Will Sam Rivera bench press 225 lb by September 14, 2026?", "Sam Rivera")).toBe("bench press 225 lb");
+    expect(stakeText("gym", "Will Sam Rivera hold a 3-minute plank by May 1, 2027?", "Sam Rivera")).toBe("hold a 3-minute plank");
+    expect(stakeText("gym", "Will Maya Chen Lopez deadlift 315 pounds by May 1, 2027?", "Maya Chen Lopez")).toBe("deadlift 315 pounds");
+  });
+
+  it("names the race distance and any target time for a running goal", () => {
+    expect(stakeText("running", "Will Jordan Patel run a half marathon in under 1:59:00 by April 30, 2027?", "Jordan Patel"))
+      .toBe("half marathon under 1:59:00");
+    expect(stakeText("running", "Will Jordan Patel run a 5K by October 30, 2026?", "Jordan Patel")).toBe("5K");
+    expect(stakeText("running", "Will Jo Lee run an 8-mile race in under 1:05:00 by May 1, 2027?")).toBe("8-mile race under 1:05:00");
   });
 
   it("falls back to the verb phrase for a goal in the person's own words", () => {
-    expect(thumbnailText("own_words", "Will Sam launch the app?", "Sam")).toBe("Launch the app");
-    expect(thumbnailText("own_words", "Will Sam launch the app?")).toBe("Launch the app");
+    expect(stakeText("own_words", "Will Sam launch the app?", "Sam")).toBe("launch the app");
+    expect(stakeText("own_words", "Will I run a half marathon?")).toBe("run a half marathon");
   });
 
   it("strips a two-word name exactly when it is known, instead of guessing its length", () => {
-    expect(thumbnailText("own_words", "Will Sam Lee launch the app?", "Sam Lee")).toBe("Launch the app");
+    expect(stakeText("own_words", "Will Sam Lee launch the app?", "Sam Lee")).toBe("launch the app");
   });
 
   it("keeps a trailing 'by' phrase in the person's own words", () => {
-    expect(thumbnailText("own_words", "Will Sam be accepted by Stanford?", "Sam")).toBe("Be accepted by Stanford");
+    expect(stakeText("own_words", "Will Sam be accepted by Stanford?", "Sam")).toBe("be accepted by Stanford");
   });
 
-  it("never runs longer than a thumbnail can hold, and cuts on a word", () => {
-    const long = thumbnailText("own_words", "Will Sam publish a working version of their very ambitious side project?");
-    expect(long.length).toBeLessThanOrEqual(34);
+  it("survives wording it does not recognise", () => {
+    expect(stakeText("gpa", "Something unexpected")).toBe("Something unexpected");
+    expect(stakeText(null, "")).toBe("");
+  });
+});
+
+describe("ticker labels", () => {
+  it("pairs the first name with the stake", () => {
+    expect(tickerLabel("gpa", "Will Maya Chen earn at least a 3.80 GPA for Fall 2026?", "Maya Chen")).toBe("Maya 3.8 GPA");
+    expect(tickerLabel("gym", "Will Luis Ortega deadlift 315 lb by May 1, 2027?", "Luis Ortega")).toBe("Luis deadlift 315 lb");
+    expect(tickerLabel("internship", "Will Priya receive a written internship offer from Google by March 1, 2027?", "Priya"))
+      .toBe("Priya Google offer");
+  });
+
+  it("stays short, cutting on a word", () => {
+    const long = tickerLabel("own_words", "Will Sam publish a working version of their very ambitious side project?", "Sam");
+    expect(long.length).toBeLessThanOrEqual(30);
     expect(long.endsWith("…")).toBe(true);
     expect(long).not.toMatch(/\s…$/);
   });
 
-  it("survives wording it does not recognise", () => {
-    expect(thumbnailText("gpa", "Something unexpected")).toBe("Something unexpected");
-    expect(thumbnailText(null, "")).toBe("");
+  it("survives names and questions it cannot use", () => {
+    expect(tickerLabel(null, "", "")).toBe("Goal");
   });
 });
 
 describe("card titles", () => {
-  it("drops the trailing deadline from template goals, since the badge shows it", () => {
+  it("drops the trailing deadline from template goals, since the card says how long is left", () => {
     expect(cardTitle("club", "Will Andre be offered admission to Chess Club by November 1, 2026?"))
       .toBe("Will Andre be offered admission to Chess Club?");
+    expect(cardTitle("running", "Will Jo run a 5K by May 1, 2027?")).toBe("Will Jo run a 5K?");
   });
 
   it("keeps every word of a goal in the person's own words", () => {
@@ -91,6 +111,7 @@ describe("categories", () => {
   it("names each template, and treats anything else as a goal", () => {
     expect(categoryLabel("gpa")).toBe("Grades");
     expect(categoryLabel("internship")).toBe("Internships");
+    expect(categoryLabel("running")).toBe("Running");
     expect(categoryLabel("own_words")).toBe("Anything");
     expect(categoryLabel(null)).toBe("Goal");
     expect(categoryLabel("something-new")).toBe("Goal");
@@ -106,12 +127,18 @@ describe("initials", () => {
   });
 });
 
-describe("volume", () => {
-  it("reads micro-units as compact play points", () => {
+describe("points", () => {
+  it("reads volume as whole play points traded", () => {
     expect(volumeLabel(0)).toBe("No trades yet");
     expect(volumeLabel(400_000)).toBe("<1 pt traded");
     expect(volumeLabel(45_000_000)).toBe("45 pts traded");
-    expect(volumeLabel(12_400_000_000)).toBe("12.4K pts traded");
+    expect(volumeLabel(4_138_400_000)).toBe("4,138 pts traded");
+  });
+
+  it("shows other amounts to one decimal", () => {
+    expect(pointsText(47_060_000)).toBe("47.1");
+    expect(pointsText(1_000_000_000)).toBe("1,000.0");
+    expect(pointsText(1_000_000_000, 0)).toBe("1,000");
   });
 });
 
@@ -123,53 +150,33 @@ describe("percent", () => {
   });
 });
 
-describe("the day's change", () => {
-  it("rounds to whole points and carries direction separately from colour", () => {
-    expect(changeLabel(420)).toEqual({ text: "4", direction: "up" });
-    expect(changeLabel(-1150)).toEqual({ text: "12", direction: "down" });
-    expect(changeLabel(40)).toEqual({ text: "0", direction: "flat" });
-    expect(changeLabel(0)).toEqual({ text: "0", direction: "flat" });
+describe("price changes", () => {
+  it("reads basis points as percentage points to one decimal, with direction apart from colour", () => {
+    expect(changeLabel(620)).toEqual({ text: "6.2", direction: "up" });
+    expect(changeLabel(-1150)).toEqual({ text: "11.5", direction: "down" });
+    expect(changeLabel(4)).toEqual({ text: "0.0", direction: "flat" });
+    expect(changeLabel(0)).toEqual({ text: "0.0", direction: "flat" });
   });
 
   it("rounds equal moves up and down to the same size", () => {
-    // Math.round(-11.5) is -11 but Math.round(11.5) is 12; the label must not be lopsided.
-    expect(changeLabel(1150).text).toBe(changeLabel(-1150).text);
-    expect(changeLabel(50).text).toBe(changeLabel(-50).text);
+    // Math.round(-0.5) is -0 but Math.round(0.5) is 1; the label must not be lopsided.
+    expect(changeLabel(625).text).toBe(changeLabel(-625).text);
+    expect(changeLabel(5).text).toBe(changeLabel(-5).text);
   });
 });
 
 describe("time labels", () => {
-  it("counts down to a deadline", () => {
-    expect(closesIn(new Date(now.getTime() - hour), now)).toBe("Closed");
-    expect(closesIn(new Date(now.getTime() + 30 * 60_000), now)).toBe("< 1h left");
-    expect(closesIn(new Date(now.getTime() + 20 * hour), now)).toBe("20h left");
-    expect(closesIn(new Date(now.getTime() + 5 * 24 * hour), now)).toBe("5d left");
-    expect(closesIn(new Date(now.getTime() + 120 * 24 * hour), now)).toBe("4mo left");
+  it("counts down to a deadline in words", () => {
+    expect(timeLeft(new Date(now.getTime() - hour), now)).toBe("Closed");
+    expect(timeLeft(new Date(now.getTime() + 30 * 60_000), now)).toBe("Under an hour left");
+    expect(timeLeft(new Date(now.getTime() + 1.5 * hour), now)).toBe("1 hour left");
+    expect(timeLeft(new Date(now.getTime() + 20 * hour), now)).toBe("20 hours left");
+    expect(timeLeft(new Date(now.getTime() + 12 * 24 * hour), now)).toBe("12 days left");
+    expect(timeLeft(new Date(now.getTime() + 120 * 24 * hour), now)).toBe("4 months left");
   });
 
-  it("says how long ago a goal went live", () => {
-    expect(ago(now, now)).toBe("just now");
-    expect(ago(new Date(now.getTime() - 5 * hour), now)).toBe("5h ago");
-    expect(ago(new Date(now.getTime() - 3 * 24 * hour), now)).toBe("3d ago");
-    expect(ago(new Date(now.getTime() + hour), now)).toBe("just now");
-  });
-
-  it("gives a short date in Eastern time", () => {
-    expect(shortDate(new Date("2026-09-24T12:00:00Z"))).toBe("SEP 24");
-    // 02:00 UTC on 1 October is still 30 September in New York.
-    expect(shortDate(new Date("2026-10-01T02:00:00Z"))).toBe("SEP 30");
-  });
-});
-
-describe("ticker symbols", () => {
-  it("pairs the first name with the stake, like a stock symbol", () => {
-    expect(tickerSymbol("gpa", "Will Maya Chen earn at least a 3.8 GPA for Fall 2026?", "Maya Chen")).toBe("MAYA·3.8GPA");
-    expect(tickerSymbol("gym", "Will Luis Ortega deadlift 315 pounds by May 1, 2027?", "Luis Ortega")).toBe("LUIS·DEADLIFT");
-    expect(tickerSymbol("internship", "Will Priya receive a written internship offer from Google by March 1, 2027?", "Priya")).toBe("PRIYA·GOOGLE");
-    expect(tickerSymbol("own_words", "Will I run a half marathon?", "Sam Lee")).toBe("SAM·RUN");
-  });
-  it("survives names and questions it cannot use", () => {
-    expect(tickerSymbol(null, "", "")).toBe("GOAL");
-    expect(tickerSymbol("own_words", "???", "Zoë")).toBe("ZO");
+  it("says when a goal page closes", () => {
+    expect(closesInWords(new Date(now.getTime() + 12 * 24 * hour), now)).toBe("closes in 12 days");
+    expect(closesInWords(new Date(now.getTime() - hour), now)).toBe("trading closed");
   });
 });

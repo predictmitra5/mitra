@@ -49,6 +49,47 @@ export interface PositionsPage {
   total: number;
   page: number;
   pages: number;
+  /** Every holding on every page, valued at today's prices. */
+  totals: HoldingTotals;
+}
+
+export interface HoldingTotals {
+  valueMicro: number;
+  costMicro: number;
+  gainMicro: number;
+}
+
+export interface SideValue {
+  side: "yes" | "no";
+  sharesMicro: number;
+  costMicro: number;
+  /** The shares at the current price of their side. */
+  valueMicro: number;
+  gainMicro: number;
+}
+
+type Holding = Pick<HeldGoal, "yesPrice" | "yesSharesMicro" | "noSharesMicro" | "yesCostBasisMicro" | "noCostBasisMicro">;
+
+/**
+ * A holding's value and its gain or loss since bought (decided 2026-09-24).
+ * Value is the shares at the current price of their side, as Kalshi shows it:
+ * a YES share is worth the YES price, a NO share one minus it. It is not what
+ * selling would return, which is lower for a large holding because a sale moves
+ * the price. Null when the goal has no price.
+ */
+export function valueHolding(goal: Holding): (HoldingTotals & { sides: SideValue[] }) | null {
+  if (goal.yesPrice === null) return null;
+  const sides: SideValue[] = [];
+  for (const side of ["yes", "no"] as const) {
+    const sharesMicro = side === "yes" ? goal.yesSharesMicro : goal.noSharesMicro;
+    if (sharesMicro <= 0) continue;
+    const costMicro = side === "yes" ? goal.yesCostBasisMicro : goal.noCostBasisMicro;
+    const valueMicro = Math.round(sharesMicro * (side === "yes" ? goal.yesPrice : 1 - goal.yesPrice));
+    sides.push({ side, sharesMicro, costMicro, valueMicro, gainMicro: valueMicro - costMicro });
+  }
+  const valueMicro = sides.reduce((sum, entry) => sum + entry.valueMicro, 0);
+  const costMicro = sides.reduce((sum, entry) => sum + entry.costMicro, 0);
+  return { sides, valueMicro, costMicro, gainMicro: valueMicro - costMicro };
 }
 
 /** Bound query offsets and reject duplicate/noncanonical URL parameters. */
@@ -90,6 +131,12 @@ export async function loadPositions<Q extends PgQueryResultHKT>(
   }
 }
 
+/** The market's public chance of YES, or null before it has a price. */
+function marketPrice(liquidityMicro: number, yesSharesMicro: number | null, noSharesMicro: number | null): number | null {
+  if (yesSharesMicro === null || noSharesMicro === null) return null;
+  return price(toLmsr({ liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro, noSharesMicro }), "YES");
+}
+
 /**
  * Private projection; userId must be the freshly verified server identity.
  * Even the owner sees only their own positions. Authorization, count and rows
@@ -124,15 +171,25 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       }).from(positions).innerJoin(markets, eq(markets.id, positions.marketId))
         .innerJoin(profiles, eq(profiles.id, markets.subjectUserId)).where(visible)
         .orderBy(asc(markets.deadlineAt), asc(markets.id)).limit(POSITIONS_PAGE_SIZE).offset((page - 1) * POSITIONS_PAGE_SIZE);
+      // Totals cover every holding, not just this page, for the account summary.
+      const all = await tx.select({
+        liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
+        yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
+        yesCostBasisMicro: positions.yesCostBasisMicro, noCostBasisMicro: positions.noCostBasisMicro,
+      }).from(positions).innerJoin(markets, eq(markets.id, positions.marketId)).where(visible);
+      const totals: HoldingTotals = { valueMicro: 0, costMicro: 0, gainMicro: 0 };
+      for (const { liquidityMicro, marketYesMicro, marketNoMicro, ...held } of all) {
+        const value = valueHolding({ ...held, yesPrice: marketPrice(liquidityMicro, marketYesMicro, marketNoMicro) });
+        if (!value) continue;
+        totals.valueMicro += value.valueMicro; totals.costMicro += value.costMicro; totals.gainMicro += value.gainMicro;
+      }
       const now = clock();
       if (!Number.isFinite(now.getTime())) throw new Error("Invalid clock.");
-      return { total, page, pages, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, subjectWithdrawnAt, subjectBannedAt, ...row }) => ({
+      return { total, page, pages, totals, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, subjectWithdrawnAt, subjectBannedAt, ...row }) => ({
         ...row, status: row.status as HeldGoal["status"],
         // The photo route refuses a banned or withdrawn person, so never link to it.
         photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
-        yesPrice: marketYesMicro === null || marketNoMicro === null ? null : price(toLmsr({
-          liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: marketYesMicro, noSharesMicro: marketNoMicro,
-        }), "YES"),
+        yesPrice: marketPrice(liquidityMicro, marketYesMicro, marketNoMicro),
         tradingOpen: row.status === "open" && !tradingClosedAt && row.deadlineAt > now,
         contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt > now,
       })) };

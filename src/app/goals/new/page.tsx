@@ -8,14 +8,14 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { GoalForm } from "./goal-form";
 import { PhotoForm } from "@/app/account/photo-form";
 import { isInactive } from "@/modules/account/standing";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "New goal" };
 
 export default async function NewGoalPage() {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
   const [profile] = await getDb().select().from(schema.profiles).where(eq(schema.profiles.id, identity.id)).limit(1);
   if (!profile || isInactive(profile) || !profile.adultConfirmedAt) redirect("/account");
   // Posting a goal requires a profile photo (decided 2026-09-24). createGoalDraft
@@ -25,7 +25,7 @@ export default async function NewGoalPage() {
   // Today's date in Eastern time, the zone deadlines use.
   const minDate = new Intl.DateTimeFormat("en-CA", { timeZone: DEADLINE_TIME_ZONE }).format(new Date());
 
-  return <div className="market-shell"><MarketHeader signedIn ownerQueue={queue} /><main className="account-main">
+  return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main">
     <div className="account-topline"><span className="eyebrow">NEW GOAL</span><Link className="text-button" href="/account">Back to account</Link></div>
     <section className="account-card profile-card">
       <span className="eyebrow motto-eyebrow">BET ON LITERALLY ANYTHING</span>

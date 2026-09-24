@@ -1,31 +1,12 @@
 import Link from "next/link";
-import {
-  ago,
-  cardTitle,
-  categoryLabel,
-  changeLabel,
-  closesIn,
-  initials,
-  percent,
-  thumbnailText,
-  volumeLabel,
-} from "@/modules/discovery/present";
+import { cardTitle, categoryLabel, changeLabel, initials, percent, timeLeft } from "@/modules/discovery/present";
 
 /*
- * The goal card, decided 2026-09-22 with the market UI redesign (DESIGN.md).
- *
- * Read top to bottom it borrows from three places:
- * - YouTube: a 16:9 thumbnail carrying a few bold words, a corner badge for
- *   time, then an avatar beside a two-line title and a meta line.
- * - GoFundMe: the person named up front, and one bar read at a glance. Here the
- *   bar is the chance of YES rather than money raised.
- * - Kalshi: the price as the number that matters, YES and NO side by side,
- *   volume, and how far the price moved today.
- *
- * Thumbnails are generated art per goal type, carrying the person's profile
- * photo since 2026-09-24, when photos became required to post a goal. Goals in
- * the person's own words ("bet on literally anything") get one of several art
- * variants chosen from the goal id, so a feed of them is not one grey wall.
+ * Goal cards in the Kalshi direction, decided 2026-09-24 (DECISIONS.md and
+ * docs/DESIGN.md section 9). A framed card: the person's photo as a small
+ * square, the category and name, the question, the chance large on the right,
+ * today's change and time left, and Yes and No with their prices. Flat: no
+ * thumbnails, gradients or stickers.
  */
 
 export type CardData = {
@@ -46,106 +27,58 @@ export type CardData = {
   reason: "just added" | "closing soon" | "active" | "quiet";
 };
 
-/** Art direction per goal type. Decorative, not data, so not bound by the chart palette. */
-const ART: Record<string, string> = {
-  gpa: "art-gpa",
-  club: "art-club",
-  internship: "art-internship",
-  gym: "art-gym",
-  launch: "art-launch",
-};
-
-/** Art for goals outside the templates, picked steadily from the goal id. */
-const ANYTHING_ART = ["art-any-0", "art-any-1", "art-any-2", "art-any-3", "art-any-4"];
-
-function artFor(goalType: string | null, seed: string | undefined): string {
-  if (goalType && ART[goalType]) return ART[goalType];
-  if (!seed) return "art-goal";
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return ANYTHING_ART[hash % ANYTHING_ART.length];
-}
-
-export function Thumbnail({
-  goalType, question, displayName, deadlineAt, tradingOpen, now, size = "card", photo = null, seed,
-}: {
-  goalType: string | null;
-  question: string;
-  displayName: string;
-  deadlineAt: string;
-  tradingOpen: boolean;
-  now: Date;
-  size?: "card" | "hero";
-  photo?: string | null;
-  /** The goal id, to vary the art for goals in the person's own words. */
-  seed?: string;
+/**
+ * A person's photo: a small square beside goals, a circle for the viewer.
+ * Without a size, the stylesheet sets it, so it can change with the screen.
+ */
+export function Avatar({ name, photo = null, size, shape = "round" }: {
+  name: string; photo?: string | null; size?: number; shape?: "round" | "square";
 }) {
-  const art = artFor(goalType, seed);
-  const stake = thumbnailText(goalType, question, displayName);
-  return (
-    <div className={`thumb ${art} thumb-${size}`}>
-      <span className="thumb-pattern" aria-hidden="true" />
-      <span className="thumb-chip">{categoryLabel(goalType)}</span>
-      <span className="thumb-stake">{stake}</span>
-      {photo
-        // Already a 512-pixel WebP from the app's own route; next/image would only re-process it.
-        // eslint-disable-next-line @next/next/no-img-element
-        ? <img className="thumb-face" src={photo} alt="" loading="lazy" decoding="async" />
-        : <span className="thumb-who" aria-hidden="true">{initials(displayName)}</span>}
-      <span className="thumb-badge">{tradingOpen ? closesIn(new Date(deadlineAt), now) : "Closed"}</span>
-    </div>
-  );
-}
-
-export function Avatar({ name, photo = null, size = 36 }: { name: string; photo?: string | null; size?: number }) {
+  const className = `avatar avatar-${shape}`;
+  const style = size ? { width: size, height: size, fontSize: size * 0.38 } : undefined;
   if (photo) {
     return (
       // The name is always written beside it, so the image itself is decorative.
       // eslint-disable-next-line @next/next/no-img-element
-      <img className="avatar avatar-photo" src={photo} alt="" width={size} height={size} loading="lazy" decoding="async" style={{ width: size, height: size }} />
+      <img className={`${className} avatar-photo`} src={photo} alt="" width={size} height={size} loading="lazy" decoding="async" style={style} />
     );
   }
-  return (
-    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.4 }} aria-hidden="true">
-      {initials(name)}
-    </span>
-  );
+  return <span className={className} style={style} aria-hidden="true">{initials(name)}</span>;
 }
 
-export function Change({ bp }: { bp: number }) {
+/** A price change to one decimal. The arrow carries the direction; colour repeats it. */
+export function Change({ bp, when }: { bp: number; when?: string }) {
   const { text, direction } = changeLabel(bp);
-  if (direction === "flat") return <span className="change change-flat" aria-label="No change today">&mdash;</span>;
+  const words = `${direction === "up" ? "Up" : direction === "down" ? "Down" : "No change,"} ${text} points${when ? ` ${when}` : ""}`;
   return (
-    <span className={`change change-${direction}`} aria-label={`${direction === "up" ? "Up" : "Down"} ${text} points today`}>
-      <span aria-hidden="true">{direction === "up" ? "▲" : "▼"}</span> {text}
+    <span className={`change change-${direction}`}>
+      <span aria-hidden="true">{direction === "up" ? "▲ " : direction === "down" ? "▼ " : ""}{text}</span>
+      <span className="sr-only">{words}</span>
     </span>
   );
 }
 
-/** YES against NO as one bar: GoFundMe's progress bar, read as a probability. */
-export function ProbabilityBar({ yesPrice }: { yesPrice: number }) {
-  const yes = percent(yesPrice);
+/** A gain or loss in points to one decimal, as "+7.3" or "−1.6", with its colour. */
+export function Gain({ micro }: { micro: number }) {
+  const tenths = Math.round(micro / 100_000);
+  if (tenths === 0) return <span className="gain gain-flat">0.0</span>;
   return (
-    <div className="pbar" role="img" aria-label={`${yes} percent chance of YES, ${100 - yes} percent NO`}>
-      <span className="pbar-yes" style={{ width: `${yes}%` }} />
-      <span className="pbar-no" />
-    </div>
+    <span className={`gain gain-${tenths > 0 ? "up" : "down"}`}>
+      {tenths > 0 ? "+" : "−"}{Math.abs(tenths / 10).toFixed(1)}
+    </span>
   );
 }
 
-export function PricePills({ yesPrice, href, compact = false }: { yesPrice: number; href: string; compact?: boolean }) {
+/** Yes and No with their prices, in words; each opens the goal with that side chosen. */
+export function PriceButtons({ id, yesPrice, size = "card" }: { id: string; yesPrice: number; size?: "card" | "large" }) {
   const yes = percent(yesPrice);
   return (
-    <div className={`pills${compact ? " pills-compact" : ""}`}>
-      <Link className="pill pill-yes" href={href} prefetch={false}>
-        <span className="pill-key" aria-hidden="true" />
-        <span className="pill-side">Yes</span>
-        <strong>{yes}%</strong>
+    <div className={`price-buttons price-buttons-${size}`}>
+      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Yes, ${yes}¢`}>
+        <span>Yes</span><span>{yes}¢</span>
       </Link>
-      <Link className="pill pill-no" href={href} prefetch={false}>
-        <span className="pill-key" aria-hidden="true" />
-        <span className="pill-side">No</span>
-        <strong>{100 - yes}%</strong>
+      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`No, ${100 - yes}¢`}>
+        <span>No</span><span>{100 - yes}¢</span>
       </Link>
     </div>
   );
@@ -154,60 +87,42 @@ export function PricePills({ yesPrice, href, compact = false }: { yesPrice: numb
 /** `flash` marks a live price move, so the number pulses once in its direction. */
 export function GoalCard({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   const href = `/markets/${card.id}`;
-  const title = cardTitle(card.goalType, card.question);
   return (
-    <article className="gcard">
-      <Link className="gcard-thumb" href={href} prefetch={false} aria-label={title}>
-        <Thumbnail
-          goalType={card.goalType}
-          question={card.question}
-          displayName={card.displayName}
-          deadlineAt={card.deadlineAt}
-          tradingOpen={card.tradingOpen}
-          now={now}
-          photo={card.photo}
-          seed={card.id}
-        />
-      </Link>
-      <div className="gcard-body">
-        <Avatar name={card.displayName} photo={card.photo} />
-        <div className="gcard-text">
-          <Link className="gcard-title" href={href} prefetch={false}>{title}</Link>
-          <p className="gcard-meta">
-            <span>{card.displayName}</span>
-            <span aria-hidden="true">&middot;</span>
-            <span>{volumeLabel(card.volumeMicro)}</span>
-            <span aria-hidden="true">&middot;</span>
-            <span>{ago(new Date(card.approvedAt), now)}</span>
-          </p>
+    <article className="card">
+      <div className="card-top">
+        <Avatar name={card.displayName} photo={card.photo} size={40} shape="square" />
+        <div className="card-head">
+          <span className="card-kicker">{categoryLabel(card.goalType)} &middot; {card.displayName}</span>
+          <Link className="card-title" href={href} prefetch={false}>{cardTitle(card.goalType, card.question)}</Link>
+        </div>
+        <div className="card-chance">
+          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
+          <span>chance</span>
         </div>
       </div>
-      <div className="gcard-market">
-        <div className="gcard-odds">
-          <span className="gcard-chance"><strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong> chance</span>
-          <Change bp={card.change24hBp} />
-        </div>
-        <ProbabilityBar yesPrice={card.yesPrice} />
-        <PricePills yesPrice={card.yesPrice} href={href} compact />
-      </div>
+      <p className="card-meta">
+        <Change bp={card.change24hBp} when="today" />
+        <span aria-hidden="true">today</span>
+        <span className="card-left">{card.tradingOpen ? timeLeft(new Date(card.deadlineAt), now) : "Trading closed"}</span>
+      </p>
+      <PriceButtons id={card.id} yesPrice={card.yesPrice} />
     </article>
   );
 }
 
-/** One line of the sidebar rundown, like Kalshi's Trending list. */
-export function RundownRow({ card, now, show, flash = null }: { card: CardData; now: Date; show: "deadline" | "change"; flash?: "up" | "down" | null }) {
+/** One row of the Closing soon list beside the featured goal. */
+export function ClosingRow({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   return (
     <li>
-      <Link className="rundown-row" href={`/markets/${card.id}`} prefetch={false}>
-        <span className="rundown-text">
-          <span className="rundown-title">{cardTitle(card.goalType, card.question)}</span>
-          <span className="rundown-sub">
-            {card.displayName} &middot; {show === "deadline" ? closesIn(new Date(card.deadlineAt), now) : categoryLabel(card.goalType)}
-          </span>
+      <Link className="closing-row" href={`/markets/${card.id}`} prefetch={false}>
+        <Avatar name={card.displayName} photo={card.photo} size={32} shape="square" />
+        <span className="closing-text">
+          <span className="closing-title">{cardTitle(card.goalType, card.question)}</span>
+          <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}</span>
         </span>
-        <span className="rundown-value">
+        <span className="closing-value">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
-          <Change bp={card.change24hBp} />
+          <Change bp={card.change24hBp} when="today" />
         </span>
       </Link>
     </li>

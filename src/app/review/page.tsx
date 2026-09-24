@@ -8,7 +8,7 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { ReviewForms } from "./review-forms";
 import { Avatar } from "@/app/components/market/goal-card";
 import { photoUrl } from "@/modules/account/photo-url";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "Review goals" };
 
@@ -17,7 +17,7 @@ const when = new Intl.DateTimeFormat("en-US", { timeZone: DEADLINE_TIME_ZONE, da
 export default async function ReviewPage({ searchParams }: PageProps<"/review">) {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
 
   let drafts;
   try {
@@ -31,7 +31,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/review">)
   const { notice } = await searchParams;
   const message = notice === "approved" ? "Goal opened for trading." : notice === "rejected" ? "Goal rejected. They can see your reason." : undefined;
 
-  return <div className="market-shell"><MarketHeader signedIn ownerQueue={queue} /><main className="account-main review-main">
+  return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER REVIEW</span><Link className="text-button" href="/account">Back to account</Link></div>
     <div className="owner-links"><Link className="secondary-button" href="/review/markets">Outcomes and objections ↗︎</Link><Link className="secondary-button" href="/review/people">People: photos and bans ↗︎</Link></div>
     <section className="account-welcome"><h1>{drafts.length === 0 ? "Nothing to review." : `${drafts.length} goal${drafts.length === 1 ? "" : "s"} waiting.`}</h1><p>Approve only goals that can’t be won or lost just by deciding to. Set the opening odds to your honest guess.</p></section>

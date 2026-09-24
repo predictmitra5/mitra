@@ -4,20 +4,29 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
-import { formatMicro } from "@/modules/market/input";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
-import { readPriceSeries, recordClick } from "@/modules/discovery/feed";
+import { readPriceSeries, readQuotes, readTicker, recordClick, type FeedCard } from "@/modules/discovery/feed";
 import { canSubmit, listForSubject, listPublished } from "@/modules/evidence/service";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
-import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { Avatar } from "@/app/components/market/goal-card";
+import { valueHolding } from "@/modules/account/positions";
+import { readViewerOrNull } from "@/modules/account/viewer";
 import { photoUrl } from "@/modules/account/photo-url";
-import { categoryLabel } from "@/modules/discovery/present";
-import { LiveChart, LivePrices } from "./live-market";
-import { TradeForm } from "./trade-form";
+import { categoryLabel, closesInWords, pointsText, tickerLabel } from "@/modules/discovery/present";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
+import { Avatar, Gain, type CardData } from "@/app/components/market/goal-card";
+import { Ticker } from "@/app/components/market/ticker";
+import { LiveChart, LiveStats } from "./live-market";
+import { TradeDock } from "./trade-dock";
+import type { TradeAccess } from "./trade-panel";
 import { ObjectionForm } from "./objection-form";
 import { EvidenceForm } from "./evidence-form";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+
+/*
+ * A goal's page in the Kalshi direction (2026-09-24, docs/DESIGN.md section 9):
+ * the question, the chance large above the chart, volume and close date, the
+ * rules, and proof as a dated list of the owner's verified statements. The trade
+ * panel sits on the right on a desktop and in a bottom sheet on a phone.
+ */
 
 // This page includes the current user's holdings: never put it in a shared cache.
 export const dynamic = "force-dynamic";
@@ -34,14 +43,50 @@ export async function generateMetadata({ params }: PageProps<"/markets/[id]">): 
   } catch { return { title: "Goal unavailable", robots: { index: false } }; }
 }
 
-const date = (value: Date) => new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeStyle: "short", timeZone: "America/New_York" }).format(value);
+const zone = "America/New_York";
+const dateTime = (value: Date) => `${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: zone }).format(value)} ET`;
+const longDate = (value: Date) => new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: zone }).format(value);
+const shortDate = (value: Date) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: zone }).format(value);
 
-export default async function MarketPage({ params }: PageProps<"/markets/[id]">) {
+/** The goal's tab on the feed, for the breadcrumb. */
+const TAB_OF: Record<string, string> = { gym: "gym", gpa: "grades", internship: "internships", club: "clubs", running: "running" };
+
+function toTickerCard(card: FeedCard): CardData {
+  return {
+    id: card.id, question: card.question, goalType: card.goalType, displayName: card.displayName, handle: card.handle,
+    photo: photoUrl(card.handle, card.photoUpdatedAt), yesPrice: card.yesPrice, tradingOpen: card.tradingOpen, deadlineAt: card.deadlineAt.toISOString(),
+    approvedAt: card.approvedAt.toISOString(), volumeMicro: card.volumeMicro, change24hBp: card.change24hBp, reason: card.reason,
+  };
+}
+
+type Held = { yesSharesMicro: number; noSharesMicro: number; yesCostBasisMicro: number; noCostBasisMicro: number };
+
+/** "Your position": each side's shares, value at today's price, and the change since bought. */
+function Position({ held, yesPrice, className }: { held: Held; yesPrice: number; className: string }) {
+  const value = valueHolding({ ...held, yesPrice });
+  if (!value || value.sides.length === 0) return null;
+  return (
+    <section className={`goal-position ${className}`} aria-label="Your position">
+      <h2>Your position</h2>
+      <ul>
+        {value.sides.map((side) => (
+          <li key={side.side}>
+            <span className="muted">{pointsText(side.sharesMicro)} {side.side === "yes" ? "Yes" : "No"} shares</span>
+            <span>{pointsText(side.valueMicro)} pts <Gain micro={side.gainMicro} /></span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export default async function MarketPage({ params, searchParams }: PageProps<"/markets/[id]">) {
   const { id } = await params;
+  const now = new Date();
   let market;
   try { market = await loadMarket(id); }
   catch {
-    return <div className="market-shell"><MarketHeader signedIn={false} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/">Back to all goals</Link></section></main><MarketFooter /></div>;
+    return <div className="market-shell"><MarketHeader viewer={null} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/" prefetch={false}>Back to all goals</Link></section></main><MarketFooter /></div>;
   }
   if (!market) notFound();
   // Feed measurement. recordClick swallows its own failures, and is called here
@@ -73,73 +118,138 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   } catch {
     // Proof is additive to this page; never let it take the goal down with it.
   }
-  const open = market.tradingOpen;
-  const status = open ? "Trading open" : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? "Settled" : market.status === "ruled" ? "Ruling · objections open" : "Trading closed";
 
-  // Price history for the chart. Prices are already public on this page; the
-  // chart only shows how they got here. Additive, so a failure never takes the page down.
+  // Price history, volume and the ticker: public, and additive, so a failure
+  // leaves the chart empty and the prices above it still correct.
   let series: { at: string; yesBp: number }[] = [];
+  let volumeMicro = 0;
+  let ticker: CardData[] = [];
   try {
-    const points = await readPriceSeries(getDb(), id, { at: new Date(), yesBp: Math.round(market.yesPrice * 10_000) });
+    const database = getDb();
+    const points = await readPriceSeries(database, id, { at: now, yesBp: Math.round(market.yesPrice * 10_000) });
     series = points.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp }));
+    volumeMicro = (await readQuotes(database, [id], now))[0]?.volumeMicro ?? 0;
+    ticker = (await readTicker(database, now)).map(toTickerCard);
   } catch {
-    // Leave the chart empty; the prices above are still correct.
+    // Leave these empty.
   }
 
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
-  return <div className="market-shell"><MarketHeader signedIn={!!identity} ownerQueue={queue} /><main className="market-main">
-    <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗︎</Link><Link href="/account">Your account ↗︎</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
-    <div className="market-layout">
-      <div className="market-story">
-        <section className="market-hero">
-          <div className="review-meta"><span className={`status-pill ${open ? "status-open" : ""}`}>{status}</span><span>{categoryLabel(market.goalType)}</span></div>
-          <p className="market-person"><Avatar name={market.displayName} photo={photoUrl(market.handle, market.photoUpdatedAt)} size={32} />{market.displayName} <span>@{market.handle}</span></p>
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
+  const open = market.tradingOpen;
+  const category = categoryLabel(market.goalType);
+  const photo = photoUrl(market.handle, market.photoUpdatedAt);
+  const status = open ? null : market.status === "cancelled" ? "Cancelled" : market.status === "settled" ? `Settled: ${market.ruledOutcome === "yes" ? "Yes" : "No"}`
+    : market.status === "ruled" ? `Ruled ${market.ruledOutcome === "yes" ? "Yes" : "No"} · ${market.contestOpen ? "objections open" : "payout pending"}` : "Trading closed";
+  const access: TradeAccess = !open ? { kind: "closed" }
+    : accountUnavailable ? { kind: "unavailable" }
+    : !identity ? { kind: "signed-out" }
+    : !trader ? { kind: "no-profile" }
+    : trader.blocked ? { kind: "blocked", message: trader.blocked }
+    : { kind: "open" };
+  const requestedSide = (await searchParams).side;
+  const initialSide = requestedSide === "no" ? "NO" : "YES";
+  const held = trader?.position ?? null;
+
+  // The dated proof list, newest first: each verified statement on the day the
+  // owner published it, and the day the goal opened at the owner's price.
+  const proof = [
+    ...publishedProof.map((item) => ({ key: item.id, at: item.reviewedAt ?? item.createdAt, item })),
+    ...(market.approvedAt ? [{ key: "opened", at: market.approvedAt, item: null }] : []),
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
+
+  return <div className="market-shell goal-shell">
+    <MarketHeader viewer={viewer} active="goals" />
+    <Ticker cards={ticker} />
+    <main className="goal">
+      <div className="goal-main">
+        <div className="goal-intro">
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <Link href="/" prefetch={false}>Goals</Link><span aria-hidden="true">/</span>
+            <Link prefetch={false} href={TAB_OF[market.goalType ?? ""] ? `/?tab=${TAB_OF[market.goalType ?? ""]}` : "/"}>{category}</Link>
+          </nav>
+          <Link className="goal-back" href="/" prefetch={false}>← Goals</Link>
+          <div className="goal-person">
+            <Avatar name={market.displayName} photo={photo} size={48} shape="square" />
+            <div>
+              <span><strong>{market.displayName}</strong> <span className="muted">@{market.handle}</span></span>
+              <span className="muted">{category} &middot; {closesInWords(market.deadlineAt, now)}</span>
+            </div>
+          </div>
           <h1>{market.question}</h1>
-          <LivePrices id={market.id} yesPrice={market.yesPrice} />
-          <p className="market-price-note">{open ? "100¢ = 1 play point. A share pays 1 point if its outcome wins, and 0 if it loses. These are current prices; your preview shows the full trade cost." : "These are the last trading prices, not a final payout. The outcome and any refund appear below."}</p>
+          {status && <p className="goal-status">{status}</p>}
+        </div>
+
+        <section className="goal-chart" aria-label="Chance of Yes">
+          <LiveChart id={market.id} points={series} />
+          <LiveStats id={market.id} yesPrice={market.yesPrice} volumeMicro={volumeMicro} closes={longDate(market.deadlineAt)} />
         </section>
-        <section className="market-rules market-chart"><LiveChart id={market.id} points={series} height={240} /></section>
-        {market.ruledOutcome && market.status !== "cancelled" && <section className="market-rules ruling-box">
-          <span className="eyebrow">{market.status === "settled" ? "FINAL OUTCOME" : "OWNER RULING"}</span>
-          <h2>{market.ruledOutcome.toUpperCase()} · {market.status === "settled" ? "Payout complete" : "Open to objections"}</h2>
-          <p className="market-criteria">{market.rulingReason}</p>
+
+        {held && <Position held={held} yesPrice={market.yesPrice} className="goal-position-phone" />}
+
+        {market.ruledOutcome && market.status !== "cancelled" && <section className="goal-notice">
+          <h2>{market.status === "settled" ? "Final outcome" : "The owner's ruling"}: {market.ruledOutcome === "yes" ? "Yes" : "No"}</h2>
+          <p className="goal-text">{market.rulingReason}</p>
           {market.status === "settled" ? <p className="muted">Winning shares paid 1 point each; losing shares paid 0. Balances have been updated. This result is final.</p>
-            : <p className="muted">Objections close {market.contestEndsAt && date(market.contestEndsAt)} ET. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
+            : <p className="muted">Objections close {market.contestEndsAt && dateTime(market.contestEndsAt)}. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
           {market.contestOpen && (trader ? <ObjectionForm marketId={id} version={market.rulingVersion} />
-            : <Link className="secondary-button" href={identity ? "/account" : "/sign-in"}>{identity ? "Complete your profile to object" : "Sign in to object"}</Link>)}
+            : <Link className="btn btn-quiet" href={identity ? "/account" : "/sign-in"}>{identity ? "Complete your profile to object" : "Log in to object"}</Link>)}
         </section>}
-        {market.status === "cancelled" && <section className="market-rules ruling-box"><span className="eyebrow">CANCELLED</span><h2>Held costs refunded.</h2><p>Every participant received the cost of the shares they still held. This is a refund, not a YES or NO payout.</p></section>}
-        {!!objections.length && <section className="market-rules private-objections"><h2>Private objections you can view</h2><p className="field-hint">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {date(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
-        {!!publishedProof.length && <section className="market-rules"><span className="eyebrow">VERIFIED</span><h2>What the proof showed</h2>
-          <p className="field-hint">Each statement below was written by the owner after reading an original document supplied by {market.displayName}. The app still holds that document; it is deliberately not shown, because it carries personal details that are nobody else&rsquo;s business. Links were supplied for publication and open as submitted.</p>
-          <ul className="evidence-public">{publishedProof.map((item) => <li key={item.id}>
-            {item.verifiedStatement && <p className="verified-statement">{item.verifiedStatement}</p>}
-            {item.kind === "link" && item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>}
-            {item.caption && <p className="field-hint">Described by {market.displayName} as: {item.caption}</p>}
-          </li>)}</ul>
-        </section>}
-        {maySendProof && <EvidenceForm marketId={id} mine={myProof} proofDeadline={`${date(market.evidenceDeadlineAt)} ET`} />}
-        <section className="market-rules"><span className="eyebrow">BEFORE YOU MAKE YOUR CALL</span><h2>What counts as YES</h2>
-          <p className="market-criteria">{market.resolutionCriteria}</p>
-          <dl className="goal-dates"><div><dt>Goal deadline</dt><dd>{date(market.deadlineAt)} ET</dd></div><div><dt>Proof due</dt><dd>{date(market.evidenceDeadlineAt)} ET</dd></div></dl>
-          <p className="muted">Trading ends at the goal deadline, or earlier if the owner closes it. The subject has 7 days to supply proof. Missing proof resolves NO. The owner’s ruling has a 24-hour contest window before final payout.</p>
-          <p className="field-hint">This page is public. Private proof documents do not appear here. If the goal is cancelled, remaining shares are refunded at their held cost.</p>
+        {market.status === "cancelled" && <section className="goal-notice"><h2>Cancelled. Held costs refunded.</h2><p className="goal-text">Every participant received the cost of the shares they still held. This is a refund, not a Yes or No payout.</p></section>}
+        {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {dateTime(objection.createdAt)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}
+        {maySendProof && <EvidenceForm marketId={id} mine={myProof} proofDeadline={dateTime(market.evidenceDeadlineAt)} />}
+
+        <section className="goal-section" aria-labelledby="rules-title">
+          <h2 id="rules-title">Rules</h2>
+          <p className="goal-rules">{market.resolutionCriteria}</p>
+          <dl className="goal-facts">
+            <div><dt>Goal deadline</dt><dd>{dateTime(market.deadlineAt)}</dd></div>
+            <div><dt>Proof due</dt><dd>{dateTime(market.evidenceDeadlineAt)}</dd></div>
+            {market.approvedAt && <div><dt>Opened</dt><dd>{longDate(market.approvedAt)}, approved by the owner</dd></div>}
+            <div><dt>If cancelled</dt><dd>Shares refunded at what you paid</dd></div>
+          </dl>
+          <p className="muted goal-small">Trading ends at the deadline, or earlier if the owner closes it. Missing proof resolves No. Each ruling has a 24-hour window for objections before payout. This page is public; private proof documents never appear on it.</p>
+        </section>
+
+        <section className="goal-section" aria-labelledby="proof-title">
+          <div className="goal-section-head"><h2 id="proof-title">Proof</h2><span className="muted">Written by the owner</span></div>
+          <ol className="proof-list">
+            {proof.map(({ key, at, item }) => (
+              <li key={key}>
+                <time dateTime={at.toISOString()}>{shortDate(at)}</time>
+                {item ? (
+                  <div>
+                    {item.verifiedStatement && <p>{item.verifiedStatement}</p>}
+                    {item.kind === "link" && item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>}
+                    {item.caption && <p className="muted">Described by {market.displayName} as: {item.caption}</p>}
+                  </div>
+                ) : (
+                  <p>Goal approved and opened at {Math.round((market.openingProbabilityBp ?? 5000) / 100)}%.</p>
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="muted goal-small">The owner writes each statement after reading the original, which stays private because it carries personal details. Links are published as they were sent.</p>
         </section>
       </div>
-      <aside className="market-ticket" aria-label="Trade this goal"><span className="eyebrow">MAKE YOUR CALL</span><h2>Your prediction</h2>
-        {trader && <dl className="trade-summary holdings">
-          <div><dt>Available points</dt><dd>{formatMicro(trader.balanceMicro)}</dd></div>
-          <div><dt>YES shares held</dt><dd>{formatMicro(trader.position.yesSharesMicro)}</dd></div>
-          <div><dt>NO shares held</dt><dd>{formatMicro(trader.position.noSharesMicro)}</dd></div>
-          <div><dt>Remaining cost allowance</dt><dd>{formatMicro(trader.allowanceMicro)} points</dd></div>
-        </dl>}
-        {!open ? <p className="rule-note">Trading is closed. You can still read this goal’s terms.</p>
-          : accountUnavailable ? <p className="form-error" role="alert">Your trading account couldn’t load. Refresh to try again.</p>
-          : !identity ? <><p className="muted">Sign in with your confirmed Ohio State email to trade. Ages 18 and up.</p><Link className="primary-button" href="/sign-in">Sign in to trade</Link></>
-          : !trader ? <><p className="rule-note">Complete your active profile and 18+ confirmation before trading.</p><Link className="primary-button" href="/account">Open your account</Link></>
-          : trader.blocked ? <p className="rule-note">{trader.blocked}</p>
-          : <TradeForm marketId={id} />}
-      </aside>
-    </div>
-  </main><MarketFooter /></div>;
+
+      <TradeDock
+        marketId={market.id}
+        title={tickerLabel(market.goalType, market.question, market.displayName)}
+        name={market.displayName}
+        photo={photo}
+        yesPrice={market.yesPrice}
+        liquidity={market.liquidity}
+        access={access}
+        balanceMicro={trader?.balanceMicro ?? null}
+        allowanceMicro={trader?.allowanceMicro ?? null}
+        heldYesMicro={held?.yesSharesMicro ?? 0}
+        heldNoMicro={held?.noSharesMicro ?? 0}
+        initialSide={initialSide}
+        openInitially={open && (requestedSide === "yes" || requestedSide === "no")}
+        tradingOpen={open}
+        position={held ? <Position held={held} yesPrice={market.yesPrice} className="goal-position-desktop" /> : null}
+      />
+    </main>
+    <MarketFooter />
+  </div>;
 }

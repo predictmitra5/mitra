@@ -1,22 +1,22 @@
 /*
- * Presentation helpers for goal cards, decided 2026-09-22 with the market UI
- * redesign (docs/DESIGN.md). Pure functions only, so every one is testable and
- * the server and browser render the same text.
+ * Presentation helpers for goals on the feed, the ticker and the goal page.
+ * Pure functions only, so every one is testable and the server and browser
+ * render the same text.
  *
- * The card borrows its structure from three places:
- * - YouTube: a large thumbnail carrying short, bold text, then avatar, title, meta.
- * - GoFundMe: the person named up front, and a single bar you read at a glance.
- * - Kalshi: the price as the headline number, volume, and the day's change.
+ * Since 2026-09-24 the look follows Kalshi's (docs/DESIGN.md, section 9): the
+ * chance as the headline number, today's change to one decimal, time left in
+ * words, and play-point volume.
  */
 
-export type GoalType = "gpa" | "club" | "internship" | "gym" | "launch" | "own_words" | "other";
+export type GoalType = "gpa" | "club" | "internship" | "gym" | "running" | "launch" | "own_words" | "other";
 
-/** Short category names for a card's corner chip. */
+/** Category names, as the feed's tabs and each card's kicker show them. */
 const CATEGORY: Record<string, string> = {
   gpa: "Grades",
   club: "Clubs",
   internship: "Internships",
   gym: "Gym",
+  running: "Running",
   launch: "Launches",
   // "Bet on literally anything" (2026-09-24): a goal in the person's own words.
   own_words: "Anything",
@@ -27,12 +27,6 @@ export function categoryLabel(goalType: string | null): string {
   return CATEGORY[goalType ?? "other"] ?? "Goal";
 }
 
-const THUMBNAIL_MAX = 34;
-
-function titleCase(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 function clip(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max - 1);
@@ -41,12 +35,12 @@ function clip(text: string, max: number): string {
 }
 
 /**
- * The big text on a thumbnail: the stake, in as few words as possible, the way
- * a YouTube thumbnail says "BOTH SOLD?" rather than the video's full title.
- * Derived from the template wording, which is fixed per goal type. Anything that
- * does not match falls back to a trimmed version of the question itself.
+ * What the goal is about, in as few words as possible: "deadlift 315 lb",
+ * "3.8 GPA", "Google offer", "half marathon under 1:59:00". Derived from the
+ * template wording, which is fixed per goal type; anything else falls back to
+ * the verb phrase after "Will <name>". Casing is kept as the person wrote it.
  */
-export function thumbnailText(goalType: string | null, question: string, displayName?: string): string {
+export function stakeText(goalType: string | null, question: string, displayName?: string): string {
   const q = question.trim();
   // "Will <name> …" with the name stripped exactly, when it is known. Shape alone
   // cannot tell a two-word name ("Sam Lee launch") from a name and a verb ("Sam launch").
@@ -54,56 +48,51 @@ export function thumbnailText(goalType: string | null, question: string, display
     ? q.slice(`will ${displayName} `.length)
     : null;
   // The gym template is "Will <name> <achievement> by <date>?", so with the name
-  // known the achievement is exact. The verb pattern below guessed the name's
-  // length and took a surname as part of the lift ("Rivera bench press").
+  // known the achievement is exact. A verb pattern would guess the name's length
+  // and take a surname as part of the lift ("Rivera bench press").
   if (goalType === "gym" && named) {
     const achievement = named.replace(/ by [^?]+\?$/i, "");
-    if (achievement && achievement !== named) return clip(titleCase(achievement), THUMBNAIL_MAX);
+    if (achievement && achievement !== named) return achievement;
   }
-  const patterns: Record<string, RegExp> = {
-    gpa: /at least an? ([0-9.]+) GPA/i,
-    club: /admission to (.+?) by /i,
-    internship: /internship offer from (.+?) by /i,
-    gym: /^Will .+? ((?:[a-z]+ )?(?:run|lift|deadlift|squat|bench|press|swim|bike|climb|hit|do|complete|finish)\b.+?) by /i,
-  };
-  const match = goalType && patterns[goalType] ? patterns[goalType].exec(q) : null;
-  if (match) {
-    if (goalType === "gpa") return `${match[1]} GPA`;
-    if (goalType === "internship") return clip(`${match[1]} internship`, THUMBNAIL_MAX);
-    return clip(titleCase(match[1]), THUMBNAIL_MAX);
-  }
-  // Own words, or wording that changed: take the verb phrase after "Will <name>".
+  const gpa = goalType === "gpa" ? /at least an? ([0-9.]+) GPA/i.exec(q) : null;
+  if (gpa) return `${Number(gpa[1])} GPA`;
+  const club = goalType === "club" ? /admission to (.+?) by /i.exec(q) : null;
+  if (club) return club[1];
+  const internship = goalType === "internship" ? /internship offer from (.+?) by /i.exec(q) : null;
+  if (internship) return `${internship[1]} offer`;
+  const running = goalType === "running" ? / run an? (.+?)(?: in under ([0-9:]+))? by [^?]+\?$/i.exec(q) : null;
+  if (running) return running[2] ? `${running[1]} under ${running[2]}` : running[1];
+  const gym = goalType === "gym"
+    ? /^Will .+? ((?:[a-z]+ )?(?:run|lift|deadlift|squat|bench|press|swim|bike|climb|hit|do|complete|finish)\b.+?) by /i.exec(q)
+    : null;
+  if (gym) return gym[1];
+  // Own words, or wording that changed: take the verb phrase after "Will <name>"
+  // (or "Will I"). A goal in the person's own words keeps a trailing "by …",
+  // because "accepted by Stanford" must not lose "by Stanford".
   const lead = named ?? q.replace(/^Will \S+ /i, "");
   const phrase = lead.replace(/\?$/, "").replace(/ by [^?]+$/i, (m) => (goalType === "own_words" ? m : ""));
-  return clip(titleCase(phrase || q), THUMBNAIL_MAX);
+  return phrase || q;
+}
+
+const TICKER_MAX = 30;
+
+/** The ticker's label: the first name and the stake, as "Luis deadlift 315 lb". */
+export function tickerLabel(goalType: string | null, question: string, displayName: string): string {
+  const first = displayName.trim().split(/\s+/)[0] ?? "";
+  const stake = stakeText(goalType, question, displayName).trim();
+  return clip([first, stake].filter(Boolean).join(" ") || "Goal", TICKER_MAX);
 }
 
 /**
- * The card title: the full question, minus the trailing deadline, which the
- * thumbnail badge already shows. Only template goals are trimmed; a goal in the
- * person's own words keeps every word, because "accepted by Stanford" must not
- * lose "by Stanford".
+ * The card title: the full question, minus the trailing deadline on template
+ * goals, since the card says how long is left. A goal in the person's own words
+ * keeps every word, because "accepted by Stanford" must not lose "by Stanford".
  */
 export function cardTitle(goalType: string | null, question: string): string {
   const q = question.trim();
   if (!goalType || goalType === "own_words" || goalType === "other") return q;
   const trimmed = q.replace(/ by [^?]+\?$/i, "?");
   return trimmed.length >= 12 ? trimmed : q;
-}
-
-/**
- * A stock-ticker symbol for the scrolling tape (2026-09-24): the first name and
- * the stake's first word, as "MAYA·3.8GPA" or "LUIS·DEADLIFT". Decoration only;
- * the full question is always one click away.
- */
-export function tickerSymbol(goalType: string | null, question: string, displayName: string): string {
-  const first = (displayName.trim().split(/\s+/)[0] ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "GOAL";
-  const words = thumbnailText(goalType, question, displayName).toUpperCase().replace(/…/g, "")
-    .replace(/[^A-Z0-9.\s]/g, "").trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return first;
-  // A number reads better with its unit: "3.8 GPA" becomes "3.8GPA", not "3.8".
-  const stake = (/^\d/.test(words[0]) && words[1] ? words[0] + words[1] : words[0]).slice(0, 10);
-  return `${first}·${stake}`;
 }
 
 /** One or two letters for an avatar, from a display name. */
@@ -115,14 +104,19 @@ export function initials(displayName: string): string {
   return (first + last).toUpperCase();
 }
 
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
-/** Play points traded, as "12.4K pts". Micro-units in, compact text out. */
+/** Play points traded, as "4,138 pts traded". Micro-units in. */
 export function volumeLabel(volumeMicro: number): string {
   const points = Math.max(0, volumeMicro) / 1_000_000;
   if (points === 0) return "No trades yet";
   if (points < 1) return "<1 pt traded";
-  return `${compact.format(points)} pts traded`;
+  return `${whole.format(points)} pts traded`;
+}
+
+/** Points to one decimal, as "47.1". Micro-units in. */
+export function pointsText(micro: number, digits = 1): string {
+  return (micro / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 /** A whole percent for display. Never 0 or 100: a binary market is never certain. */
@@ -131,45 +125,39 @@ export function percent(yesPrice: number): number {
 }
 
 /**
- * The day's change as a signed whole number of percentage points, with a
- * direction. Arrows carry the direction so it never rests on colour alone.
+ * A price change in percentage points to one decimal, with its direction.
+ * Arrows carry the direction, so it never rests on colour alone. Rounds the
+ * size and then reapplies the sign, so equal moves up and down read the same.
  */
-export function changeLabel(change24hBp: number): { text: string; direction: "up" | "down" | "flat" } {
-  // Round the size, then reapply the sign. Math.round alone rounds -11.5 to -11
-  // but 11.5 to 12, so equal moves up and down would show different sizes.
-  const points = Math.sign(change24hBp) * Math.round(Math.abs(change24hBp) / 100);
-  if (points === 0) return { text: "0", direction: "flat" };
-  return points > 0
-    ? { text: `${points}`, direction: "up" }
-    : { text: `${Math.abs(points)}`, direction: "down" };
+export function changeLabel(changeBp: number): { text: string; direction: "up" | "down" | "flat" } {
+  const tenths = Math.round(Math.abs(changeBp) / 10);
+  if (tenths === 0) return { text: "0.0", direction: "flat" };
+  return { text: (tenths / 10).toFixed(1), direction: changeBp > 0 ? "up" : "down" };
 }
 
-/** "Closes in 3d", "Closes in 5h", "Closed". Server-computed, so no clock skew. */
-export function closesIn(deadline: Date, now: Date): string {
-  const ms = deadline.getTime() - now.getTime();
-  if (ms <= 0) return "Closed";
+function plural(n: number, unit: string): string {
+  return `${n} ${unit}${n === 1 ? "" : "s"}`;
+}
+
+/** "12 days", "5 hours", "4 months"; null once the moment has passed. */
+function duration(ms: number): string | null {
+  if (ms <= 0) return null;
   const hours = ms / 3_600_000;
-  if (hours < 1) return "< 1h left";
-  if (hours < 48) return `${Math.floor(hours)}h left`;
+  if (hours < 1) return "under an hour";
+  if (hours < 48) return plural(Math.floor(hours), "hour");
   const days = Math.round(hours / 24);
-  if (days < 60) return `${days}d left`;
-  return `${Math.round(days / 30)}mo left`;
+  if (days < 60) return plural(days, "day");
+  return plural(Math.round(days / 30), "month");
 }
 
-/** "2d ago", in the manner of a YouTube meta line. */
-export function ago(then: Date, now: Date): string {
-  const ms = Math.max(0, now.getTime() - then.getTime());
-  const hours = ms / 3_600_000;
-  if (hours < 1) return "just now";
-  if (hours < 24) return `${Math.floor(hours)}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+/** "12 days left" on a card. Server-computed, so no clock skew. */
+export function timeLeft(deadline: Date, now: Date): string {
+  const words = duration(deadline.getTime() - now.getTime());
+  return words ? `${words.charAt(0).toUpperCase()}${words.slice(1)} left` : "Closed";
 }
 
-/** Short month and day for a rundown row, like Kalshi's "SEP 24". */
-export function shortDate(value: Date): string {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })
-    .format(value)
-    .toUpperCase();
+/** "closes in 12 days" beside the person on a goal page. */
+export function closesInWords(deadline: Date, now: Date): string {
+  const words = duration(deadline.getTime() - now.getTime());
+  return words ? `closes in ${words}` : "trading closed";
 }

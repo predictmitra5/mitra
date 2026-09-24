@@ -8,7 +8,7 @@ import { loadForReview } from "@/modules/evidence/review";
 import { readOriginal, signedOriginalUrl } from "@/modules/evidence/storage";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { StatementForm } from "./statement-form";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "Review proof", robots: { index: false } };
 // Holds a short-lived link to a private document. Never cache this.
@@ -18,7 +18,7 @@ export default async function ReviewEvidencePage({ params }: PageProps<"/review/
   const { id } = await params;
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
 
   let item;
   try {
@@ -32,7 +32,7 @@ export default async function ReviewEvidencePage({ params }: PageProps<"/review/
 
   const shell = (children: React.ReactNode) => (
     <div className="market-shell">
-      <MarketHeader signedIn ownerQueue={queue} />
+      <MarketHeader viewer={viewer} />
       <main className="account-main">
         <div className="account-topline">
           <span className="eyebrow">REVIEW PROOF</span>

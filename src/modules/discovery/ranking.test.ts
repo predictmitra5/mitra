@@ -8,7 +8,6 @@ import {
   interest,
   isClosingSoon,
   isJustAdded,
-  justAdded,
   newbornBonus,
   rankMarkets,
   score,
@@ -208,7 +207,6 @@ describe("rankMarkets", () => {
 
   it("handles an empty feed", () => {
     expect(rankMarkets([], now)).toEqual([]);
-    expect(justAdded([], now)).toEqual([]);
   });
 
   it("does not mutate its input", () => {
@@ -216,20 +214,5 @@ describe("rankMarkets", () => {
     const copy = input.map((m) => ({ ...m }));
     rankMarkets(input, now);
     expect(input).toEqual(copy);
-  });
-});
-
-describe("justAdded", () => {
-  it("lists only goals inside the window, newest approval first", () => {
-    const old = signals({ id: "old", approvedAt: new Date(now.getTime() - 10 * 24 * hour) });
-    const recent = signals({ id: "recent", approvedAt: new Date(now.getTime() - 5 * hour) });
-    const newest = signals({ id: "newest", approvedAt: new Date(now.getTime() - hour) });
-    expect(justAdded([old, recent, newest], now).map((m) => m.id)).toEqual(["newest", "recent"]);
-  });
-
-  it("respects its limit", () => {
-    const fresh = Array.from({ length: 12 }, (_, i) =>
-      signals({ id: `f-${i}`, approvedAt: new Date(now.getTime() - i * hour) }));
-    expect(justAdded(fresh, now, 3).map((m) => m.id)).toEqual(["f-0", "f-1", "f-2"]);
   });
 });

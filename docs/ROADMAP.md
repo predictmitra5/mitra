@@ -52,9 +52,9 @@ Verify: originals do not leak; each review is attributable; factual updates and 
 
 ## Slice 4 - Instrumented discovery
 
-Done (2026-09-19): the public feed at `/`, browsable without an account, with person tabs, a "Just added" row and a dismissible account prompt after two minutes. Ranking is recent activity over time decay, with a new-goal head start and a two-slot-per-person cap, recorded in DECISIONS.md and explainable per card. Exposure and click events are recorded from day one, without viewer identity.
+Done (2026-09-19): the public feed at `/`, browsable without an account, with a dismissible account prompt after two minutes. Person tabs and the Just added row were replaced on 2026-09-24 by category tabs, search that filters the loaded goals, and a featured goal moving most today (DECISIONS.md). Ranking is recent activity over time decay, with a new-goal head start and a two-slot-per-person cap, recorded in DECISIONS.md and explainable per card. Exposure and click events are recorded from day one, without viewer identity.
 
-Remaining here: per-viewer measurement and any personalization, which need the discovery privacy decision (D08, D09) first; search; and any ranking change informed by what the recorded events actually show.
+Remaining here: per-viewer measurement and any personalization, which need the discovery privacy decision (D08, D09) first; search across goals that are not on the feed; and any ranking change informed by what the recorded events actually show.
 
 Record the agreed exposure and action events when the first usable feed is introduced. After the dedicated ranking interview, implement an explainable baseline with the chosen eligibility, exploration and diversity behavior; record its version.
 

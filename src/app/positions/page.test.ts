@@ -6,19 +6,20 @@ const mocks = vi.hoisted(() => ({ identity: vi.fn(), database: vi.fn(), load: vi
 vi.mock("@/modules/auth/server", () => ({ currentIdentity: mocks.identity }));
 vi.mock("@/db/client", () => ({ getDb: mocks.database }));
 vi.mock("@/modules/account/positions", async (original) => ({ ...await original<object>(), loadPositions: mocks.load }));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, usePathname: () => "/positions" }));
 vi.mock("next/link", () => ({ default: ({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) => React.createElement("a", { href, className }, children) }));
 import Positions, { metadata, dynamic } from "./page";
 import { PositionsView } from "./positions-view";
 import { PositionsError, type PositionsPage } from "@/modules/account/positions";
 
-const fixture: PositionsPage = { total: 1, page: 1, pages: 1, goals: [{
-  marketId: "fixture-id", question: "Will Alex join the chess club?", goalType: "club", yesPrice: 0.62, displayName: "Alex", handle: "alex", photoUpdatedAt: null,
+const fixture: PositionsPage = { total: 1, page: 1, pages: 1, totals: { valueMicro: 12_345_678, costMicro: 4_567_891, gainMicro: 7_777_787 }, goals: [{
+  marketId: "fixture-id", question: "Will Alex be offered admission to Chess Club by October 1, 2026?", goalType: "club", yesPrice: 0.62, displayName: "Alex", handle: "alex", photoUpdatedAt: null,
   status: "open", deadlineAt: new Date("2026-10-01T03:59:00Z"), evidenceDeadlineAt: new Date("2026-10-08T03:59:00Z"),
   contestEndsAt: null, ruledOutcome: null, tradingOpen: true, contestOpen: false,
-  yesSharesMicro: 1, noSharesMicro: 12_345_678, yesCostBasisMicro: 1, noCostBasisMicro: 4_567_890,
+  yesSharesMicro: 1_000_000, noSharesMicro: 12_345_678, yesCostBasisMicro: 400_000, noCostBasisMicro: 4_567_890,
 }] };
-const now = new Date("2026-09-20T12:00:00Z");
+const empty: PositionsPage = { total: 0, goals: [], page: 1, pages: 1, totals: { valueMicro: 0, costMicro: 0, gainMicro: 0 } };
+const view = (data: PositionsPage) => renderToStaticMarkup(React.createElement(PositionsView, { data }));
 beforeEach(() => {
   vi.resetAllMocks(); vi.stubGlobal("React", React);
   mocks.identity.mockResolvedValue({ id: "verified-user" }); mocks.database.mockReturnValue("database"); mocks.load.mockResolvedValue(fixture);
@@ -34,13 +35,13 @@ describe("positions page authorization and presentation", () => {
   it("takes identity only from the server, including when a user query parameter is forged", async () => {
     const rendered = await Positions({ searchParams: Promise.resolve({ page: "2", userId: "someone-else" }), params: Promise.resolve({}) });
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith("database", "verified-user", 2);
-    expect(renderToStaticMarkup(rendered)).toContain("Your predictions.");
+    expect(renderToStaticMarkup(rendered)).toContain("<h1>Positions</h1>");
     expect(dynamic).toBe("force-dynamic"); expect(metadata.robots).toEqual({ index: false, follow: false });
   });
   it("shows safe errors and never treats an unavailable query as an empty portfolio", async () => {
     mocks.load.mockRejectedValue(new Error("private SQL parameters"));
     const html = renderToStaticMarkup(await Positions({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }));
-    expect(html).toContain("Predictions unavailable"); expect(html).not.toContain("private SQL"); expect(html).not.toContain("Your next prediction starts here");
+    expect(html).toContain("Positions unavailable"); expect(html).not.toContain("private SQL"); expect(html).not.toContain("No positions yet");
     mocks.load.mockRejectedValue(new PositionsError("PROFILE_REQUIRED", "Complete your active account."));
     expect(renderToStaticMarkup(await Positions({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }))).toContain("Finish setting up your account");
   });
@@ -48,37 +49,36 @@ describe("positions page authorization and presentation", () => {
     const html = renderToStaticMarkup(await Positions({ searchParams: Promise.resolve({ page: ["1", "2"] }), params: Promise.resolve({}) }));
     expect(html).toContain("Open the first page"); expect(mocks.database).not.toHaveBeenCalled();
   });
-  it("renders both sides with all six decimals and keeps held cost distinct from sale value", () => {
-    const html = renderToStaticMarkup(React.createElement(PositionsView, { now, data: fixture }));
-    expect(html).toContain("0.000001"); expect(html).toContain("12.345678"); expect(html).toContain("4.56789");
-    expect(html).toContain("YES"); expect(html).toContain("NO"); expect(html).toContain("current sale value");
-    expect(html).toContain('/markets/fixture-id'); expect(html).toContain("Sep 30, 2026");
+  it("lists each side held with its shares and price paid, and the value with the change since bought", () => {
+    const html = view(fixture);
+    expect(html).toContain('/markets/fixture-id');
+    // Template wording without its deadline, since the list shows dates elsewhere.
+    expect(html).toContain("Will Alex be offered admission to Chess Club?");
+    expect(html).toContain('side-yes">Yes</span> · 1.0 shares · paid 40¢');
+    expect(html).toContain('side-no">No</span> · 12.3 shares · paid 37¢');
+    // 1 Yes share at 62¢ plus 12.345678 No shares at 38¢ = 5.311 points, against 4.968 paid.
+    expect(html).toContain("5.3 pts"); expect(html).toContain("+0.3");
+    expect(html).toContain("12.3 pts"); expect(html).toContain("+7.8");
+    expect(html).toContain("not what selling them would return");
   });
-  it("distinguishes pending payouts from an open objection window and supports empty/paginated states", () => {
-    const pending = { ...fixture, goals: [{ ...fixture.goals[0], status: "ruled" as const, tradingOpen: false, contestOpen: false, ruledOutcome: "yes" as const, contestEndsAt: new Date("2026-10-09T03:59:00Z") }] };
-    expect(renderToStaticMarkup(React.createElement(PositionsView, { now, data: pending }))).toContain("Payout pending");
-    expect(renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...pending, goals: [{ ...pending.goals[0], contestOpen: true }] } }))).toContain("Ruling · objections open");
-    expect(renderToStaticMarkup(React.createElement(PositionsView, { now, data: { total: 0, goals: [], page: 1, pages: 1 } }))).toContain("Your next prediction starts here");
-    const pages = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...fixture, page: 2, pages: 3 } }));
+  it("says where a closed holding stands: proof due, objections open, or payout pending", () => {
+    const closed = { ...fixture, goals: [{ ...fixture.goals[0], tradingOpen: false, status: "closed" as const }] };
+    expect(view(closed)).toContain("Trading closed · Proof due Oct 7");
+    const ruled = { ...fixture.goals[0], status: "ruled" as const, tradingOpen: false, ruledOutcome: "yes" as const, contestEndsAt: new Date("2026-10-09T03:59:00Z") };
+    expect(view({ ...fixture, goals: [{ ...ruled, contestOpen: true }] })).toContain("Ruled Yes · Objections close Oct 8");
+    expect(view({ ...fixture, goals: [{ ...ruled, contestOpen: false }] })).toContain("Objections closed · Payout pending");
+  });
+  it("sends an empty portfolio to the public feed, and pages through long ones", () => {
+    const html = view(empty);
+    expect(html).toContain("No positions yet"); expect(html).toContain('href="/"'); expect(html).toContain("Browse goals");
+    const pages = view({ ...fixture, page: 2, pages: 3 });
     expect(pages).toContain('/positions?page=1'); expect(pages).toContain('/positions?page=3');
   });
-  it("labels an elapsed objection window as closed rather than closing", () => {
-    const ruled = { ...fixture.goals[0], status: "ruled" as const, tradingOpen: false, ruledOutcome: "no" as const, contestEndsAt: new Date("2026-10-09T03:59:00Z") };
-    const open = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...fixture, goals: [{ ...ruled, contestOpen: true }] } }));
-    const elapsed = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...fixture, goals: [{ ...ruled, contestOpen: false }] } }));
-    expect(open).toContain("Objections close<"); expect(elapsed).toContain("Objections closed<");
-  });
-  it("sends an empty portfolio to the public feed", () => {
-    const html = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { total: 0, goals: [], page: 1, pages: 1 } }));
-    expect(html).toContain('href="/"'); expect(html).toContain("Browse goals"); expect(html).not.toContain("shared market link");
-  });
-  it("shows the public chance with the feed's bar, and says when it is the closing number", () => {
-    const open = renderToStaticMarkup(React.createElement(PositionsView, { now, data: fixture }));
-    expect(open).toContain("62%"); expect(open).toContain("chance of YES"); expect(open).toContain("62 percent chance of YES");
-    expect(open).toContain("thumb art-club");
-    const closed = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...fixture, goals: [{ ...fixture.goals[0], tradingOpen: false, status: "closed" as const }] } }));
-    expect(closed).toContain("chance of YES when trading closed");
-    const unpriced = renderToStaticMarkup(React.createElement(PositionsView, { now, data: { ...fixture, goals: [{ ...fixture.goals[0], yesPrice: null }] } }));
-    expect(unpriced).not.toContain("chance of YES");
+  it("keeps the public chance for screen readers, and says when it is the closing number", () => {
+    expect(view(fixture)).toContain("62% chance of Yes.");
+    const closed = { ...fixture, goals: [{ ...fixture.goals[0], tradingOpen: false, status: "closed" as const }] };
+    expect(view(closed)).toContain("62% chance of Yes when trading closed.");
+    const unpriced = view({ ...fixture, goals: [{ ...fixture.goals[0], yesPrice: null }] });
+    expect(unpriced).not.toContain("chance of Yes"); expect(unpriced).not.toContain("holding-value");
   });
 });

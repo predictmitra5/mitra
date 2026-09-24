@@ -64,6 +64,42 @@ describe("buildGoalDraft", () => {
     expect(draft.resolutionCriteria).toContain("the app stores no video");
   });
 
+  it("counts only an official race result for running goals, with chip time when listed", () => {
+    const timed = buildGoalDraft("Jordan Patel", { type: "running", distance: "half", time: "1:59:00", deadline: "2027-04-30" }, now);
+    expect(timed.goalType).toBe("running");
+    expect(timed.question).toBe("Will Jordan Patel run a half marathon in under 1:59:00 by April 30, 2027?");
+    expect(timed.resolutionCriteria).toContain("race's official published results");
+    expect(timed.resolutionCriteria).toContain("chip time counts; otherwise the official finish time");
+    expect(timed.resolutionCriteria).toContain("logged only in an app or on a watch does not count");
+    expect(timed.resolutionCriteria).toMatch(/If no proof reaches the owner/);
+
+    const untimed = buildGoalDraft("Jo", { type: "running", distance: "5k", time: "  ", deadline: "2026-11-01" }, now);
+    expect(untimed.question).toBe("Will Jo run a 5K by November 1, 2026?");
+    expect(untimed.resolutionCriteria).not.toContain("chip time");
+  });
+
+  it("writes race distances and target times the way people say them", () => {
+    const draft = (distance: string, extra: { miles?: string; time?: string } = {}) =>
+      buildGoalDraft("Jo", { type: "running", distance, deadline: "2026-11-01", ...extra }, now).question;
+    expect(draft("10k")).toBe("Will Jo run a 10K by November 1, 2026?");
+    expect(draft("marathon", { time: "4:05:00" })).toBe("Will Jo run a marathon in under 4:05:00 by November 1, 2026?");
+    expect(draft("miles", { miles: "10" })).toBe("Will Jo run a 10-mile race by November 1, 2026?");
+    expect(draft("miles", { miles: "8" })).toBe("Will Jo run an 8-mile race by November 1, 2026?");
+    expect(draft("miles", { miles: "13.1", time: "25:00" })).toBe("Will Jo run a 13.1-mile race in under 25:00 by November 1, 2026?");
+    expect(draft("5k", { time: "0:24:30" })).toBe("Will Jo run a 5K in under 24:30 by November 1, 2026?");
+  });
+
+  it("rejects running goals without a real distance or time", () => {
+    const base = { type: "running" as const, deadline: "2026-11-01" };
+    expect(() => buildGoalDraft("Jo", { ...base, distance: "ultra" }, now)).toThrow(GoalInputError);
+    for (const miles of ["", "0", "0.5", "101", "ten", "5.25"]) {
+      expect(() => buildGoalDraft("Jo", { ...base, distance: "miles", miles }, now)).toThrow(GoalInputError);
+    }
+    for (const time of ["25", "25:60", "1:60:00", "0:00", "24:00:00", "fast"]) {
+      expect(() => buildGoalDraft("Jo", { ...base, distance: "5k", time }, now)).toThrow(GoalInputError);
+    }
+  });
+
   it("keeps own-words goals but always appends the no-proof rule", () => {
     const draft = buildGoalDraft("Jake", {
       type: "own_words",

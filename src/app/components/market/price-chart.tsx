@@ -1,39 +1,37 @@
 "use client";
 
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+import { changeLabel } from "@/modules/discovery/present";
 
 /*
- * A goal's YES probability over time. Decided 2026-09-22 with the market UI
- * redesign; built to the data-visualisation rules rather than by eye:
+ * A goal's chance of Yes over time, in the Kalshi direction (2026-09-24,
+ * docs/DESIGN.md section 9): the chance large above a step line, dashed
+ * gridlines, labels on the right, and 1D, 1W, 1M and All.
  *
- * - One series, so no legend box: the heading names what is plotted.
- * - A 2px step line. A market's price holds flat between trades, so a sloped
- *   line would draw movement that never happened.
- * - A 10% wash under the line, hairline solid gridlines one step off the surface.
- * - The series colours were validated for the dark surface (lightness band,
- *   chroma, contrast). Text never wears them: labels use the text tokens.
- * - A crosshair snaps to the nearest point, with the value leading the tooltip.
- *   The same readout follows the keyboard, and a table carries every value, so
- *   nothing is reachable only by hovering.
- *
- * Since 2026-09-24 it reads like a stock chart: the current price large, the
- * change over the chosen range beside it, and 1D, 1W, 1M and All. The line
- * takes the validated YES colour when the range ended up, and the validated NO
- * colour when it ended down, the way a stock app colours a rising or falling day.
+ * - A step line. A market's price holds flat between trades, so a sloped line
+ *   would draw movement that never happened.
+ * - The line is green when the chosen range ended up and red when it ended
+ *   down; the ▲ or ▼ in the headline carries the direction in words too.
+ * - Everything is placed by percentage inside the plot: the line is an SVG
+ *   stretched to the plot with a stroke that does not stretch, and the
+ *   gridlines, labels and end dot are ordinary elements. So the chart is right
+ *   at any width from the first paint, with nothing to measure. (It used to
+ *   measure itself, and was the wrong size until it had.)
+ * - A crosshair snaps to the nearest point. The same readout follows the
+ *   keyboard, and a table carries every value, so nothing needs a pointer.
  */
 
 export type ChartPoint = { at: string; yesBp: number };
 
-const PAD = { top: 14, right: 44, bottom: 26, left: 6 };
-const Y_TICKS = [0, 25, 50, 75, 100];
+const Y_TICKS = [100, 75, 50, 25, 0];
 const DAY_MS = 24 * 3_600_000;
 const RANGES = [
   { key: "1D", label: "1D", ms: DAY_MS, words: "today" },
-  { key: "1W", label: "1W", ms: 7 * DAY_MS, words: "this week" },
-  { key: "1M", label: "1M", ms: 30 * DAY_MS, words: "this month" },
-  { key: "ALL", label: "All", ms: Infinity, words: "all time" },
+  { key: "1W", label: "1W", ms: 7 * DAY_MS, words: "past week" },
+  { key: "1M", label: "1M", ms: 30 * DAY_MS, words: "past month" },
+  { key: "ALL", label: "All", ms: Infinity, words: "since it opened" },
 ] as const;
-type RangeKey = (typeof RANGES)[number]["key"];
+export type RangeKey = (typeof RANGES)[number]["key"];
 
 const pct = (bp: number) => `${Math.round(bp / 100)}%`;
 const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
@@ -63,46 +61,30 @@ export function windowed(data: Datum[], rangeMs: number): Datum[] {
   return out.length >= 2 ? out : [...out, { t: end, v: out[out.length - 1].v }];
 }
 
+/** The step line in a 1000 by 1000 box, which the SVG stretches to the plot. */
+export function stepPath(data: Datum[]): string {
+  if (data.length === 0) return "";
+  const t0 = data[0].t, span = Math.max(1, data[data.length - 1].t - t0);
+  const x = (t: number) => (((t - t0) / span) * 1000).toFixed(2);
+  const y = (v: number) => ((1 - v / 10_000) * 1000).toFixed(2);
+  let line = `M${x(data[0].t)},${y(data[0].v)}`;
+  for (let i = 1; i < data.length; i += 1) line += `H${x(data[i].t)}V${y(data[i].v)}`;
+  return line;
+}
+
 export function PriceChart({
-  points, height = 220, label = "Chance of YES", header = false, ranges = false,
+  points, variant = "page", initialRange = "ALL", label = "Chance of Yes",
 }: {
   points: ChartPoint[];
-  height?: number;
+  /** "page": the chance headline, the change and the range buttons. "card": the line alone. */
+  variant?: "page" | "card";
+  initialRange?: RangeKey;
   label?: string;
-  /** The stock-app header: current price and the change over the range. */
-  header?: boolean;
-  /** 1D, 1W, 1M and All. */
-  ranges?: boolean;
 }) {
-  const wrap = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(560);
+  const area = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<number | null>(null);
-  const [range, setRange] = useState<RangeKey>("ALL");
+  const [range, setRange] = useState<RangeKey>(initialRange);
   const titleId = useId();
-
-  // Measure the real width so strokes and text are drawn at 1:1. Three layers,
-  // because a ResizeObserver alone was not enough: it never fires while a page
-  // is hidden or its rendering is throttled, and the chart then stayed at its
-  // starting guess and ran off a phone screen.
-  //  1. Measure synchronously on mount, before the first paint.
-  //  2. Observe for later resizes, and listen to window resize as a fallback.
-  //  3. The SVG has a viewBox, so even an unmeasured chart scales to fit.
-  useLayoutEffect(() => {
-    const node = wrap.current;
-    if (!node) return;
-    const measure = () => {
-      const next = Math.round(node.clientWidth);
-      if (next > 0) setWidth((current) => (current === next ? current : next));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
 
   const all = useMemo(
     () => points.map((p) => ({ t: new Date(p.at).getTime(), v: p.yesBp })).sort((a, b) => a.t - b.t),
@@ -111,44 +93,41 @@ export function PriceChart({
   const chosen = RANGES.find((r) => r.key === range) ?? RANGES[3];
   const data = useMemo(() => windowed(all, chosen.ms), [all, chosen.ms]);
 
-  const plotW = Math.max(40, width - PAD.left - PAD.right);
-  const plotH = Math.max(40, height - PAD.top - PAD.bottom);
-  const t0 = data[0]?.t ?? 0;
-  const t1 = data.at(-1)?.t ?? 1;
-  const span = Math.max(1, t1 - t0);
-  const x = (t: number) => PAD.left + ((t - t0) / span) * plotW;
-  const y = (v: number) => PAD.top + (1 - v / 10_000) * plotH;
-
   if (all.length < 2) {
     return (
-      <div className="chart-empty" role="img" aria-label={`${label}: not enough trading yet to draw a history.`}>
-        Not enough trading yet to draw a history.
+      <div className={`chart chart-${variant}`}>
+        {variant === "page" && all.length === 1 && (
+          <div className="chart-head"><div className="chart-now">
+            <strong className="chart-pct">{pct(all[0].v)}<span> chance</span></strong>
+          </div></div>
+        )}
+        <div className="chart-empty" role="img" aria-label={`${label}: not enough trading yet to draw a history.`}>
+          Not enough trading yet to draw a history.
+        </div>
       </div>
     );
   }
 
-  // Step-after: hold each price until the next point, then jump.
-  let line = `M${x(data[0].t)},${y(data[0].v)}`;
-  for (let i = 1; i < data.length; i += 1) line += `H${x(data[i].t)}V${y(data[i].v)}`;
-  const area = `${line}V${y(0)}H${x(data[0].t)}Z`;
+  const t0 = data[0].t;
+  const span = Math.max(1, data[data.length - 1].t - t0);
+  const xPct = (t: number) => ((t - t0) / span) * 100;
+  const yPct = (v: number) => (1 - v / 10_000) * 100;
 
-  const last = data.at(-1)!;
+  const last = data[data.length - 1];
   const first = data[0];
   const shown = active === null ? null : data[Math.min(active, data.length - 1)];
   const change = last.v - first.v;
   const trend = change > 0 ? "up" : change < 0 ? "down" : "flat";
-  const movePoints = Math.abs(Math.round(change / 100));
+  const move = changeLabel(change);
 
-  // Three evenly spaced ticks: dates normally, times of day for a short history.
+  // Three ticks: dates normally, times of day for a short history, and "Now" at the end.
   const tickFormat = span < SHORT_SPAN_MS ? clock : day;
-  const xTicks = [0, 0.5, 1].map((f) => t0 + f * span);
+  const xTicks = [tickFormat.format(t0), tickFormat.format(t0 + span / 2), "Now"];
 
   function nearest(clientX: number) {
-    const rect = wrap.current?.getBoundingClientRect();
+    const rect = area.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return;
-    // Convert screen pixels into drawing units, in case the viewBox is scaling.
-    const px = (clientX - rect.left) * (width / rect.width);
-    const target = t0 + ((px - PAD.left) / plotW) * span;
+    const target = t0 + ((clientX - rect.left) / rect.width) * span;
     let best = 0;
     for (let i = 1; i < data.length; i += 1) {
       if (Math.abs(data[i].t - target) < Math.abs(data[best].t - target)) best = i;
@@ -173,41 +152,33 @@ export function PriceChart({
   }
 
   const summary = `${label}: ${pct(first.v)} on ${day.format(first.t)}, ${pct(last.v)} now, `
-    + `${change === 0 ? "unchanged" : `${change > 0 ? "up" : "down"} ${movePoints} points`} ${chosen.words}.`;
-
-  const tipLeft = shown ? Math.min(Math.max(x(shown.t), 70), width - 70) : 0;
+    + `${trend === "flat" ? "unchanged" : `${trend} ${move.text} points`} ${chosen.words}.`;
+  const tipLeft = shown ? Math.min(Math.max(xPct(shown.t), 12), 88) : 0;
 
   return (
-    <figure className={`chart chart-${trend}`}>
-      <figcaption className="chart-caption" id={titleId}>{label}</figcaption>
-      {(header || ranges) && (
+    <figure className={`chart chart-${variant} chart-${trend}`}>
+      <figcaption className="sr-only" id={titleId}>{label}</figcaption>
+      {variant === "page" && (
         <div className="chart-head">
-          {header && (
-            <div className="chart-now">
-              <strong>{pct(shown ? shown.v : last.v)}</strong>
-              <span className={`chart-delta chart-delta-${trend}`}>
-                {trend === "flat" ? "No change" : <><span aria-hidden="true">{trend === "up" ? "▲" : "▼"}</span> {movePoints} pts</>}
-                {" "}<span className="chart-delta-range">{chosen.words}</span>
-              </span>
-            </div>
-          )}
-          {ranges && (
-            <div className="chart-ranges" role="group" aria-label="Time range">
-              {RANGES.map((option) => (
-                <button key={option.key} type="button" aria-pressed={range === option.key}
-                  className={range === option.key ? "is-active" : undefined}
-                  onClick={() => { setRange(option.key); setActive(null); }}>
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="chart-now" aria-live="polite">
+            <strong className="chart-pct">{pct(shown ? shown.v : last.v)}<span> chance</span></strong>
+            <span className={`chart-delta chart-delta-${trend}`}>
+              {trend === "flat" ? "0.0" : <><span aria-hidden="true">{trend === "up" ? "▲" : "▼"}</span> {move.text}</>}
+              {" "}<span className="chart-delta-range">{chosen.words}</span>
+            </span>
+          </div>
+          <div className="chart-ranges" role="group" aria-label="Time range">
+            {RANGES.map((option) => (
+              <button key={option.key} type="button" aria-pressed={range === option.key}
+                onClick={() => { setRange(option.key); setActive(null); }}>
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <div
-        ref={wrap}
         className="chart-plot"
-        style={{ height }}
         tabIndex={0}
         role="img"
         aria-labelledby={titleId}
@@ -218,63 +189,47 @@ export function PriceChart({
         onBlur={() => setActive(null)}
       >
         <p id={`${titleId}-summary`} className="sr-only">{summary}</p>
-        <svg
-          width="100%"
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="xMinYMid meet"
-          aria-hidden="true"
-        >
+        <div className="chart-area" ref={area} aria-hidden="true">
           {Y_TICKS.map((tick) => (
-            <g key={tick}>
-              <line className="chart-grid" x1={PAD.left} x2={PAD.left + plotW} y1={y(tick * 100)} y2={y(tick * 100)} />
-              <text className="chart-tick" x={PAD.left + plotW + 8} y={y(tick * 100)} dy="0.32em">{tick}%</text>
-            </g>
+            <div key={tick} className="chart-grid" style={{ top: `${100 - tick}%` }}>
+              <span className="chart-tick chart-tick-y">{tick}%</span>
+            </div>
           ))}
-          {xTicks.map((tick, i) => (
-            <text
-              key={tick}
-              className="chart-tick"
-              x={x(tick)}
-              y={height - 6}
-              textAnchor={i === 0 ? "start" : i === xTicks.length - 1 ? "end" : "middle"}
-            >
-              {tickFormat.format(tick)}
-            </text>
-          ))}
-          <path className="chart-area" d={area} />
-          <path className="chart-line" d={line} />
+          <svg className="chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
+            <path className="chart-line" d={stepPath(data)} vectorEffect="non-scaling-stroke" />
+          </svg>
+          {shown ? (
+            <>
+              <span className="chart-crosshair" style={{ left: `${xPct(shown.t)}%` }} />
+              <span className="chart-dot" style={{ left: `${xPct(shown.t)}%`, top: `${yPct(shown.v)}%` }} />
+            </>
+          ) : (
+            <span className="chart-dot" style={{ left: `${xPct(last.t)}%`, top: `${yPct(last.v)}%` }} />
+          )}
           {shown && (
-            <g>
-              <line className="chart-crosshair" x1={x(shown.t)} x2={x(shown.t)} y1={PAD.top} y2={PAD.top + plotH} />
-              <circle className="chart-dot" cx={x(shown.t)} cy={y(shown.v)} r={4} />
-            </g>
+            <div className="chart-tip" style={{ left: `${tipLeft}%` }}>
+              <strong>{pct(shown.v)}</strong>
+              <span>{moment.format(shown.t)}</span>
+            </div>
           )}
-          {!shown && (
-            <g>
-              <circle className="chart-dot chart-dot-live" cx={x(last.t)} cy={y(last.v)} r={4} />
-            </g>
-          )}
-        </svg>
-        {shown && (
-          <div className="chart-tip" style={{ left: `${(tipLeft / width) * 100}%` }} aria-hidden="true">
-            <span className="chart-tip-key" />
-            <strong>{pct(shown.v)}</strong>
-            <span>{moment.format(shown.t)}</span>
-          </div>
-        )}
+        </div>
+        <div className="chart-x" aria-hidden="true">
+          {xTicks.map((tick, i) => <span key={i} className="chart-tick">{tick}</span>)}
+        </div>
       </div>
-      <details className="chart-table">
-        <summary>Show as a table</summary>
-        <table>
-          <thead><tr><th scope="col">When (ET)</th><th scope="col">Chance of YES</th></tr></thead>
-          <tbody>
-            {[...all].reverse().map((point, i) => (
-              <tr key={`${point.t}-${i}`}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
+      {variant === "page" && (
+        <details className="chart-table">
+          <summary>Show as a table</summary>
+          <table>
+            <thead><tr><th scope="col">When (ET)</th><th scope="col">Chance of Yes</th></tr></thead>
+            <tbody>
+              {[...all].reverse().map((point, i) => (
+                <tr key={`${point.t}-${i}`}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
     </figure>
   );
 }

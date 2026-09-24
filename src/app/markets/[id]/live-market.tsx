@@ -1,39 +1,38 @@
 "use client";
 
-import { ProbabilityBar } from "@/app/components/market/goal-card";
 import { PriceChart, type ChartPoint } from "@/app/components/market/price-chart";
-import { flashFor, useLiveQuotes } from "@/app/components/market/live-quotes";
+import { useLiveQuotes } from "@/app/components/market/live-quotes";
+import { percent } from "@/modules/discovery/present";
 
 /*
- * The goal page's prices and chart, refreshed live (decided 2026-09-24). Both
- * read the same quote store, so they share one request per interval and never
- * disagree. The trade ticket still recomputes every quote on the server, so a
- * price shown here is never the price anyone is charged.
+ * The goal page's live parts (prices refresh about every 15 seconds, decided
+ * 2026-09-24): the chance headline and chart, and the line of numbers under
+ * it. They share the page's one quote request, so they never disagree. The
+ * trade panel still has the server compute every quote, so a price shown here
+ * is never the price anyone is charged.
  */
 
-const cents = (yesBp: number) => (yesBp / 100).toFixed(2);
-
-export function LivePrices({ id, yesPrice }: { id: string; yesPrice: number }) {
-  const live = useLiveQuotes([id]);
-  const quote = live.get(id);
-  const yesBp = quote ? quote.yesBp : Math.round(yesPrice * 10_000);
-  const flash = flashFor(yesPrice, quote);
-  const flashClass = flash ? ` flash flash-${flash}` : "";
-  return <>
-    <div className="market-prices" aria-label="Last market share prices" aria-live="polite">
-      <div><span>YES</span><strong key={`y${yesBp}`} className={flashClass.trim() || undefined}>{cents(yesBp)}<small>¢</small></strong></div>
-      <div><span>NO</span><strong key={`n${yesBp}`} className={flashClass.trim() || undefined}>{cents(10_000 - yesBp)}<small>¢</small></strong></div>
-    </div>
-    <ProbabilityBar yesPrice={yesBp / 10_000} />
-  </>;
-}
-
-export function LiveChart({ id, points, height }: { id: string; points: ChartPoint[]; height: number }) {
+export function LiveChart({ id, points }: { id: string; points: ChartPoint[] }) {
   const live = useLiveQuotes([id]);
   const quote = live.get(id);
   const last = points.at(-1);
   const series = quote && (!last || last.yesBp !== quote.yesBp)
     ? [...points, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }]
     : points;
-  return <PriceChart points={series} height={height} header ranges />;
+  return <PriceChart points={series} variant="page" />;
+}
+
+const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
+export function LiveStats({ id, yesPrice, volumeMicro, closes }: { id: string; yesPrice: number; volumeMicro: number; closes: string }) {
+  const quote = useLiveQuotes([id]).get(id);
+  const yes = percent(quote ? quote.yesBp / 10_000 : yesPrice);
+  const volume = (quote ? quote.volumeMicro : volumeMicro) / 1_000_000;
+  return (
+    <p className="goal-stats">
+      <span>Volume <strong>{volume >= 1 ? `${whole.format(volume)} pts` : volume > 0 ? "<1 pt" : "0 pts"}</strong></span>
+      <span>Closes <strong>{closes}</strong></span>
+      <span className="goal-stats-no">No price <strong>{100 - yes}¢</strong></span>
+    </p>
+  );
 }

@@ -5,7 +5,7 @@ import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
-import { justAdded, rankMarkets, type FeedReason, type MarketSignals, type RankedMarket } from "./ranking";
+import { rankMarkets, type FeedReason, type MarketSignals, type RankedMarket } from "./ranking";
 
 const { markets, profiles, trades, feedEvents, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -44,31 +44,25 @@ export type FeedCard = {
 /** One point of a goal's price history, for a chart. */
 export type PricePoint = { at: Date; yesBp: number };
 
-/** A featured goal carries its history, so the carousel can draw a chart. */
-export type FeaturedGoal = FeedCard & { series: PricePoint[] };
-
-/** A tab across the top of the feed. The owner chose to group by person. */
-export type FeedPerson = {
-  handle: string;
-  displayName: string;
-  photoUpdatedAt: Date | null;
-  openGoals: number;
-};
+/**
+ * The featured goal carries its history, so the feed can draw its chart.
+ * `moving` says it was chosen as the goal moving most today; when nothing
+ * moved, the leading traded goal stands in and is not called a mover.
+ */
+export type FeaturedGoal = FeedCard & { series: PricePoint[]; moving: boolean };
 
 export type Feed = {
+  /** Every open goal, in ranked order. */
   cards: FeedCard[];
-  justAdded: FeedCard[];
-  people: FeedPerson[];
-  /** The leading goals by rank, with price history, for the carousel. */
-  featured: FeaturedGoal[];
-  /** Open goals whose trading deadline is nearest. */
+  /** One goal with its chart, decided 2026-09-24: the one moving most today. */
+  featured: FeaturedGoal | null;
+  /** Open goals whose trading deadline is nearest, for the desktop side list. */
   closingSoon: FeedCard[];
-  /** Open goals whose price moved most in 24 hours, either way. */
-  movers: FeedCard[];
 };
 
-const FEATURED_COUNT = 5;
-const RUNDOWN_COUNT = 5;
+const CLOSING_SOON_COUNT = 5;
+/** How many goals the ticker carries. */
+export const TICKER_COUNT = 20;
 /** A chart wider than this many points is visually identical; keep payloads small. */
 const MAX_SERIES_POINTS = 120;
 
@@ -132,6 +126,46 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
 ): Promise<Feed> {
+  const cards = await readRankedCards(database, now);
+  const open = cards.filter((card) => card.tradingOpen);
+
+  // "Moving most today" (2026-09-24): the biggest 24-hour move either way, ties
+  // kept in rank order. When nothing moved, the leading traded goal stands in,
+  // because a chart of a goal nobody has traded is a flat line.
+  const mover = [...open]
+    .filter((card) => card.change24hBp !== 0)
+    .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))[0];
+  const pick = mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
+  let featured: FeaturedGoal | null = null;
+  if (pick) {
+    const history = (await readSeries(database, [pick.id])).get(pick.id) ?? [];
+    // End the line at the live price, so the chart agrees with the buttons beside it.
+    const current = { at: now, yesBp: Math.round(pick.yesPrice * 10_000) };
+    featured = { ...pick, series: thinSeries([...history, current]), moving: pick === mover };
+  }
+
+  return {
+    cards,
+    featured,
+    closingSoon: [...open]
+      .sort((a, b) => a.deadlineAt.getTime() - b.deadlineAt.getTime())
+      .slice(0, CLOSING_SOON_COUNT),
+  };
+}
+
+/** The leading goals for the price ticker on pages other than the feed. */
+export async function readTicker<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  now: Date = new Date(),
+): Promise<FeedCard[]> {
+  return (await readRankedCards(database, now)).slice(0, TICKER_COUNT);
+}
+
+/** Every open goal, ranked, with its volume and 24-hour change filled in. */
+async function readRankedCards<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  now: Date,
+): Promise<FeedCard[]> {
   const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
 
   const clickCounts = database
@@ -204,17 +238,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
       noSharesMicro: row.noSharesMicro,
     }));
 
-  const ranked = rankMarkets(signals, now);
-  const fresh = justAdded(ranked, now);
-
-  const people = new Map<string, FeedPerson>();
-  for (const row of signals) {
-    const existing = people.get(row.handle);
-    if (existing) existing.openGoals += 1;
-    else people.set(row.handle, { handle: row.handle, displayName: row.displayName, photoUpdatedAt: row.photoUpdatedAt, openGoals: 1 });
-  }
-
-  const cards = ranked.map((row) => toCard(row, now));
+  const cards = rankMarkets(signals, now).map((row) => toCard(row, now));
   const ids = cards.map((card) => card.id);
   const info = await readMarketInformation(database, ids, since);
   for (const card of cards) {
@@ -222,41 +246,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
     const then = info.priceThen.get(card.id);
     card.change24hBp = then === undefined ? 0 : Math.round(card.yesPrice * 10_000) - then;
   }
-  const byId = new Map(cards.map((card) => [card.id, card]));
-
-  // The carousel leads with goals that have been traded, still in rank order,
-  // because a featured chart with no history is a flat line. A new goal keeps
-  // its place in the ranked grid and the Just added strip; this only changes
-  // which goals the carousel draws a chart for.
-  const leading = [
-    ...cards.filter((card) => card.volumeMicro > 0),
-    ...cards.filter((card) => card.volumeMicro === 0),
-  ].slice(0, FEATURED_COUNT);
-  const series = await readSeries(database, leading.map((card) => card.id));
-  const featured: FeaturedGoal[] = leading.map((card) => {
-    const history = series.get(card.id) ?? [];
-    // End the line at the live price, so the chart agrees with the pills beside it.
-    const current = { at: now, yesBp: Math.round(card.yesPrice * 10_000) };
-    return { ...card, series: thinSeries([...history, current]) };
-  });
-
-  const open = cards.filter((card) => card.tradingOpen);
-
-  return {
-    cards,
-    justAdded: fresh.map((row) => byId.get(row.id) ?? toCard(row, now)),
-    people: [...people.values()].sort(
-      (a, b) => b.openGoals - a.openGoals || a.displayName.localeCompare(b.displayName),
-    ),
-    featured,
-    closingSoon: [...open]
-      .sort((a, b) => a.deadlineAt.getTime() - b.deadlineAt.getTime())
-      .slice(0, RUNDOWN_COUNT),
-    movers: [...open]
-      .filter((card) => card.change24hBp !== 0)
-      .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))
-      .slice(0, RUNDOWN_COUNT),
-  };
+  return cards;
 }
 
 /** A goal's live numbers, for pages that refresh prices while open. */

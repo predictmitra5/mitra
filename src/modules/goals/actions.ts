@@ -74,6 +74,8 @@ function goalInputFromForm(form: FormData): GoalInput | null {
       return { type, company: text(form, "company"), deadline };
     case "gym":
       return { type, achievement: text(form, "achievement"), deadline };
+    case "running":
+      return { type, distance: text(form, "distance"), miles: text(form, "miles"), time: text(form, "time"), deadline };
     case "own_words":
       return { type, question: text(form, "question"), criteria: text(form, "criteria"), deadline };
   }

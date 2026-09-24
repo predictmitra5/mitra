@@ -19,7 +19,7 @@ export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }
     ? "That email link is invalid or has expired. Open the latest link in the browser where you requested it, or request a new one."
     : notice === "signout-failed" ? "We couldn’t finish signing out. Please try again from your account." : undefined;
   return <div className="market-shell">
-    <MarketHeader signedIn={false} />
+    <MarketHeader viewer={null} />
     <main className="entry-grid">
       <section className="entry-form-panel" aria-labelledby="form-title">
         <div className="form-heading"><span className="eyebrow">YOUR NEXT CHAPTER</span><h1 id="form-title">{title}</h1><p>{description}</p></div>

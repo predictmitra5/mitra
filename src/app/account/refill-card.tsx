@@ -6,7 +6,13 @@ import { refillCash, type RefillResult } from "@/modules/account/refill-actions"
 import type { RefillStatus } from "@/modules/account/refill";
 import { formatMicro } from "@/modules/market/input";
 
-export function RefillCard({ status }: { status: RefillStatus }) {
+/**
+ * "Top up to 1,000 pts" on the account page (refills decided 2026-09-15; the
+ * button's wording 2026-09-24). Up to twice a month, counting available points
+ * only. A retry after an uncertain answer reuses the same request, so it can
+ * never credit twice.
+ */
+export function RefillButton({ status }: { status: RefillStatus }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const request = useRef<string | null>(null);
@@ -26,22 +32,23 @@ export function RefillCard({ status }: { status: RefillStatus }) {
         if (response.ok || response.code !== "UNAVAILABLE") request.current = null;
         router.refresh();
       } catch {
-        setResult({ ok: false, code: "UNAVAILABLE", error: "Your refill could not be confirmed. Retry to check the same refill safely." });
+        setResult({ ok: false, code: "UNAVAILABLE", error: "Your top-up could not be confirmed. Retry to check the same top-up safely." });
       } finally { submitting.current = false; }
     });
   }
 
-  return <section className="account-note" aria-labelledby="refill-heading">
-    <div className="section-head"><h2 id="refill-heading">Refill your points</h2><span className="status-pill">{status.remaining} of {status.monthlyLimit} left</span></div>
-    <p>Top up your available cash to {formatMicro(status.targetMicro)} play points. Points in open predictions don’t count toward this limit.</p>
-    <p className="field-hint">{status.monthLabel} · Resets at midnight Eastern time on the first of each month.</p>
-    {!status.decision.eligible && <p className="field-hint">{status.decision.reason === "MONTHLY_LIMIT_REACHED"
-      ? "You’ve used this month’s refills. More are available next month."
-      : `You can refill when your cash is below ${formatMicro(status.targetMicro)} points.`}</p>}
-    {result?.ok && <div className="form-success" role="status">Refill confirmed: {formatMicro(result.receipt.amountMicro)} points credited. Retrying a confirmed refill won’t add it again.</div>}
-    {result?.ok === false && <div className="form-error" role="alert">{result.error}</div>}
-    <button type="button" className="secondary-button" onClick={refill} disabled={pending || (!retry && !status.decision.eligible)}>
-      {pending ? "Checking refill…" : retry ? "Retry this refill" : `Refill to ${formatMicro(status.targetMicro)} points`}
+  const target = formatMicro(status.targetMicro);
+  return <div className="refill">
+    <button type="button" className="btn btn-quiet refill-button" onClick={refill} disabled={pending || (!retry && !status.decision.eligible)}>
+      {pending ? "Checking…" : retry ? "Retry this top-up" : `Top up to ${target} pts`}
     </button>
-  </section>;
+    {result?.ok && <p className="form-success" role="status">Topped up: {formatMicro(result.receipt.amountMicro)} points added. Retrying won’t add them again.</p>}
+    {result?.ok === false && <p className="form-error" role="alert">{result.error}</p>}
+    <p className="muted account-small">
+      {!status.decision.eligible && (status.decision.reason === "MONTHLY_LIMIT_REACHED"
+        ? "You’ve used this month’s top-ups. "
+        : `You can top up when you have less than ${target} points available. `)}
+      Points in positions don’t count. Resets at midnight Eastern on the first of each month.
+    </p>
+  </div>;
 }

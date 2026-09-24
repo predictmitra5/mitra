@@ -8,7 +8,7 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
-import { readFeed, readPriceSeries, readQuotes, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
+import { readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
 import { CAPPED_SLOTS, MAX_PER_SUBJECT_IN_TOP } from "./ranking";
 import { withFixturePhoto } from "@/test/photo-fixture";
 
@@ -62,8 +62,8 @@ describe("the public feed", () => {
   it("is empty before anything is approved, and never fails on an empty database", async () => {
     const feed = await readFeed(db, now);
     expect(feed.cards).toEqual([]);
-    expect(feed.justAdded).toEqual([]);
-    expect(feed.people).toEqual([]);
+    expect(feed.featured).toBeNull();
+    expect(feed.closingSoon).toEqual([]);
   });
 
   it("shows an approved goal with its public terms and current price", async () => {
@@ -89,28 +89,6 @@ describe("the public feed", () => {
     for (const privateValue of [owner, alice, bob, "Private approval note", "subjectUserId", "liquidityMicro", "score"]) {
       expect(visible).not.toContain(privateValue);
     }
-  });
-
-  it("lists the people with open goals as tabs, busiest first", async () => {
-    await openGoal(alice, "Chess Club");
-    await openGoal(alice, "Debate Club");
-    await openGoal(bob, "Running Club");
-
-    const feed = await readFeed(db, now);
-    expect(feed.people).toEqual([
-      { handle: "alice", displayName: "alice", openGoals: 2, photoUpdatedAt: new Date("2026-09-01T12:00:00Z") },
-      { handle: "bob", displayName: "bob", openGoals: 1, photoUpdatedAt: new Date("2026-09-01T12:00:00Z") },
-    ]);
-  });
-
-  it("puts a goal approved just now in the Just added row and an older one out of it", async () => {
-    const old = await openGoal(alice, "Old Club");
-    await age(old, 200);
-    const fresh = await openGoal(bob, "New Club");
-
-    const feed = await readFeed(db, now);
-    expect(feed.justAdded.map((card) => card.id)).toEqual([fresh]);
-    expect(feed.cards.map((card) => card.id)).toContain(old);
   });
 
   it("ranks a goal with real trading above an equally aged one with none", async () => {
@@ -249,63 +227,76 @@ describe("market information on each card", () => {
   });
 });
 
-describe("featured goals and rundowns", () => {
-  it("features the leading goals with a price series ending at the live price", async () => {
-    const id = await openGoal(alice, "Featured Club");
-    await trade(bob, id, 20_000_000);
+describe("the featured goal and the closing soon list", () => {
+  it("features the goal that moved most today, with a series ending at the live price", async () => {
+    const small = await openGoal(alice, "Small Move Club");
+    const big = await openGoal(bob, "Big Move Club");
+    await trade(bob, small, 10_000_000);
+    await trade(alice, big, 40_000_000);
 
-    const feed = await readFeed(db, now);
-    expect(feed.featured).toHaveLength(1);
-    const [goal] = feed.featured;
-    expect(goal.id).toBe(id);
-    expect(goal.series.length).toBeGreaterThanOrEqual(2);
-    // Oldest first, and the last point is the price the pills show.
-    const times = goal.series.map((point) => new Date(point.at).getTime());
+    const { featured } = await readFeed(db, now);
+    expect(featured?.id).toBe(big);
+    expect(featured?.moving).toBe(true);
+    const times = (featured?.series ?? []).map((point) => new Date(point.at).getTime());
+    expect(times.length).toBeGreaterThanOrEqual(2);
+    // Oldest first, and the last point is the price the buttons show.
     expect([...times].sort((a, b) => a - b)).toEqual(times);
-    expect(goal.series.at(-1)?.yesBp).toBe(Math.round(goal.yesPrice * 10_000));
+    expect(featured?.series.at(-1)?.yesBp).toBe(Math.round((featured?.yesPrice ?? 0) * 10_000));
   });
 
-  it("leads the carousel with traded goals, without changing the ranked order", async () => {
+  it("counts a fall as a move, by its size", async () => {
+    const rising = await openGoal(alice, "Rising Club");
+    const falling = await openGoal(bob, "Falling Club");
+    await trade(bob, rising, 10_000_000);
+    const preview = await previewTrade(db, alice, { marketId: falling, side: "NO", action: "buy", amountMicro: 40_000_000 }, clock);
+    await executeTrade(db, alice, preview, clock);
+
+    const { featured } = await readFeed(db, now);
+    expect(featured?.id).toBe(falling);
+    expect(featured?.change24hBp).toBeLessThan(0);
+  });
+
+  it("falls back to the leading traded goal when nothing moved today, without calling it a mover", async () => {
     const untraded = await openGoal(alice, "Brand New Club");
     const traded = await openGoal(bob, "Busy Club");
     await age(traded, 200);
     await trade(alice, traded, 10_000_000);
+    // Move the trade two days back, so nothing moved in the last 24 hours.
+    const twoDaysAgo = new Date(now.getTime() - 48 * 3_600_000);
+    await db.update(schema.trades).set({ createdAt: twoDaysAgo }).where(eq(schema.trades.marketId, traded));
+    // The opening point first, then the trade's, both before the 24-hour window.
+    await db.update(priceHistory).set({ recordedAt: sql`${twoDaysAgo}::timestamptz - (case when ${priceHistory.yesPriceBp} = 5000 then interval '1 hour' else interval '0' end)` })
+      .where(eq(priceHistory.marketId, traded));
 
     const feed = await readFeed(db, now);
     // The newborn head start still ranks the untraded goal first in the grid...
     expect(feed.cards[0].id).toBe(untraded);
-    // ...but the carousel opens on a goal that has a chart to draw.
-    expect(feed.featured[0].id).toBe(traded);
-    expect(feed.featured.map((goal) => goal.id)).toContain(untraded);
+    // ...but the featured goal is one with a chart to draw.
+    expect(feed.featured?.id).toBe(traded);
+    expect(feed.featured?.moving).toBe(false);
   });
 
-  it("features at most five goals", async () => {
-    for (let i = 0; i < 8; i += 1) await openGoal(await account(`feature_${i}`), `Club ${i}`);
-    expect((await readFeed(db, now)).featured.length).toBe(5);
-  });
-
-  it("lists goals closing soonest first", async () => {
+  it("lists goals closing soonest first, five at most", async () => {
     const later = await openGoal(alice, "Later Club", "2026-12-01");
     const sooner = await openGoal(bob, "Sooner Club", "2026-10-01");
-    const { closingSoon } = await readFeed(db, now);
-    expect(closingSoon.map((card) => card.id)).toEqual([sooner, later]);
+    expect((await readFeed(db, now)).closingSoon.map((card) => card.id)).toEqual([sooner, later]);
+    for (let i = 0; i < 6; i += 1) await openGoal(await account(`closing_${i}`), `Club ${i}`, "2026-11-01");
+    expect((await readFeed(db, now)).closingSoon).toHaveLength(5);
   });
 
-  it("lists the biggest movers by size of move, up or down, and leaves out goals that did not move", async () => {
-    const up = await openGoal(alice, "Up Club");
-    const still = await openGoal(bob, "Still Club");
-    await trade(bob, up, 40_000_000);
-
-    const { movers } = await readFeed(db, now);
-    expect(movers.map((card) => card.id)).toEqual([up]);
-    expect(movers.map((card) => card.id)).not.toContain(still);
+  it("feeds the ticker the leading goals in ranked order", async () => {
+    const first = await openGoal(alice, "Busy Club");
+    await openGoal(bob, "Quiet Club");
+    await trade(bob, first, 20_000_000);
+    const [feed, ticker] = [await readFeed(db, now), await readTicker(db, now)];
+    expect(ticker.map((card) => card.id)).toEqual(feed.cards.map((card) => card.id));
   });
 
-  it("returns empty featured and rundown lists on an empty database", async () => {
+  it("features nothing on an empty database", async () => {
     const feed = await readFeed(db, now);
-    expect(feed.featured).toEqual([]);
+    expect(feed.featured).toBeNull();
     expect(feed.closingSoon).toEqual([]);
-    expect(feed.movers).toEqual([]);
+    expect(await readTicker(db, now)).toEqual([]);
   });
 });
 
@@ -339,7 +330,6 @@ describe("banned people", () => {
     await db.update(profiles).set({ bannedAt: now }).where(eq(profiles.id, alice));
     const feed = await readFeed(db, now);
     expect(feed.cards.map((card) => card.id)).toEqual([kept]);
-    expect(feed.people.map((person) => person.handle)).toEqual(["bob"]);
   });
 });
 

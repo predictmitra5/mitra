@@ -7,7 +7,7 @@ import { photoUrl } from "@/modules/account/photo-url";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { Avatar } from "@/app/components/market/goal-card";
 import { BanForm, FinishBanForm, RemovePhotoForm, UnbanForm } from "./people-forms";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "People", robots: { index: false, follow: false } };
 // Lists every account and private ban reasons: never cache.
@@ -52,7 +52,7 @@ function PersonCard({ person }: { person: Person }) {
 export default async function PeoplePage() {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
   let people: Person[];
   try {
     people = await listPeople(getDb(), identity.id);
@@ -63,7 +63,7 @@ export default async function PeoplePage() {
   }
   const banned = people.filter((p) => p.bannedAt).length;
 
-  return <div className="market-shell"><MarketHeader signedIn ownerQueue={queue} /><main className="account-main review-main">
+  return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER · PEOPLE</span><Link className="text-button" href="/review">Review goals</Link></div>
     <section className="account-welcome">
       <h1>{people.length} {people.length === 1 ? "person" : "people"}.</h1>

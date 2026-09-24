@@ -167,11 +167,3 @@ export function rankMarkets<T extends MarketSignals>(markets: readonly T[], now:
 
   return applySubjectCap(scored);
 }
-
-/** The "Just added" strip: newest approvals first, regardless of activity. */
-export function justAdded<T extends MarketSignals>(markets: readonly T[], now: Date, limit = 8): T[] {
-  return markets
-    .filter((market) => isJustAdded(market, now))
-    .sort((a, b) => b.approvedAt.getTime() - a.approvedAt.getTime())
-    .slice(0, limit);
-}

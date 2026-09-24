@@ -183,4 +183,14 @@ Breadcrumb, person, question; the chance large in Yes green with the change over
 
 ### Account
 
-Name and handle, available points large, points in positions with the gain or loss, refills left, the top-up, positions valued at today's price with the change since bought, your goals with their status wording, owner tools for the owner, the photo and sign out.
+Name and handle, available points large, points in positions with the gain or loss, refills left, the top-up, positions valued at today's price with the change since bought, your goals with their status wording, owner tools for the owner, the photo and sign out. `/positions` is the same list with every holding, 20 to a page, and the header's Positions link goes there.
+
+### How it is built, and what the build taught
+
+- **The chart places everything by percentage.** The step line is an SVG stretched to the plot with a stroke that does not stretch; gridlines, labels, the end dot and the crosshair are ordinary elements. It is therefore right at any width from the first paint, with nothing to measure, which replaces the three-layer measuring of section 3 and fixes the pre-measurement size the signed-in preview used to show.
+- **One trade panel, moved by the stylesheet.** On a desktop it is a sticky aside; below 900px it hides behind the Buy Yes / Buy No bar and opens as a bottom sheet that is a modal dialog (focus moves in and stays, Escape closes and returns focus, the page behind stays still). There is only ever one form on the page.
+- **Search and tabs live in the address** (`?q=`, `?tab=`) and change it with `history.replaceState`, which Next.js reads without a request. Links to the feed have prefetching off: a prefetch could render the feed on the server, which records views.
+- **Screen-reader text inside a sideways-scrolling row escapes it** unless the row is positioned: the ticker's hidden "Up 6.2 points today" labels widened the whole page to 2,041 pixels until `.ticker` got `position: relative`.
+- Photos in the feed are squares; the viewer's own photo in the top bar and on the account page is a circle.
+- The phone header keeps the wordmark, points and photo; the motto is in the footer there, as on the boards. The search is its own row under the bar on the feed only.
+- Not built from the boards: the account page's "Trade history" link (not on the owner's list) and editing the display name (not a feature).

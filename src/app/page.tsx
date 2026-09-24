@@ -2,10 +2,10 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readFeed, recordExposures, type Feed, type FeedCard } from "@/modules/discovery/feed";
 import { photoUrl } from "@/modules/account/photo-url";
+import { readViewerOrNull } from "@/modules/account/viewer";
 import type { CardData } from "./components/market/goal-card";
 import { MarketFooter, MarketHeader } from "./components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
 
 /*
  * The public home feed. Anyone may read this without an account. It shows only
@@ -36,10 +36,9 @@ function toCard(card: FeedCard): CardData {
   };
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
   const now = new Date();
-  const empty: Feed = { cards: [], justAdded: [], people: [], featured: [], closingSoon: [], movers: [] };
-  let feed = empty;
+  let feed: Feed = { cards: [], featured: null, closingSoon: [] };
   let unavailable = false;
 
   try {
@@ -59,32 +58,26 @@ export default async function Home() {
     // A signed-out view is the correct fallback when identity cannot be read.
   }
 
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
+  const { q } = await searchParams;
 
-  const featured: FeaturedData[] = feed.featured.map((goal) => ({
-    ...toCard(goal),
-    series: goal.series.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp })),
-  }));
+  const featured: FeaturedData | null = feed.featured && {
+    ...toCard(feed.featured),
+    moving: feed.featured.moving,
+    series: feed.featured.series.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp })),
+  };
 
   return (
     <div className="market-shell">
-      <MarketHeader signedIn={!!identity} ownerQueue={queue} />
-      <main className="market-wrap">
-        <FeedView
-          cards={feed.cards.map(toCard)}
-          justAdded={feed.justAdded.map(toCard)}
-          people={feed.people.map((person) => ({
-            handle: person.handle, displayName: person.displayName, openGoals: person.openGoals,
-            photo: photoUrl(person.handle, person.photoUpdatedAt),
-          }))}
-          featured={featured}
-          closingSoon={feed.closingSoon.map(toCard)}
-          movers={feed.movers.map(toCard)}
-          signedIn={!!identity}
-          unavailable={unavailable}
-          nowIso={now.toISOString()}
-        />
-      </main>
+      <MarketHeader viewer={viewer} active="goals" search="feed" query={typeof q === "string" ? q.slice(0, 80) : ""} />
+      <FeedView
+        cards={feed.cards.map(toCard)}
+        featured={featured}
+        closingSoon={feed.closingSoon.map(toCard)}
+        signedIn={!!identity}
+        unavailable={unavailable}
+        nowIso={now.toISOString()}
+      />
       <MarketFooter />
     </div>
   );

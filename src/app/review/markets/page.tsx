@@ -7,7 +7,7 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { listForOwner } from "@/modules/evidence/service";
 import { signedOriginalUrl } from "@/modules/evidence/storage";
 import { OwnerControls } from "./owner-controls";
-import { ownerQueueOrNull } from "@/modules/account/owner-queue";
+import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "Manage outcomes", robots: { index: false } };
 const when = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" });
@@ -32,7 +32,7 @@ async function loadProof(ownerId: string, marketId: string) {
 export default async function ManageMarketsPage() {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const queue = await ownerQueueOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity?.id);
   let rows;
   try { rows = await listLifecycleMarkets(getDb(), identity.id); }
   catch (error) {
@@ -46,7 +46,7 @@ export default async function ManageMarketsPage() {
     // whole outcome queue down with it.
     proof: await loadProof(identity.id, row.market.id),
   })));
-  return <div className="market-shell"><MarketHeader signedIn ownerQueue={queue} /><main className="account-main review-main">
+  return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review new goals</Link></div>
     <section className="account-welcome"><h1>Follow every goal through.</h1><p>Close trading, review proof, and explain each outcome. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
     {!items.length && <section className="account-card"><h2>No active goals to manage.</h2><Link href="/account">Your account</Link></section>}

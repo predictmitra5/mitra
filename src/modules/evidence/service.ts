@@ -64,6 +64,8 @@ export type PublicEvidence = {
   linkUrl: string | null;
   caption: string | null;
   createdAt: Date;
+  /** When the owner verified and published it; the date on the public proof list. */
+  reviewedAt: Date | null;
 };
 
 async function loadMarket<Q extends PgQueryResultHKT>(database: Database<Q>, marketId: string) {
@@ -269,6 +271,7 @@ export async function listPublished<Q extends PgQueryResultHKT>(
       linkUrl: evidence.linkUrl,
       caption: evidence.caption,
       createdAt: evidence.createdAt,
+      reviewedAt: evidence.reviewedAt,
     })
     .from(evidence)
     .where(and(eq(evidence.marketId, marketId), eq(evidence.status, "published")))

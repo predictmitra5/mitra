@@ -78,6 +78,7 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
     ruledAt: markets.ruledAt, contestEndsAt: markets.contestEndsAt, settledAt: markets.settledAt, cancelledAt: markets.cancelledAt,
+    approvedAt: markets.approvedAt, openingProbabilityBp: markets.openingProbabilityBp,
     displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
     subjectWithdrawnAt: profiles.withdrawnAt, subjectBannedAt: profiles.bannedAt,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
@@ -86,6 +87,9 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
   if (!row || row.yesSharesMicro === null || row.noSharesMicro === null) return null;
   const { liquidityMicro, yesSharesMicro, noSharesMicro, subjectWithdrawnAt, subjectBannedAt, ...publicFields } = row;
   return { ...publicFields,
+    // The market maker's liquidity is a published constant (b = 150), shown so the
+    // trade panel can estimate price impact; the share counts stay private.
+    liquidity: liquidityMicro / MICRO_PER_UNIT,
     // The photo route refuses a banned or withdrawn person, so never link to it.
     photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
     tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > Date.now(),
