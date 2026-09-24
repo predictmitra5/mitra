@@ -24,13 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### Finish positions integration and verification — 2026-09-21 (Codex)
+### Take over from Codex - 2026-09-23 (Claude Code)
 
-- Resume the approved positions slice from 74c4df6. It was preserved in 3ce54f6 while this task was stopped by a usage-limit approval rejection. The current tree is clean, other work is recorded as completed, and fresh usage status permits ordinary work again. No reset credit was used.
-- Review the existing private query, lifecycle loading, pagination, authorization, navigation and cache boundaries against the current feed, evidence and sign-in code. Preserve the completed work from the other session. The relevant decisions are the 2026-09-19 positions approval, public feed, pilot sign-in change and verified-statement evidence policy.
-- Fix the positions empty state to link to the now-existing public feed, keep share counts distinct from play-point costs in the explanatory text, and label an elapsed objection window correctly. These are presentation updates to decided behavior, not new market rules. No schema, dependency, credential or provider changes are planned.
-- Run the current local suite, typecheck, lint and production build, then check the production positions route's logged-out HTML/RSC privacy. Reuse the fictional presentation helper for any changed layout. Do not create Auth users, change live markets or send documents to an AI provider for this validation.
-- Finish the missing positions documentation in README, MARKETS, DATA_MODEL and ROADMAP. Reconcile stale Current state, decision status and Next actions here with the already-committed feed and evidence work so a future session does not rebuild them. Record actual verification and its limits, clear In progress, and commit. Keep one workspace writer; any independent design review must use only the supplied description.
+- The owner asked to remove Codex's work and have Claude Code work on the project alone: "can u remove codex work and just u work on it".
+- Codex's open In progress entry ("Finish positions integration and verification", 2026-09-21) left five files edited and uncommitted for two days: `README.md`, `docs/DATA_MODEL.md`, `docs/MARKETS.md`, `docs/ROADMAP.md` and `src/app/positions/positions-view.tsx`. Set them aside with `git stash` rather than discarding them, so nothing is lost if the owner changes their mind, and close Codex's entry.
+- Committed work stays. The positions page itself was committed in 3ce54f6 and works; removing committed history would take out most of the app, which Codex and Claude Code built together.
+- The finishing items Codex had listed become Claude Code's, to redo and verify later: the empty state should link to the public feed, an elapsed objection window should read "Objections closed", and README, MARKETS, DATA_MODEL and ROADMAP need the positions, feed and evidence work described.
+- Record that Claude Code is now the only agent. No code, schema, dependency or configuration changes.
 
 ## Deferred, to come back to
 
