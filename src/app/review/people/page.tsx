@@ -16,7 +16,10 @@ export const dynamic = "force-dynamic";
 const day = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "America/New_York" });
 
 function PersonCard({ person }: { person: Person }) {
-  const photo = photoUrl(person.handle, person.photoUpdatedAt);
+  // The photo route refuses banned and withdrawn people; show initials instead
+  // of a broken image, but keep the remove button while a photo is stored.
+  const hasPhoto = !!person.photoUpdatedAt;
+  const photo = person.bannedAt || person.withdrawn ? null : photoUrl(person.handle, person.photoUpdatedAt);
   return <article className="person-card">
     <div className="person-head">
       <Avatar name={person.displayName} photo={photo} size={52} />
@@ -29,7 +32,7 @@ function PersonCard({ person }: { person: Person }) {
       {person.isOwner && <span className="status-pill status-open">Owner</span>}
       {person.bannedAt && <span className="status-pill status-rejected">Banned</span>}
       {person.withdrawn && <span className="status-pill">Withdrawn</span>}
-      {!photo && <span className="status-pill">No photo</span>}
+      {!hasPhoto && <span className="status-pill">No photo</span>}
       <span className="status-pill">{person.activeGoals} live goal{person.activeGoals === 1 ? "" : "s"}</span>
     </div>
     {person.bannedAt && <p className="ban-note">Banned {day.format(person.bannedAt)}. Reason: {person.banReason}</p>}
@@ -40,7 +43,7 @@ function PersonCard({ person }: { person: Person }) {
           {person.pendingCancellations > 0 && <FinishBanForm userId={person.id} reason={person.banReason ?? "Banned."} pending={person.pendingCancellations} />}
         </>
         : <BanForm userId={person.id} name={person.displayName} liveGoals={person.activeGoals} />}
-      {photo && <RemovePhotoForm userId={person.id} />}
+      {hasPhoto && <RemovePhotoForm userId={person.id} />}
     </div>}
   </article>;
 }

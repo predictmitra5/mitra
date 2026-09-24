@@ -52,6 +52,8 @@ A separate backend could be useful for future long-running processing, but adds 
 - Storage supports row-level access policies. Service credentials bypass these protections and must remain server-only. A server using privileged access must enforce user permissions explicitly. [Official storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 - Drizzle supports explicit transactions/isolation and generated migrations. The eventual ledger still needs application invariants, constraints, retry handling and concurrency tests. [Transactions](https://orm.drizzle.team/docs/transactions), [migrations](https://orm.drizzle.team/docs/migrations)
 
+Server actions accept 1 MB by default. Since 2026-09-24 `next.config.ts` raises `serverActions.bodySizeLimit` and `proxyClientMaxBodySize` to 11 MB for uploads (proof up to 10 MB, photos up to 8 MB); before that, any proof above 1 MB was refused. Each service still enforces its own limit. A host may impose its own request-size cap; check it at deployment.
+
 Do not assume hosted request handlers support indefinitely running jobs or persistent connections. Select that infrastructure only when verification rechecks, asynchronous review or other concrete requirements justify it.
 
 ## Not decided by this document

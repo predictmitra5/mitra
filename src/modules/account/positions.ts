@@ -116,6 +116,7 @@ export async function readPositions<Q extends PgQueryResultHKT>(
         marketId: markets.id, question: markets.question, goalType: markets.goalType,
         liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
         displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
+        subjectWithdrawnAt: profiles.withdrawnAt, subjectBannedAt: profiles.bannedAt,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
         yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
@@ -125,8 +126,10 @@ export async function readPositions<Q extends PgQueryResultHKT>(
         .orderBy(asc(markets.deadlineAt), asc(markets.id)).limit(POSITIONS_PAGE_SIZE).offset((page - 1) * POSITIONS_PAGE_SIZE);
       const now = clock();
       if (!Number.isFinite(now.getTime())) throw new Error("Invalid clock.");
-      return { total, page, pages, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, ...row }) => ({
+      return { total, page, pages, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, subjectWithdrawnAt, subjectBannedAt, ...row }) => ({
         ...row, status: row.status as HeldGoal["status"],
+        // The photo route refuses a banned or withdrawn person, so never link to it.
+        photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
         yesPrice: marketYesMicro === null || marketNoMicro === null ? null : price(toLmsr({
           liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: marketYesMicro, noSharesMicro: marketNoMicro,
         }), "YES"),

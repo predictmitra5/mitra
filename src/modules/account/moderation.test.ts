@@ -10,7 +10,8 @@ import { BAN_CANCEL_REASON, BAN_REJECT_REASON, banPerson, listPeople, unbanPerso
 import { isBanned } from "./standing";
 import { ownerQueue, ownerQueueOrNull } from "./owner-queue";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
-import { executeTrade, previewTrade } from "@/modules/market/service";
+import { executeTrade, previewTrade, readPublicMarket } from "@/modules/market/service";
+import { readPositions } from "./positions";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
 
 const { profiles, markets, wallets, positions, adminActions, evidence } = schema;
@@ -89,6 +90,20 @@ describe("banning a person", () => {
       outcome: "yes", basis: "reviewed_proof", reason: "Offer letter reviewed." }, afterProof);
     expect(await banPerson(db, owner, subject, "Fake account.", afterProof)).toMatchObject({ cancelled: 0, remaining: 0 });
     expect((await market(theirs)).status).toBe("ruled");
+  });
+
+  it("stops linking to their photo wherever their remaining goals still show", async () => {
+    const theirs = await goal(subject, "2026-09-25");
+    await buy(trader, theirs);
+    const goalRow = await market(theirs);
+    const afterProof = () => new Date(goalRow.evidenceDeadlineAt.getTime() + 1000);
+    await applyOwnerCommand(db, owner, { marketId: theirs, requestId: randomUUID(), action: "rule", expectedVersion: 0,
+      outcome: "yes", basis: "reviewed_proof", reason: "Offer letter reviewed." }, afterProof);
+    expect((await readPublicMarket(db, theirs))?.photoUpdatedAt).not.toBeNull();
+    await banPerson(db, owner, subject, "Fake account.", afterProof);
+    // The photo route refuses a banned person, so a link would be a broken image.
+    expect((await readPublicMarket(db, theirs))?.photoUpdatedAt).toBeNull();
+    expect((await readPositions(db, trader, 1, afterProof)).goals[0].photoUpdatedAt).toBeNull();
   });
 
   it("leaves their bets on other people's goals in place", async () => {

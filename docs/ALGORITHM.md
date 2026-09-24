@@ -38,3 +38,17 @@ Raw volume rewards heavily exposed subjects. Impression normalization needs actu
 Every eventual feed response must identify its algorithm version. Record meaningful feature/ranking changes here and in DECISIONS.md, along with hypothesis, objective, feature scaling, configuration, eligibility, exploration, assignment and observed results. No version is live yet.
 
 Embeddings, collaborative filtering and bandits remain research/future candidates; sparse pilot data does not justify starting with an ML-heavy system. See RESEARCH.md for exploratory sources and ANALYTICS.md for the measurement prerequisites.
+
+## The feed as built (2026-09-19, updated 2026-09-24)
+
+Every open, approved goal gets a score, highest first:
+
+- **Interest** over the last 24 hours: `log10(1 + clicks + 5 × trades + 3 × distinct traders)`. The logarithm keeps one runaway goal from burying the rest.
+- **A head start for new goals**: plus 1.0 at approval, fading to nothing over 48 hours.
+- **Urgency**: times 1.5 when the trading deadline is within 72 hours.
+- **Decay**: the total divided by `(hours since approval + 2)^1.5`, so goals sink unless people keep trading them.
+- **Diversity**: no person holds more than 2 of the top 10 slots, best effort when there are too few people.
+
+Everyone sees the same order; nothing is personalized, and `feed_events` carries no viewer identity. The featured carousel prefers traded goals, in rank order.
+
+Since 2026-09-24: banned and withdrawn people's goals are excluded. There is **no boost for having a profile photo**: the owner asked about one, and accepted the recommendation that it is unnecessary once a photo is required to post a goal. Live price polling records no events, so it cannot move the ranking.

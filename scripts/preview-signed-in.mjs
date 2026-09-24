@@ -1,6 +1,6 @@
 // Local presentation check for the signed-in pages: account, new goal, your
-// predictions, the owner's review queue and outcomes, and a goal page with the
-// trade ticket. The real page components render against an in-memory
+// predictions, the owner's review queue, outcomes and people, a goal page with
+// the trade ticket, and the feed as a signed-in person would see it. The real page components render against an in-memory
 // PostgreSQL (PGlite) seeded with fictional people through the app's own
 // services. No Supabase, no Auth users, no network, no credentials.
 //
@@ -21,6 +21,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 
 const project = process.cwd();
 const PORT = 3120;
@@ -62,6 +63,9 @@ export { default as PositionsPage } from "@/app/positions/page";
 export { default as ReviewPage } from "@/app/review/page";
 export { default as OutcomesPage } from "@/app/review/markets/page";
 export { default as MarketPage } from "@/app/markets/[id]/page";
+export { default as PeoplePage } from "@/app/review/people/page";
+export { default as FeedPage } from "@/app/page";
+export { banPerson } from "@/modules/account/moderation";
 export { provisionAccount } from "@/modules/account/provision";
 export { createGoalDraft, approveDraft, rejectDraft } from "@/modules/goals/service";
 export { previewTrade, executeTrade } from "@/modules/market/service";
@@ -105,9 +109,10 @@ const now = Date.now();
 const at = (days) => new Date(now + days * DAY);
 const easternDate = (date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(date);
 
-async function person(handle, displayName) {
+async function person(handle, displayName, photo = true) {
   const id = randomUUID();
   await app.provisionAccount(db, id, { displayName, handle, adultConfirmed: true }, at(-30));
+  if (photo) await db.update(app.schema.profiles).set({ photoPath: `fixture/${handle}.webp`, photoUpdatedAt: at(-29) }).where(eq(app.schema.profiles.id, id));
   return id;
 }
 const people = {
@@ -117,7 +122,8 @@ const people = {
   jordan: await person("jordan_p", "Jordan Patel"),
   sam: await person("sam_r", "Sam Rivera"),
   priya: await person("priya_n", "Priya Nair"),
-  ben: await person("ben_k", "Ben Kowalski"),
+  ben: await person("ben_k", "Ben Kowalski", false),
+  quinn: await person("quinn_t", "Quinn Taylor"),
 };
 await db.update(app.schema.profiles).set({ isOwner: 1 }).where(eq(app.schema.profiles.id, people.owner));
 
@@ -150,6 +156,17 @@ await app.applyOwnerCommand(db, people.owner, { marketId: gym, requestId: random
   outcome: "yes", basis: "reviewed_proof", reason: "Uncut video of the lift reviewed; plates and bar checked." },
   () => new Date(Math.max(gymRow.evidenceDeadlineAt.getTime(), now - 3_600_000)));
 
+// Quinn is banned: their open goal is cancelled and Leo, who bet on it, refunded.
+const quinnGoal = await goal(people.quinn, { type: "own_words", question: "Will Quinn swim across Mirror Lake and back?",
+  criteria: "YES if a public video shows Quinn swimming across Mirror Lake and back before the deadline.", deadline: easternDate(at(30)) }, 3000, 5);
+await trade(people.trader, quinnGoal, "NO", 15, 2);
+await app.banPerson(db, people.owner, people.quinn, "Fictional: posting other students' private details.", () => at(-1));
+
+// An "anything" goal on the feed, and proof waiting for the owner.
+await goal(people.jordan, { type: "own_words", question: "Will I run a half marathon before graduation?",
+  criteria: "YES if an official race result shows Jordan finishing a half marathon before the deadline.", deadline: easternDate(at(70)) }, 4500, 1);
+await db.insert(app.schema.evidence).values({ marketId: gpa, submittedBy: people.priya, kind: "link", linkUrl: "https://example.com/fictional-grade-report" });
+
 // Waiting for the owner, and one turned down, for the review queue and account.
 await goal(people.priya, { type: "own_words", question: "Will Priya publish her study-planner app on the App Store?",
   criteria: "YES if the app is listed on the App Store under Priya's developer name before the deadline.", deadline: easternDate(at(60)) }, null, 1);
@@ -164,11 +181,29 @@ const personas = {
   owner: { id: people.owner, label: "Ava, the owner" },
   subject: { id: people.maya, label: "Maya, whose goal is open" },
   newcomer: { id: randomUUID(), label: "a new sign-up with no profile yet" },
+  nophoto: { id: people.ben, label: "Ben, who has no profile photo" },
+  out: { id: null, label: "someone signed out" },
 };
 const pages = {
   "/account": app.AccountPage, "/goals/new": app.NewGoalPage, "/positions": app.PositionsPage,
-  "/review": app.ReviewPage, "/review/markets": app.OutcomesPage,
+  "/review": app.ReviewPage, "/review/markets": app.OutcomesPage, "/review/people": app.PeoplePage, "/feed": app.FeedPage,
 };
+
+/** A fictional photo: a silhouette on a colour picked from the handle. Nobody real. */
+const photoCache = new Map();
+async function servePhoto(handle, response) {
+  const [profile] = await db.select().from(app.schema.profiles).where(eq(app.schema.profiles.handle, handle));
+  if (!profile?.photoPath || profile.bannedAt) { response.writeHead(404); response.end("No photo."); return; }
+  if (!photoCache.has(handle)) {
+    let hash = 0;
+    for (const ch of handle) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+    const hue = hash % 360;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue} 55% 42%)"/><stop offset="1" stop-color="hsl(${(hue + 40) % 360} 60% 28%)"/></linearGradient></defs><rect width="512" height="512" fill="url(#g)"/><circle cx="256" cy="205" r="95" fill="rgba(255,255,255,0.82)"/><path d="M86 512c0-104 76-176 170-176s170 72 170 176z" fill="rgba(255,255,255,0.82)"/></svg>`;
+    photoCache.set(handle, await sharp(Buffer.from(svg)).webp({ quality: 80 }).toBuffer());
+  }
+  response.writeHead(200, { "Content-Type": "image/webp" });
+  response.end(photoCache.get(handle));
+}
 
 function documentFor(title, body) {
   return `<!doctype html><html lang="en" class="h-full antialiased"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} · fictional preview</title><link rel="stylesheet" href="/styles.css"></head><body class="min-h-full flex flex-col">${body}</body></html>`;
@@ -177,10 +212,12 @@ function documentFor(title, body) {
 function index() {
   const links = [];
   for (const [key, persona] of Object.entries(personas)) {
-    const routes = key === "owner" ? ["/account", "/review", "/review/markets", `/markets/${gym}`]
+    const routes = key === "owner" ? ["/feed", "/account", "/review", "/review/markets", "/review/people", `/markets/${gym}`]
       : key === "subject" ? ["/account", `/markets/${club}`]
       : key === "newcomer" ? ["/account"]
-      : ["/account", "/positions", "/goals/new", `/markets/${club}`, `/markets/${gpa}`];
+      : key === "nophoto" ? ["/goals/new", "/account"]
+      : key === "out" ? ["/feed"]
+      : ["/feed", "/account", "/positions", "/goals/new", `/markets/${club}`, `/markets/${gpa}`];
     links.push(`<section class="account-card"><h2>As ${persona.label}</h2>${routes.map((r) => `<p><a href="${r}?as=${key}">${r}</a></p>`).join("")}</section>`);
   }
   return documentFor("Signed-in pages", `<div class="market-shell"><main class="account-main"><section class="account-welcome"><span class="eyebrow">FICTIONAL PREVIEW</span><h1>Signed-in pages</h1><p>Real page components, in-memory data, nobody real. Forms do not submit.</p></section>${links.join("")}</main></div>`);
@@ -191,8 +228,10 @@ const server = createServer(async (request, response) => {
   response.setHeader("Cache-Control", "no-store");
   if (url.pathname === "/styles.css") { response.writeHead(200, { "Content-Type": "text/css; charset=utf-8" }); response.end(css); return; }
   if (url.pathname === "/") { response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); response.end(index()); return; }
+  const photo = url.pathname.match(/^\/photos\/([a-z0-9_]{3,24})$/);
+  if (photo) { await servePhoto(photo[1], response); return; }
   const persona = personas[url.searchParams.get("as") ?? "trader"] ?? personas.trader;
-  globalThis.__preview.identity = { id: persona.id, email: "fictional@osu.edu" };
+  globalThis.__preview.identity = persona.id ? { id: persona.id, email: "fictional@osu.edu" } : null;
   const query = Object.fromEntries(url.searchParams);
   const market = url.pathname.match(/^\/markets\/([0-9a-f-]{36})$/);
   const Page = market ? app.MarketPage : pages[url.pathname];

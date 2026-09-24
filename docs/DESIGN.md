@@ -130,3 +130,14 @@ The owner said to go ahead after being asked whether to roll the look out everyw
 - **Components that assumed a light page were rewritten, not overridden.** Several used the ink colour as a background with white text on top; flipping the tokens alone would have produced near-white blocks with near-white text. Inputs no longer hard-code white. Primary buttons are lime with dark text. The welcome panels (balance, your predictions, the sign-up story) use a faint lime wash instead of a solid dark block, which on a dark page would vanish.
 - **Your predictions uses the feed's card parts**: the thumbnail, avatar and chance bar, so a goal looks the same everywhere. YES and NO holdings carry the same short colour keys as the price pills.
 - **The arrow glyph.** The app's `↗` rendered as a blue emoji tile on Windows, including inside the logo. `font-variant-emoji: text` did not prevent it; the text-presentation selector (U+FE0E) after each arrow does, and a test keeps every arrow marked.
+
+---
+
+## 8. Photos, the ticker, live prices and the motto (2026-09-24)
+
+- **The motto**, "Bet on literally anything.", leads the feed in a compact band with one button, and the sign-up story. "Anything" is the goal form's default, with tappable ideas in one scrolling row.
+- **Photos.** The avatar shows the person's photo; thumbnails put it in a ringed circle where the faded initials were, so a card now reads like a GoFundMe card: a face and a stake. Goals in the person's own words get one of five art variants picked from the goal id instead of one grey. Anyone without a photo, or banned, falls back to initials rather than a broken image.
+- **The ticker tape** runs across the top of the feed: avatar, a stock-style symbol ("MAYA·3.8GPA"), price and the day's change. It pauses under the pointer or keyboard focus and stands still, scrollable, for anyone who asks their system for less motion. The copy that makes the loop seamless is hidden from screen readers and the keyboard.
+- **The chart** now reads like a stock chart: the current price large, the change over the chosen range, and 1D, 1W, 1M and All. The line takes the validated YES colour when the range ended up and the validated NO colour when it ended down; both colours passed the palette checks earlier, so no new colour was introduced.
+- **Live prices** every 15 seconds while visible. A price that moves pulses once, lime up or violet down, behind the number; the arrow and the number carry the direction, and the pulse is off for reduced motion. Ranking order does not change live, so cards never jump under a finger.
+- **Owner:** a "Review" button with a count in the top bar, visible on a phone too; the People page lists everyone with their photo, standing and live goals.

@@ -79,12 +79,15 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
     ruledAt: markets.ruledAt, contestEndsAt: markets.contestEndsAt, settledAt: markets.settledAt, cancelledAt: markets.cancelledAt,
     displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
+    subjectWithdrawnAt: profiles.withdrawnAt, subjectBannedAt: profiles.bannedAt,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
   }).from(markets).innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
     .where(and(eq(markets.id, id), isNotNull(markets.approvedAt), inArray(markets.status, [...publicStatuses]))).limit(1);
   if (!row || row.yesSharesMicro === null || row.noSharesMicro === null) return null;
-  const { liquidityMicro, yesSharesMicro, noSharesMicro, ...publicFields } = row;
+  const { liquidityMicro, yesSharesMicro, noSharesMicro, subjectWithdrawnAt, subjectBannedAt, ...publicFields } = row;
   return { ...publicFields,
+    // The photo route refuses a banned or withdrawn person, so never link to it.
+    photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
     tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > Date.now(),
     contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt.getTime() > Date.now(),
     yesPrice: price(toLmsr({ liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro, noSharesMicro }), "YES") };
