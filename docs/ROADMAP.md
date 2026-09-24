@@ -26,13 +26,13 @@ Verify: authorized users can complete it; unauthorized actors cannot approve or 
 
 Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`. Monthly cash refills are built end to end, from the account card through the locked wallet write.
 
-Refill validation was extended on 2026-09-19 with authorization, rollback, exact Eastern boundaries and hosted races against buys, sells and payouts. The next build slice is private navigation to existing positions; its presentation must not introduce a ranking or leaderboard policy.
+Refill validation was extended on 2026-09-19 with authorization, rollback, exact Eastern boundaries and hosted races against buys, sells and payouts. Private navigation to existing positions is built at `/positions` (finished 2026-09-23): active holdings, held costs, each goal's public chance and status, and links to the market controls. It introduces no valuation, ranking or leaderboard.
 
 Also done (2026-09-18): public approved-market pages and authenticated buy/sell previews and confirmations. The transaction writes trade, wallet, ledger, position, market state and price history together. Retry protection, deadline enforcement, wallet/ledger reconciliation and multi-connection hosted concurrency checks pass.
 
 Also done: deadline/early closure, owner rulings and revisions, private objections, final payouts and owner cancellation refunds. Revisions reset the full 24-hour window; terminal accounting is atomic and protected against retries and concurrent trades. Due close/payout transitions run on relevant page access. Public outcome pages are browser-checked.
 
-Remaining: deployed periodic scheduling; account withdrawal with its automatic cancellations; outcome-decider assignment; portfolio navigation; evidence collection. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
+Remaining: deployed periodic scheduling; account withdrawal with its automatic cancellations and proof deletion; outcome-decider assignment. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
 
 Verify: concurrent and retried actions cannot duplicate balances; ledger replay reconciles accounting; resolution and cancellation follow approved rules; migrations, type checks, lint and appropriate tests pass.
 

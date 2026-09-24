@@ -6,7 +6,7 @@ import { proposeStatements } from "@/modules/evidence/extract";
 import { EvidenceError, isAcceptedImageType } from "@/modules/evidence/policy";
 import { loadForReview } from "@/modules/evidence/review";
 import { readOriginal, signedOriginalUrl } from "@/modules/evidence/storage";
-import { AppHeader } from "@/app/components/auth-screen";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { StatementForm } from "./statement-form";
 
 export const metadata = { title: "Review proof", robots: { index: false } };
@@ -29,8 +29,8 @@ export default async function ReviewEvidencePage({ params }: PageProps<"/review/
   if (!item) notFound();
 
   const shell = (children: React.ReactNode) => (
-    <div className="site-shell">
-      <AppHeader />
+    <div className="market-shell">
+      <MarketHeader signedIn />
       <main className="account-main">
         <div className="account-topline">
           <span className="eyebrow">REVIEW PROOF</span>
@@ -38,7 +38,7 @@ export default async function ReviewEvidencePage({ params }: PageProps<"/review/
         </div>
         {children}
       </main>
-      <footer className="app-footer"><span>Play money. Real goals.</span><span>Owner tools</span></footer>
+      <MarketFooter />
     </div>
   );
 

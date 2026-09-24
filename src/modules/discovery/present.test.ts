@@ -36,6 +36,13 @@ describe("thumbnail text, the stake in as few words as possible", () => {
     expect(thumbnailText("gym", "Will Luis run a sub-25-minute 5K by December 15, 2026?")).toBe("Run a sub-25-minute 5K");
   });
 
+  it("never takes a surname as part of the achievement", () => {
+    // Real display names have two words; the template writes the full name.
+    expect(thumbnailText("gym", "Will Sam Rivera bench press 225 lb by September 14, 2026?", "Sam Rivera")).toBe("Bench press 225 lb");
+    expect(thumbnailText("gym", "Will Sam Rivera hold a 3-minute plank by May 1, 2027?", "Sam Rivera")).toBe("Hold a 3-minute plank");
+    expect(thumbnailText("gym", "Will Maya Chen Lopez deadlift 315 pounds by May 1, 2027?", "Maya Chen Lopez")).toBe("Deadlift 315 pounds");
+  });
+
   it("falls back to the verb phrase for a goal in the person's own words", () => {
     expect(thumbnailText("own_words", "Will Sam launch the app?", "Sam")).toBe("Launch the app");
     expect(thumbnailText("own_words", "Will Sam launch the app?")).toBe("Launch the app");

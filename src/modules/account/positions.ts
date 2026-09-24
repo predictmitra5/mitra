@@ -2,6 +2,9 @@ import { and, asc, count, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
+import { price } from "@/modules/market/lmsr";
+import { toLmsr } from "@/modules/market/quote";
+import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
 
 const { profiles, positions, markets } = schema;
@@ -16,6 +19,13 @@ export class PositionsError extends Error {
 export interface HeldGoal {
   marketId: string;
   question: string;
+  goalType: string | null;
+  /**
+   * The market's public chance of YES, the same number its page shows: the
+   * live price while trading is open, the last traded one after. It is not a
+   * valuation of the holding; held cost stays separate from sale value.
+   */
+  yesPrice: number | null;
   displayName: string;
   handle: string;
   status: "open" | "closed" | "ruled";
@@ -100,7 +110,9 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       // final remaining page instead of a misleading empty portfolio.
       const page = Math.min(requestedPage, pages);
       const rows = await tx.select({
-        marketId: markets.id, question: markets.question, displayName: profiles.displayName, handle: profiles.handle,
+        marketId: markets.id, question: markets.question, goalType: markets.goalType,
+        liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
+        displayName: profiles.displayName, handle: profiles.handle,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
         yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
@@ -110,8 +122,11 @@ export async function readPositions<Q extends PgQueryResultHKT>(
         .orderBy(asc(markets.deadlineAt), asc(markets.id)).limit(POSITIONS_PAGE_SIZE).offset((page - 1) * POSITIONS_PAGE_SIZE);
       const now = clock();
       if (!Number.isFinite(now.getTime())) throw new Error("Invalid clock.");
-      return { total, page, pages, goals: rows.map(({ tradingClosedAt, ...row }) => ({
+      return { total, page, pages, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, ...row }) => ({
         ...row, status: row.status as HeldGoal["status"],
+        yesPrice: marketYesMicro === null || marketNoMicro === null ? null : price(toLmsr({
+          liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: marketYesMicro, noSharesMicro: marketNoMicro,
+        }), "YES"),
         tradingOpen: row.status === "open" && !tradingClosedAt && row.deadlineAt > now,
         contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt > now,
       })) };

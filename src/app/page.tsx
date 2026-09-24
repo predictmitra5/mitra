@@ -62,7 +62,7 @@ export default async function Home() {
   }));
 
   return (
-    <div className="theme-dark market-shell">
+    <div className="market-shell">
       <MarketHeader signedIn={!!identity} />
       <main className="market-wrap">
         <FeedView

@@ -10,6 +10,9 @@ import { loadPositions, readPositions, positionsPageNumber, POSITIONS_PAGE_SIZE 
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
+import { price } from "@/modules/market/lmsr";
+import { toLmsr } from "@/modules/market/quote";
+import { MICRO_PER_UNIT } from "@/modules/market/units";
 
 const { profiles, markets, positions, wallets, ledgerEntries } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -64,6 +67,18 @@ describe("private positions", () => {
     expect(data.goals[0]).toMatchObject({ yesSharesMicro: held.yesSharesMicro, noSharesMicro: held.noSharesMicro,
       yesCostBasisMicro: held.yesCostBasisMicro, noCostBasisMicro: held.noCostBasisMicro });
     expect(held.yesCostBasisMicro).toBeLessThan(10_000_000);
+  });
+  it("carries the goal type and the market's public chance, not a valuation of the holding", async () => {
+    await trade(other, "NO", "buy", 5_000_000);
+    const before = (await readPositions(db, other, 1, clock)).goals[0];
+    await trade();
+    const goal = await market();
+    const live = price(toLmsr({ liquidity: goal.liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: goal.yesSharesMicro!, noSharesMicro: goal.noSharesMicro! }), "YES");
+    const mine = (await readPositions(db, trader, 1, clock)).goals[0], theirs = (await readPositions(db, other, 1, clock)).goals[0];
+    expect(mine).toMatchObject({ goalType: "club", yesPrice: live });
+    // Everyone holding the goal sees the same public number, whichever side they hold.
+    expect(theirs.yesPrice).toBe(live); expect(live).toBeGreaterThan(before.yesPrice!);
+    for (const internal of ["liquidityMicro", "marketYesMicro", "marketNoMicro"]) expect(mine).not.toHaveProperty(internal);
   });
   it("removes fully sold positions and handles accounts without trades", async () => {
     expect(await readPositions(db, trader, 1, clock)).toEqual({ goals: [], total: 0, page: 1, pages: 1 });

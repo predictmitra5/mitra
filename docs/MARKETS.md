@@ -1,6 +1,6 @@
 # Markets
 
-Status: goal drafting, owner approval, public market pages, transactional buy/sell execution, close, ruling/revision, private objections, final payouts, cancellation refunds and monthly cash refills are built. Account withdrawal, evidence submission and deployed background scheduling remain to be implemented.
+Status: goal drafting, owner approval, the public feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, monthly cash refills, and proof submission with owner-published statements are built. Account withdrawal and deployed background scheduling remain to be implemented.
 
 ## Confirmed direction - 2026-09-15
 
@@ -108,7 +108,7 @@ Still open: whether V1 is binary only (the PDF's race example needs separate rul
 
 These criteria do not prescribe a database schema or specific concurrency technique.
 
-## Implementation status (updated 2026-09-18)
+## Implementation status (updated 2026-09-23)
 
 Implemented and unit-tested pure logic in `src/modules/market`:
 
@@ -120,7 +120,9 @@ Implemented and unit-tested pure logic in `src/modules/market`:
 - `trade.ts`: `planBuy` and `planSell` apply the ban, the per-market limit, balance and share checks, and return the quote with the resulting position and balance.
 - `economy.ts`: the owner's settings (1,000 start, two refills a month, 100-point limit, b = 150).
 
-Account refill persistence and controls are implemented in `src/modules/account` and `/account`. Additional validation on 2026-09-19 covers exact micro-point credits, Eastern year/month and daylight-saving boundaries, retry receipts after later spending/month changes, missing wallets, stale eligibility, rollback, authenticated action errors, and hosted concurrency with trades and payouts. The committed original refill tests are preserved alongside the added `refill-safety.test.ts` cases. A real signed-in browser walkthrough still requires email setup.
+Account refill persistence and controls are implemented in `src/modules/account` and `/account`. Additional validation on 2026-09-19 covers exact micro-point credits, Eastern year/month and daylight-saving boundaries, retry receipts after later spending/month changes, missing wallets, stale eligibility, rollback, authenticated action errors, and hosted concurrency with trades and payouts. The committed original refill tests are preserved alongside the added `refill-safety.test.ts` cases. A real signed-in walkthrough has still not been done; email confirmation is switched off for the pilot, so it no longer waits on email setup.
+
+`/positions` (`src/modules/account/positions.ts`) lists only the signed-in active adult's own nonzero holdings in approved open, closed or ruled markets. The owner gets no view of anyone else's. Holdings are listed soonest deadline first, in pages of 20, with shares and held cost at the engine's six-decimal precision. Each card shows the goal's thumbnail and its public chance of YES, the same number the goal page shows, labelled as the closing chance once trading has ended. Held cost is what was paid, never presented as sale value; the page computes no valuation and ranks nobody. Status labels distinguish trading open, trading closed, an open objection window and a pending payout. Sold, settled and refunded holdings leave the list, and an empty list links to the public feed. The count and rows are read in one repeatable-read snapshot, after due closes and payouts are processed.
 
 Tests (35) cover cost-function consistency, the identity that n YES plus n NO shares cost n points, spend/cost inversion, round trips that cannot make money, the subsidy bound, average-cost basis including values beyond 2^53, Eastern-time month boundaries, and every rejection path.
 
@@ -132,7 +134,7 @@ Tests (35) cover cost-function consistency, the identity that n YES plus n NO sh
 
 Settlement pays one micro-point per winning micro-share and records zero payouts for losing positions. Cancellation returns the sum of held cost basis on both sides, including the effect of earlier partial sales. Each operation locks the market and participant wallets, appends ledger/audit records, clears active positions and sets the terminal status in one transaction. Retry or racing calls cannot credit twice. Historical market-maker shares are kept as the last trading state; settled pages separately show the final outcome, and cancellation pages show refunds rather than an outcome payout.
 
-Due transitions run on access to market, account and owner-management pages, with bounded batches for account/owner reads. No deployed periodic runner exists yet, so unattended markets may retain their old stored status and unprocessed payouts until accessed. Trading and objection deadline checks still apply at their exact cutoff. Account withdrawal/deletion, automatic cancellation on withdrawal, selective collusion-trade reversal, outcome-decider assignment, evidence collection and discovery remain unfinished. Public outcome pages were checked at desktop/375px; signed-in controls have service/action tests but await a real-account browser walkthrough after SMTP setup.
+Due transitions run on access to market, account, positions and owner-management pages, with bounded batches for account, positions and owner reads. No deployed periodic runner exists yet, so unattended markets may retain their old stored status and unprocessed payouts until accessed. Trading and objection deadline checks still apply at their exact cutoff. Account withdrawal/deletion, automatic cancellation on withdrawal, selective collusion-trade reversal and outcome-decider assignment remain unfinished. The public feed and proof submission are built separately; see ALGORITHM.md and VERIFICATION.md. Every page, signed-in ones included, has been checked in a browser at desktop and 375px against fictional data (`scripts/preview-signed-in.mjs` for signed-in pages); no real account has walked the flow end to end.
 
 Price-impact simulation used to choose b, with markets opening at 50% (1,000 starting points, 100-point maximum):
 

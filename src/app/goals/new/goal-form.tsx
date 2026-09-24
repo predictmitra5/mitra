@@ -43,6 +43,6 @@ export function GoalForm({ minDate }: { minDate: string }) {
     <div className="field"><label htmlFor="deadline">Deadline</label><input id="deadline" name="deadline" type="date" min={minDate} required aria-describedby="deadline-hint" /><p id="deadline-hint" className="field-hint">Trading closes at 11:59 pm Eastern that day. You then have 7 days to send proof, or it resolves NO.</p></div>
 
     {state.error && <p className="form-error" role="alert">{state.error}</p>}
-    <button className="primary-button" type="submit" disabled={pending}>{pending ? "Submitting…" : "Submit for approval"}<span aria-hidden="true">↗</span></button>
+    <button className="primary-button" type="submit" disabled={pending}>{pending ? "Submitting…" : "Submit for approval"}<span aria-hidden="true">↗︎</span></button>
   </form>;
 }

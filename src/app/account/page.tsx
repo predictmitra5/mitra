@@ -3,12 +3,13 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
+import { emailConfirmationRequired } from "@/modules/auth/config";
 import { signOut } from "@/modules/auth/actions";
 import { readRefillStatus, type RefillStatus } from "@/modules/account/refill";
 import { listGoalsForSubject } from "@/modules/goals/service";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
-import { AppHeader } from "../components/auth-screen";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { ProfileForm } from "./profile-form";
 import { RefillCard } from "./refill-card";
 
@@ -46,27 +47,27 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const { notice } = await searchParams;
   const blocked = account?.profile.withdrawnAt || (account && !account.wallet);
 
-  return <div className="site-shell"><AppHeader /><main className="account-main">
+  return <div className="market-shell"><MarketHeader signedIn /><main className="account-main">
     <div className="account-topline"><span className="eyebrow">YOUR ACCOUNT</span><form action={signOut}><button className="text-button">Sign out</button></form></div>
     {unavailable || blocked ? <section className="account-card"><h1>{account?.profile.withdrawnAt ? "This account is inactive." : "Your account is temporarily unavailable."}</h1><p>Please contact the app owner before continuing.</p></section>
-      : !account?.profile.adultConfirmedAt ? <section className="account-card profile-card"><span className="eyebrow">ONE MORE STEP</span><h1>Make it yours.</h1><p>Your email is confirmed. Set up your profile and confirm you’re 18 or older to join.</p><ProfileForm displayName={account?.profile.displayName} handle={account?.profile.handle} /></section>
+      : !account?.profile.adultConfirmedAt ? <section className="account-card profile-card"><span className="eyebrow">ONE MORE STEP</span><h1>Make it yours.</h1><p>{emailConfirmationRequired() ? "Your email is confirmed. " : ""}Set up your profile and confirm you’re 18 or older to join.</p><ProfileForm displayName={account?.profile.displayName} handle={account?.profile.handle} /></section>
       : <>
         {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
         <section className="account-welcome"><span className="eyebrow">YOU’RE IN</span><h1>Hey, {account.profile.displayName}.</h1><p>@{account.profile.handle}</p></section>
-        <section className="balance-card"><div><span className="eyebrow">AVAILABLE PLAY POINTS</span><p className="balance-number">{((refillStatus?.balanceMicro ?? account.wallet?.balanceMicro ?? 0) / MICRO_PER_UNIT).toLocaleString("en-US", { maximumFractionDigits: 2 })}</p></div><span className="balance-symbol" aria-hidden="true">↗</span><p>For making predictions. No deposits, withdrawals or cash value.</p></section>
+        <section className="balance-card"><div><span className="eyebrow">AVAILABLE PLAY POINTS</span><p className="balance-number">{((refillStatus?.balanceMicro ?? account.wallet?.balanceMicro ?? 0) / MICRO_PER_UNIT).toLocaleString("en-US", { maximumFractionDigits: 2 })}</p></div><span className="balance-symbol" aria-hidden="true">↗︎</span><p>For making predictions. No deposits, withdrawals or cash value.</p></section>
         {refillStatus && <RefillCard status={refillStatus} />}
-        <section className="account-note"><div className="section-head"><h2>Your predictions</h2><Link className="secondary-button" href="/positions" prefetch={false}>View holdings ↗</Link></div><p>Find the goals you’ve backed, see your shares and return to a market.</p></section>
+        <section className="account-note"><div className="section-head"><h2>Your predictions</h2><Link className="secondary-button" href="/positions" prefetch={false}>View holdings ↗︎</Link></div><p>Find the goals you’ve backed, see your shares and return to a market.</p></section>
         {account.profile.isOwner === 1 && <section className="account-note"><h2>Owner tools</h2><p><Link href="/review">Review submitted goals</Link></p><p><Link href="/review/markets">Manage outcomes and objections</Link></p></section>}
         <section className="goals-card">
-          <div className="section-head"><h2>Your goals</h2><Link className="secondary-button" href="/goals/new">New goal ↗</Link></div>
+          <div className="section-head"><h2>Your goals</h2><Link className="secondary-button" href="/goals/new">New goal ↗︎</Link></div>
           {goals.length === 0
             ? <p className="muted">No goals yet. Put one out there: a GPA target, an internship, a club, a personal best.</p>
             : <ul className="goal-rows">{goals.map(({ market, rejectionReason }) => <li key={market.id}>
               <span className={`status-pill status-${market.status}`}>{statusLabels[market.status] ?? market.status}</span>
-              <p>{market.approvedAt && !["draft", "rejected"].includes(market.status) ? <Link href={`/markets/${market.id}`}>{market.question} ↗</Link> : market.question}</p>
+              <p>{market.approvedAt && !["draft", "rejected"].includes(market.status) ? <Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link> : market.question}</p>
               {market.status === "rejected" && rejectionReason && <p className="rejection">Owner’s note: {rejectionReason}</p>}
             </li>)}</ul>}
         </section>
       </>}
-  </main><footer className="app-footer"><span>Play money. Real goals.</span><span>Ohio State early access</span></footer></div>;
+  </main><MarketFooter /></div>;
 }

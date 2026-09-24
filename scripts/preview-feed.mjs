@@ -2,17 +2,37 @@
 //
 //   node --env-file=.env.local scripts/preview-feed.mjs          (after npm run build)
 //   node --env-file=.env.local scripts/preview-feed.mjs --dev    (hot reload; stop npm run dev first)
+//   node --env-file=.env.local scripts/preview-feed.mjs --cleanup (remove fixtures a killed run left)
 //
 // Seeds seven fictional people and fourteen goals, with price paths, trades for
 // volume and recent movement, into an isolated, disposable schema, then serves
 // the whole app against it at http://localhost:3100, signed out. It never seeds
 // the live app or creates Auth users. Ctrl+C, or "stop" on stdin, removes it.
+// A process killed outright (a closed terminal or Task Manager on Windows) gets
+// no chance to clean up; --cleanup then removes every preview schema.
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import postgres from "postgres";
 
 if (!process.env.DIRECT_DATABASE_URL) throw new Error("Set DIRECT_DATABASE_URL in .env.local first.");
+
+// Only schemas the preview scripts name, never anything else.
+const PREVIEW_SCHEMA = /^mitra_[a-z_]*preview_[0-9a-f]{32}$/;
+if (process.argv.includes("--cleanup")) {
+  const sweep = postgres(process.env.DIRECT_DATABASE_URL, { ssl: "require", prepare: false, max: 1, onnotice: () => {} });
+  try {
+    const found = await sweep`select nspname from pg_namespace where nspname ~ ${PREVIEW_SCHEMA.source}`;
+    for (const { nspname } of found) {
+      if (!PREVIEW_SCHEMA.test(nspname)) throw new Error("Unsafe preview cleanup target.");
+      await sweep.unsafe(`DROP SCHEMA IF EXISTS "${nspname}" CASCADE`);
+      console.log("Removed leftover preview schema", nspname);
+    }
+    console.log(found.length ? "Done." : "No preview schemas left behind.");
+  } finally { await sweep.end(); }
+  process.exit(0);
+}
+
 const devMode = process.argv.includes("--dev");
 const name = `mitra_feed_preview_${randomUUID().replaceAll("-", "")}`;
 const connection = new URL(process.env.DIRECT_DATABASE_URL);

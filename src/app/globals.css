@@ -1,25 +1,26 @@
 @import "tailwindcss";
 
 /* Public goals and trade confirmation. */
-.market-main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 3rem; }
+.market-main { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 3rem; }
 .market-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
-.market-nav a { text-decoration: underline; text-underline-offset: 3px; }
+.market-nav a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+.market-nav a:hover { color: var(--ink); }
 .market-layout, .market-story, .trade-form, .trade-preview { display: grid; gap: 1.25rem; }
 .market-layout { align-items: start; }
 .market-layout > *, .market-story > * { min-width: 0; }
 .market-hero, .market-rules, .market-ticket { display: grid; gap: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 2rem); overflow-wrap: anywhere; }
-.market-hero { background: var(--ink); color: #f4f4f0; border-color: var(--ink); }
-.market-hero .review-meta { color: #a9aebb; }
+.market-hero .review-meta { color: var(--muted); }
 .market-person { font-size: 0.9rem; font-weight: 600; }
-.market-person span { color: #a9aebb; font-weight: 400; }
+.market-person span { color: var(--muted); font-weight: 400; }
 .market-hero h1 { font-size: clamp(1.75rem, 4vw, 2.8rem); line-height: 1.12; font-weight: 700; letter-spacing: -0.03em; }
 .market-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
-.market-prices > div { display: grid; gap: 0.35rem; border: 1px solid #434855; border-radius: 14px; padding: 1rem; }
-.market-prices > div:first-child { color: var(--accent); }
+.market-prices > div { display: grid; gap: 0.35rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--raised); padding: 1rem; }
+.market-prices > div:first-child { color: var(--toward-yes); }
+.market-prices > div:last-child { color: var(--toward-no); }
 .market-prices span { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; }
 .market-prices strong { font-size: clamp(1.8rem, 5vw, 2.6rem); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .market-prices small { font-size: 1rem; }
-.market-price-note { color: #a9aebb; font-size: 0.82rem; line-height: 1.5; }
+.market-price-note { color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
 .market-rules h2, .market-ticket h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
 .market-criteria { white-space: pre-wrap; line-height: 1.6; }
 .trade-summary { display: grid; gap: 0.7rem; font-size: 0.85rem; }
@@ -49,23 +50,39 @@
  * with min-width queries. The accent is a neutral lime, deliberately not Ohio
  * State's scarlet and gray, so the app does not look like an official
  * university product.
+ *
+ * One dark theme for every page since 2026-09-23 (docs/DESIGN.md). Data
+ * colours were validated with the data-visualisation checks, not chosen by
+ * eye: --yes and --no pass lightness band, chroma, colourblind separation
+ * (delta E 31.5) and 3:1 contrast on the --card surface. The bright brand
+ * lime is for buttons and labels only; data marks use the validated step.
  */
 
 :root {
-  --ink: #0f1115;
-  --ink-soft: #3a3f4b;
-  --muted: #6b7180;
-  --paper: #f5f4ef;
-  --card: #ffffff;
-  --line: #e3e1d8;
+  --paper: #0b0d10;
+  --card: #14171c;
+  --raised: #1b1f26;
+  --line: #262b33;
+  --line-strong: #353b45;
+  --ink: #eef0f3;
+  --ink-soft: #c4c9d2;
+  --muted: #8b93a1;
   --accent: #d2f24a;
-  --accent-ink: #1b2400;
-  --danger: #b42318;
-  --danger-bg: #fef3f2;
-  --success: #067647;
-  --success-bg: #ecfdf3;
+  --accent-ink: #141a00;
+  --yes: #82a000;
+  --no: #796ae5;
+  /* Text-safe steps of the same two hues, for the direction of a move. */
+  --toward-yes: #b9dc4f;
+  --toward-no: #a99ff2;
+  /* A lime-tinted surface for notes and the welcome panels. */
+  --accent-wash: #1f2610;
+  --accent-wash-ink: #d9ec9a;
+  --danger: #ff8f85;
+  --danger-bg: #2c1512;
+  --success: #74e0a8;
+  --success-bg: #0f271c;
   --radius: 18px;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -75,27 +92,10 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Shell */
-.site-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.app-header {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 1rem clamp(1rem, 4vw, 2.5rem);
-  border-bottom: 1px solid var(--line); background: var(--paper);
-}
-.wordmark { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; letter-spacing: -0.01em; text-decoration: none; white-space: nowrap; }
-@media (max-width: 420px) {
-  .access-label span { display: none; }
-}
-.brand-mark { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 0.6rem; background: var(--ink); color: var(--accent); }
-.access-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; }
-.access-label span { color: var(--muted); }
+/* Shared. The app’s arrow (U+2197) is always followed by U+FE0E, which asks for
+   the text glyph: without it Windows draws a blue emoji tile, and font-variant-emoji
+   did not prevent that. src/app/glyphs.test.ts keeps every arrow marked. */
 .eyebrow { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); }
-.app-footer {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;
-  padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
-  border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--muted);
-}
 
 /* Sign-in and sign-up */
 .entry-grid { flex: 1; display: grid; gap: 1.5rem; width: 100%; max-width: 1120px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 2.5rem; }
@@ -107,16 +107,16 @@ body {
 .entry-form-panel > .form-error { margin-bottom: 1rem; }
 .form-heading h1, .account-card h1, .account-welcome h1 { font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
 .form-heading p, .account-card > p { color: var(--ink-soft); line-height: 1.5; }
-.entry-story { display: grid; gap: 1rem; background: var(--ink); color: #f4f4f0; border-radius: var(--radius); padding: clamp(1.5rem, 4vw, 2.5rem); }
+.entry-story { display: grid; gap: 1rem; background: linear-gradient(160deg, var(--accent-wash) 0%, var(--card) 55%); border: 1px solid var(--line); color: var(--ink); border-radius: var(--radius); padding: clamp(1.5rem, 4vw, 2.5rem); }
 .entry-story .eyebrow { color: var(--accent); }
 .entry-story h2 { font-size: clamp(2rem, 6vw, 3.25rem); font-weight: 700; line-height: 1; letter-spacing: -0.04em; }
 .entry-story em { font-style: normal; color: var(--accent); }
-.story-description { color: #c9ccd4; line-height: 1.5; }
+.story-description { color: var(--ink-soft); line-height: 1.5; }
 .goal-list { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
-.goal-list > div { display: grid; grid-template-columns: 2.25rem 1fr auto; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border: 1px solid #2a2e37; border-radius: 12px; }
-.goal-list span:first-child { color: #8a90a0; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.goal-list > div { display: grid; grid-template-columns: 2.25rem 1fr auto; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border: 1px solid var(--line-strong); border-radius: 12px; background: rgb(0 0 0 / 0.18); }
+.goal-list span:first-child { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .goal-list span:last-child { color: var(--accent); }
-.story-footnote { color: #8a90a0; font-size: 0.85rem; }
+.story-footnote { color: var(--muted); font-size: 0.85rem; }
 
 /* Forms */
 .auth-form, .review-form { display: grid; gap: 1rem; }
@@ -126,29 +126,31 @@ body {
 .label-row a { font-size: 0.8rem; color: var(--ink-soft); }
 .field input, .field textarea {
   width: 100%; font: inherit; font-size: 1rem; /* 16px keeps iOS from zooming on focus */
-  padding: 0.8rem 0.9rem; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink);
+  padding: 0.8rem 0.9rem; border: 1.5px solid var(--line-strong); border-radius: 12px; background: var(--raised); color: var(--ink);
 }
 .field textarea { resize: vertical; }
-.field input:focus, .field textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgb(210 242 74 / 0.6); }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(210 242 74 / 0.25); }
+.field input::file-selector-button { background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.35rem 0.7rem; margin-right: 0.7rem; }
 .field-hint { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
 .checkbox-row { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.92rem; line-height: 1.4; }
-.checkbox-row input { width: 1.1rem; height: 1.1rem; margin-top: 0.1rem; accent-color: var(--ink); }
+.checkbox-row input { width: 1.1rem; height: 1.1rem; margin-top: 0.1rem; accent-color: var(--accent); }
 .form-error, .form-success { padding: 0.75rem 0.9rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; }
 .form-error { background: var(--danger-bg); color: var(--danger); }
 .form-success { background: var(--success-bg); color: var(--success); }
 .form-switch { text-align: center; font-size: 0.9rem; color: var(--ink-soft); }
 .form-switch a { font-weight: 600; }
-.rule-note { padding: 0.75rem 0.9rem; border-radius: 12px; background: #f0f3de; color: #3d4a0f; font-size: 0.88rem; line-height: 1.45; }
+.rule-note { padding: 0.75rem 0.9rem; border-radius: 12px; background: var(--accent-wash); color: var(--accent-wash-ink); font-size: 0.88rem; line-height: 1.45; }
 
 /* Buttons */
 .primary-button, .secondary-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  min-height: 3rem; padding: 0.75rem 1.25rem; border: 1.5px solid var(--ink); border-radius: 999px;
+  min-height: 3rem; padding: 0.75rem 1.25rem; border: 1.5px solid var(--line-strong); border-radius: 999px;
   font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; transition: transform 0.1s ease;
 }
-.primary-button { width: 100%; background: var(--ink); color: #fff; }
-.primary-button span { color: var(--accent); }
+.primary-button { width: 100%; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.primary-button span { color: var(--accent-ink); }
 .secondary-button { background: transparent; color: var(--ink); }
+.secondary-button:hover:not(:disabled) { border-color: var(--ink-soft); }
 .primary-button:hover:not(:disabled), .secondary-button:hover:not(:disabled) { transform: translateY(-1px); }
 .primary-button:disabled, .secondary-button:disabled { opacity: 0.55; cursor: progress; }
 .text-button {
@@ -163,54 +165,14 @@ body {
   display: grid; gap: 0.75rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(1.25rem, 4vw, 2rem);
 }
 .account-welcome p { color: var(--muted); line-height: 1.5; }
-.balance-card { grid-template-columns: 1fr auto; align-items: center; background: var(--ink); color: #f4f4f0; border-color: var(--ink); }
+.balance-card { grid-template-columns: 1fr auto; align-items: center; background: linear-gradient(135deg, var(--accent-wash) 0%, var(--card) 65%); }
 .balance-card .eyebrow { color: var(--accent); }
 .balance-number { margin-top: 0.35rem; font-size: clamp(2.5rem, 10vw, 3.75rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .balance-symbol { font-size: 2rem; color: var(--accent); }
-.balance-card > p { grid-column: 1 / -1; color: #a9aebb; font-size: 0.85rem; }
+.balance-card > p { grid-column: 1 / -1; color: var(--muted); font-size: 0.85rem; }
 .account-note h2, .goals-card h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
 .account-note p { color: var(--ink-soft); }
-.account-note a { font-weight: 600; }
-
-/* Private holdings. */
-.positions-main { max-width: 840px; }
-.positions-main > .market-nav { margin-bottom: 0; }
-.positions-heading { display: grid; gap: 0.8rem; padding: clamp(1.5rem, 5vw, 2.5rem); background: var(--ink); color: var(--paper); border-radius: var(--radius); }
-.positions-heading .eyebrow { color: var(--accent); }
-.positions-heading h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; font-weight: 700; letter-spacing: -0.04em; }
-.positions-heading > p { max-width: 40rem; color: #c9ccd4; line-height: 1.5; }
-.positions-count { display: flex; align-items: baseline; gap: 0.7rem; padding-top: 0.5rem; }
-.positions-count strong { font-size: 2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
-.positions-count span { font-size: 0.9rem; }
-.positions-explainer { display: grid; gap: 0.3rem; padding: 0.25rem 0.25rem 0.75rem; font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; }
-.positions-list-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-.positions-list-heading h2 { font-size: 1.1rem; font-weight: 700; }
-.positions-list-heading span { color: var(--muted); font-size: 0.8rem; }
-.position-list { display: grid; gap: 1rem; padding: 0; list-style: none; }
-.position-card { display: grid; gap: 1rem; padding: clamp(1.25rem, 4vw, 2rem); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; overflow-wrap: anywhere; }
-.position-person { font-size: 0.8rem; }
-.position-person span { color: var(--muted); }
-.position-card h3 { font-size: 1.25rem; line-height: 1.3; font-weight: 700; letter-spacing: -0.02em; }
-.position-card h3 a { text-decoration: none; }
-.position-card h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.position-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.75rem; }
-.position-side { display: grid; gap: 0.75rem; padding: 1rem; border-radius: 12px; background: var(--paper); }
-.position-yes { background: #f0f3de; }
-.position-side-label { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; }
-.position-side dl { display: grid; gap: 0.5rem; }
-.position-side dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
-.position-side dt { color: var(--ink-soft); font-size: 0.8rem; }
-.position-side dd { font-size: 1rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.position-side small { font-size: 0.75rem; font-weight: 400; }
-.position-ruling { font-size: 0.85rem; line-height: 1.5; }
-.position-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
-.position-footer p { display: grid; gap: 0.25rem; font-size: 0.8rem; }
-.position-footer p span { color: var(--muted); }
-.position-footer .secondary-button { min-height: 2.75rem; font-size: 0.85rem; padding: 0.5rem 1rem; }
-.positions-pagination { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
-.positions-pagination .secondary-button { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
-.positions-empty { text-align: center; justify-items: center; padding-top: 2rem; padding-bottom: 2rem; }
-.empty-mark { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--accent); font-size: 1.5rem; margin-bottom: 0.5rem; }
+.account-note a { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Goals */
 .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
@@ -222,7 +184,7 @@ body {
 .goal-rows .rejection { font-size: 0.85rem; color: var(--danger); }
 .status-pill {
   justify-self: start; display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: #eeede6; color: var(--ink-soft);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: var(--raised); color: var(--ink-soft);
 }
 .status-open { background: var(--accent); color: var(--accent-ink); }
 .status-rejected, .status-cancelled { background: var(--danger-bg); color: var(--danger); }
@@ -231,8 +193,8 @@ body {
 .type-picker legend { margin-bottom: 0.5rem; }
 .type-option { position: relative; }
 .type-option input { position: absolute; opacity: 0; pointer-events: none; }
-.type-option span { display: inline-block; padding: 0.55rem 0.95rem; border: 1.5px solid var(--line); border-radius: 999px; background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-.type-option input:checked + span { background: var(--ink); border-color: var(--ink); color: #fff; }
+.type-option span { display: inline-block; padding: 0.55rem 0.95rem; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--raised); font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.type-option input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .type-option input:focus-visible + span { box-shadow: 0 0 0 3px rgb(210 242 74 / 0.8); }
 
 /* Owner review */
@@ -257,9 +219,9 @@ body {
 .evidence-mine { display: grid; gap: 0.6rem; }
 .evidence-mine li { display: grid; gap: 0.25rem; border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.85rem; font-size: 0.85rem; overflow-wrap: anywhere; }
 .evidence-mine-what { font-weight: 600; }
-.evidence-status { justify-self: start; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--line); color: var(--ink-soft); }
+.evidence-status { justify-self: start; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--raised); color: var(--ink-soft); }
 .evidence-status-published { background: var(--accent); color: var(--accent-ink); }
-.evidence-status-rejected { background: var(--ink); color: #f4f4f0; }
+.evidence-status-rejected { background: var(--danger-bg); color: var(--danger); }
 .evidence-public { display: grid; gap: 1rem; }
 .evidence-public li { display: grid; gap: 0.5rem; }
 .evidence-public img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
@@ -300,46 +262,9 @@ body {
 /* ========================================================================
    Market surfaces, redesigned 2026-09-22 (docs/DESIGN.md).
    Kalshi's layout, YouTube's thumbnails, GoFundMe's titles and single bar.
-   Dark, scoped to .theme-dark so account, review and positions pages are
-   untouched until the look is approved.
-
-   Data colours were validated with the data-visualisation checks, not chosen
-   by eye: --yes and --no pass lightness band, chroma, colourblind separation
-   (delta E 31.5) and 3:1 contrast on the --card surface. The bright brand
-   lime is for buttons and labels only; data marks use the validated step.
+   Since 2026-09-23 every page uses this shell and the tokens in :root.
    ======================================================================== */
-.theme-dark {
-  --paper: #0b0d10;
-  --card: #14171c;
-  --raised: #1b1f26;
-  --line: #262b33;
-  --line-strong: #353b45;
-  --ink: #eef0f3;
-  --ink-soft: #c4c9d2;
-  --muted: #8b93a1;
-  --accent: #d2f24a;
-  --accent-ink: #141a00;
-  --yes: #82a000;
-  --no: #796ae5;
-  /* Text-safe steps of the same two hues, for the direction of a move. */
-  --toward-yes: #b9dc4f;
-  --toward-no: #a99ff2;
-  --danger: #ff8f85;
-  --danger-bg: #2c1512;
-  --success: #74e0a8;
-  --success-bg: #0f271c;
-  color-scheme: dark;
-  background: var(--paper);
-  color: var(--ink);
-}
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-/* The page canvas comes from html and body, not the shell, so without this a
-   phone's overscroll bounce flashes the light background past a dark page.
-   No color-scheme here, on purpose: with it, the build's CSS compiler rewrote
-   the rule with its color-scheme polyfill and the result never reached the
-   browser's stylesheet. The shell already sets color-scheme for its contents. */
-html:has(.theme-dark) { background: #0b0d10; }
-body:has(.theme-dark) { background: #0b0d10; }
 
 .market-shell { min-height: 100vh; display: flex; flex-direction: column; }
 /* Every track is minmax(0, 1fr). An auto track grows to its widest child's natural
@@ -548,35 +473,51 @@ body:has(.theme-dark) { background: #0b0d10; }
   @keyframes feed-prompt-in { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
 }
 
-/* The goal page under the dark theme. These components predate it and several
-   use var(--ink) as a background with light text on top. Flipping --ink alone
-   would turn them into light blocks with near-white text, so each is set here. */
-.theme-dark .market-main { max-width: 1240px; }
-.theme-dark .market-nav a { color: var(--ink-soft); }
-.theme-dark .market-nav a:hover { color: var(--ink); }
-.theme-dark .market-hero { background: var(--card); color: var(--ink); border-color: var(--line); }
-.theme-dark .market-rules, .theme-dark .market-ticket, .theme-dark .evidence-panel { background: var(--card); border-color: var(--line); }
-.theme-dark .market-hero .review-meta, .theme-dark .market-person span, .theme-dark .market-price-note { color: var(--muted); }
-.theme-dark .market-prices > div { border-color: var(--line-strong); background: var(--raised); }
-.theme-dark .market-prices > div:first-child { color: var(--toward-yes); }
-.theme-dark .market-prices > div:last-child { color: var(--toward-no); }
-.theme-dark .market-chart { padding-bottom: 1.1rem; }
-.theme-dark .status-pill { background: var(--raised); color: var(--ink-soft); }
-.theme-dark .status-open { background: var(--accent); color: var(--accent-ink); }
-.theme-dark .primary-button { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.theme-dark .primary-button span { color: var(--accent-ink); }
-.theme-dark .secondary-button { color: var(--ink); border-color: var(--line-strong); }
-.theme-dark .secondary-button:hover:not(:disabled) { border-color: var(--ink-soft); }
-.theme-dark .text-button { color: var(--ink-soft); }
-/* Inputs hardcode a white background; on a dark page that is white text on white. */
-.theme-dark .field input, .theme-dark .field textarea { background: var(--raised); color: var(--ink); border-color: var(--line-strong); }
-.theme-dark .field input:focus, .theme-dark .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(210 242 74 / 0.25); }
-.theme-dark .field input::file-selector-button { background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px; padding: 0.35rem 0.7rem; margin-right: 0.7rem; }
-.theme-dark .checkbox-row input { accent-color: var(--accent); }
-.theme-dark .type-option input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.theme-dark .rule-note { background: #1f2610; color: #d9ec9a; }
-.theme-dark .evidence-status-rejected { background: var(--raised); color: var(--ink); }
-.theme-dark .evidence-status { background: var(--raised); color: var(--ink-soft); }
-.theme-dark .evidence-status-published { background: var(--accent); color: var(--accent-ink); }
-.theme-dark .verified-statement { border-left-color: var(--accent); }
-.theme-dark .account-card { background: var(--card); border-color: var(--line); }
+.market-chart { padding-bottom: 1.1rem; }
+
+/* Private holdings: the signed-in person's own positions. Each card carries the
+   feed's thumbnail and chance bar, so a goal looks the same wherever it appears. */
+.positions-main { max-width: 900px; }
+.positions-main > .market-nav { margin-bottom: 0; }
+.positions-heading { display: grid; gap: 0.8rem; padding: clamp(1.5rem, 5vw, 2.25rem); background: linear-gradient(135deg, var(--accent-wash) 0%, var(--card) 65%); border: 1px solid var(--line); border-radius: var(--radius); }
+.positions-heading .eyebrow { color: var(--accent); }
+.positions-heading h1 { font-size: clamp(2rem, 6vw, 2.8rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.04em; }
+.positions-heading > p { max-width: 40rem; color: var(--ink-soft); line-height: 1.5; }
+.positions-count { display: flex; align-items: baseline; gap: 0.7rem; padding-top: 0.25rem; }
+.positions-count strong { font-size: 2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.positions-count span { font-size: 0.9rem; color: var(--ink-soft); }
+.positions-explainer { display: grid; gap: 0.3rem; padding: 0 0.25rem 0.5rem; font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+.positions-list-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.positions-list-heading h2 { font-size: 1.1rem; font-weight: 800; }
+.positions-list-heading span { color: var(--muted); font-size: 0.8rem; }
+.position-list { display: grid; gap: 1rem; padding: 0; list-style: none; }
+.position-card { display: grid; gap: 1rem; padding: clamp(1rem, 3vw, 1.4rem); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; overflow-wrap: anywhere; }
+.position-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.9rem; align-items: start; }
+@media (min-width: 560px) { .position-top { grid-template-columns: 180px minmax(0, 1fr); } }
+.position-head { display: grid; gap: 0.5rem; min-width: 0; }
+.position-person { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; }
+.position-person span { color: var(--muted); }
+.position-card h3 { font-size: 1.1rem; line-height: 1.3; font-weight: 700; letter-spacing: -0.02em; }
+.position-card h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.position-chance { display: grid; gap: 0.4rem; font-size: 0.85rem; color: var(--ink-soft); }
+.position-chance strong { font-size: 1.1rem; color: var(--ink); font-weight: 800; }
+.position-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 0.75rem; }
+.position-side { display: grid; gap: 0.75rem; padding: 0.9rem 1rem; border-radius: 12px; background: var(--raised); border: 1px solid var(--line); }
+.position-side-label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; }
+.position-side-label::before { content: ""; width: 3px; height: 0.95rem; border-radius: 2px; }
+.position-yes .position-side-label::before { background: var(--yes); }
+.position-no .position-side-label::before { background: var(--no); }
+.position-side dl { display: grid; gap: 0.5rem; }
+.position-side dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
+.position-side dt { color: var(--muted); font-size: 0.8rem; }
+.position-side dd { font-size: 1rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.position-side small { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.position-ruling { font-size: 0.85rem; line-height: 1.5; padding: 0.7rem 0.85rem; border-radius: 12px; background: var(--accent-wash); color: var(--accent-wash-ink); }
+.position-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--line); }
+.position-footer p { display: grid; gap: 0.25rem; font-size: 0.8rem; }
+.position-footer p span { color: var(--muted); }
+.position-footer .secondary-button { min-height: 2.6rem; font-size: 0.85rem; padding: 0.5rem 1rem; }
+.positions-pagination { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-soft); }
+.positions-pagination .secondary-button { min-height: 2.5rem; padding: 0.5rem 0.9rem; font-size: 0.8rem; }
+.positions-empty { text-align: center; justify-items: center; padding-top: 2rem; padding-bottom: 2rem; }
+.empty-mark { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 1.5rem; margin-bottom: 0.5rem; }

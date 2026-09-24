@@ -70,7 +70,7 @@ export function OwnerControls({ marketId, version, canClose, canRule, isRevision
         </fieldset>
         <label className="field">Public explanation<textarea name="reason" required minLength={3} maxLength={2000} rows={4} /><span className="field-hint">Explain the outcome without copying private documents or personal details. This text appears on the public goal page.</span></label>
         <button className="secondary-button">Review ruling</button>
-      </form></details> : <p className="field-hint">Ruling opens after the seven-day proof period. Collect and review proof outside these forms until evidence submission is built.</p>}
+      </form></details> : <p className="field-hint">Ruling opens after the seven-day proof period. Proof the subject sends before then is listed on this card for you to review.</p>}
       <details><summary>Cancel this goal</summary><form action={prepare} className="auth-form">
         <input type="hidden" name="action" value="cancel" />
         <p className="field-hint">For a broken market: refund held costs and end trading. Missing proof is a NO ruling, not a reason to refund.</p>

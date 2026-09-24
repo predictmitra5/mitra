@@ -39,7 +39,7 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
   let market;
   try { market = await loadMarket(id); }
   catch {
-    return <div className="theme-dark market-shell"><MarketHeader signedIn={false} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/account">Your account</Link></section></main></div>;
+    return <div className="market-shell"><MarketHeader signedIn={false} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/">Back to all goals</Link></section></main><MarketFooter /></div>;
   }
   if (!market) notFound();
   // Feed measurement. recordClick swallows its own failures, and is called here
@@ -84,8 +84,8 @@ export default async function MarketPage({ params }: PageProps<"/markets/[id]">)
     // Leave the chart empty; the prices above are still correct.
   }
 
-  return <div className="theme-dark market-shell"><MarketHeader signedIn={!!identity} /><main className="market-main">
-    <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗</Link><Link href="/account">Your account ↗</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
+  return <div className="market-shell"><MarketHeader signedIn={!!identity} /><main className="market-main">
+    <nav className="market-nav"><Link href="/">← All goals</Link>{identity && <><Link href="/positions" prefetch={false}>Your predictions ↗︎</Link><Link href="/account">Your account ↗︎</Link></>}<span className="eyebrow">PLAY-MONEY PREDICTIONS</span></nav>
     <div className="market-layout">
       <div className="market-story">
         <section className="market-hero">

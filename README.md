@@ -16,11 +16,13 @@ Implemented:
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
 - Goal creation from templates (GPA, internship, club, gym) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
 - Monthly cash refills on the account page: a top-up to 1,000 available points when cash is below it, at most twice per Eastern calendar month. Money held in open predictions does not count. Retrying the same request returns the original receipt instead of crediting twice.
+- A private **Your predictions** page at `/positions`, linked from the top bar and the account page: each goal you hold shares in, with the same thumbnail and chance bar as the feed, your YES and NO shares and what you paid for them, in pages of 20, soonest deadline first. Held cost is shown as what you paid, not what the shares would sell for. Sold, paid-out and refunded holdings leave the list.
+- One dark interface across every page, built from Kalshi's prices and rundown, YouTube's thumbnails and GoFundMe's titles and single bar, with a price chart on featured goals and goal pages. See [docs/DESIGN.md](docs/DESIGN.md).
 - Public approved-goal pages with prices, resolution terms and deadlines; signed-in traders can preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: account withdrawal/deletion (including the deletion of a withdrawing person's documents, which is decided but unbuilt), outcome-decider assignment, profile pictures and deployment. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no search, follow or leaderboard. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner must explicitly confirm reviewed or missing proof because the app cannot infer missing evidence from uploads that are not built yet.
+Not yet implemented: account withdrawal/deletion (including the deletion of a withdrawing person's documents, which is decided but unbuilt), outcome-decider assignment, profile pictures and deployment. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no search, follow or leaderboard. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner still records a missing-proof NO explicitly rather than the app inferring it from an empty proof list.
 
 The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
@@ -130,4 +132,18 @@ To inspect the feed with enough goals to see the tabs, the "Just added" row and 
 node --env-file=.env.local scripts/preview-feed.mjs
 ```
 
-That one seeds four fictional people and nine goals into a disposable `mitra_feed_preview_*` schema and serves the whole app at localhost:3100, signed out. Authentication is unchanged, so signed-in controls still require a real verified account. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
+That one seeds seven fictional people and fourteen goals, with trades and price history, into a disposable `mitra_feed_preview_*` schema and serves the whole app at localhost:3100, signed out. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
+
+A preview killed outright, for example by closing its terminal on Windows, cannot remove its schema. This removes every preview schema left behind, and nothing else:
+
+```bash
+node --env-file=.env.local scripts/preview-feed.mjs --cleanup
+```
+
+To see the signed-in pages (account, new goal, your predictions, the owner's review queue and outcomes, and a goal page with the trade ticket and proof form) without an account:
+
+```bash
+node scripts/preview-signed-in.mjs
+```
+
+It renders the real page components against an in-memory database seeded with fictional people, so it needs no credentials, touches no Supabase project and creates no Auth users. Open http://127.0.0.1:3120 and pick a person. Forms render but do not submit: it shows how pages look, not what they do. Build first; it takes the stylesheet from the build.

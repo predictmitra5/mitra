@@ -47,6 +47,18 @@ function clip(text: string, max: number): string {
  */
 export function thumbnailText(goalType: string | null, question: string, displayName?: string): string {
   const q = question.trim();
+  // "Will <name> …" with the name stripped exactly, when it is known. Shape alone
+  // cannot tell a two-word name ("Sam Lee launch") from a name and a verb ("Sam launch").
+  const named = displayName && q.toLowerCase().startsWith(`will ${displayName.toLowerCase()} `)
+    ? q.slice(`will ${displayName} `.length)
+    : null;
+  // The gym template is "Will <name> <achievement> by <date>?", so with the name
+  // known the achievement is exact. The verb pattern below guessed the name's
+  // length and took a surname as part of the lift ("Rivera bench press").
+  if (goalType === "gym" && named) {
+    const achievement = named.replace(/ by [^?]+\?$/i, "");
+    if (achievement && achievement !== named) return clip(titleCase(achievement), THUMBNAIL_MAX);
+  }
   const patterns: Record<string, RegExp> = {
     gpa: /at least an? ([0-9.]+) GPA/i,
     club: /admission to (.+?) by /i,
@@ -60,11 +72,7 @@ export function thumbnailText(goalType: string | null, question: string, display
     return clip(titleCase(match[1]), THUMBNAIL_MAX);
   }
   // Own words, or wording that changed: take the verb phrase after "Will <name>".
-  // The name is stripped exactly when known, because shape alone cannot tell a
-  // two-word name ("Sam Lee launch") from a name and a verb ("Sam launch").
-  const lead = displayName && q.toLowerCase().startsWith(`will ${displayName.toLowerCase()} `)
-    ? q.slice(`will ${displayName} `.length)
-    : q.replace(/^Will \S+ /i, "");
+  const lead = named ?? q.replace(/^Will \S+ /i, "");
   const phrase = lead.replace(/\?$/, "").replace(/ by [^?]+$/i, (m) => (goalType === "own_words" ? m : ""));
   return clip(titleCase(phrase || q), THUMBNAIL_MAX);
 }

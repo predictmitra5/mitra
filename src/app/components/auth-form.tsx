@@ -31,7 +31,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     </div>}
     {state.error && <p className="form-error" role="alert">{state.error}</p>}
     {state.success && <div className="form-success" role="status">{state.success}</div>}
-    <button className="primary-button" disabled={pending} type="submit">{pending ? "Please wait…" : labels[mode]}<span aria-hidden="true">↗</span></button>
+    <button className="primary-button" disabled={pending} type="submit">{pending ? "Please wait…" : labels[mode]}<span aria-hidden="true">↗︎</span></button>
     {mode === "sign-in" && <p className="form-switch">New here? <Link href="/sign-up">Create an account</Link></p>}
     {mode !== "sign-in" && <p className="form-switch"><Link href="/sign-in">Back to sign in</Link></p>}
   </form>;

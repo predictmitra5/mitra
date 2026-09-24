@@ -4,7 +4,7 @@ How Mitra's market surfaces are laid out, and why. Redesigned 2026-09-22 from th
 
 The owner's brief: Kalshi's price and information layout and its rundown of events; the thumbnail quality and title structure of YouTube and GoFundMe, compressed to a Kalshi-sized card; a price graph if it earns its place.
 
-Applies to the public home feed (`/`) and the goal page (`/markets/[id]`). Account, review and positions pages keep the original light theme until this look is approved.
+Applied first to the public home feed (`/`) and the goal page (`/markets/[id]`), then on 2026-09-23 to every page; see section 7.
 
 ---
 
@@ -117,4 +117,16 @@ Each of these is a product decision that has not been made, so the redesign leav
 node --env-file=.env.local scripts/preview-feed.mjs
 ```
 
-After `npm run build`. Seeds seven fictional people and fourteen goals with price paths and trades into a disposable schema, serves the app at http://localhost:3100 signed out, and removes it all on Ctrl+C. `--dev` runs a hot-reloading server instead; stop `npm run dev` first, as the two share a build folder.
+After `npm run build`. Seeds seven fictional people and fourteen goals with price paths and trades into a disposable schema, serves the app at http://localhost:3100 signed out, and removes it all on Ctrl+C. `--dev` runs a hot-reloading server instead; stop `npm run dev` first, as the two share a build folder. If the process is killed rather than stopped, `--cleanup` removes what it left.
+
+For the signed-in pages, `node scripts/preview-signed-in.mjs` renders the real page components against an in-memory database of fictional people at http://127.0.0.1:3120. No credentials, no Supabase, no Auth users; forms render but do not submit.
+
+---
+
+## 7. Every page (2026-09-23)
+
+The owner said to go ahead after being asked whether to roll the look out everywhere. Sign-in, sign-up, password pages, account, new goal, your predictions and the three owner pages now share the market top bar and footer, and the dark tokens moved from a scoped class to `:root`.
+
+- **Components that assumed a light page were rewritten, not overridden.** Several used the ink colour as a background with white text on top; flipping the tokens alone would have produced near-white blocks with near-white text. Inputs no longer hard-code white. Primary buttons are lime with dark text. The welcome panels (balance, your predictions, the sign-up story) use a faint lime wash instead of a solid dark block, which on a dark page would vanish.
+- **Your predictions uses the feed's card parts**: the thumbnail, avatar and chance bar, so a goal looks the same everywhere. YES and NO holdings carry the same short colour keys as the price pills.
+- **The arrow glyph.** The app's `↗` rendered as a blue emoji tile on Windows, including inside the logo. `font-variant-emoji: text` did not prevent it; the text-presentation selector (U+FE0E) after each arrow does, and a test keeps every arrow marked.

@@ -5,7 +5,7 @@ export function MarketHeader({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="topbar">
       <Link className="topbar-brand" href="/">
-        <span className="topbar-mark" aria-hidden="true">&#8599;</span>
+        <span className="topbar-mark" aria-hidden="true">&#8599;&#65038;</span>
         Mitra
       </Link>
       <span className="topbar-scope">Ohio State <span>/ early access</span></span>

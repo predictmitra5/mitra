@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { LifecycleError, listLifecycleMarkets, readObjections } from "@/modules/market/lifecycle";
-import { AppHeader } from "@/app/components/auth-screen";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { listForOwner } from "@/modules/evidence/service";
 import { signedOriginalUrl } from "@/modules/evidence/storage";
 import { OwnerControls } from "./owner-controls";
@@ -44,13 +44,13 @@ export default async function ManageMarketsPage() {
     // whole outcome queue down with it.
     proof: await loadProof(identity.id, row.market.id),
   })));
-  return <div className="site-shell"><AppHeader /><main className="account-main review-main">
+  return <div className="market-shell"><MarketHeader signedIn /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review new goals</Link></div>
     <section className="account-welcome"><h1>Follow every goal through.</h1><p>Close trading, review proof, and explain each outcome. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
     {!items.length && <section className="account-card"><h2>No active goals to manage.</h2><Link href="/account">Your account</Link></section>}
     {items.map(({ market, displayName, handle, objections, proof }) => <article className="review-card" key={market.id}>
       <div className="review-meta"><span className={`status-pill status-${market.status}`}>{market.status}</span><span>{displayName} · @{handle}</span></div>
-      <h2><Link href={`/markets/${market.id}`}>{market.question} ↗</Link></h2><p className="market-criteria">{market.resolutionCriteria}</p>
+      <h2><Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link></h2><p className="market-criteria">{market.resolutionCriteria}</p>
       <dl className="goal-dates"><div><dt>Trading deadline</dt><dd>{when.format(market.deadlineAt)} ET</dd></div><div><dt>Proof deadline</dt><dd>{when.format(market.evidenceDeadlineAt)} ET</dd></div></dl>
       {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && when.format(market.contestEndsAt)} ET</p></section>}
       {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {when.format(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
@@ -64,11 +64,11 @@ export default async function ManageMarketsPage() {
             : item.viewUrl
               ? <a href={item.viewUrl} target="_blank" rel="noopener noreferrer">Open the original image (link expires in 5 minutes)</a>
               : <span className="muted">That image could not be opened. Reload the page for a fresh link.</span>}
-          {item.status === "submitted" && <Link className="text-button" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗</Link>}
+          {item.status === "submitted" && <Link className="text-button" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗︎</Link>}
         </article>)}
       </section>}
       <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}
         canRule={market.rulingAvailable} isRevision={market.status === "ruled"} />
     </article>)}
-  </main><footer className="app-footer"><span>Play money. Real goals.</span><span>Owner tools</span></footer></div>;
+  </main><MarketFooter /></div>;
 }

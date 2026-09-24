@@ -4,7 +4,7 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { GoalError, listPendingDrafts } from "@/modules/goals/service";
 import { DEADLINE_TIME_ZONE } from "@/modules/goals/templates";
-import { AppHeader } from "../components/auth-screen";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { ReviewForms } from "./review-forms";
 
 export const metadata = { title: "Review goals" };
@@ -27,9 +27,9 @@ export default async function ReviewPage({ searchParams }: PageProps<"/review">)
   const { notice } = await searchParams;
   const message = notice === "approved" ? "Goal opened for trading." : notice === "rejected" ? "Goal rejected. They can see your reason." : undefined;
 
-  return <div className="site-shell"><AppHeader /><main className="account-main review-main">
+  return <div className="market-shell"><MarketHeader signedIn /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER REVIEW</span><Link className="text-button" href="/account">Back to account</Link></div>
-    <Link className="secondary-button" href="/review/markets">Manage outcomes and objections ↗</Link>
+    <Link className="secondary-button" href="/review/markets">Manage outcomes and objections ↗︎</Link>
     <section className="account-welcome"><h1>{drafts.length === 0 ? "Nothing to review." : `${drafts.length} goal${drafts.length === 1 ? "" : "s"} waiting.`}</h1><p>Approve only goals that can’t be won or lost just by deciding to. Set the opening odds to your honest guess.</p></section>
     {message && <p className="form-success" role="status">{message}</p>}
     {drafts.map(({ market, subject }) => <article key={market.id} className="review-card">
@@ -39,5 +39,5 @@ export default async function ReviewPage({ searchParams }: PageProps<"/review">)
       <dl className="goal-dates"><div><dt>Trading closes</dt><dd>{when.format(market.deadlineAt)} ET</dd></div><div><dt>Proof due</dt><dd>{when.format(market.evidenceDeadlineAt)} ET</dd></div></dl>
       <ReviewForms marketId={market.id} />
     </article>)}
-  </main><footer className="app-footer"><span>Play money. Real goals.</span><span>Ohio State early access</span></footer></div>;
+  </main><MarketFooter /></div>;
 }
