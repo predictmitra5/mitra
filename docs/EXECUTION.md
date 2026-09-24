@@ -24,7 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### Continue Claude's Vercel handoff — 2026-09-24 (Codex)
+
+- The owner explicitly asked Codex to inspect Claude's work and continue deploying to Vercel. This resumes Codex work after the earlier Claude-only arrangement. The working tree is clean at cc13697 and Claude's In progress entry is clear; leave the superseded Codex stash untouched.
+- Review the latest deployment changes and relevant code/configuration, run the current local tests/typecheck/lint/build, and verify current Vercel documentation for Node 24, region and all-deployment protection. Follow the recorded 2026-09-24 Vercel, private-first, upload-size and push-main decisions. No new product rules, schema changes or live test accounts are planned.
+- The owner confirms no Vercel project exists yet. Open the project setup and continue as far as the available authenticated access permits; the owner handles account acceptance and entering credentials. Do not read, print, paste or commit secret values. Check the actual remote head before deciding whether a push is necessary; local origin/main appears stale.
+- Record and correct any concrete deployment blockers before implementation. Keep every deployment private, including its production domain, and verify that protection before a live walkthrough or sharing. Do not incur a paid plan or weaken access controls without the owner's decision.
+- Update deployment instructions and the execution record with what is verified, the actual project/deployment URL if created, and any precise remaining owner steps. Do not describe preparation or an unverified URL as a completed deployment. One workspace writer only; any parallel research uses public provider documentation, not workspace edits.
 
 ## Deferred, to come back to
 
