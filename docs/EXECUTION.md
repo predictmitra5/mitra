@@ -24,7 +24,22 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-09-24 - Deploy to Vercel, private at first (Claude Code)
+
+**What:** make the app ready for Vercel and push it, so the owner can import the repository, paste the environment values and turn on protection. Creating the Vercel account, entering secrets and changing Supabase's URL settings are the owner's to do; the steps go in README.md.
+
+**Relies on:** the owner's answers of 2026-09-24, recorded in DECISIONS.md as the first step: host on Vercel ("need to deploy on vercel"); private at first, behind Vercel's own login for every deployment, with shareable links for testers, until email confirmation is back on; keep the 10 MB proof and 8 MB photo limits; push `main`.
+
+**Why code changes:** Vercel refuses any request body over 4.5 MB, and today files travel through a server action. Keeping the limits means files go from the browser straight to Supabase Storage.
+
+**Steps:**
+
+1. DECISIONS.md entry.
+2. Proof uploads in three steps: a server action checks the person, the goal and the declared type and size and returns a signed upload URL for one path (Supabase's signed uploads last two hours and cannot overwrite); the browser sends the file there; a second action reads the object back, checks its real size and its file signature against the declared type, re-checks eligibility and writes the row, discarding the object if anything fails. Existing checks and messages are kept.
+3. Photo uploads the same way into a new private staging bucket, `photo-uploads` (JPEG, PNG or WebP, 8 MB); the server reads the original, runs the unchanged AI-label check and re-encoding into `profile-photos`, and always deletes the staging copy. `scripts/setup-evidence-storage.mjs` creates the bucket; run it once against the project.
+4. Server actions go back to Next.js's default body limit, since no file passes through them any more.
+5. `vercel.json` runs functions in `yul1` (Montréal, the same AWS region as the database, ca-central-1); `package.json` pins Node 24.
+6. README.md: the owner's deployment steps. Tests, typecheck, lint and build; then push `main`.
 
 ## Deferred, to come back to
 

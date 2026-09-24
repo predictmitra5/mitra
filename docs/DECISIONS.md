@@ -448,3 +448,16 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Technical choices under delegation, recorded so they are not mistaken for owner rules:** a position's value is its shares at the current price, which is how Kalshi shows it and how the boards' numbers are computed; it can be more than selling would return at that moment, because a sale moves the price. The trade panel's estimate applies the market maker's formula at the current public price, so it includes price impact; the server's preview remains the exact figure. A goal with no movement in 24 hours can still be featured when nothing else moved.
 
 **Not built, though drawn on the boards:** a Trade history link on the account page, which is not on the owner's feature list, and editing the display name, which does not exist.
+
+## 2026-09-24 - Hosting on Vercel, private at first
+
+**User instruction:** "need to deploy on vercel". Three questions followed; the owner's answers are quoted.
+
+**Confirmed:**
+
+- **Host: Vercel.** This settles the hosting question left open in D05. Which Vercel plan is the owner's choice when they create the account; the free Hobby plan is limited by Vercel's terms to personal, non-commercial use, which a play-money pilot with no revenue fits, and was pointed out.
+- **Who can open it at first: "Private, share by link".** Every deployment, production included, sits behind Vercel Authentication, which is free on every plan. Testers get Vercel's shareable links. The site goes public only once email confirmation is back on, because with it off anyone could sign up with another student's `@osu.edu` address.
+- **Upload sizes: "Keep 10 MB / 8 MB"**, not the recommended cap at 4 MB. Vercel refuses request bodies over 4.5 MB, so proof and photos go from the browser straight to Supabase Storage through one-time signed upload links, and the server reads each file back to check it before recording it. Nothing about who may upload, what is accepted, or what is published changes.
+- **Push the code to the private GitHub repository: "Yes, push main".**
+
+**Technical choices under delegation:** functions run in Vercel's `yul1` region (Montréal), the same AWS region as the Supabase database, since every page makes several database round trips; Node 24, as developed. Photos wait in a private staging bucket, `photo-uploads`, only until they are checked and re-encoded, then the staging copy is deleted.
