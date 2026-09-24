@@ -378,3 +378,42 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Unchanged:** only the subject may submit, only during the proof window; the owner reviews everything before anything is visible; originals are kept permanently; an objector sees exactly what the public sees; withdrawing an account deletes the documents and leaves a tombstone.
 
 **Not inferred:** no automatic ruling from a statement. Extraction proposes wording, the owner confirms or rewrites it, and the ruling remains a separate decision.
+
+## 2026-09-24 - Profile photos, bans, "bet on literally anything", live prices
+
+**User instruction:** "I need to create a lot of persimissons for the owner accounnt. first off, how can we add a methodology that allows us to get pfps for aeveryone posting a goal. we also make sure the pfp isnt ai generated. qlso, is it possibel to prefer users that have a pfp in the algorithm. ... also, make sue the mian thing is bet on literally anytng that should be the motto ... need to make the stock ticker look more liek a stock ticker. does it have real time updates? ... also, make sure the owner accoutns cna ban people." Four choices were then put to the owner; their answers are quoted below.
+
+**Profile photos. Answer: "Required to post a goal".**
+
+- Anyone writing a goal needs a profile photo first. Browsing and betting do not need one.
+- The photo is public wherever the person's name appears: feed cards and thumbnails, goal pages, the review queue, positions. Posting a goal on a public feed already puts the person's name there; the photo goes with it.
+- One photo per person, replaceable or removable at any time. Removing it blocks new goals; existing goals fall back to initials.
+- Stored privately and served by the app, re-encoded to a 512-pixel square with every piece of metadata stripped, including the location a phone writes into a photo.
+- No feed boost for having a photo. The owner accepted the recommendation that it is unnecessary once every goal has one.
+- Deleting the photo when an account is withdrawn belongs with the unbuilt withdrawal flow, like proof.
+
+**Keeping out AI-generated photos. Answer: "Auto-check AI labels" only.** The owner did not choose approving every photo by hand, camera-only capture or a paid detector.
+
+- An upload is refused if its metadata declares it AI-generated or AI-composited (the IPTC digital source types that C2PA content credentials also use) or carries a known generator's signature (for example Stable Diffusion's saved parameters, ComfyUI workflows, DALL-E, Midjourney, Adobe Firefly).
+- Limit, stated to the owner: this only catches images that still carry the labels. A screenshot, or any tool that strips metadata, passes. Nothing available can guarantee a photo is not AI-generated.
+- The owner still sees each person's photo beside their goal in the review queue before approving it. A photo changed after that goes live after the automatic check only.
+
+**Owner permissions (technical form under delegated authority, within "I need to create a lot of permissions for the owner account"):** the owner gets a People page listing every account, can remove anyone's photo, and sees a count of goals and proof waiting in the top bar.
+
+**Bans. Answer: "Lock out, refund their goals".**
+
+- Owner only; the owner cannot ban themselves. A private reason is recorded with who banned and when.
+- A banned person cannot sign in, bet, post goals, refill, send proof or object.
+- Their open goals, and closed goals still waiting for a ruling, are cancelled and every trader refunded at held cost, because they can no longer send proof. Their drafts are rejected.
+- Interpretation, flagged to the owner: a goal already ruled no longer depends on their proof, so it finishes its objection window and settles normally.
+- Their bets on other people's goals stay and settle normally.
+- Unbanning restores access. Cancelled goals stay cancelled.
+
+**"Bet on literally anything." Answer: "Anything about yourself".**
+
+- The motto is "Bet on literally anything." A goal can be anything about the poster's own life, not just grades, clubs, internships and the gym. Those four stay as quick starts.
+- Unchanged: people post only about themselves, the owner approves every goal before it is public, and a goal must be something the person cannot win or lose just by deciding to.
+
+**Stock-ticker look and live prices (technical and visual, delegated).** The goal chart gets a stock app's shape: the current price large, the change over the chosen range, and range buttons. A scrolling ticker tape of goals and prices runs across the feed. Prices refresh about every 15 seconds while a page is visible, through a read-only endpoint that records nothing, so refreshing cannot inflate the feed's view and click counts.
+
+**Not inferred:** no per-viewer personalization, no appeals process for bans, no notifications by email or phone, no posting about other people.

@@ -24,7 +24,17 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### Photos, bans, "anything", live prices and owner tools - 2026-09-24 (Claude Code)
+
+Implements DECISIONS.md, 2026-09-24. Built in this order, each step tested before the next:
+
+1. **Schema.** Migration: `profiles` gains photo path and time, and banned-at, banned-by and ban reason; `admin_action_kind` gains ban, unban and photo removal. Applied to Supabase.
+2. **Bans.** One standing check (withdrawn or banned) used by every service that today checks only withdrawal; `currentIdentity` treats a banned account as signed out and sign-in refuses it. `banPerson` sets the ban, rejects drafts and cancels open and unruled closed goals through the existing refund path; it is safe to re-run if a cancellation fails partway. Unban. A People page under `/review` for the owner.
+3. **Photos.** A private `profile-photos` bucket (added to the storage setup script and created), an AI-label check on the original bytes, re-encoding with sharp, a route that serves photos by handle, upload and removal on the account page and on the new-goal page, and the requirement enforced in `createGoalDraft` itself so no path skips it. Tests that create goals give their fixtures a photo. Photos replace initials in avatars and thumbnails. The owner can remove any photo.
+4. **"Bet on literally anything."** The motto on the feed, sign-up, metadata and footer; "Anything" first and selected by default in the goal form, with examples; varied thumbnail art for these goals.
+5. **Stock-ticker look and live prices.** Chart header with the current price, the change over the selected range and 1D, 1W, 1M and All; a scrolling ticker tape on the feed; a read-only quotes endpoint polled every 15 seconds while visible, updating feed cards, the ticker, the goal page's prices and chart.
+6. **Owner queue count** in the top bar.
+7. Docs and verification: tests, typecheck, lint, build, both previews at desktop and phone width, the live database checked afterwards.
 
 ## Deferred, to come back to
 
