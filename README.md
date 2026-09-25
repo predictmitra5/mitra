@@ -106,6 +106,8 @@ If that script reports wrong privacy on the bucket, fix it in the Supabase dashb
 
 Decided 2026-09-24: Vercel, **private at first** (see DECISIONS.md). Every deployment, production included, sits behind Vercel's own login until email confirmation is back on, because with confirmation off anyone could sign up with another student's `@osu.edu` address. Testers get a shareable link.
 
+Deployed 2026-09-24: [Mitra](https://mitra-chi-eight.vercel.app), managed in the [Vercel project](https://vercel.com/mughils-projects/mitra). Home and sign-in render, and unauthenticated requests to both production and deployment addresses redirect to Vercel login. A real-account walkthrough and Supabase email redirect configuration still need verification.
+
 You enter credentials and complete account setup yourself. The code and non-secret configuration can be prepared together; no credentials go into Git.
 
 1. **Create the Vercel account.** At vercel.com, sign up with **Continue with GitHub**, using the GitHub account that owns `wuckyduckylol/mitra`. The free Hobby plan is for personal, non-commercial use, which fits a play-money pilot.
@@ -120,6 +122,7 @@ You enter credentials and complete account setup yourself. The code and non-secr
    - `ANTHROPIC_MODEL`: `claude-haiku-4-5`
    - `AUTH_REQUIRE_EMAIL_CONFIRMATION`: `false`, while confirmation is off
    `DIRECT_DATABASE_URL` is not needed there: migrations run from your computer.
+   Save the two `NEXT_PUBLIC_SUPABASE_` entries as **Config**, acknowledging that their URL and publishable key are intended for the browser. Save private keys and database connection strings as **Secret**. Do not import the entire file under one type: the dashboard rejects public-prefixed names under Secret. An import adds entries and fails on duplicate names; use the existing entry's **Edit** action to replace its value. A saved Secret cannot become Config in place, so replacing a wrongly classified entry requires deleting and recreating that specific entry with the owner's value. See [Vercel's Config/Secret rules](https://vercel.com/docs/environment-variables/sensitive-environment-variables).
 5. **Deploy the latest source**, then copy the production address Vercel gives the project. If replacing a failed deployment of an old commit, deploy the updated `main` rather than redeploying that old source.
 6. **Set `APP_URL`** to the actual HTTPS production address (without a path) in Production and Preview, then redeploy the latest commit. Sign-up and password reset need it. If the project already shows its assigned domain before the build, set this variable then.
 7. **Verify privacy and let testers in.** Check both the production address and generated deployment URL in a private browser window without a shareable link: each must show Vercel's login, not Mitra. Only then use **Share** for testers. Hobby includes one shareable link per account; anyone possessing it bypasses Vercel Authentication but still signs in to Mitra. Keep it out of Git and public messages; revoke it to remove that access. See [Vercel's sharing limits](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/sharable-links).
@@ -129,6 +132,8 @@ You enter credentials and complete account setup yourself. The code and non-secr
 To go public later: restore email confirmation (Supabase Auth setup above), delete `AUTH_REQUIRE_EMAIL_CONFIRMATION` from Vercel, redeploy, then turn Deployment Protection off.
 
 **If the build says `Authentication is not configured`:** `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing from the environment used for that build. `.env.local` is intentionally absent from GitHub. Add both values in Vercel, select the deployment's environment, save, then build the latest source again. Do not remove the authentication check. The server also needs `DATABASE_URL` and `SUPABASE_SECRET_KEY` at runtime; a successful build alone does not verify them.
+
+**If Vercel blocks the commit author:** commits must be attributed to an account permitted to contribute to this private project. The owner approved repository-local Git identity `wuckyduckylol`; use that account for future commits here. The earlier `vijiganesanwork` attribution caused the Hobby deployment block. Do not rewrite old history or change global Git settings to resolve it.
 
 Upload finalization re-checks the active subject before storage access and serializes recording/cleanup for the same upload id. Only invalid file content is discarded during finalization. Abandoned uploads and valid files whose finalization fails can leave private, unreferenced objects; scheduled orphan cleanup is not implemented.
 
