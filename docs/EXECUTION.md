@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- **2026-10-04 — Repair the new `mitra25/mitra` production database binding.** Confirm the connected Supabase project and live schema, map Vercel's integration-provided transaction-pooler value to the server-only `DATABASE_URL` name required by `src/db/client.ts`, redeploy the existing production source, and verify `https://mitra-gamma-ten.vercel.app` plus relevant runtime logs. Do not print, commit, or persist credential values locally; leave the existing integration variables and database contents unchanged.
+- **2026-10-04 — Repair the new `mitra25/mitra` production database binding.** The connected projects and live schema match, but Vercel correctly will not reveal or duplicate the integration-managed Sensitive `POSTGRES_URL` value. Preserve `DATABASE_URL` as the preferred app setting and add `POSTGRES_URL` as its server-only fallback in `src/db/client.ts`, with regression coverage; then redeploy and verify `https://mitra-gamma-ten.vercel.app` plus relevant runtime logs. Do not print, commit, or persist credential values locally; leave the existing integration variables and database contents unchanged.
 
 ## Deferred, to come back to
 
