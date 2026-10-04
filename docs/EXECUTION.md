@@ -24,7 +24,11 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-04 - Mitra at OSU campus brand and trust pages
+
+The owner asked to launch the first community as "Mitra at OSU," replace the lime brand treatment with an OSU-inspired scarlet scheme, make the product feel polished, and add an FAQ/privacy area that plainly says the product is not affiliated with Ohio State. This supersedes only the earlier choice to avoid scarlet-and-gray branding; the existing dark, data-first layout and semantic Yes-green/No-red market colours remain because they communicate market direction rather than institutional branding.
+
+Plan: add one reusable campus configuration for names and independence language; update metadata, header, footer and primary-action tokens to a scarlet/charcoal/white OSU launch theme without using Ohio State logos, the Block O, mascot art or official typography; add public FAQ and privacy pages linked from every footer; update the design and setup documentation; add focused tests for the reusable campus copy; and visually check the public, auth, FAQ and privacy views at desktop and phone widths. No database, authentication, market, economy, evidence or deployment behavior will change.
 
 ## Deferred, to come back to
 
