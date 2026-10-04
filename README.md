@@ -1,6 +1,6 @@
-# Mitra
+# Mitra at OSU
 
-A play-money social prediction app about people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`, an 18-page question-first brief. The project folder is still named "Kalshi for People"; the app is Mitra.
+A play-money social prediction app about people's goals, launching first as Mitra at OSU. Mitra is an independent student-built platform and is not affiliated with, endorsed by, or sponsored by The Ohio State University. The product was built from `Prediction_Market_MVP_Master_Prompt.pdf`, an 18-page question-first brief.
 
 Start with [docs/EXECUTION.md](docs/EXECUTION.md) for current state, decisions and next work. Coding agents should also read [AGENTS.md](AGENTS.md).
 
@@ -21,7 +21,7 @@ Implemented:
 - **Owner tools:** a People page at `/review/people` to ban and unban people and remove photos, and a count in the top bar of goals and proof waiting. A ban signs the person out and keeps them out, cancels their goals that still need proof with refunds, and rejects their drafts; goals already ruled finish normally.
 - **Live prices** every 15 seconds while a page is open, a quiet price ticker under the top bar with today's change, and a chart with 1D, 1W, 1M and All. Polling records nothing, so it cannot inflate the feed's counts.
 - **Positions** on the account page and at `/positions` (in pages of 20): each goal you hold shares in, the side, shares and average price paid, and what the shares are worth at today's price with the gain or loss since you bought. That value is not what selling would return, which is lower for a large holding. Sold, paid-out and refunded holdings leave the list.
-- One dark interface across every page in Kalshi's calm, data-first style (since 2026-09-24): framed goal cards with the person's photo, the chance large and Yes and No buttons with prices; Yes green, No red; lime only on Post a goal and Buy. See [docs/DESIGN.md](docs/DESIGN.md), section 9.
+- One dark interface across every page in a calm, data-first style: framed goal cards with the person's photo, the chance large and Yes and No buttons with prices; semantic Yes green and No red; and a scarlet, charcoal, gray and white Mitra at OSU brand layer. Public FAQ and privacy pages explain the pilot and its independence from the university. See [docs/DESIGN.md](docs/DESIGN.md), sections 9 and 10.
 - Public approved-goal pages with prices, resolution terms and deadlines; a trade panel (on a phone, a bottom sheet) estimates shares and "To win" with quick amounts, and signed-in traders then preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.

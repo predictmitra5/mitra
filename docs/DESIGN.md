@@ -194,3 +194,34 @@ Name and handle, available points large, points in positions with the gain or lo
 - Photos in the feed are squares; the viewer's own photo in the top bar and on the account page is a circle.
 - The phone header keeps the wordmark, points and photo; the motto is in the footer there, as on the boards. The search is its own row under the bar on the feed only.
 - Not built from the boards: the account page's "Trade history" link (not on the owner's list) and editing the display name (not a feature).
+
+---
+
+## 10. Mitra at OSU campus brand (2026-10-04)
+
+The first community is now presented as **Mitra at OSU**, while Mitra remains the parent product name for later campus editions. This section supersedes section 9 only where it describes the lime brand accent and plain `mitra` wordmark. The data-first layout, Inter, dark surfaces and semantic market colours stay.
+
+### Campus layer
+
+- `src/config/campus.ts` holds the edition name, university name, community name, email domain and independence statement in one place. Shared metadata, the header, footer, FAQ and privacy page read from it rather than repeating OSU copy.
+- The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` capsule. It is an original text treatment: no Block O, university logo, Brutus, official typeface or university artwork.
+- Every footer links to `/faq` and `/privacy` and says that Mitra is independent and is not affiliated with, endorsed by or sponsored by The Ohio State University.
+- The public FAQ explains play money, eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what is public, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
+
+### Tokens
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Page | `#0c0d0f` | Near-black canvas |
+| Surface | `#141518` | Cards and panels |
+| Raised | `#1c1e22` | Selected and elevated controls |
+| Divider | `#282a2f` | Hairlines and card borders |
+| Text | `#f3f3f4` | Primary text |
+| Muted | `#989ba2` | Supporting labels |
+| Scarlet | `#ba0c2f` with white text | Primary actions, top rule and owner badge |
+| Scarlet hover | `#d0193d` | Interactive emphasis on the dark canvas |
+| Scarlet wash | `#2a1016` | Notes, highlights and the campus capsule |
+| Yes / up | `#34c77b` | Market semantics only |
+| No / down | `#f2545b` | Market semantics only |
+
+Ohio State publicly describes scarlet, gray and white as its primary palette and cautions that a moderate amount of scarlet goes a long way. The interface follows that balance rather than flooding the page red. Ohio State also requires permission for student organizations to use university names or marks; the independence copy and avoidance of official marks reduce confusion but do not replace any permission the operator may need. References: [Ohio State EHE graphics guidance](https://brand.ehe.osu.edu/graphics/) and [student trademark requests](https://trademarklicensing.osu.edu/page/student-request).

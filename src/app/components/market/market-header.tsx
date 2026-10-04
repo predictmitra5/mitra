@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CAMPUS } from "@/config/campus";
 import type { Viewer } from "@/modules/account/viewer";
 import { Avatar } from "./goal-card";
 import { SearchBox } from "./search-box";
@@ -6,7 +7,7 @@ import { SearchBox } from "./search-box";
 /**
  * The top bar on every page, in the Kalshi direction (2026-09-24): the wordmark
  * with the motto, search, Goals and Positions, the viewer's available points, a
- * lime "Post a goal" and their photo. Log in and Sign up when signed out.
+ * scarlet "Post a goal" and their photo. Log in and Sign up when signed out.
  *
  * `viewer.ownerQueue` is set only for the owner: how many goals and pieces of
  * proof are waiting. That link stays visible on a phone, because nothing else
@@ -26,7 +27,10 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop" }:
   return (
     <header className={`topbar${search === "feed" ? " topbar-with-search" : ""}`}>
       <Link className="brand" href="/" prefetch={false}>
-        <span className="brand-word">mitra</span>
+        <span className="brand-lockup">
+          <span className="brand-word">mitra</span>
+          <span className="brand-campus">at {CAMPUS.shortName}</span>
+        </span>
         <span className="brand-motto">Bet on literally anything</span>
       </Link>
       <div className="topbar-search"><SearchBox initial={query} /></div>
@@ -48,7 +52,7 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop" }:
                 <strong>{pointsShort(points)}</strong> <span>pts</span>
               </Link>
             )}
-            <Link className="btn btn-lime topbar-post" href="/goals/new">Post a goal</Link>
+            <Link className="btn btn-primary topbar-post" href="/goals/new">Post a goal</Link>
             <Link className="topbar-me" href="/account" aria-label="Your account">
               <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
             </Link>
@@ -56,7 +60,7 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop" }:
         ) : (
           <>
             <Link className="btn btn-quiet" href="/sign-in">Log in</Link>
-            <Link className="btn btn-lime" href="/sign-up">Sign up</Link>
+            <Link className="btn btn-primary" href="/sign-up">Sign up</Link>
           </>
         )}
       </div>
@@ -73,8 +77,15 @@ function pointsShort(micro: number): string {
 export function MarketFooter() {
   return (
     <footer className="market-footer">
-      <span className="footer-motto">Bet on literally anything.</span>
-      <span>Play money. Points have no cash value.</span>
+      <div className="footer-brand">
+        <span className="footer-edition">{CAMPUS.editionName}</span>
+        <span>Bet on literally anything. Play money only.</span>
+      </div>
+      <nav className="footer-links" aria-label="Information">
+        <Link href="/faq">FAQ</Link>
+        <Link href="/privacy">Privacy</Link>
+      </nav>
+      <p className="footer-disclaimer">{CAMPUS.independenceStatement}</p>
     </footer>
   );
 }

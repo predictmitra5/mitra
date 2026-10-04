@@ -90,7 +90,7 @@ export function PositionsView({ data }: { data: PositionsPage }) {
         <section className="account-empty">
           <h2>No positions yet.</h2>
           <p className="muted">When you buy Yes or No on a goal, it shows up here with what it is worth today.</p>
-          <Link className="btn btn-lime" href="/" prefetch={false}>Browse goals</Link>
+          <Link className="btn btn-primary" href="/" prefetch={false}>Browse goals</Link>
         </section>
       ) : (
         <section aria-labelledby="holdings-title">

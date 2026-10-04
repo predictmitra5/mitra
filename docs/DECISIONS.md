@@ -433,14 +433,6 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 - **New features:** search and the new tabs; today's change on cards, the ticker and the goal page; volume ("pts traded"); "To win" and quick amounts in the trade panel; the phone buy sheet; gain or loss per position; the dated proof list; the "Post a goal" button in the header.
 - **Kept unchanged:** a profile photo on every goal; no trader counts anywhere; play money only, points and never dollars; the owner approves every goal and nobody bets on their own goal; the motto "Bet on literally anything" in the header and footer; the 100-point limit per goal and two top-ups to 1,000 a month.
 
-## 2026-10-04 - Campus launch brand: Mitra at OSU
-
-**User instruction:** "we're gonna make it like Mitra at OSU" and later support editions such as "Mitra at UIUC"; for the OSU launch, use Buckeye red instead of the existing lime treatment, make the interface look polished, and add an FAQ or privacy area stating that Mitra is not affiliated with OSU.
-
-**Decision:** Mitra remains the parent product name and the first community is presented as **Mitra at OSU**. The brand layer uses a scarlet, charcoal, gray and white palette for the wordmark, primary actions, focus states and supporting surfaces. Yes remains green and No remains red because those are market semantics, not brand colors. Campus names and independence language live in one reusable configuration so a later university edition does not require rewriting shared components.
-
-**Independence boundary:** no Block O, Brutus, official Ohio State logo, official university typeface or claim of sponsorship is used. Every page footer links to public FAQ and privacy pages and carries a plain statement that Mitra is an independent student-built platform, not affiliated with, endorsed by or sponsored by The Ohio State University. This copy is a transparency measure, not a conclusion that the university name can be used without permission.
-
 **Interview answers the same day** (recommended options unless stated):
 
 - **Where search results go: "Filter the feed".** The cards narrow as you type, matching the question, the person's name or their handle. Searching from another page returns to the feed with the search filled in. No results page.
@@ -469,3 +461,11 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 - **Push the code to the private GitHub repository: "Yes, push main".**
 
 **Technical choices under delegation:** functions run in Vercel's `yul1` region (Montréal), the same AWS region as the Supabase database, since every page makes several database round trips; Node 24, as developed. Photos wait in a private staging bucket, `photo-uploads`, only until they are checked and re-encoded, then the staging copy is deleted.
+
+## 2026-10-04 - Campus launch brand: Mitra at OSU
+
+**User instruction:** "we're gonna make it like Mitra at OSU" and later support editions such as "Mitra at UIUC"; for the OSU launch, use Buckeye red instead of the existing lime treatment, make the interface look polished, and add an FAQ or privacy area stating that Mitra is not affiliated with OSU.
+
+**Decision:** Mitra remains the parent product name and the first community is presented as **Mitra at OSU**. The brand layer uses a scarlet, charcoal, gray and white palette for the wordmark, primary actions, focus states and supporting surfaces. Yes remains green and No remains red because those are market semantics, not brand colors. Campus names and independence language live in one reusable configuration so a later university edition does not require rewriting shared components.
+
+**Independence boundary:** no Block O, Brutus, official Ohio State logo, official university typeface or claim of sponsorship is used. Every page footer links to public FAQ and privacy pages and carries a plain statement that Mitra is an independent student-built platform, not affiliated with, endorsed by or sponsored by The Ohio State University. This copy is a transparency measure, not a conclusion that the university name can be used without permission.

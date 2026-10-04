@@ -115,7 +115,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         </section>
 
         <section aria-labelledby="goals-title">
-          <div className="account-section-head"><h2 id="goals-title">Your goals</h2><Link className="btn btn-lime" href="/goals/new">Post a goal</Link></div>
+          <div className="account-section-head"><h2 id="goals-title">Your goals</h2><Link className="btn btn-primary" href="/goals/new">Post a goal</Link></div>
           {goals.length === 0
             ? <p className="muted account-none">No goals yet. Put one out there: a race, a grade, an internship, anything about your own life.</p>
             : <ul className="my-goals">{goals.map((row) => {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { CAMPUS } from "@/config/campus";
 import "./globals.css";
 
 // Inter with tabular numbers, decided 2026-09-24 (docs/DESIGN.md section 9).
@@ -10,13 +11,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Mitra", template: "%s · Mitra" },
-  description: "Bet on literally anything your friends are going for, with play money. Ohio State early access.",
+  title: { default: CAMPUS.editionName, template: `%s · ${CAMPUS.editionName}` },
+  description: `Bet on what your campus is going for with play money. ${CAMPUS.communityName} early access.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" data-campus={CAMPUS.key} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

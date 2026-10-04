@@ -75,7 +75,7 @@ function SignUpPrompt({ onDismiss }: { onDismiss: () => void }) {
         <h2 id="feed-prompt-title">Want to make a call?</h2>
         <p>Browsing is open to everyone. Predicting needs an account, which comes with 1,000 play points. No deposits, no cash value.</p>
         <div className="feed-prompt-actions">
-          <Link className="btn btn-lime" href="/sign-up">Create an account</Link>
+          <Link className="btn btn-primary" href="/sign-up">Create an account</Link>
           <Link className="feed-prompt-secondary" href="/sign-in">Log in</Link>
         </div>
       </div>
@@ -183,7 +183,7 @@ export function FeedView({
               Goals appear here once someone posts one about themselves and the owner approves it.
               {signedIn ? " Yours can be the first." : " Create an account to add yours."}
             </p>
-            <Link className="btn btn-lime" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
+            <Link className="btn btn-primary" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
           </section>
         ) : (
           <>

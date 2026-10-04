@@ -10,29 +10,29 @@
  * gradients or stickers, Inter with tabular numbers. Yes and upward moves are
  * green, No and downward moves are red; the owner chose these and waived the
  * colour-blindness concern, so direction always also rides on ▲ ▼ and the
- * words Yes and No. Lime is only for main actions (Post a goal, Buy). Not Ohio
- * State's scarlet and gray, so the app does not look like an official
- * university product.
+ * words Yes and No. The launch community is Mitra at OSU: scarlet, charcoal,
+ * gray and white form the brand layer, without university logos or marks.
  */
 
 :root {
-  --paper: #0e0f11;
-  --card: #15171a;
-  --raised: #1c1f23;
-  --line: #24272c;
-  --line-strong: #30343a;
-  --ink: #eceef1;
-  --ink-soft: #c9ccd2;
-  --muted: #9097a1;
-  --accent: #d2f24a;
-  --accent-ink: #141a00;
+  --paper: #0c0d0f;
+  --card: #141518;
+  --raised: #1c1e22;
+  --line: #282a2f;
+  --line-strong: #373a40;
+  --ink: #f3f3f4;
+  --ink-soft: #d0d1d4;
+  --muted: #989ba2;
+  --accent: #ba0c2f;
+  --accent-hover: #d0193d;
+  --accent-ink: #ffffff;
+  --focus: #e75b73;
   --yes: #34c77b;
   --yes-wash: #10251a;
   --no: #f2545b;
   --no-wash: #2a1517;
-  /* A lime-tinted surface for notes. */
-  --accent-wash: #1f2610;
-  --accent-wash-ink: #d9ec9a;
+  --accent-wash: #2a1016;
+  --accent-wash-ink: #ffb6c3;
   --danger: #ff8f85;
   --danger-bg: #2c1512;
   --success: #74e0a8;
@@ -55,7 +55,7 @@ body {
 .eyebrow { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); }
 .muted { color: var(--muted); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Sign-in and sign-up */
 .entry-grid { flex: 1; display: grid; gap: 1.5rem; width: 100%; max-width: 1120px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 2.5rem; }
@@ -100,10 +100,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .form-switch a { font-weight: 600; }
 .rule-note { padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--raised); color: var(--ink-soft); font-size: 0.88rem; line-height: 1.45; }
 
-/* Buttons. Lime only for main actions. */
+/* Brand actions use the active campus accent. */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid transparent; font: inherit; font-size: 14.5px; font-weight: 600; white-space: nowrap; cursor: pointer; text-decoration: none; }
-.btn-lime { background: var(--accent); color: var(--accent-ink); }
-.btn-lime:hover { filter: brightness(1.05); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); }
 .btn-quiet { border-color: var(--line-strong); background: transparent; color: var(--ink); }
 .btn-quiet:hover { border-color: var(--muted); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
@@ -250,8 +250,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
    ======================================================================== */
 
 .market-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.market-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: auto; padding: 22px 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-.footer-motto { color: var(--ink); font-weight: 500; }
+.market-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 28px; margin-top: auto; padding: 24px 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.footer-brand { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.footer-edition { color: var(--ink); font-weight: 650; }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { color: var(--ink-soft); font-weight: 550; }
+.footer-links a:hover { color: var(--ink); }
+.footer-disclaimer { grid-column: 1 / -1; max-width: 82ch; font-size: 12px; line-height: 1.5; color: var(--muted); }
 
 /* Avatars: a small square beside goals, a circle for the viewer. */
 .avatar { flex: none; display: grid; place-items: center; overflow: hidden; background: var(--raised); color: var(--ink-soft); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
@@ -260,9 +265,12 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .avatar-photo { object-fit: cover; }
 
 /* Top bar */
-.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px; height: 64px; padding: 0 48px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px; height: 66px; padding: 2px 48px 0; background: rgb(12 13 15 / 0.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
+.topbar::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--accent); }
 .brand { display: flex; align-items: baseline; gap: 12px; flex: none; color: var(--ink); }
-.brand-word { font-size: 22px; font-weight: 700; letter-spacing: -0.035em; }
+.brand-lockup { display: inline-flex; align-items: center; gap: 8px; }
+.brand-word { font-size: 22px; font-weight: 750; letter-spacing: -0.045em; }
+.brand-campus { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--accent) 72%, white); border-radius: 999px; background: var(--accent-wash); color: #ff8398; font-size: 10px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
 .brand-motto { font-size: 13px; color: var(--muted); }
 .topbar-search { flex: 0 1 420px; min-width: 0; }
 .search { margin: 0; }
@@ -579,6 +587,30 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .feed-prompt-close { flex: none; padding: 0 2px; border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
 .feed-prompt-close:hover { color: var(--ink); }
 
+/* Public trust pages: one calm reading column with compact policy cards. */
+.info-page { flex: 1; display: grid; gap: 36px; align-content: start; width: min(100% - 32px, 1040px); margin: 0 auto; padding: 64px 0 80px; }
+.info-hero { display: grid; gap: 14px; max-width: 760px; }
+.info-hero .eyebrow { color: #ff8398; }
+.info-hero h1 { max-width: 18ch; font-size: clamp(2.5rem, 7vw, 5.2rem); font-weight: 650; line-height: 0.98; letter-spacing: -0.055em; text-wrap: balance; }
+.info-hero p { max-width: 62ch; color: var(--ink-soft); font-size: clamp(1rem, 2vw, 1.15rem); line-height: 1.65; }
+.faq-list { display: grid; border-top: 1px solid var(--line); }
+.faq-list details { border-bottom: 1px solid var(--line); }
+.faq-list summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-height: 72px; padding: 10px 2px; color: var(--ink); font-size: clamp(1rem, 2vw, 1.12rem); font-weight: 600; cursor: pointer; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary span { color: #ff8398; font-size: 22px; font-weight: 400; transition: transform 160ms ease; }
+.faq-list details[open] summary span { transform: rotate(45deg); }
+.faq-list details > p { max-width: 72ch; padding: 0 36px 24px 2px; color: var(--ink-soft); line-height: 1.65; }
+.info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.info-card { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px 12px; align-content: start; min-height: 230px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.info-number { grid-row: 1 / span 2; color: #ff8398; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+.info-card h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+.info-card p { color: var(--ink-soft); font-size: 14px; line-height: 1.65; }
+.info-callout { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px 24px; border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--line)); border-radius: var(--radius); background: var(--accent-wash); color: var(--accent-wash-ink); }
+.info-callout p { line-height: 1.55; }
+.info-callout a { flex: none; color: var(--ink); font-weight: 600; }
+.info-callout strong { display: block; margin-bottom: 4px; color: var(--ink); }
+.info-callout-wide { align-items: flex-end; }
+
 /* In between: fewer card columns before the phone layout. */
 @media (max-width: 1279px) {
   .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -597,8 +629,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 
 /* Phones and narrow windows: one column, the trade panel in a bottom sheet. */
 @media (max-width: 899px) {
-  .topbar { gap: 12px; height: 56px; padding: 0 16px; }
+  .topbar { gap: 12px; height: 58px; padding: 2px 16px 0; }
   .brand-word { font-size: 21px; }
+  .brand-campus { min-height: 20px; padding: 0 6px; font-size: 9px; }
   .topbar-search, .topbar-nav, .topbar-post { display: none; }
   .topbar-actions { margin-left: auto; gap: 12px; }
   .topbar-me { margin: -6px -6px -6px 0; }
@@ -656,5 +689,11 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
   .buy-bar-no { background: var(--no); }
   .goal-shell .market-footer { padding-bottom: calc(22px + 84px); }
   .account { gap: 32px; padding: 20px 16px 32px; }
-  .market-footer { flex-direction: column; padding: 22px 16px; }
+  .market-footer { grid-template-columns: minmax(0, 1fr); padding: 24px 16px; }
+  .footer-links { grid-row: 2; }
+  .footer-disclaimer { grid-column: 1; }
+  .info-page { gap: 28px; padding: 40px 0 56px; }
+  .info-grid { grid-template-columns: minmax(0, 1fr); }
+  .info-card { min-height: 0; padding: 20px; }
+  .info-callout, .info-callout-wide { align-items: flex-start; flex-direction: column; }
 }

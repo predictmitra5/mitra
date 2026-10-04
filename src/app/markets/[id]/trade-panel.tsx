@@ -12,7 +12,7 @@ import { percent } from "@/modules/discovery/present";
 
 /*
  * The trade panel (decided 2026-09-24): Buy or Sell, Yes or No, an amount with
- * +10, +25 and Max, an estimate with "To win", and a lime button. The button
+ * +10, +25 and Max, an estimate with "To win", and a brand button. The button
  * asks the server for the exact preview, which the trader then confirms, as
  * before; the estimate never charges anyone. Play points only, up to 100 points
  * of held cost per goal.
@@ -153,7 +153,7 @@ export function TradePanel({
             ? `If ${words(preview.side)} wins, these shares pay ${formatMicro(preview.sharesMicro)} points. If it loses, they pay 0.`
             : "Selling returns these shares to the market maker. You give up their eventual payout."}</p>
           {preview.action === "sell" && preview.totalMicro === 0 && <p className="trade-notice">This tiny sale rounds down to 0 points. Confirm only if you want to give up these shares for nothing.</p>}
-          <button type="button" className="btn btn-lime trade-cta" disabled={pending} onClick={confirm}>
+          <button type="button" className="btn btn-primary trade-cta" disabled={pending} onClick={confirm}>
             {pending ? "Confirming…" : uncertain ? "Retry the same confirmation" : `Confirm ${preview.action === "buy" ? "buy" : "sale"}`}
           </button>
           {!uncertain && <button type="button" className="trade-back" disabled={pending} onClick={() => { setPreview(null); setError(""); }}>Change trade</button>}
@@ -218,15 +218,15 @@ export function TradePanel({
           <div className="trade-win"><dt>{mode === "buy" ? "To win" : "You receive"}</dt><dd className={`win-${side === "YES" ? "yes" : "no"}`}>{payoff}</dd></div>
         </dl>
         {access.kind === "open" ? (
-          <button type="submit" className="btn btn-lime trade-cta" disabled={pending || !amountMicro || over}>
+          <button type="submit" className="btn btn-primary trade-cta" disabled={pending || !amountMicro || over}>
             {pending ? "Getting your quote…" : mode === "buy"
               ? `Buy ${words(side)}${amountMicro ? ` for ${formatMicro(amountMicro)} pts` : ""}`
               : `Sell ${words(side)}${amountMicro ? ` · ${formatMicro(amountMicro)} shares` : ""}`}
           </button>
         ) : access.kind === "signed-out" ? (
-          <Link className="btn btn-lime trade-cta" href="/sign-in">Log in to trade</Link>
+          <Link className="btn btn-primary trade-cta" href="/sign-in">Log in to trade</Link>
         ) : (
-          <Link className="btn btn-lime trade-cta" href="/account">Finish your profile to trade</Link>
+          <Link className="btn btn-primary trade-cta" href="/account">Finish your profile to trade</Link>
         )}
       </form>
       <p className="trade-note">
