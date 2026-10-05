@@ -8,7 +8,7 @@ Selected: 2026-09-15, under the user's explicit delegation of technical choices.
 | --- | --- | --- |
 | Web application | Next.js App Router, React, TypeScript | One typed codebase for the mobile-first website and initial server endpoints |
 | Database | PostgreSQL on Supabase | Relational constraints and transactions for auditable market, evidence and event records |
-| Authentication | Supabase Auth | Integrated identity/session service with supported Next.js integration. The launch restriction to Ohio State email addresses is not a Supabase setting; enforce and test it in application code or an auth hook |
+| Authentication | Supabase Auth | Integrated identity/session service with supported Next.js integration. The OSU/UIUC domain gate and campus match are enforced and tested in application code; Supabase supplies the verified six-digit email OTP session |
 | Evidence file storage | Private Supabase Storage | Restricted object access for the user-approved private-document capability; visibility/retention rules still require decisions |
 | Server data access/migrations | Drizzle | Explicit transactional SQL-oriented access and generated SQL migrations that can be reviewed |
 | Initial deployment shape | One web application with separate domain modules | Reduce coordination while keeping market, information and discovery responsibilities distinct |

@@ -48,7 +48,7 @@ Still open: fees (none proposed), minimum trade size, rounding presentation, and
 
 ## User-provided goals and contract questions
 
-The initial community is friends and Ohio State students. The user explicitly wants a broad range of goals. Templates for GPA, club, internship and gym goals were decided on 2026-09-16, and a Running template on 2026-09-24. Launch and music goals have no template yet and use the subject's own wording; the owner plans a music template later. Each template also sets the goal's tab on the feed (Grades, Clubs, Internships, Gym, Running); goals in the subject's own words appear under Anything.
+The initial community is friends and students in the OSU and UIUC editions. The user explicitly wants a broad range of goals. Templates for GPA, club, internship and gym goals were decided on 2026-09-16, and a Running template on 2026-09-24. Launch and music goals have no template yet and use the subject's own wording; the owner plans a music template later. Each template also sets the goal's tab on the feed (Grades, Clubs, Internships, Gym, Running); goals in the subject's own words appear under Anything.
 
 | Goal type | Template wording | What counts as YES | Proof the owner reviews |
 | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Private student records or offer letters must not become public by default. Mark
 
 The user said: "Use kalshis rules for trading. id assume the peole being betted on have to be 18".
 
-Adopted: binary YES/NO contracts shown in cents, and Kalshi's ban on trading by anyone who influences the outcome, applied to buys and sells. All participants explicitly confirm they are 18 or older at profile setup (decided 2026-09-16); an Ohio State email does not establish age.
+Adopted: binary YES/NO contracts shown in cents, and Kalshi's ban on trading by anyone who influences the outcome, applied to buys and sells. All participants explicitly confirm they are 18 or older at profile setup (decided 2026-09-16); a university email does not establish age.
 
 Not adopted: order-book matching (replaced by a market-maker bot) and a strict ban on trading with non-public knowledge (provisionally replaced by per-market limits). Play money only: no deposits, withdrawals, cash value or claim of regulatory compliance.
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canonicalUniversityEmail, eligibleIdentity, passwordError } from "./policy";
+import { canonicalUniversityEmail } from "@/config/campus";
+import { eligibleIdentity, passwordError } from "./policy";
 
 const verifiedUser = {
   id: "3a6f0546-6747-4b8f-b682-05ec32a12c09",
@@ -9,9 +10,10 @@ const verifiedUser = {
 };
 
 describe("university identity policy", () => {
-  it("maps the two accepted input domains to one lowercase mailbox", () => {
+  it("maps accepted input domains to their lowercase canonical mailbox", () => {
     expect(canonicalUniversityEmail(" Student.123@OSU.EDU ")).toBe("student.123@osu.edu");
     expect(canonicalUniversityEmail("STUDENT.123@BuckeyeMail.OSU.edu")).toBe("student.123@osu.edu");
+    expect(canonicalUniversityEmail("NETID@ILLINOIS.EDU")).toBe("netid@illinois.edu");
   });
 
   it.each([
@@ -49,28 +51,18 @@ describe("university identity policy", () => {
       email: "STUDENT.123@OSU.EDU",
       user_metadata: { isOwner: true, adultConfirmed: true, email_verified: true },
     };
-    expect(eligibleIdentity(user)).toEqual({ id: verifiedUser.id, email: verifiedUser.email });
+    expect(eligibleIdentity(user)).toEqual({ id: verifiedUser.id, email: verifiedUser.email, campus: "osu" });
     expect(eligibleIdentity({ ...user, email_confirmed_at: undefined })).toBeNull();
   });
 
-  it("accepts an unconfirmed mailbox only when the caller waives confirmation", () => {
+  it("never accepts an unconfirmed mailbox and derives UIUC from a verified Illinois address", () => {
     const unconfirmed = { ...verifiedUser, email_confirmed_at: undefined };
     expect(eligibleIdentity(unconfirmed)).toBeNull();
-    expect(eligibleIdentity(unconfirmed, true)).toBeNull();
-    expect(eligibleIdentity(unconfirmed, false)).toEqual({ id: verifiedUser.id, email: verifiedUser.email });
-  });
-
-  it("keeps every other identity rule when confirmation is waived", () => {
-    for (const user of [
-      null,
-      { ...verifiedUser, email_confirmed_at: undefined, is_anonymous: true },
-      { ...verifiedUser, email_confirmed_at: undefined, email: "student.123@buckeyemail.osu.edu" },
-      { ...verifiedUser, email_confirmed_at: undefined, email: "student.123@gmail.com" },
-      { ...verifiedUser, email_confirmed_at: undefined, email: undefined },
-      { ...verifiedUser, email_confirmed_at: undefined, id: "client-controlled-profile-id" },
-    ]) {
-      expect(eligibleIdentity(user, false)).toBeNull();
-    }
+    expect(eligibleIdentity({ ...verifiedUser, email: "netid@illinois.edu" })).toEqual({
+      id: verifiedUser.id,
+      email: "netid@illinois.edu",
+      campus: "uiuc",
+    });
   });
 });
 

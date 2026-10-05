@@ -1,4 +1,6 @@
-export type AuthIdentity = { id: string; email: string };
+import { universityEmail, type CampusKey } from "@/config/campus";
+
+export type AuthIdentity = { id: string; email: string; campus: CampusKey };
 
 type AuthUser = {
   id: string;
@@ -7,28 +9,19 @@ type AuthUser = {
   is_anonymous?: boolean;
 };
 
-/** OSU's primary and student alias domains reach the same mailbox. */
-export function canonicalUniversityEmail(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 254) return null;
-  const email = value.trim().toLowerCase();
-  const match = /^([a-z0-9]+(?:[._-][a-z0-9]+)*)@(osu\.edu|buckeyemail\.osu\.edu)$/.exec(email);
-  if (!match || match[1].length > 64) return null;
-  return `${match[1]}@osu.edu`;
-}
-
 /**
  * Only use with a fresh, server-verified auth.getUser() result.
- * requireConfirmation defaults to true so a new call site fails safe; pass
- * emailConfirmationRequired() from server code.
+ * Campus and confirmation come from the provider's verified user, not editable
+ * user metadata, a cookie or the campus picker.
  */
-export function eligibleIdentity(user: AuthUser | null, requireConfirmation = true): AuthIdentity | null {
+export function eligibleIdentity(user: AuthUser | null): AuthIdentity | null {
   if (!user || user.is_anonymous) return null;
-  if (requireConfirmation && !user.email_confirmed_at) return null;
+  if (!user.email_confirmed_at) return null;
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(user.id)) return null;
-  const email = canonicalUniversityEmail(user.email);
+  const identity = universityEmail(user.email);
   // Do not silently link a separate alias Auth account to another user's wallet.
-  if (!email || email !== user.email?.toLowerCase()) return null;
-  return { id: user.id, email };
+  if (!identity || identity.email !== user.email?.toLowerCase()) return null;
+  return { id: user.id, ...identity };
 }
 
 export function passwordError(password: unknown): string | null {
@@ -38,4 +31,8 @@ export function passwordError(password: unknown): string | null {
   return null;
 }
 
-export type FormState = { error?: string; success?: string };
+export type FormState = {
+  error?: string;
+  success?: string;
+  verification?: { email: string; campus: CampusKey };
+};

@@ -25,7 +25,7 @@ function refresh(marketId: string) {
 export async function attachLink(marketId: string, form: FormData): Promise<EvidenceResult> {
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your Ohio State email to send proof.");
+    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your verified university email to send proof.");
     await submitLink(getDb(), identity.id, {
       marketId,
       url: form.get("url"),
@@ -50,7 +50,7 @@ export type UploadStart =
 export async function startFileUpload(marketId: string, file: { contentType: string; bytes: number }): Promise<UploadStart> {
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your Ohio State email to send proof.");
+    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your verified university email to send proof.");
     const start = await beginFileUpload(getDb(), identity.id, { marketId, contentType: file?.contentType, bytes: file?.bytes });
     return { ok: true, uploadId: start.id, contentType: start.contentType, url: await createOriginalUploadUrl(start.path) };
   } catch (error) {
@@ -65,7 +65,7 @@ export async function finishFileUpload(
 ): Promise<EvidenceResult> {
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your Ohio State email to send proof.");
+    if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your verified university email to send proof.");
     await completeFileUpload(getDb(), identity.id,
       { marketId, id: upload?.uploadId, contentType: upload?.contentType, caption: upload?.caption },
       { readOriginal, discardOrphan });

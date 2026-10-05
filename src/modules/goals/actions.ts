@@ -8,7 +8,7 @@ import type { FormState } from "@/modules/auth/policy";
 import { approveDraft, createGoalDraft, GoalError, rejectDraft } from "./service";
 import { isGoalType, type GoalInput } from "./templates";
 
-const signedOut = { error: "Sign in with your confirmed Ohio State email to continue." };
+const signedOut = { error: "Sign in with your verified university email to continue." };
 
 export async function createGoal(_state: FormState, form: FormData): Promise<FormState> {
   try {

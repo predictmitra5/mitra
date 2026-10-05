@@ -2,14 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { CAMPUSES, canonicalUniversityEmail, isCampusKey } from "@/config/campus";
+import { rememberCampus } from "@/config/campus-server";
 import { getDb } from "@/db/client";
 import { isBanned } from "@/modules/account/standing";
 import { createAuthClient } from "./server";
-import { appOrigin, emailConfirmationRequired } from "./config";
-import { canonicalUniversityEmail, eligibleIdentity, passwordError, type FormState } from "./policy";
+import { appOrigin } from "./config";
+import { eligibleIdentity, passwordError, type FormState } from "./policy";
 
 const unavailable = { error: "We couldn’t connect right now. Please try again shortly." };
-const emailMessage = "Use your Ohio State email, such as name.123@osu.edu.";
+const emailMessage = "Use a supported university email: @osu.edu or @illinois.edu.";
 const signupFailed = "We couldn’t create your account. Try again shortly, or sign in if you already registered.";
 
 export async function signIn(_state: FormState, form: FormData): Promise<FormState> {
@@ -20,19 +22,14 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
   try {
     const client = await createAuthClient();
     const { error } = await client.auth.signInWithPassword({ email, password });
-    const confirming = emailConfirmationRequired();
     if (error) {
-      return { error: confirming
-        ? "Unable to sign in. Check your email and password, and confirm your email first."
-        : "Unable to sign in. Check your email and password." };
+      return { error: "Unable to sign in. Check your email and password, and verify your email first." };
     }
     const verified = await client.auth.getUser();
-    const identity = verified.error ? null : eligibleIdentity(verified.data.user, confirming);
+    const identity = verified.error ? null : eligibleIdentity(verified.data.user);
     if (!identity) {
       await client.auth.signOut({ scope: "local" });
-      return { error: confirming
-        ? "Sign in with a confirmed @osu.edu account to continue."
-        : "Sign in with an @osu.edu account to continue." };
+      return { error: "Sign in with a verified @osu.edu or @illinois.edu account to continue." };
     }
     // Banned accounts cannot sign in (decided 2026-09-24). A failed lookup
     // refuses sign-in rather than letting a banned person through.
@@ -40,19 +37,21 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
       await client.auth.signOut({ scope: "local" });
       return { error: "This account has been banned from Mitra." };
     }
+    await rememberCampus(identity.campus);
   } catch { return unavailable; }
   revalidatePath("/", "layout");
   redirect("/account");
 }
 
 export async function signUp(_state: FormState, form: FormData): Promise<FormState> {
-  const email = canonicalUniversityEmail(form.get("email"));
+  const campus = form.get("campus");
+  if (!isCampusKey(campus)) return { error: "Choose your university first." };
+  const email = canonicalUniversityEmail(form.get("email"), campus);
   const password = form.get("password");
-  if (!email) return { error: emailMessage };
+  if (!email) return { error: `Use the @${CAMPUSES[campus].emailDomain} address for ${CAMPUSES[campus].shortName}.` };
   const invalid = passwordError(password);
   if (invalid) return { error: invalid };
   if (password !== form.get("confirmPassword")) return { error: "Your passwords don’t match." };
-  let admitted = false;
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.signUp({
@@ -61,23 +60,47 @@ export async function signUp(_state: FormState, form: FormData): Promise<FormSta
     });
     if (error) return { error: signupFailed };
     if (data.session) {
-      // While confirmation is required, an automatic session must never become app access.
-      if (emailConfirmationRequired()) {
-        await client.auth.signOut({ scope: "local" });
-        return { error: "Email confirmation is unavailable. Please contact the app owner." };
-      }
-      const verified = await client.auth.getUser();
-      if (verified.error || !eligibleIdentity(verified.data.user, false)) {
-        await client.auth.signOut({ scope: "local" });
-        return { error: signupFailed };
-      }
-      admitted = true;
+      // Signup must never bypass mailbox ownership, even if provider settings drift.
+      await client.auth.signOut({ scope: "local" });
+      return { error: "Email verification is unavailable. Please contact the app owner." };
     }
-    if (!admitted) {
-      return { success: "Check your Ohio State inbox for a confirmation link. Open it in this browser to finish creating your account. Already registered? You can sign in instead." };
-    }
+    await rememberCampus(campus);
+    return {
+      success: `We sent a six-digit code to ${email}.`,
+      verification: { email, campus },
+    };
   } catch { return unavailable; }
-  // redirect() throws to unwind, so it stays outside the try.
+}
+
+export async function verifyEmailCode(_state: FormState, form: FormData): Promise<FormState> {
+  const campus = form.get("campus");
+  if (!isCampusKey(campus)) return { error: "Choose your university and request a new code." };
+  const email = canonicalUniversityEmail(form.get("email"), campus);
+  const token = form.get("token");
+  if (!email) return { error: emailMessage };
+  if (typeof token !== "string" || !/^\d{6}$/.test(token)) {
+    return { error: "Enter the six-digit code from your email.", verification: { email, campus } };
+  }
+  try {
+    const client = await createAuthClient();
+    const verifiedOtp = await client.auth.verifyOtp({ email, token, type: "email" });
+    if (verifiedOtp.error) {
+      return { error: "That code is invalid or expired. Check the latest email and try again.", verification: { email, campus } };
+    }
+    const verified = await client.auth.getUser();
+    const identity = verified.error ? null : eligibleIdentity(verified.data.user);
+    if (!identity || identity.email !== email || identity.campus !== campus) {
+      await client.auth.signOut({ scope: "local" });
+      return { error: "We couldn’t verify that university account. Request a new code and try again.", verification: { email, campus } };
+    }
+    if (await isBanned(getDb(), identity.id)) {
+      await client.auth.signOut({ scope: "local" });
+      return { error: "This account has been banned from Mitra.", verification: { email, campus } };
+    }
+    await rememberCampus(identity.campus);
+  } catch {
+    return { ...unavailable, verification: { email, campus } };
+  }
   revalidatePath("/", "layout");
   redirect("/account");
 }
@@ -101,7 +124,7 @@ export async function resetPassword(_state: FormState, form: FormData): Promise<
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.getUser();
-    if (error || !eligibleIdentity(data.user, emailConfirmationRequired())) return { error: "Your reset session has expired. Request a new reset link." };
+    if (error || !eligibleIdentity(data.user)) return { error: "Your reset session has expired. Request a new reset link." };
     const result = await client.auth.updateUser({ password: password as string });
     if (result.error) return { error: "Choose a different password and try again. If the link expired, request a new one." };
   } catch { return unavailable; }

@@ -1,20 +1,17 @@
-import { emailConfirmationRequired } from "@/modules/auth/config";
+import { selectedCampus } from "@/config/campus-server";
 import { AuthForm, type AuthMode } from "./auth-form";
 import { MarketFooter, MarketHeader } from "./market/market-header";
 
 const copy: Record<AuthMode, { title: string; description: string }> = {
   "sign-in": { title: "Welcome back.", description: "Sign in to follow the next chapter." },
-  "sign-up": { title: "You’re up next.", description: "Complete your profile and start with 1,000 play points. Ages 18 and up." },
-  "forgot-password": { title: "Let’s get you back in.", description: "We’ll send a password-reset link to your Ohio State inbox." },
+  "sign-up": { title: "You’re up next.", description: "Choose your university, verify your email, and start with 1,000 play points. Ages 18 and up." },
+  "forgot-password": { title: "Let’s get you back in.", description: "We’ll send a password-reset link to your university inbox." },
   "reset-password": { title: "A fresh start.", description: "Choose a new password for your account." },
 };
 
-export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }) {
-  const { title } = copy[mode];
-  // Only promise an email step while confirmation is switched on (see README).
-  const description = mode === "sign-up" && emailConfirmationRequired()
-    ? "Confirm your email, complete your profile, and start with 1,000 play points. Ages 18 and up."
-    : copy[mode].description;
+export async function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }) {
+  const campus = await selectedCampus();
+  const { title, description } = copy[mode];
   const message = notice === "link-expired"
     ? "That email link is invalid or has expired. Open the latest link in the browser where you requested it, or request a new one."
     : notice === "signout-failed" ? "We couldn’t finish signing out. Please try again from your account." : undefined;
@@ -24,7 +21,7 @@ export function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: string }
       <section className="entry-form-panel" aria-labelledby="form-title">
         <div className="form-heading"><span className="eyebrow">YOUR NEXT CHAPTER</span><h1 id="form-title">{title}</h1><p>{description}</p></div>
         {message && <p className="form-error" role="alert">{message}</p>}
-        <AuthForm mode={mode} />
+        <AuthForm mode={mode} initialCampus={campus.key} />
       </section>
       <aside className="entry-story" aria-label="About Mitra">
         <span className="eyebrow">BET ON LITERALLY ANYTHING</span>

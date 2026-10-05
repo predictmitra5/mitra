@@ -231,7 +231,7 @@ export function TradePanel({
       </form>
       <p className="trade-note">
         Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 pts per goal.
-        {access.kind === "signed-out" && " Trading needs an Ohio State email and is for ages 18 and up."}
+        {access.kind === "signed-out" && " Trading needs a verified university email and is for ages 18 and up."}
       </p>
     </div>
   );

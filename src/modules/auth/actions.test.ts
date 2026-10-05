@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   isBanned: vi.fn(),
   redirect: vi.fn(),
   revalidatePath: vi.fn(),
+  rememberCampus: vi.fn(),
   auth: {
     signInWithPassword: vi.fn(),
     signUp: vi.fn(),
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     signOut: vi.fn(),
     resetPasswordForEmail: vi.fn(),
     updateUser: vi.fn(),
+    verifyOtp: vi.fn(),
   },
 }));
 
@@ -22,8 +24,9 @@ vi.mock("@/db/client", () => ({ getDb: () => "database" }));
 vi.mock("@/modules/account/standing", () => ({ isBanned: mocks.isBanned }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/config/campus-server", () => ({ rememberCampus: mocks.rememberCampus }));
 
-import { requestPasswordReset, resetPassword, signIn, signOut, signUp } from "./actions";
+import { requestPasswordReset, resetPassword, signIn, signOut, signUp, verifyEmailCode } from "./actions";
 
 const user: User = {
   id: "3a6f0546-6747-4b8f-b682-05ec32a12c09",
@@ -49,6 +52,7 @@ function form(values: Record<string, string> = {}) {
   const data = new FormData();
   for (const [key, value] of Object.entries({
     email: "Student.123@buckeyemail.osu.edu",
+    campus: "osu",
     password,
     confirmPassword: password,
     ...values,
@@ -69,6 +73,7 @@ beforeEach(() => {
   mocks.auth.signOut.mockResolvedValue({ error: null });
   mocks.auth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
   mocks.auth.updateUser.mockResolvedValue({ data: { user }, error: null });
+  mocks.auth.verifyOtp.mockResolvedValue({ data: { user, session }, error: null });
   mocks.isBanned.mockResolvedValue(false);
 });
 
@@ -96,6 +101,7 @@ describe("auth server actions", () => {
     expect(mocks.auth.getUser).toHaveBeenCalledOnce();
     expect(mocks.auth.getUser.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.auth.signInWithPassword.mock.invocationCallOrder[0]);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
+    expect(mocks.rememberCampus).toHaveBeenCalledWith("osu");
     expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/account");
   });
 
@@ -138,6 +144,7 @@ describe("auth server actions", () => {
       emailRedirectTo: "https://evil.example", origin: "https://evil.example", next: "//evil.example",
     }));
     expect(result).toHaveProperty("success");
+    expect(result).toHaveProperty("verification", { email: user.email, campus: "osu" });
     expect(mocks.auth.signUp).toHaveBeenCalledExactlyOnceWith({
       email: user.email,
       password,
@@ -151,6 +158,15 @@ describe("auth server actions", () => {
     expect(await signUp({}, form())).toHaveProperty("error");
     expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("supports UIUC signup only when the selected campus matches the email", async () => {
+    const illinoisUser = { ...user, email: "netid@illinois.edu" };
+    mocks.auth.signUp.mockResolvedValue({ data: { user: illinoisUser, session: null }, error: null });
+    const result = await signUp({}, form({ campus: "uiuc", email: "NETID@ILLINOIS.EDU" }));
+    expect(result.verification).toEqual({ email: "netid@illinois.edu", campus: "uiuc" });
+    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ email: "netid@illinois.edu" }));
+    expect(await signUp({}, form({ campus: "osu", email: "netid@illinois.edu" }))).toHaveProperty("error");
   });
 
   it("recovery gives the same account-neutral response and uses the configured recovery callback", async () => {
@@ -216,53 +232,28 @@ describe("auth server actions", () => {
   });
 });
 
-describe("auth server actions with email confirmation switched off", () => {
-  const unconfirmed = { ...user, email_confirmed_at: undefined };
-
-  beforeEach(() => {
-    vi.stubEnv("AUTH_REQUIRE_EMAIL_CONFIRMATION", "false");
-    mocks.auth.signUp.mockResolvedValue({ data: { user: unconfirmed, session }, error: null });
-    mocks.auth.getUser.mockResolvedValue({ data: { user: unconfirmed }, error: null });
-    mocks.auth.signInWithPassword.mockResolvedValue({ data: { user: unconfirmed, session }, error: null });
-  });
-
-  it("admits a new account straight to the account page", async () => {
-    await expect(signUp({}, form())).rejects.toThrow("NEXT_REDIRECT:/account");
-    expect(mocks.auth.signOut).not.toHaveBeenCalled();
+describe("email code verification", () => {
+  it("verifies a six-digit email OTP, re-checks the provider identity and redirects", async () => {
+    await expect(verifyEmailCode({}, form({ token: "123456" }))).rejects.toThrow("NEXT_REDIRECT:/account");
+    expect(mocks.auth.verifyOtp).toHaveBeenCalledExactlyOnceWith({ email: user.email, token: "123456", type: "email" });
+    expect(mocks.auth.getUser).toHaveBeenCalledOnce();
+    expect(mocks.isBanned).toHaveBeenCalledWith("database", user.id);
+    expect(mocks.rememberCampus).toHaveBeenCalledWith("osu");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
   });
 
-  it("signs in an unconfirmed account", async () => {
-    await expect(signIn({}, form())).rejects.toThrow("NEXT_REDIRECT:/account");
-    expect(mocks.auth.signOut).not.toHaveBeenCalled();
+  it("rejects malformed codes and mismatched campus data before provider access", async () => {
+    expect(await verifyEmailCode({}, form({ token: "1234" }))).toHaveProperty("error");
+    expect(await verifyEmailCode({}, form({ token: "123456", campus: "uiuc" }))).toHaveProperty("error");
+    expect(mocks.createAuthClient).not.toHaveBeenCalled();
   });
 
-  it("still verifies the identity the server reports, not the signup payload", async () => {
-    mocks.auth.getUser.mockResolvedValue({ data: { user: { ...unconfirmed, email: "outsider@example.com" } }, error: null });
-    expect(await signUp({}, form())).toHaveProperty("error");
-    expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
-    expect(mocks.redirect).not.toHaveBeenCalled();
-  });
-
-  it("does not leak the provider error when the server check fails", async () => {
-    mocks.auth.getUser.mockResolvedValue({ data: { user: unconfirmed }, error: providerError });
-    const result = await signUp({}, form());
-    expect(result).toHaveProperty("error");
+  it("keeps the verification step after an expired code without leaking provider details", async () => {
+    mocks.auth.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: providerError });
+    const result = await verifyEmailCode({}, form({ token: "123456" }));
+    expect(result.error).toContain("invalid or expired");
+    expect(result.verification).toEqual({ email: user.email, campus: "osu" });
     expect(JSON.stringify(result)).not.toContain(providerError.message);
-    expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
-  });
-
-  it("still asks for the emailed link when Supabase withholds a session", async () => {
-    mocks.auth.signUp.mockResolvedValue({ data: { user: unconfirmed, session: null }, error: null });
-    expect(await signUp({}, form())).toHaveProperty("success");
     expect(mocks.redirect).not.toHaveBeenCalled();
-  });
-
-  it("treats any value other than the exact string false as confirmation required", async () => {
-    for (const value of ["true", "", "FALSE", "0", "no"]) {
-      vi.stubEnv("AUTH_REQUIRE_EMAIL_CONFIRMATION", value);
-      expect(await signUp({}, form())).toHaveProperty("error");
-      expect(mocks.redirect).not.toHaveBeenCalled();
-    }
   });
 });

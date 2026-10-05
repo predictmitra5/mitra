@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPUS } from "@/config/campus";
+import { CAMPUSES } from "@/config/campus";
 import type { Viewer } from "@/modules/account/viewer";
 import { Avatar } from "./goal-card";
 import { SearchBox } from "./search-box";
@@ -29,7 +29,8 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop" }:
       <Link className="brand" href="/" prefetch={false}>
         <span className="brand-lockup">
           <span className="brand-word">mitra</span>
-          <span className="brand-campus">at {CAMPUS.shortName}</span>
+          <span className="brand-campus campus-only campus-osu">at {CAMPUSES.osu.shortName}</span>
+          <span className="brand-campus campus-only campus-uiuc">at {CAMPUSES.uiuc.shortName}</span>
         </span>
         <span className="brand-motto">Bet on literally anything</span>
       </Link>
@@ -78,14 +79,16 @@ export function MarketFooter() {
   return (
     <footer className="market-footer">
       <div className="footer-brand">
-        <span className="footer-edition">{CAMPUS.editionName}</span>
+        <span className="footer-edition campus-only campus-osu">{CAMPUSES.osu.editionName}</span>
+        <span className="footer-edition campus-only campus-uiuc">{CAMPUSES.uiuc.editionName}</span>
         <span>Bet on literally anything. Play money only.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>
-      <p className="footer-disclaimer">{CAMPUS.independenceStatement}</p>
+      <p className="footer-disclaimer campus-only campus-osu">{CAMPUSES.osu.independenceStatement}</p>
+      <p className="footer-disclaimer campus-only campus-uiuc">{CAMPUSES.uiuc.independenceStatement}</p>
     </footer>
   );
 }

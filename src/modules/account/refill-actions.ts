@@ -11,7 +11,7 @@ export async function refillCash(requestId: string): Promise<RefillResult> {
   let receipt: RefillReceipt;
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new RefillError("SIGNED_OUT", "Sign in with your confirmed Ohio State email to refill.");
+    if (!identity) throw new RefillError("SIGNED_OUT", "Sign in with your verified university email to refill.");
     receipt = await claimRefill(getDb(), identity.id, requestId);
   } catch (error) {
     return { ok: false, code: error instanceof RefillError ? error.code : "UNAVAILABLE",

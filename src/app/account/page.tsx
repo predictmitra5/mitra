@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
-import { emailConfirmationRequired } from "@/modules/auth/config";
+import { CAMPUSES } from "@/config/campus";
 import { signOut } from "@/modules/auth/actions";
 import { readRefillStatus, type RefillStatus } from "@/modules/account/refill";
 import { readPositions, type PositionsPage } from "@/modules/account/positions";
@@ -86,13 +86,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
   return <div className="market-shell"><MarketHeader viewer={viewer} active="positions" /><main className="account">
     {unavailable || blocked ? <section className="account-empty"><h1>{account?.profile.withdrawnAt ? "This account is inactive." : "Your account is temporarily unavailable."}</h1><p>Please contact the app owner before continuing.</p></section>
-      : !account?.profile.adultConfirmedAt ? <section className="account-card profile-card"><span className="eyebrow">ONE MORE STEP</span><h1>Make it yours.</h1><p>{emailConfirmationRequired() ? "Your email is confirmed. " : ""}Set up your profile and confirm you’re 18 or older to join.</p><ProfileForm displayName={account?.profile.displayName} handle={account?.profile.handle} /></section>
+      : !account?.profile.adultConfirmedAt ? <section className="account-card profile-card"><span className="eyebrow">ONE MORE STEP</span><h1>Make it yours.</h1><p>Your email is verified. Set up your profile and confirm you’re 18 or older to join.</p><ProfileForm displayName={account?.profile.displayName} handle={account?.profile.handle} /></section>
       : <>
         {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
 
         <div className="me">
           <Avatar name={account.profile.displayName} photo={photoUrl(account.profile.handle, account.profile.photoUpdatedAt)} size={72} />
-          <div><h1>{account.profile.displayName}</h1><p className="muted">@{account.profile.handle} &middot; Ohio State</p></div>
+          <div><h1>{account.profile.displayName}</h1><p className="muted">@{account.profile.handle} &middot; {CAMPUSES[identity.campus].communityName}</p></div>
         </div>
 
         <section className="points" aria-label="Points">

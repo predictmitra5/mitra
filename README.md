@@ -1,6 +1,6 @@
-# Mitra at OSU
+# Mitra
 
-A play-money social prediction app about people's goals, launching first as Mitra at OSU. Mitra is an independent student-built platform and is not affiliated with, endorsed by, or sponsored by The Ohio State University. The product was built from `Prediction_Market_MVP_Master_Prompt.pdf`, an 18-page question-first brief.
+A play-money social prediction app about people's goals, launching as campus editions for OSU and UIUC. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by either university. The product was built from `Prediction_Market_MVP_Master_Prompt.pdf`, an 18-page question-first brief.
 
 Start with [docs/EXECUTION.md](docs/EXECUTION.md) for current state, decisions and next work. Coding agents should also read [AGENTS.md](AGENTS.md).
 
@@ -11,7 +11,7 @@ Implemented:
 - A public home feed at `/`: anyone can browse open goals and open any goal page without an account. Category tabs (Anything, Gym, Grades, Internships, Clubs, Running, Closing soon) and a search for goals and people narrow the cards in place; the goal moving most today leads with its chart, beside a Closing soon list; and a dismissible prompt to create an account appears after two minutes of browsing.
 - Feed ranking from recent activity over time decay, with a head start for new goals and a cap of two leading slots per person, so one popular person cannot fill the page. Exposure and click counts are recorded without any viewer identity.
 - Proof submission and verified statements: the subject of a goal can attach documents (PDF or image) or links to it from approval until the proof deadline. **An uploaded document is never published.** The owner reads it, with suggested wording from an automatic read, and publishes a short statement such as "Fall 2026 GPA is 3.85". The document stays private and is kept as the record behind that statement.
-- Sign-up, sign-in, sign-out and password reset, limited to Ohio State email addresses. Email confirmation is built and currently switched off; see Supabase Auth setup below.
+- Campus-first sign-up, sign-in, sign-out and password reset for canonical `@osu.edu` and `@illinois.edu` identities. Signup requires Supabase's six-digit email verification code before the account can enter the app; see Supabase Auth setup below.
 - Profile setup with an 18+ self-confirmation and a one-time 1,000-point signup grant, written in a single database transaction.
 - The market engine (LMSR pricing, positions, the per-market limit, the trading ban, refills) as tested logic.
 - Goal creation from templates (GPA, internship, club, gym, running) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
@@ -21,14 +21,14 @@ Implemented:
 - **Owner tools:** a People page at `/review/people` to ban and unban people and remove photos, and a count in the top bar of goals and proof waiting. A ban signs the person out and keeps them out, cancels their goals that still need proof with refunds, and rejects their drafts; goals already ruled finish normally.
 - **Live prices** every 15 seconds while a page is open, a quiet price ticker under the top bar with today's change, and a chart with 1D, 1W, 1M and All. Polling records nothing, so it cannot inflate the feed's counts.
 - **Positions** on the account page and at `/positions` (in pages of 20): each goal you hold shares in, the side, shares and average price paid, and what the shares are worth at today's price with the gain or loss since you bought. That value is not what selling would return, which is lower for a large holding. Sold, paid-out and refunded holdings leave the list.
-- One dark interface across every page in a calm, data-first style: framed goal cards with the person's photo, the chance large and Yes and No buttons with prices; semantic Yes green and No red; and a scarlet, charcoal, gray and white Mitra at OSU brand layer. Public FAQ and privacy pages explain the pilot and its independence from the university. See [docs/DESIGN.md](docs/DESIGN.md), sections 9 and 10.
+- One dark interface across every page in a calm, data-first style: framed goal cards with the person's photo, the chance large and Yes and No buttons with prices; semantic Yes green and No red; a scarlet OSU edition and an Illinois-orange UIUC edition. Public FAQ and privacy pages explain the pilot and its independence from each university. See [docs/DESIGN.md](docs/DESIGN.md), sections 9 and 10.
 - Public approved-goal pages with prices, resolution terms and deadlines; a trade panel (on a phone, a bottom sheet) estimates shares and "To win" with quick amounts, and signed-in traders then preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
 - Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
 - The database schema on Supabase, with row-level security on every table.
 
 Not yet implemented: account withdrawal/deletion (including the deletion of a withdrawing person's documents and photo, which is decided but unbuilt), outcome-decider assignment, notifications and deployment. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no follow or leaderboard. Search only filters the goals already on the feed. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner still records a missing-proof NO explicitly rather than the app inferring it from an empty proof list.
 
-The first users are friends and Ohio State students, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
+The first users are friends and students in the OSU and UIUC editions, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Economy, subject to change: 1,000 starting points, two refills a month, and at most 100 points per person per market.
 
 ## Local setup
 
@@ -66,13 +66,13 @@ While any of these runs, anyone on the same network can open it. On this compute
 
 These are dashboard settings in your Supabase project. The app never changes them. Menu names can shift between dashboard versions.
 
-1. **Email confirmation is off for the pilot** (Authentication, Email provider, "Confirm email"). No SMTP provider is connected, so nobody outside the Supabase project team could receive a link; the owner decided on 2026-09-19 to remove the requirement and restore it later. Two settings must agree: turn "Confirm email" off in the dashboard, and set `AUTH_REQUIRE_EMAIL_CONFIRMATION=false` in `.env.local`. With the dashboard setting on, Supabase withholds the session; with the variable unset, the app refuses an unconfirmed one. Only the exact string `false` disables the check, so a typo fails safe.
-   - **To put it back:** delete that line from `.env.local` and switch "Confirm email" on again. Do this before anyone outside your own circle joins.
-   - **While it is off**, the `@osu.edu` gate only checks the address someone types, not that they own that mailbox. Anyone can claim any Ohio State address, including one belonging to somebody else. Invite only people you know.
+1. **Email confirmation must be on** (Authentication, Sign In / Providers, Email, "Confirm email"). The application has no bypass: every protected request requires Supabase to report a confirmed mailbox.
+   - In Authentication, Email Templates, edit the signup confirmation template to show `{{ .Token }}`. Supabase then sends the six-digit code expected by the signup screen instead of only a confirmation link.
+   - Keep the OTP expiry short and use Supabase's built-in request limits. The app accepts exactly six digits and re-checks the provider identity after verification.
 2. **Allow the redirect URLs** (Authentication, URL Configuration):
    - Site URL: `http://localhost:3000` for local development, or the deployment's `APP_URL`.
    - Redirect URLs: `http://localhost:3000/auth/callback` and `http://localhost:3000/auth/recovery`, plus the same two paths on the production `APP_URL`.
-3. **Configure custom SMTP before restoring confirmation** (Authentication, Emails, SMTP Settings). This is deferred, not abandoned: password reset still sends email, and confirmation cannot come back without it. Supabase's built-in email only delivers to members of your Supabase project team, at about two messages an hour, so Ohio State students cannot receive confirmation or reset emails until a provider such as Resend, Postmark or Amazon SES is connected. See [Supabase's SMTP guide](https://supabase.com/docs/guides/auth/auth-smtp).
+3. **Configure custom SMTP before inviting students** (Authentication, Emails, SMTP Settings). Supabase's built-in email is for limited project testing, so student delivery and password reset require a provider such as Resend, Postmark or Amazon SES. See [Supabase's SMTP guide](https://supabase.com/docs/guides/auth/auth-smtp).
    - **No domain (fine for a small pilot):** a personal Gmail account. Host `smtp.gmail.com`, port `465`, username the Gmail address, password a 16-character Google app password, sender the same Gmail address. Creating an app password requires 2-Step Verification, and school accounts such as `@osu.edu` cannot create one. Personal Gmail has daily sending limits and weaker deliverability than a dedicated provider. See [Supabase's Google SMTP note](https://supabase.com/docs/guides/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y) and [Google's app password help](https://support.google.com/mail/answer/185833).
    - **No domain, alternatives to Google:** Yahoo Mail (`smtp.mail.yahoo.com`, port 465), iCloud Mail (`smtp.mail.me.com`, port 587) and AOL Mail (`smtp.aol.com`, port 465). Each one needs an app password generated in that account's security settings, and each sends from that mailbox address. AOL runs on Yahoo's infrastructure, so it is the fallback if Yahoo's app-password page is uncooperative. Daily volume is limited, which suits a pilot. See [AOL's app password help](https://help.aol.com/articles/create-and-manage-app-password).
    - **No domain, one further option:** GMX (`smtp.gmx.com`, port 587) accepts the ordinary account password, but only after POP3 and IMAP access is switched on under Settings, and GMX switches that access back off after a long idle period. Its delivery record into American university inboxes is less proven than the four above.
@@ -104,7 +104,7 @@ If that script reports wrong privacy on the bucket, fix it in the Supabase dashb
 
 ## Deploying on Vercel
 
-Decided 2026-09-24: Vercel, **private at first** (see DECISIONS.md). Every deployment, production included, sits behind Vercel's own login until email confirmation is back on, because with confirmation off anyone could sign up with another student's `@osu.edu` address. Testers get a shareable link.
+Decided 2026-09-24: Vercel, **private at first** (see DECISIONS.md). Every deployment, production included, stays behind Vercel's own login until the six-digit signup email is proven to arrive at both OSU and UIUC inboxes. Testers get a shareable link.
 
 Deployed 2026-09-24: [Mitra](https://mitra-chi-eight.vercel.app), managed in the [Vercel project](https://vercel.com/mughils-projects/mitra). Home and sign-in render, and unauthenticated requests to both production and deployment addresses redirect to Vercel login. A real-account walkthrough and Supabase email redirect configuration still need verification.
 
@@ -120,7 +120,6 @@ You enter credentials and complete account setup yourself. The code and non-secr
    - `DATABASE_URL` (the transaction pooler, port 6543)
    - `ANTHROPIC_API_KEY` (optional: it only suggests wording when you review proof)
    - `ANTHROPIC_MODEL`: `claude-haiku-4-5`
-   - `AUTH_REQUIRE_EMAIL_CONFIRMATION`: `false`, while confirmation is off
    `DIRECT_DATABASE_URL` is not needed there: migrations run from your computer.
    Save the two `NEXT_PUBLIC_SUPABASE_` entries as **Config**, acknowledging that their URL and publishable key are intended for the browser. Save private keys and database connection strings as **Secret**. Do not import the entire file under one type: the dashboard rejects public-prefixed names under Secret. An import adds entries and fails on duplicate names; use the existing entry's **Edit** action to replace its value. A saved Secret cannot become Config in place, so replacing a wrongly classified entry requires deleting and recreating that specific entry with the owner's value. See [Vercel's Config/Secret rules](https://vercel.com/docs/environment-variables/sensitive-environment-variables).
 5. **Deploy the latest source**, then copy the production address Vercel gives the project. If replacing a failed deployment of an old commit, deploy the updated `main` rather than redeploying that old source.
@@ -129,7 +128,7 @@ You enter credentials and complete account setup yourself. The code and non-secr
 8. **Tell Supabase about the address.** Supabase, Authentication, URL Configuration: set Site URL to the production address, and add `<address>/auth/callback` and `<address>/auth/recovery` to Redirect URLs.
 9. **Storage.** The `photo-uploads` bucket was created on 2026-09-24. On another Supabase project, run the storage script above first.
 
-To go public later: restore email confirmation (Supabase Auth setup above), delete `AUTH_REQUIRE_EMAIL_CONFIRMATION` from Vercel, redeploy, then turn Deployment Protection off.
+To go public later: test signup and password recovery with real OSU and UIUC inboxes through custom SMTP, then turn Deployment Protection off.
 
 **If the build says `Authentication is not configured`:** `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing from the environment used for that build. `.env.local` is intentionally absent from GitHub. Add both values in Vercel, select the deployment's environment, save, then build the latest source again. Do not remove the authentication check. The server also needs `DATABASE_URL` and `SUPABASE_SECRET_KEY` at runtime; a successful build alone does not verify them.
 

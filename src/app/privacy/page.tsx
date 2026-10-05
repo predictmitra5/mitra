@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPage } from "@/app/components/info-page";
-import { CAMPUS } from "@/config/campus";
+import { selectedCampus } from "@/config/campus-server";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: `A plain-language privacy summary for the ${CAMPUS.editionName} pilot.`,
+  description: "A plain-language privacy summary for the Mitra campus pilot.",
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const campus = await selectedCampus();
   return (
     <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 4, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what becomes public, and what stays private.">
       <div className="info-grid">
@@ -46,11 +47,10 @@ export default function PrivacyPage() {
       <aside className="info-callout info-callout-wide">
         <div>
           <strong>Independent by design.</strong>
-          <p>{CAMPUS.independenceStatement}</p>
+          <p>{campus.independenceStatement}</p>
         </div>
         <Link href="/faq">Read the FAQ <span aria-hidden="true">↗︎</span></Link>
       </aside>
     </InfoPage>
   );
 }
-

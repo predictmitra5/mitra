@@ -6,21 +6,21 @@ Status: proposed implementation sequence, conditional on user decisions. No mile
 
 Completed: inspect workspace; deeply read the PDF; create execution documentation; start skill and technical research; ask the first interview batch.
 
-Remaining: collusion research, a launch-goal template, verification/privacy and minimal measurement. Templates for GPA, internship, club and gym goals are decided. The economy and the market lifecycle are decided; see MARKETS.md. Confirmed: Ohio State and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
+Remaining: collusion research, a launch-goal template, verification/privacy and minimal measurement. Templates for GPA, internship, club and gym goals are decided. The economy and the market lifecycle are decided; see MARKETS.md. Confirmed: OSU and UIUC launch editions and example goals; subjects create their own goals from templates, AI suggestions or their own words, and the owner approves each market; Kalshi-style ban on subject and decision-maker trading; app-run market-maker bot; link-viewable market pages; the selected technical stack; trades as the main objective with education secondary; public/private proof categories.
 
-Follow-up: the initial audience is friends and Ohio State students, and the user emphasized a broad range of goals. Use their GPA, clubs, internship, launch and gym examples to complete the market and evidence design interviews. See TECH_STACK.md for the selected foundation.
+Follow-up: the initial audience is friends and students in the OSU and UIUC editions, and the user emphasized a broad range of goals. Use their GPA, clubs, internship, launch and gym examples to complete the market and evidence design interviews. See TECH_STACK.md for the selected foundation.
 
 Exit: a documented initial product contract and chosen stack, with each policy-dependent feature sufficiently decided to implement.
 
 ## Slice 1 - An approved subject and a well-defined market
 
-Done: the stack is scaffolded and runs locally from the README; the database schema is applied with row-level security enabled on every table; email-and-password sign-in admits only confirmed Ohio State identities; profile setup records an 18+ self-confirmation and issues the 1,000-point grant in one transaction.
+Done: the stack is scaffolded and runs locally from the README; the database schema is applied with row-level security enabled on every table; campus-first signup admits only confirmed OSU or UIUC identities through a six-digit email code; profile setup records an 18+ self-confirmation and issues the 1,000-point grant in one transaction.
 
 Also done: goal creation from templates or the subject's own words, and the owner approval queue with opening odds and rejection reasons.
 
 Remaining: the owner's custom SMTP and redirect URL setup (without it students receive no email), marking the owner account as approver, AI goal suggestions, and a launch template.
 
-Verify: authorized users can complete it; unauthorized actors cannot approve or impersonate a subject; a non-OSU address cannot sign in; terms and permissions are attributable.
+Verify: authorized users can complete it; unauthorized actors cannot approve or impersonate a subject; unsupported domains and campus/email mismatches cannot sign in; terms and permissions are attributable.
 
 ## Slice 2 - Complete play-money lifecycle
 

@@ -19,7 +19,7 @@ The source lists death, injury, disease, mental health, self-harm, crime victimi
 - Accounts use email and password (chosen by the owner on 2026-09-16). Users confirm they are 18 or older before a profile or grant is created; the server records when. This is self-attestation: it deters minors but does not verify age, and no birth date or identity document is collected.
 - Implemented 2026-09-16: non-OSU accounts are never admitted by the app, but Supabase itself will still create them if someone calls its sign-up API directly. A provider-side auth hook would stop that; not built.
 - Supabase's built-in email delivers only to the project team, so confirmation and reset emails cannot reach students until the owner configures custom SMTP.
-- Sign-in at launch is limited to Ohio State email addresses. This reduces anonymous accounts but excludes the user's non-OSU friends, does not verify age, and does not establish that an account holder is the person a market concerns. Supabase Auth does not enforce a domain restriction by itself; application code must, and it must be tested.
+- Sign-in at launch is limited to verified `@osu.edu` and `@illinois.edu` addresses. This reduces anonymous accounts but excludes friends outside those campuses, does not verify age, and does not establish that an account holder is the person a market concerns. Supabase Auth does not enforce the campus match by itself; application code does, and it is tested.
 - The owner sets each market's opening price at approval, which is an editorial judgement about a real person and should be recorded with the approval.
 
 ## Consent and privacy decisions

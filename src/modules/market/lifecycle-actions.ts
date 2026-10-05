@@ -23,7 +23,7 @@ export async function manageMarket(input: OwnerCommand): Promise<LifecycleResult
   let marketId: string;
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new LifecycleError("SIGNED_OUT", "Sign in with your confirmed Ohio State email to continue.");
+    if (!identity) throw new LifecycleError("SIGNED_OUT", "Sign in with your verified university email to continue.");
     ({ marketId } = await applyOwnerCommand(getDb(), identity.id, input));
   } catch (error) { return failure(error); }
   refresh(marketId);
@@ -34,7 +34,7 @@ export async function objectToRuling(input: ObjectionInput): Promise<LifecycleRe
   let marketId: string;
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new LifecycleError("SIGNED_OUT", "Sign in with your confirmed Ohio State email to object.");
+    if (!identity) throw new LifecycleError("SIGNED_OUT", "Sign in with your verified university email to object.");
     ({ marketId } = await submitObjection(getDb(), identity.id, input));
   } catch (error) { return failure(error); }
   refresh(marketId);

@@ -197,15 +197,15 @@ Name and handle, available points large, points in positions with the gain or lo
 
 ---
 
-## 10. Mitra at OSU campus brand (2026-10-04)
+## 10. Campus editions (2026-10-04)
 
-The first community is now presented as **Mitra at OSU**, while Mitra remains the parent product name for later campus editions. This section supersedes section 9 only where it describes the lime brand accent and plain `mitra` wordmark. The data-first layout, Inter, dark surfaces and semantic market colours stay.
+Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch editions. This section supersedes section 9 only where it describes the lime brand accent and plain `mitra` wordmark. The data-first layout, Inter, dark surfaces and semantic market colours stay.
 
 ### Campus layer
 
-- `src/config/campus.ts` holds the edition name, university name, community name, email domain and independence statement in one place. Shared metadata, the header, footer, FAQ and privacy page read from it rather than repeating OSU copy.
-- The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` capsule. It is an original text treatment: no Block O, university logo, Brutus, official typeface or university artwork.
-- Every footer links to `/faq` and `/privacy` and says that Mitra is independent and is not affiliated with, endorsed by or sponsored by The Ohio State University.
+- `src/config/campus.ts` holds both editions' names, university names, email domains, onboarding hints and independence statements. The server derives the account campus from the confirmed email; a cookie remembers only the display edition.
+- The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` or `at UIUC` capsule. It is an original text treatment with no university logo, mascot, official typeface or artwork.
+- Every footer links to `/faq` and `/privacy` and says that Mitra is an independent platform, not affiliated with, endorsed by or sponsored by the displayed university.
 - The public FAQ explains play money, eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what is public, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
 
 ### Tokens
@@ -221,7 +221,9 @@ The first community is now presented as **Mitra at OSU**, while Mitra remains th
 | Scarlet | `#ba0c2f` with white text | Primary actions, top rule and owner badge |
 | Scarlet hover | `#d0193d` | Interactive emphasis on the dark canvas |
 | Scarlet wash | `#2a1016` | Notes, highlights and the campus capsule |
+| Illinois orange | `#ff5f05` with white text | UIUC edition actions and identity |
+| Illinois orange hover | `#ff762b` | UIUC interactive emphasis |
 | Yes / up | `#34c77b` | Market semantics only |
 | No / down | `#f2545b` | Market semantics only |
 
-Ohio State publicly describes scarlet, gray and white as its primary palette and cautions that a moderate amount of scarlet goes a long way. The interface follows that balance rather than flooding the page red. Ohio State also requires permission for student organizations to use university names or marks; the independence copy and avoidance of official marks reduce confusion but do not replace any permission the operator may need. References: [Ohio State EHE graphics guidance](https://brand.ehe.osu.edu/graphics/) and [student trademark requests](https://trademarklicensing.osu.edu/page/student-request).
+Ohio State publicly describes scarlet, gray and white as its primary palette and cautions that a moderate amount of scarlet goes a long way. UIUC uses Illinois Orange as the second edition's accent. The interface uses campus color sparingly rather than flooding the page, and it keeps Yes/No colors semantic. Independence copy and avoidance of official marks reduce confusion but do not replace any permission the operator may need. References: [Ohio State EHE graphics guidance](https://brand.ehe.osu.edu/graphics/) and [student trademark requests](https://trademarklicensing.osu.edu/page/student-request).

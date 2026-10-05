@@ -17,7 +17,7 @@ function failure(error: unknown) {
 export async function previewOrder(form: FormData): Promise<Result<TradePreview>> {
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new TradingError("SIGNED_OUT", "Sign in with your confirmed Ohio State email to trade.");
+    if (!identity) throw new TradingError("SIGNED_OUT", "Sign in with your verified university email to trade.");
     const amountMicro = parseTradeAmount(form.get("amount"));
     const marketId = form.get("marketId"), side = form.get("side"), action = form.get("action");
     if (amountMicro === null || typeof marketId !== "string" || (side !== "YES" && side !== "NO") || (action !== "buy" && action !== "sell")) {
@@ -31,7 +31,7 @@ export async function confirmOrder(input: TradeConfirmation): Promise<Result<Tra
   let result: TradeReceipt;
   try {
     const identity = await currentIdentity();
-    if (!identity) throw new TradingError("SIGNED_OUT", "Sign in with your confirmed Ohio State email to trade.");
+    if (!identity) throw new TradingError("SIGNED_OUT", "Sign in with your verified university email to trade.");
     // The service validates every value and computes prices and balances again.
     // Client-supplied preview totals, identity, and wallet values are never used.
     result = await executeTrade(getDb(), identity.id, input);

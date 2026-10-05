@@ -8,7 +8,7 @@ The app lets users forecast people's goals using play money. The PDF emphasized 
 
 ## Confirmed user direction - 2026-09-15
 
-- First community: the user's friends and Ohio State students. Sign-in requires an Ohio State email at launch (decided 2026-09-15), widening after product-market fit.
+- First communities: the user's friends and students joining through the OSU and UIUC editions. Sign-in requires a verified `@osu.edu` or `@illinois.edu` identity, widening after product-market fit.
 - Goal categories are broad. The user supplied GPA by semester/year end, club admission, an internship at a named company, launching something, and a gym goal. These are examples, not a closed category list.
 - Main objective: maximize trades. Education and informed trading are also important.
 - People create goals about themselves: from fill-in templates, from AI-written suggestions based on what they enter, or in their own words. The owner approves every market before it is published. The user wants an AI reviewer to eventually follow their judgment.
@@ -16,7 +16,7 @@ The app lets users forecast people's goals using play money. The PDF emphasized 
 - Trades execute against an app-run market-maker bot, so a trade never waits for another person. Prices appear Kalshi-style in cents.
 - Provisionally, friends may trade using what they know, with a per-person maximum per market. The user asked for more research on collusion.
 - Market pages are public: anyone with the link can view them and search engines may index them. What logged-out visitors see in detail is not decided.
-- Sign-in at launch requires an Ohio State email address, opening wider after product-market fit. This excludes non-OSU friends in the meantime and does not establish anyone's age.
+- Sign-in at launch requires a verified OSU or UIUC email address. This excludes friends outside those campuses and does not establish anyone's age.
 - The owner sets each market's opening price when approving it.
 - Economy, subject to change: 1,000 starting play money; refills restore cash to 1,000 at most twice a month; at most 100 points per person in one market; selling allowed while trading is open.
 - Public sources and private documents are acceptable evidence categories for initial owner review; actual sufficiency/privacy rules remain open.
