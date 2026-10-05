@@ -52,7 +52,7 @@ Verify: originals do not leak; each review is attributable; factual updates and 
 
 ## Slice 4 - Instrumented discovery
 
-Done (2026-09-19; access changed 2026-10-05): the ranked feed at `/` has category tabs, search that filters loaded goals and a featured goal moving most today (DECISIONS.md). Ranking is recent activity over time decay, with a new-goal head start and a two-slot-per-person cap, recorded in DECISIONS.md and explainable per card. Exposure and click events are recorded without viewer identity. The original public browsing and two-minute prompt were removed: the feed and goal pages now require a verified account, while signed-out `/` is neutral signup onboarding.
+Done (2026-09-19; access changed 2026-10-05): the ranked feed at `/` has category tabs, search that filters loaded goals and a featured goal moving most today (DECISIONS.md). Ranking is recent activity over time decay, with a new-goal head start and a two-slot-per-person cap, recorded in DECISIONS.md and explainable per card. Exposure and click events are recorded without viewer identity. Public browsing was removed on 2026-10-04 and restored on 2026-10-05, now with a Kalshi-style sign-up pop-up after 30 seconds in place of the old two-minute prompt.
 
 Remaining here: per-viewer measurement and any personalization, which need the discovery privacy decision (D08, D09) first; search across goals that are not on the feed; and any ranking change informed by what the recorded events actually show.
 

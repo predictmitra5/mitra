@@ -199,6 +199,8 @@ Name and handle, available points large, points in positions with the gain or lo
 
 ## 10. Campus editions (2026-10-04)
 
+_Superseded on 2026-10-05 by section 12, except the campus registry and the no-official-marks rule._
+
 Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch editions. This section supersedes section 9 only where it describes the lime brand accent and plain `mitra` wordmark. The data-first layout, Inter, dark surfaces and semantic market colours stay.
 
 ### Campus layer
@@ -236,8 +238,41 @@ Ohio State publicly describes scarlet, gray and white as its primary palette and
 
 ## 11. Neutral signup-first entry (2026-10-05)
 
+_Superseded later on 2026-10-05 by section 12: visitors browse first and sign up in Kalshi-style steps._
+
 - Signed-out `/` is the signup surface. It contains the parent `mitra` wordmark, university selection and concise trust/product context, but no live goals, example events, prices, positions, ticker or feed.
 - The entry palette is deliberately campus-neutral: deep blue-black canvas, blue-gray surfaces and a muted steel-blue action color (`#6f96c2`, hover `#83a8d1`). University cards remain text-first and do not repaint the page.
 - Selecting OSU or UIUC changes validation copy and the accepted email domain only. Even the credential and verification steps remain neutral; the `Mitra at OSU`/`Mitra at UIUC` lockup and scarlet/orange theme start after a verified session.
 - The layout is a single column on phones and a balanced signup/product-context split on desktop. FAQ and privacy stay public, with a generic independence statement on the entry shell.
 - Feed and market layouts from sections 9 and 10 are unchanged for authenticated members. Signed-out direct market requests redirect to signup before any market query, click/exposure event or profile-photo read.
+
+## 12. Browse first, Kalshi-style sign-up and onboarding, the logo, Helvetica (2026-10-05)
+
+Decided by the owner after reviewing a canvas of the screens (https://claude.ai/artifact/CRVbTCMDaHEyE6w3sm6xkP); DECISIONS.md, 2026-10-05. Sections 9's layout (ticker, framed cards, featured goal, Closing soon, goal page and trade panel) stays; this section replaces its colours and type, and sections 10 and 11.
+
+### Look
+
+- **Themes.** Black by default, white when the person picks it with the moon/sun button in the top bar. The choice is a cookie (`mitra_theme`), so the server sets `html[data-theme]` and the first paint is right; both icons and labels are in the button and CSS shows the pair for the theme.
+- **Type.** Helvetica throughout (`--font-sans`: Helvetica Neue, Helvetica, Arial, system sans). Nothing is downloaded; devices without Helvetica show Arial or their system sans. Tabular numbers everywhere.
+- **Colour.** Baby blue `#89cff0` for main actions with dark ink `#04212f`; green Yes and red No, brighter on black (`#3fd38a`, `#ff5c63`) and darker on white (`#0e8546`, `#c8323a`) so text on their tints passes contrast. Black: page `#0b0c0e`, cards `#141619`, borders `#262a30`/`#3a3f47`. White: page `#f5f6f8` so white cards stand out, borders `#e2e5e9`/`#c9ced5`.
+- **Controls.** Pill buttons. The selected tab or chart range is a solid pill in the text colour. Yes/No buttons are tinted at rest and fill solid on hover.
+- **Hover and press.** About 160 ms: main buttons brighten with a soft baby blue ring, outline buttons and tabs fill lightly, goal cards lift 2 px with a shadow, list rows highlight, everything presses to 97%. Hover rules apply only where there is a mouse; reduced motion keeps the colour changes and drops the movement.
+- **Logo.** The owner's lockup (symbol and MITRA), traced from their image into one SVG path (`src/app/components/brand/logo.tsx`) drawn in `currentColor`: baby blue on black, a deeper `#3aa3d9` on white. The symbol alone is the tab and app icon (`src/app/icon.svg`, `apple-icon.png`).
+- **School.** Once signed in, the school's name sits after a thin divider beside the logo in its colour: scarlet for Ohio State, orange for Illinois, each lightened on black and darkened on white to stay readable. No other campus colouring, no official marks.
+
+### Browsing and the pop-up
+
+Visitors see the same feed and goal pages as members. After 30 seconds a native `<dialog>` opens (centred on a laptop, a bottom sheet on a phone): "Create your account", one button per school, Log in, and the play-money line. Closing it stops it opening by itself again for the browser session; any Yes, No or trade control opens it at once instead of acting (`src/app/components/signup-prompt.tsx`).
+
+### Sign-up, sign-in and onboarding
+
+One screen per step (`src/app/components/step-frame.tsx`): a four-part progress bar (account, profile, photo, getting started), back arrow, logo in the middle, close, one 560 px column with large headings and 56 px pill buttons.
+
+- **Sign-up** (`signup-flow.tsx`): school (skipped when the pop-up already chose it), school email, the six-digit code (resend after 60 seconds, change email), password.
+- **Onboarding** (`/welcome`): name and @username, 18 or older (these two create the profile), photo with a circular picker and "Skip for now", topics as pills, how Mitra works, then the feed.
+- **Sign-in, forgot and reset password** use the same frame without the progress bar.
+
+### Chart
+
+Yes and No are two step lines, green and red, with a dot at each end, dotted gridlines labelled on the right, dates below, and a legend with both values that follows the crosshair (`price-chart.tsx`). The headline chance and the 1D/1W/1M/All pills stay. Not built from the reference: the floating "+ 10" trade amounts, which would need a new public feed of individual trade sizes.
+

@@ -15,7 +15,7 @@ The app lets users forecast people's goals using points. The PDF emphasized prof
 - Nobody trades a market about their own goal, and neither do people who decide its outcome (Kalshi-style). The owner does not approve goals that can be achieved simply by deciding to.
 - Trades execute against an app-run market-maker bot, so a trade never waits for another person. Prices appear Kalshi-style in cents.
 - Provisionally, friends may trade using what they know, with a per-person maximum per market. The user asked for more research on collusion.
-- Goal feeds, market pages, live prices and profile photos require a verified signed-in account. Signed-out visitors see neutral Mitra onboarding plus FAQ, privacy and account-recovery pages; search engines must not index market details.
+- Since 2026-10-05 anyone can browse the feed, goal pages, live prices and profile photos; trading, posting and every other write need a verified signed-in account. Visitors get a closable sign-up pop-up after 30 seconds, reopened by Yes, No or trade controls. Search engines are asked not to index goal pages.
 - Sign-in at launch requires a verified OSU or UIUC email address. This excludes friends outside those campuses and does not establish anyone's age.
 - The owner sets each market's opening price when approving it.
 - Current economy: one 1,000-point starting grant; no user top-ups or periodic resets; at most 100 points per person in one market; selling allowed while trading is open. Points are not currently cash or prizes. Future prize or cash concepts are not promised or implemented.

@@ -291,7 +291,7 @@ const server = createServer(async (request, response) => {
   const photo = url.pathname.match(/^\/photos\/([a-z0-9_]{3,24})$/);
   if (photo) { await servePhoto(photo[1], response); return; }
   const persona = personas[url.searchParams.get("as") ?? "trader"] ?? personas.trader;
-  globalThis.__preview.identity = persona.id ? { id: persona.id, email: "fictional@osu.edu" } : null;
+  globalThis.__preview.identity = persona.id ? { id: persona.id, email: "fictional@osu.edu", campus: "osu" } : null;
   const query = Object.fromEntries(url.searchParams);
   const market = url.pathname.match(/^\/markets\/([0-9a-f-]{36})$/);
   const Page = market ? app.MarketPage : pages[url.pathname];
