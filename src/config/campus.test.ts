@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CAMPUSES, campusForKey, canonicalUniversityEmail, universityEmail } from "./campus";
+import { CAMPUSES, campusForKey, canonicalUniversityEmail, isOwnerEmail, universityEmail } from "./campus";
 
 describe("campus brand configuration", () => {
   it("defines distinct OSU and UIUC editions under the Mitra parent brand", () => {
@@ -22,5 +22,12 @@ describe("campus brand configuration", () => {
     expect(universityEmail("NETID@ILLINOIS.EDU")).toEqual({ email: "netid@illinois.edu", campus: "uiuc" });
     expect(canonicalUniversityEmail("netid@illinois.edu", "osu")).toBeNull();
     expect(canonicalUniversityEmail("name@illinois.edu.evil.example")).toBeNull();
+  });
+
+  it("admits only the explicitly verified owner mailbox outside campus domains", () => {
+    expect(universityEmail("PredictMitra@gmail.com", "osu")).toEqual({ email: "predictmitra@gmail.com", campus: "osu" });
+    expect(canonicalUniversityEmail("predictmitra@gmail.com", "uiuc")).toBeNull();
+    expect(isOwnerEmail("PREDICTMITRA@gmail.com")).toBe(true);
+    expect(isOwnerEmail("someone.else@gmail.com")).toBe(false);
   });
 });

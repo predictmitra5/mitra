@@ -52,6 +52,20 @@ describe("account provisioning against local PostgreSQL", () => {
     ]);
   });
 
+  it("creates and upgrades an owner only when the server passes the verified-owner flag", async () => {
+    const createdId = randomUUID();
+    const created = await provisionAccount(database, createdId, { ...input, isOwner: true }, now);
+    expect(created.profile.isOwner).toBe(1);
+
+    const upgradedId = randomUUID();
+    const secondInput = { ...input, handle: "second_owner" };
+    await provisionAccount(database, upgradedId, secondInput, now);
+    const upgraded = await provisionAccount(database, upgradedId, { ...secondInput, isOwner: true }, now);
+    expect(upgraded.created).toBe(false);
+    expect(upgraded.profile.isOwner).toBe(1);
+    expect(await counts()).toEqual({ profiles: 2, wallets: 2, grants: 2 });
+  });
+
   it("retries preserve cash, identity fields and the original age affirmation", async () => {
     const userId = randomUUID();
     await provisionAccount(database, userId, input, now);
@@ -183,11 +197,11 @@ describe("account provisioning against local PostgreSQL", () => {
       ...input,
       id: randomUUID(),
       userId: randomUUID(),
-      isOwner: 1,
+      isOwner: "true",
       balanceMicro: 999_999_999_999,
       adultConfirmedAt: new Date("2000-01-01"),
       withdrawnAt: now,
-    } as AccountInput, now);
+    } as unknown as AccountInput, now);
     expect(result).toMatchObject({
       balanceMicro: startingBalance,
       profile: { id: verifiedUserId, isOwner: 0, adultConfirmedAt: now, withdrawnAt: null },

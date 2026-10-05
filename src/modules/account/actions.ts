@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { isOwnerEmail } from "@/config/campus";
 import { getDb } from "@/db/client";
 import { createAuthClient, currentIdentity } from "@/modules/auth/server";
 import { deleteAuthIdentity } from "@/modules/auth/admin";
@@ -20,6 +21,7 @@ export async function completeProfile(_state: FormState, form: FormData): Promis
     if (typeof displayName !== "string" || typeof handle !== "string") return { error: "Enter a display name and username." };
     await provisionAccount(getDb(), identity.id, {
       displayName, handle, adultConfirmed: form.get("adultConfirmed") === "on",
+      isOwner: isOwnerEmail(identity.email),
     });
   } catch (error) {
     if (error instanceof AccountError) return { error: error.message };

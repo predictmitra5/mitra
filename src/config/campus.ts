@@ -44,6 +44,19 @@ export function campusForKey(value: unknown): Campus {
 export type UniversityEmail = { email: string; campus: CampusKey };
 
 /**
+ * Explicit owner mailbox exception chosen by the product owner. It remains
+ * subject to Supabase email verification; this only bypasses the campus-domain
+ * rule and never trusts form data or user-editable metadata.
+ */
+const OWNER_EMAILS: Readonly<Record<string, CampusKey>> = {
+  "predictmitra@gmail.com": "osu",
+};
+
+export function isOwnerEmail(value: unknown): boolean {
+  return typeof value === "string" && Object.hasOwn(OWNER_EMAILS, value.trim().toLowerCase());
+}
+
+/**
  * Canonicalize only the exact launch-campus domains. The campus form choice is
  * an expectation, never the source of authorization.
  */
@@ -54,7 +67,9 @@ export function universityEmail(value: unknown, expectedCampus?: CampusKey): Uni
   if (!match || match[1].length > 64) return null;
 
   let result: UniversityEmail | null = null;
-  if (match[2] === "osu.edu" || match[2] === "buckeyemail.osu.edu") {
+  if (Object.hasOwn(OWNER_EMAILS, email)) {
+    result = { email, campus: OWNER_EMAILS[email] };
+  } else if (match[2] === "osu.edu" || match[2] === "buckeyemail.osu.edu") {
     result = { email: `${match[1]}@osu.edu`, campus: "osu" };
   } else if (match[2] === "illinois.edu") {
     result = { email: `${match[1]}@illinois.edu`, campus: "uiuc" };
