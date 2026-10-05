@@ -14,18 +14,17 @@ beforeEach(() => {
 });
 
 describe("live quote access", () => {
-  it("rejects signed-out requests before reading the database", async () => {
-    mocks.identity.mockResolvedValue(null);
-    const response = await GET({ nextUrl: new URL("https://mitra.test/api/quotes?ids=one") } as never);
-    expect(response.status).toBe(401);
-    expect(mocks.database).not.toHaveBeenCalled();
-    expect(mocks.readQuotes).not.toHaveBeenCalled();
-  });
-
-  it("serves quotes after server-verified authentication", async () => {
-    mocks.identity.mockResolvedValue({ id: "verified-user" });
+  it("serves prices to signed-out visitors without reading any identity", async () => {
     const response = await GET({ nextUrl: new URL("https://mitra.test/api/quotes?ids=one") } as never);
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(mocks.readQuotes).toHaveBeenCalledWith("database", ["one"]);
+    expect(mocks.identity).not.toHaveBeenCalled();
+  });
+
+  it("caps how many goals one request can ask about", async () => {
+    const ids = Array.from({ length: 30 }, (_, i) => `goal-${i}`).join(",");
+    await GET({ nextUrl: new URL(`https://mitra.test/api/quotes?ids=${ids}`) } as never);
+    expect(mocks.readQuotes.mock.calls[0][1]).toHaveLength(24);
   });
 });

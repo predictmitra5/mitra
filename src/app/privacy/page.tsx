@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 5, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what signed-in community members can see, and what stays private.">
+    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 5, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what anyone visiting Mitra can see, and what stays private.">
       <div className="info-grid">
         <section className="info-card">
           <span className="info-number">01</span>
-          <h2>What your community can see</h2>
-          <p>Signed-in members of your university community can see your display name, handle, profile photo, approved goal terms, market prices, aggregate point volume, outcomes, and short evidence statements approved by the Mitra owner.</p>
+          <h2>What anyone can see</h2>
+          <p>Anyone who visits Mitra, with or without an account, can see your display name, handle, profile photo, approved goal terms, market prices, aggregate point volume, outcomes, and short evidence statements approved by the Mitra owner. Goal pages ask search engines not to list them.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">04</span>
           <h2>Basic activity measurement</h2>
-          <p>Mitra records when signed-in members are shown a goal or open one, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
+          <p>Mitra records when a goal is shown or opened, whether or not the visitor has an account, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
         </section>
         <section className="info-card">
           <span className="info-number">05</span>

@@ -20,6 +20,7 @@ vi.mock("@/config/campus-server", () => ({ selectedCampus: async () => ({ key: "
 
 import Home from "./page";
 import { FeedView } from "./feed-view";
+import { SignupPrompt } from "./components/signup-prompt";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -29,23 +30,31 @@ beforeEach(() => {
   mocks.viewer.mockResolvedValue(null);
 });
 
-describe("home access boundary", () => {
-  it("shows neutral signup before reading or measuring any goal data", async () => {
+describe("home feed for visitors and members", () => {
+  it("shows visitors the feed with the sign-up pop-up and reads no account", async () => {
     mocks.identity.mockResolvedValue(null);
     const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
-    expect(view.props.className).toBe("market-shell entry-shell");
-    expect(mocks.database).not.toHaveBeenCalled();
-    expect(mocks.readFeed).not.toHaveBeenCalled();
-    expect(mocks.recordExposures).not.toHaveBeenCalled();
-  });
-
-  it("loads the ranked feed only for a verified identity", async () => {
-    mocks.identity.mockResolvedValue({ id: "verified-user", email: "member@osu.edu", campus: "osu" });
-    const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
-    const feed = view.props.children[1];
+    const [, feed, , prompt] = view.props.children;
     expect(feed.type).toBe(FeedView);
+    expect(feed.props.signedIn).toBe(false);
+    expect(prompt.type).toBe(SignupPrompt);
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date));
     expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
+    expect(mocks.viewer).not.toHaveBeenCalled();
+  });
+
+  it("treats an unavailable sign-in service as a visitor rather than failing", async () => {
+    mocks.identity.mockRejectedValue(new Error("auth down"));
+    const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
+    expect(view.props.children[1].props.signedIn).toBe(false);
+  });
+
+  it("gives a verified member their header and no pop-up", async () => {
+    mocks.identity.mockResolvedValue({ id: "verified-user", email: "member@osu.edu", campus: "osu" });
+    const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
+    const [, feed, , prompt] = view.props.children;
+    expect(feed.props.signedIn).toBe(true);
+    expect(prompt).toBe(false);
     expect(mocks.viewer).toHaveBeenCalledWith("database", "verified-user");
   });
 });

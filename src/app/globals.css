@@ -698,6 +698,33 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 .info-callout-wide { align-items: flex-end; }
 
 
+/* The sign-up pop-up for visitors (2026-10-05): centred on a desktop, a bottom sheet on a phone. */
+.signup-prompt { width: min(520px, calc(100% - 32px)); max-width: none; max-height: none; margin: auto; padding: 0; border: 0; background: transparent; color: var(--ink); overflow: visible; }
+.signup-prompt::backdrop { background: var(--scrim); }
+.signup-prompt[open] { animation: prompt-in 220ms var(--ease); }
+@keyframes prompt-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.signup-prompt-panel { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 40px 40px 30px; border: 1px solid var(--line-strong); border-radius: 20px; background: var(--card); box-shadow: 0 30px 80px rgb(0 0 0 / 0.45); }
+.signup-prompt-close { position: absolute; top: 16px; right: 16px; border-color: transparent; }
+.signup-prompt h2 { margin: 0; padding-right: 40px; font-size: 36px; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
+.signup-prompt-sub { margin: 0 0 12px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+.school-button { display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; border-radius: 12px; background: #e9eaec; color: #0b0c0e; font-size: 17px; font-weight: 700; text-decoration: none; }
+html[data-theme="light"] .school-button { background: var(--raised); border: 1px solid var(--line-strong); }
+.school-dot { width: 12px; height: 12px; border-radius: 999px; }
+.school-osu .school-dot { background: #ba0c2f; }
+.school-uiuc .school-dot { background: #ff5f05; }
+.signup-prompt-login { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: 15px; }
+.signup-prompt-login a { margin-left: 4px; color: var(--ink); font-weight: 700; }
+.signup-prompt-fine { margin: 0; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.signup-prompt-fine a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 599px) {
+  .signup-prompt { width: 100%; margin: auto 0 0; }
+  .signup-prompt[open] { animation-name: sheet-in; }
+  @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .signup-prompt-panel { padding: 28px 20px calc(24px + env(safe-area-inset-bottom)); border-width: 1px 0 0; border-radius: 22px 22px 0 0; }
+  .signup-prompt h2 { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) { .signup-prompt[open] { animation: none; } }
+
 /* Mouse-over (2026-10-05). Touch screens get the press feedback only. */
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover, .primary-button:hover:not(:disabled) { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
@@ -711,6 +738,9 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
   .closing li:hover + li .closing-row, .holdings li:hover + li .holding { border-top-color: transparent; }
   .trade-modes button:hover:not([aria-pressed="true"]) { color: var(--ink-soft); }
   .topbar-nav a:hover { color: var(--ink); }
+  .school-button:hover { background: #ffffff; box-shadow: 0 0 0 4px rgb(255 255 255 / 0.12); }
+  html[data-theme="light"] .school-button:hover { background: var(--hover); border-color: var(--ink-soft); box-shadow: none; }
+  .signup-prompt-login a:hover, .signup-prompt-fine a:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .card:hover, .my-goal:hover { transform: none; }

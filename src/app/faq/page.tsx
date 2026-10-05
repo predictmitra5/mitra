@@ -11,7 +11,7 @@ export default function FaqPage() {
   const questions = [
     {
       question: "What is Mitra?",
-      answer: "A private university prediction community for personal goals. People post goals about themselves, and their community uses Yes or No points to forecast whether those goals will happen.",
+      answer: "A university prediction community for personal goals. People post goals about themselves, and their community uses Yes or No points to forecast whether those goals will happen. Anyone can browse; trading and posting need a verified Ohio State or Illinois email.",
     },
     {
       question: "Is Mitra affiliated with a university?",

@@ -224,7 +224,7 @@ export function TradePanel({
               : `Sell ${words(side)}${amountMicro ? ` · ${formatMicro(amountMicro)} shares` : ""}`}
           </button>
         ) : access.kind === "signed-out" ? (
-          <Link className="btn btn-primary trade-cta" href="/sign-in">Log in to trade</Link>
+          <Link className="btn btn-primary trade-cta" href="/sign-up" data-needs-account>Sign up to trade</Link>
         ) : (
           <Link className="btn btn-primary trade-cta" href="/account">Finish your profile to trade</Link>
         )}

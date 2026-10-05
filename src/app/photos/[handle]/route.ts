@@ -1,18 +1,17 @@
 import type { NextRequest } from "next/server";
 import { getDb } from "@/db/client";
 import { readPhotoByHandle } from "@/modules/account/photos";
-import { currentIdentity } from "@/modules/auth/server";
 
 /*
  * Serves profile photos from the private bucket (decided 2026-09-24). Photos
- * are available only to verified members through here: the app stops serving a banned or
- * withdrawn person's photo at once, though a browser that already cached it may
- * keep showing it. The ?v= version is the photo's update time, so a matching
+ * are public, wherever the person's name appears (browsing without an account
+ * returned on 2026-10-05), but only through here: the app stops serving a banned
+ * or withdrawn person's photo at once, though a browser that already cached it
+ * may keep showing it. Caching stays private to the browser, so no shared cache
+ * keeps serving a removed photo. The ?v= version is the photo's update time, so a matching
  * request can be cached for good and a replaced photo is a new URL.
  */
 export async function GET(request: NextRequest, ctx: RouteContext<"/photos/[handle]">) {
-  const identity = await currentIdentity().catch(() => null);
-  if (!identity) return new Response("Sign in required.", { status: 401, headers: { "Cache-Control": "no-store" } });
   const { handle } = await ctx.params;
   let photo;
   try {

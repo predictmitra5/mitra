@@ -11,7 +11,7 @@ import { Ticker } from "./components/market/ticker";
 import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
- * The signed-in home feed in the Kalshi direction (2026-09-24, DECISIONS.md and
+ * The home feed in the Kalshi direction (2026-09-24, DECISIONS.md and
  * docs/DESIGN.md section 9): a quiet ticker, category tabs and search, the goal
  * moving most today with its chart, the Closing soon list beside it on a
  * desktop, then every goal as a framed card, four across or one on a phone.
@@ -19,7 +19,8 @@ import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components
  * Tabs and search only narrow the goals already loaded, and live in the
  * address (?tab=, ?q=) without reloading, so they record no extra views. The
  * ranking order stays as the server sent it, so cards never jump under a finger.
- * This component is rendered only after the server verifies the viewer.
+ * Visitors without an account see it too (2026-10-05); the page adds the
+ * sign-up pop-up for them.
  */
 
 export type FeaturedData = CardData & { series: ChartPoint[]; moving: boolean };
@@ -67,11 +68,12 @@ function withLivePoint(series: ChartPoint[], quote: LiveQuote | undefined): Char
 }
 
 export function FeedView({
-  cards, featured, closingSoon, unavailable, nowIso,
+  cards, featured, closingSoon, signedIn, unavailable, nowIso,
 }: {
   cards: CardData[];
   featured: FeaturedData | null;
   closingSoon: CardData[];
+  signedIn: boolean;
   unavailable: boolean;
   nowIso: string;
 }) {
@@ -142,9 +144,9 @@ export function FeedView({
             <h1>No goals are open yet.</h1>
             <p>
               Goals appear here once someone posts one about themselves and the owner approves it.
-              Yours can be the first.
+              {signedIn ? " Yours can be the first." : " Create an account to add yours."}
             </p>
-            <Link className="btn btn-primary" href="/goals/new">Post a goal</Link>
+            <Link className="btn btn-primary" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
           </section>
         ) : (
           <>

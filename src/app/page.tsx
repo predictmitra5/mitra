@@ -6,12 +6,12 @@ import { readViewerOrNull } from "@/modules/account/viewer";
 import type { CardData } from "./components/market/goal-card";
 import { MarketFooter, MarketHeader } from "./components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
-import { AuthScreen } from "./components/auth-screen";
+import { SignupPrompt } from "./components/signup-prompt";
 
 /*
- * The home route is onboarding for signed-out visitors and the ranked feed for
- * verified members. Authenticate before touching feed data so a signed-out
- * request cannot read goals or record an exposure.
+ * The home route is the ranked feed for everyone (browsing without an account
+ * returned on 2026-10-05). Visitors also get the sign-up pop-up; exposures are
+ * recorded without any viewer identity, as before.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
@@ -42,9 +42,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   try {
     identity = await currentIdentity();
   } catch {
-    // If Auth is unavailable, fail closed to the signed-out onboarding surface.
+    // If Auth is unavailable, show the feed as a visitor would see it.
   }
-  if (!identity) return AuthScreen({ mode: "sign-up" });
 
   const now = new Date();
   let feed: Feed = { cards: [], featured: null, closingSoon: [] };
@@ -60,7 +59,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     unavailable = true;
   }
 
-  const viewer = await readViewerOrNull(getDb(), identity.id);
+  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
   const { q } = await searchParams;
 
   const featured: FeaturedData | null = feed.featured && {
@@ -76,10 +75,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         cards={feed.cards.map(toCard)}
         featured={featured}
         closingSoon={feed.closingSoon.map(toCard)}
+        signedIn={!!identity}
         unavailable={unavailable}
         nowIso={now.toISOString()}
       />
       <MarketFooter />
+      {!identity && <SignupPrompt />}
     </div>
   );
 }
