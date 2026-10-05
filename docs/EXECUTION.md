@@ -24,11 +24,12 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-05 - Campus-neutral public information pages
+### 2026-10-05 - Neutral information pages, working signup feedback and account deletion
 
 - Give the shared FAQ/Privacy shell its own neutral graphite design tokens so a previously selected OSU or UIUC campus cannot tint public information pages.
-- Keep the change presentation-only: no FAQ/Privacy copy, authentication, database rows, or provider configuration will change.
-- Validate the focused UI change with typecheck, lint, build, and browser checks, then record the result and push it to `origin/main` using the owner's required global Git email.
+- Diagnose the production signup failures from runtime evidence and current Supabase Auth configuration. Preserve email verification, but distinguish an existing account from provider/delivery failures and give the user an actionable sign-in path.
+- Add self-service account withdrawal from the account page with explicit typed confirmation. The flow will cancel/refund any nonterminal markets owned by the withdrawing subject, remove their private uploads and application rows, delete their Supabase Auth identity, and sign them out. It will be tested transactionally and fail closed if complete deletion cannot be performed.
+- Update the account-withdrawal decisions and data model from deferred to implemented, validate with tests/typecheck/lint/build and browser checks, then record the result and push it to `origin/main` using the owner's required global Git email.
 
 ## Deferred, to come back to
 
