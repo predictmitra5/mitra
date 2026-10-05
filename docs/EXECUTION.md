@@ -24,15 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-05 - Points-only economy and focused campus entry/feed polish
-
-- Rework the neutral signed-out entry surface around functional minimalism: keep the page generic Mitra, use Inter plus a closely related display face, tighten the grid and copy, and give the OSU/UIUC choices their actual scarlet/orange identity colors without campus-branding the page itself.
-- Replace repeated "play money" / "play points" language with concise current-state points language. Keep one plain disclosure that accounts start with 1,000 points and that points are not currently cash or prizes; do not promise a future prize pool or cash product.
-- Remove the user-facing refill/top-up path and make the current economy a one-time 1,000-point starting balance with no periodic reset. Preserve the old implementation only where needed for historical migrations/tests, but make it unreachable from the product.
-- Change feed navigation to Competitions / Awards, Academics, Anything and a disabled Coming soon label. Competitions / Awards groups club and running goals; Academics groups GPA goals; Anything remains the complete feed.
-- Make FAQ and Privacy use neutral Mitra framing independent of the selected campus.
-- Inspect production account/wallet counts, then perform a one-time, ledger-reconciled reset of every existing wallet to exactly 1,000 points. Report the verified account count without exposing identities.
-- Update the product/design/market/data-model records to mark prior refill and play-money wording as superseded, run unit/type/lint/build checks plus a signed-out browser check, then push and verify the production deployment. Immediately before pushing, set and verify the global Git email as `predictmitra@gmail.com`.
+_None._
 
 ## Deferred, to come back to
 
@@ -45,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- Stage: the core goal-to-payout flow is built. Signed-out `/` is now a neutral Mitra signup experience with OSU/UIUC selection and no live goals, prices or betting/event content; campus naming and scarlet/orange themes begin only after authentication. Feed, market, quote and profile-photo reads require a confirmed supported-university identity. Public FAQ and privacy pages describe Mitra as an independent platform and contain no build-origin claim. Production deployment `dpl_G6qspYkXoWTfnKupUMYL82m833rN` from source `a60c4ec` is Ready at https://mitra-gamma-ten.vercel.app. The signup page returns 200 publicly, while a signed-out direct market request returns 307 to `/sign-up`. Nobody has yet completed a real OSU/UIUC code-delivery signup or the full goal-to-payout flow with live accounts.
+- Stage: the core goal-to-payout flow is built. Signed-out `/` is a neutral Mitra signup experience with school-color OSU/UIUC choices and no live goals, prices or betting/event content; campus naming and full scarlet/orange themes begin only after authentication. Feed, market, quote and profile-photo reads require a confirmed supported-university identity. FAQ and Privacy use generic Mitra framing and the university-agnostic independence statement. Production deployment `dpl_29VURrixZo75AZTSzofEERCeyfp9` from source `233ace6` is Ready at https://mitra-gamma-ten.vercel.app, where the updated signup copy and 1,000-point framing were browser-verified. Nobody has yet completed a real OSU/UIUC code-delivery signup or the full goal-to-payout flow with live accounts.
 - Implemented:
   - Next.js 16.3.5 app with Vitest, ESLint, route-type generation and a production build.
   - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: university selection precedes signup; Supabase email-and-password authentication admits confirmed `@osu.edu`/`@buckeyemail.osu.edu` or `@illinois.edu` identities and re-verifies the campus server-side at every boundary. Signup fails closed if Supabase returns a session before verification and accepts the supported six-digit email code through `verifyOtp`. `src/proxy.ts` refreshes sessions; it does not authorize.
@@ -204,6 +196,16 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-05 - Points-only economy and focused campus entry/feed polish (Codex)
+
+Reworked the signed-out main page in the existing functional-minimal direction: Inter remains the UI/data face, Inter Tight now carries display headings, the neutral blue-gray Mitra frame remains, and OSU/UIUC choices use scarlet `#ba0c2f` and orange `#ff5f05`. Replaced repeated play-money copy with 1,000-point language and the shorter accountability headline, while keeping one accurate FAQ disclosure that points are not currently cash or prizes. FAQ and Privacy now always use neutral Mitra framing.
+
+Removed the account refill card and refill server action. Existing low-level refill code and race tests remain only as historical regression material and have no UI/action entry point. Feed tabs are now Competitions / Awards, Academics, Anything and a disabled Coming soon label; other goal types remain under Anything and search.
+
+The production database had four Auth accounts, three completed profiles/wallets, and one wallet below the target at 965 points. A single atomic adjustment added 35 points to that wallet and wrote the matching ledger entry. Verification found all three wallets at 1,000 points, zero wallets off target, and identical 3,000-point wallet and ledger totals. The fourth account has no profile/wallet and will receive the normal grant only if onboarding completes.
+
+Validation: 478 tests pass with 17 hosted-only skipped; typecheck and lint pass; the Next.js Webpack production build succeeds. The normal Turbopack build first could not fetch Inter Tight within the restricted network and then hit the already-known sandbox port restriction; neither was an application error. Browser checks verified the local signup, generic FAQ and generic Privacy pages, then the live production signup. Commit `233ace6` was pushed to `origin/main` after setting and verifying global Git email `predictmitra@gmail.com`; Vercel deployment `dpl_29VURrixZo75AZTSzofEERCeyfp9` is Ready.
 
 ### 2026-10-05 - Neutral signup home and authenticated market surface (Codex)
 
