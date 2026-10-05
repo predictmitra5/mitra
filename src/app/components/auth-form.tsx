@@ -29,7 +29,7 @@ export function AuthForm({ mode, initialCampus }: { mode: AuthMode; initialCampu
     return <section className="campus-step" aria-labelledby="campus-step-title">
       <div className="step-label"><span>01</span><span>Choose your community</span></div>
       <h2 id="campus-step-title">Where are you joining from?</h2>
-      <p>Your university sets your Mitra edition and color theme. Your email will verify the choice.</p>
+      <p>Your verified university email unlocks the right private community after you join.</p>
       <div className="campus-picker">
         {(Object.values(CAMPUSES)).map((option) => <button key={option.key} className="campus-option" type="button" onClick={() => {
           setCampus(option.key);
@@ -47,7 +47,7 @@ export function AuthForm({ mode, initialCampus }: { mode: AuthMode; initialCampu
   const selected = CAMPUSES[campus ?? initialCampus];
   return <form action={action} className="auth-form" aria-busy={pending}>
     {mode === "sign-up" && <div className="campus-choice">
-      <div><span className="campus-swatch" aria-hidden="true" /><span><small>YOUR COMMUNITY</small><strong>{selected.editionName}</strong></span></div>
+      <div><span className="campus-swatch" aria-hidden="true" /><span><small>YOUR UNIVERSITY</small><strong>{selected.universityName}</strong></span></div>
       <button type="button" onClick={() => setCampus(null)}>Change</button>
       <input type="hidden" name="campus" value={selected.key} />
     </div>}

@@ -6,11 +6,12 @@ import { readViewerOrNull } from "@/modules/account/viewer";
 import type { CardData } from "./components/market/goal-card";
 import { MarketFooter, MarketHeader } from "./components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
+import { AuthScreen } from "./components/auth-screen";
 
 /*
- * The public home feed. Anyone may read this without an account. It shows only
- * what a goal's own public page already shows, plus aggregate play-point volume
- * (see docs/DESIGN.md), so opening browsing widens nothing about anybody.
+ * The home route is onboarding for signed-out visitors and the ranked feed for
+ * verified members. Authenticate before touching feed data so a signed-out
+ * request cannot read goals or record an exposure.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
@@ -37,6 +38,14 @@ function toCard(card: FeedCard): CardData {
 }
 
 export default async function Home({ searchParams }: PageProps<"/">) {
+  let identity = null;
+  try {
+    identity = await currentIdentity();
+  } catch {
+    // If Auth is unavailable, fail closed to the signed-out onboarding surface.
+  }
+  if (!identity) return AuthScreen({ mode: "sign-up" });
+
   const now = new Date();
   let feed: Feed = { cards: [], featured: null, closingSoon: [] };
   let unavailable = false;
@@ -51,14 +60,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     unavailable = true;
   }
 
-  let identity = null;
-  try {
-    identity = await currentIdentity();
-  } catch {
-    // A signed-out view is the correct fallback when identity cannot be read.
-  }
-
-  const viewer = await readViewerOrNull(getDb(), identity?.id);
+  const viewer = await readViewerOrNull(getDb(), identity.id);
   const { q } = await searchParams;
 
   const featured: FeaturedData | null = feed.featured && {
@@ -74,7 +76,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         cards={feed.cards.map(toCard)}
         featured={featured}
         closingSoon={feed.closingSoon.map(toCard)}
-        signedIn={!!identity}
         unavailable={unavailable}
         nowIso={now.toISOString()}
       />

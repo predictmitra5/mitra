@@ -15,8 +15,8 @@ export async function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: st
   const message = notice === "link-expired"
     ? "That email link is invalid or has expired. Open the latest link in the browser where you requested it, or request a new one."
     : notice === "signout-failed" ? "We couldn’t finish signing out. Please try again from your account." : undefined;
-  return <div className="market-shell">
-    <MarketHeader viewer={null} />
+  return <div className="market-shell entry-shell">
+    <MarketHeader viewer={null} brandMode="neutral" entryAction={mode === "sign-up" ? "sign-in" : "sign-up"} />
     <main className="entry-grid">
       <section className="entry-form-panel" aria-labelledby="form-title">
         <div className="form-heading"><span className="eyebrow">YOUR NEXT CHAPTER</span><h1 id="form-title">{title}</h1><p>{description}</p></div>
@@ -24,18 +24,17 @@ export async function AuthScreen({ mode, notice }: { mode: AuthMode; notice?: st
         <AuthForm mode={mode} initialCampus={campus.key} />
       </section>
       <aside className="entry-story" aria-label="About Mitra">
-        <span className="eyebrow">BET ON LITERALLY ANYTHING</span>
-        <h2>Your people.<br />Their next <em>move.</em></h2>
-        <p className="story-description">Follow the goals. Read the evidence.<br />Make your own call.</p>
-        <div className="goal-list" aria-label="Examples of goals">
-          <div><span>01</span><p>Run the half marathon</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>02</span><p>Launch the app</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>03</span><p>Land the internship</p><span aria-hidden="true">↗︎</span></div>
-          <div><span>04</span><p>Visit five new countries</p><span aria-hidden="true">↗︎</span></div>
+        <span className="eyebrow">PLAY MONEY · REAL ACCOUNTABILITY</span>
+        <h2>Put a little belief<br />behind the <em>next move.</em></h2>
+        <p className="story-description">A private university community for following through—without deposits, cash value, or public browsing.</p>
+        <div className="entry-principles" aria-label="How Mitra starts">
+          <div><span>01</span><p><strong>Choose your university</strong><small>Your verified inbox unlocks the right community.</small></p></div>
+          <div><span>02</span><p><strong>Post only about yourself</strong><small>You decide which personal goals enter review.</small></p></div>
+          <div><span>03</span><p><strong>Use play points</strong><small>Make a call with no deposits and no cash payouts.</small></p></div>
         </div>
-        <p className="story-footnote">Your goals don’t have to fit in a box.</p>
+        <p className="story-footnote">Your university sets the community—not the first impression.</p>
       </aside>
     </main>
-    <MarketFooter />
+    <MarketFooter brandMode="neutral" />
   </div>;
 }

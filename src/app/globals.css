@@ -10,8 +10,8 @@
  * gradients or stickers, Inter with tabular numbers. Yes and upward moves are
  * green, No and downward moves are red; the owner chose these and waived the
  * colour-blindness concern, so direction always also rides on ▲ ▼ and the
- * words Yes and No. The launch community is Mitra at OSU: scarlet, charcoal,
- * gray and white form the brand layer, without university logos or marks.
+ * words Yes and No. Signed-in communities use their campus accent; every auth
+ * surface uses Mitra's neutral blue-gray entry layer without university marks.
  */
 
 :root {
@@ -70,23 +70,46 @@ html[data-campus="uiuc"] .campus-uiuc { display: var(--campus-display, inline); 
 a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Sign-in and sign-up */
+.entry-shell {
+  --paper: #0b111a;
+  --card: #111a26;
+  --raised: #172333;
+  --line: #243246;
+  --line-strong: #354a64;
+  --ink: #f2f6fb;
+  --ink-soft: #c5d1df;
+  --muted: #8495a9;
+  --accent: #6f96c2;
+  --accent-hover: #83a8d1;
+  --accent-ink: #08111d;
+  --focus: #9dbce0;
+  --accent-wash: #15253a;
+  --accent-wash-ink: #b9d1ed;
+  background: var(--paper);
+}
+.entry-shell .topbar { position: relative; background: rgb(11 17 26 / 0.96); }
+.entry-shell .topbar::before { height: 1px; }
+.entry-shell .brand-word { color: var(--ink); letter-spacing: -0.055em; }
+.entry-shell .entry-header-action { min-width: 96px; }
 .entry-grid { flex: 1; display: grid; gap: 1.5rem; width: 100%; max-width: 1120px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 2.5rem; }
 @media (min-width: 900px) {
-  .entry-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; padding-top: 3rem; }
+  .entry-grid { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: center; padding-top: 3rem; padding-bottom: 3rem; }
 }
-.entry-form-panel { background: var(--card); border: 1px solid var(--line); border-radius: calc(var(--radius) + 2px); padding: clamp(1.25rem, 4vw, 2.25rem); box-shadow: 0 24px 70px rgb(0 0 0 / 0.18); }
+.entry-form-panel { background: var(--card); border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); padding: clamp(1.25rem, 4vw, 2.25rem); box-shadow: 0 24px 70px rgb(0 0 0 / 0.2); }
 .form-heading { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
 .entry-form-panel > .form-error { margin-bottom: 1rem; }
 .form-heading h1, .account-card h1, .account-welcome h1 { font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; }
 .form-heading p, .account-card > p { color: var(--ink-soft); line-height: 1.5; }
-.entry-story { display: grid; gap: 1rem; background: color-mix(in srgb, var(--card) 88%, var(--accent-wash)); border: 1px solid var(--line); color: var(--ink); border-radius: calc(var(--radius) + 2px); padding: clamp(1.5rem, 4vw, 2.5rem); }
+.entry-story { display: grid; gap: 1.15rem; background: color-mix(in srgb, var(--card) 82%, var(--accent-wash)); border: 1px solid var(--line); color: var(--ink); border-radius: calc(var(--radius) + 4px); padding: clamp(1.5rem, 4vw, 2.75rem); }
 .entry-story h2 { font-size: clamp(1.9rem, 5vw, 2.8rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.04em; }
 .entry-story em { font-style: normal; color: var(--accent); }
 .story-description { color: var(--ink-soft); line-height: 1.5; }
-.goal-list { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
-.goal-list > div { display: grid; grid-template-columns: 2.25rem 1fr auto; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border: 1px solid var(--line); border-radius: 8px; }
-.goal-list span:first-child { color: var(--muted); font-size: 0.8rem; }
-.goal-list span:last-child { color: var(--muted); }
+.entry-principles { display: grid; gap: 0.55rem; margin-top: 0.5rem; }
+.entry-principles > div { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); align-items: start; gap: 0.8rem; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 10px; background: rgb(8 15 24 / 0.2); }
+.entry-principles > div > span { padding-top: 0.12rem; color: var(--accent-wash-ink); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; }
+.entry-principles p { display: grid; gap: 0.25rem; margin: 0; }
+.entry-principles strong { color: var(--ink); font-size: 0.92rem; }
+.entry-principles small { color: var(--muted); font-size: 0.78rem; line-height: 1.45; }
 .story-footnote { color: var(--muted); font-size: 0.85rem; }
 
 .campus-step { display: grid; gap: 1rem; }
@@ -104,6 +127,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .campus-swatch { display: block; width: 12px; height: 32px; border-radius: 999px; background: var(--accent); }
 .campus-option:first-child .campus-swatch { background: #ba0c2f; }
 .campus-option:nth-child(2) .campus-swatch { background: #ff5f05; }
+.entry-shell .campus-option .campus-swatch,
+.entry-shell .campus-choice .campus-swatch { background: var(--accent); }
 .campus-choice { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 0.85rem; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 .campus-choice > div { display: flex; align-items: center; gap: 0.75rem; }
 .campus-choice > div > span:last-child { display: grid; gap: 0.15rem; }
@@ -615,16 +640,6 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .account-links form { margin: 0; }
 .account-signout { width: 100%; min-height: 52px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .account-signout:hover { color: var(--ink); }
-
-/* Sign-up prompt after two minutes. Dismissible by decision: a prompt, not a wall. */
-.feed-prompt { position: fixed; inset-inline: 16px; bottom: 16px; z-index: 40; display: flex; align-items: flex-start; gap: 16px; max-width: 30rem; margin-inline: auto; padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--raised); color: var(--ink); }
-.feed-prompt-body { display: grid; gap: 8px; }
-.feed-prompt h2 { margin: 0; font-size: 16px; font-weight: 600; }
-.feed-prompt p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
-.feed-prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 4px; }
-.feed-prompt-secondary { font-size: 14px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.feed-prompt-close { flex: none; padding: 0 2px; border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
-.feed-prompt-close:hover { color: var(--ink); }
 
 /* Public trust pages: one calm reading column with compact policy cards. */
 .info-page { flex: 1; display: grid; gap: 36px; align-content: start; width: min(100% - 32px, 1040px); margin: 0 auto; padding: 64px 0 80px; }

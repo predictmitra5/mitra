@@ -16,29 +16,32 @@ import { SearchBox } from "./search-box";
  * On a phone the bar keeps the wordmark, points and photo; the search drops to
  * its own row on the feed (`search="feed"`) and is left out elsewhere.
  */
-export function MarketHeader({ viewer, active, query = "", search = "desktop" }: {
+export function MarketHeader({ viewer, active, query = "", search = "desktop", brandMode = "campus", entryAction }: {
   viewer: Viewer | null;
   active?: "goals" | "positions";
   /** The search already in the address, on the feed. */
   query?: string;
   search?: "desktop" | "feed";
+  brandMode?: "campus" | "neutral";
+  entryAction?: "sign-in" | "sign-up";
 }) {
   const points = viewer?.balanceMicro ?? null;
+  const neutral = brandMode === "neutral";
   return (
-    <header className={`topbar${search === "feed" ? " topbar-with-search" : ""}`}>
+    <header className={`topbar${search === "feed" && !neutral ? " topbar-with-search" : ""}${neutral ? " topbar-entry" : ""}`}>
       <Link className="brand" href="/" prefetch={false}>
         <span className="brand-lockup">
           <span className="brand-word">mitra</span>
-          <span className="brand-campus campus-only campus-osu">at {CAMPUSES.osu.shortName}</span>
-          <span className="brand-campus campus-only campus-uiuc">at {CAMPUSES.uiuc.shortName}</span>
+          {!neutral && <><span className="brand-campus campus-only campus-osu">at {CAMPUSES.osu.shortName}</span>
+          <span className="brand-campus campus-only campus-uiuc">at {CAMPUSES.uiuc.shortName}</span></>}
         </span>
-        <span className="brand-motto">Bet on literally anything</span>
+        {!neutral && <span className="brand-motto">Bet on literally anything</span>}
       </Link>
-      <div className="topbar-search"><SearchBox initial={query} /></div>
-      <nav className="topbar-nav" aria-label="Main">
+      {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
+      {!neutral && <nav className="topbar-nav" aria-label="Main">
         <Link href="/" prefetch={false} aria-current={active === "goals" ? "page" : undefined}>Goals</Link>
         {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
-      </nav>
+      </nav>}
       <div className="topbar-actions">
         {viewer?.ownerQueue != null && (
           <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
@@ -58,6 +61,10 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop" }:
               <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
             </Link>
           </>
+        ) : neutral ? (
+          <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
+            {entryAction === "sign-in" ? "Sign in" : "Create account"}
+          </Link>
         ) : (
           <>
             <Link className="btn btn-quiet" href="/sign-in">Log in</Link>
@@ -75,7 +82,16 @@ function pointsShort(micro: number): string {
   return tenths.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
-export function MarketFooter() {
+export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | "neutral" }) {
+  if (brandMode === "neutral") {
+    return (
+      <footer className="market-footer market-footer-entry">
+        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Play money only.</span></div>
+        <nav className="footer-links" aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link></nav>
+        <p className="footer-disclaimer">Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
+      </footer>
+    );
+  }
   return (
     <footer className="market-footer">
       <div className="footer-brand">

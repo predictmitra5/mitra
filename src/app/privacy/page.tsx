@@ -11,17 +11,17 @@ export const metadata: Metadata = {
 export default async function PrivacyPage() {
   const campus = await selectedCampus();
   return (
-    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 4, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what becomes public, and what stays private.">
+    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 5, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what signed-in community members can see, and what stays private.">
       <div className="info-grid">
         <section className="info-card">
           <span className="info-number">01</span>
-          <h2>What becomes public</h2>
-          <p>Your display name, handle, profile photo, approved goal terms, market prices, aggregate play-point volume, outcomes, and the short evidence statements approved by the Mitra owner can appear publicly.</p>
+          <h2>What your community can see</h2>
+          <p>Signed-in members of your university community can see your display name, handle, profile photo, approved goal terms, market prices, aggregate play-point volume, outcomes, and short evidence statements approved by the Mitra owner.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
           <h2>What stays private</h2>
-          <p>Your sign-in details, wallet, individual positions, objections, moderation notes, and original evidence files are not placed on public pages. Evidence originals are visible only to you and the Mitra owner.</p>
+          <p>Your sign-in details, wallet, individual positions, objections, moderation notes, and original evidence files are not shown to the community. Evidence originals are visible only to you and the Mitra owner.</p>
         </section>
         <section className="info-card">
           <span className="info-number">03</span>
@@ -31,7 +31,7 @@ export default async function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">04</span>
           <h2>Basic activity measurement</h2>
-          <p>Mitra records when public goals are shown or opened and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
+          <p>Mitra records when signed-in members are shown a goal or open one, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
         </section>
         <section className="info-card">
           <span className="info-number">05</span>

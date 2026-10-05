@@ -13,7 +13,7 @@ The source lists death, injury, disease, mental health, self-harm, crime victimi
 - Consent: a person creates the goals about themselves, and the owner approves each market. Markets about someone proposed by other people are not approved.
 - Self-dealing: subjects and people who decide an outcome cannot trade that market (Kalshi's influence rule).
 - The owner rejects goals that can be achieved simply by deciding to.
-- Visibility: anyone with the link can view market pages, and the user chose to let search engines index them, accepting that searching a person's name may surface their goals. Private evidence must never appear on those pages. Idea, not approved: let a subject keep an individual market out of search results.
+- Visibility: market feeds, goal pages, prices and profile photos are limited to verified signed-in campus members. Signed-out market requests redirect before data access and market metadata is marked no-index. Private evidence must never appear on community-visible pages.
 - Provisional: friends may trade on their own knowledge with a per-market maximum, and the owner may cancel colluders' trades. The user requested more research. A subject deliberately failing so a friend's NO position wins remains a known risk.
 - AI goal suggestions send what a subject types to an AI provider. Recommended, not yet approved: tell subjects before they use it, and never send evidence documents.
 - Accounts use email and password (chosen by the owner on 2026-09-16). Users confirm they are 18 or older before a profile or grant is created; the server records when. This is self-attestation: it deters minors but does not verify age, and no birth date or identity document is collected.

@@ -206,7 +206,7 @@ Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch e
 - `src/config/campus.ts` holds both editions' names, university names, email domains, onboarding hints and independence statements. The server derives the account campus from the confirmed email; a cookie remembers only the display edition.
 - The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` or `at UIUC` capsule. It is an original text treatment with no university logo, mascot, official typeface or artwork.
 - Every footer links to `/faq` and `/privacy` and says that Mitra is an independent platform, not affiliated with, endorsed by or sponsored by the displayed university.
-- The public FAQ explains play money, eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what is public, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
+- The public FAQ explains play money, eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what signed-in community members can see, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
 
 ### Tokens
 
@@ -227,3 +227,13 @@ Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch e
 | No / down | `#f2545b` | Market semantics only |
 
 Ohio State publicly describes scarlet, gray and white as its primary palette and cautions that a moderate amount of scarlet goes a long way. UIUC uses Illinois Orange as the second edition's accent. The interface uses campus color sparingly rather than flooding the page, and it keeps Yes/No colors semantic. Independence copy and avoidance of official marks reduce confusion but do not replace any permission the operator may need. References: [Ohio State EHE graphics guidance](https://brand.ehe.osu.edu/graphics/) and [student trademark requests](https://trademarklicensing.osu.edu/page/student-request).
+
+---
+
+## 11. Neutral signup-first entry (2026-10-05)
+
+- Signed-out `/` is the signup surface. It contains the parent `mitra` wordmark, university selection and concise trust/product context, but no live goals, example events, prices, positions, ticker or feed.
+- The entry palette is deliberately campus-neutral: deep blue-black canvas, blue-gray surfaces and a muted steel-blue action color (`#6f96c2`, hover `#83a8d1`). University cards remain text-first and do not repaint the page.
+- Selecting OSU or UIUC changes validation copy and the accepted email domain only. Even the credential and verification steps remain neutral; the `Mitra at OSU`/`Mitra at UIUC` lockup and scarlet/orange theme start after a verified session.
+- The layout is a single column on phones and a balanced signup/product-context split on desktop. FAQ and privacy stay public, with a generic independence statement on the entry shell.
+- Feed and market layouts from sections 9 and 10 are unchanged for authenticated members. Signed-out direct market requests redirect to signup before any market query, click/exposure event or profile-photo read.

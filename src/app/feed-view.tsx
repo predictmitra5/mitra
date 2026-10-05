@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { browse, FEED_TABS, isFeedTab, tabLabel, type FeedTab } from "@/modules/discovery/browse";
@@ -11,7 +11,7 @@ import { Ticker } from "./components/market/ticker";
 import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
- * The public home feed in the Kalshi direction (2026-09-24, DECISIONS.md and
+ * The signed-in home feed in the Kalshi direction (2026-09-24, DECISIONS.md and
  * docs/DESIGN.md section 9): a quiet ticker, category tabs and search, the goal
  * moving most today with its chart, the Closing soon list beside it on a
  * desktop, then every goal as a framed card, four across or one on a phone.
@@ -19,13 +19,11 @@ import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components
  * Tabs and search only narrow the goals already loaded, and live in the
  * address (?tab=, ?q=) without reloading, so they record no extra views. The
  * ranking order stays as the server sent it, so cards never jump under a finger.
- * Kept from 2026-09-19: a dismissible account prompt after two minutes.
+ * This component is rendered only after the server verifies the viewer.
  */
 
 export type FeaturedData = CardData & { series: ChartPoint[]; moving: boolean };
 
-const PROMPT_AFTER_MS = 2 * 60 * 1000;
-const PROMPT_DISMISSED_KEY = "mitra.signup-prompt-dismissed";
 const closeDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
 function Featured({ goal, live }: { goal: FeaturedData; live: ReadonlyMap<string, LiveQuote> }) {
@@ -68,29 +66,12 @@ function withLivePoint(series: ChartPoint[], quote: LiveQuote | undefined): Char
   return [...series, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }];
 }
 
-function SignUpPrompt({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div className="feed-prompt" role="dialog" aria-modal="false" aria-labelledby="feed-prompt-title">
-      <div className="feed-prompt-body">
-        <h2 id="feed-prompt-title">Want to make a call?</h2>
-        <p>Browsing is open to everyone. Predicting needs an account, which comes with 1,000 play points. No deposits, no cash value.</p>
-        <div className="feed-prompt-actions">
-          <Link className="btn btn-primary" href="/sign-up">Create an account</Link>
-          <Link className="feed-prompt-secondary" href="/sign-in">Log in</Link>
-        </div>
-      </div>
-      <button type="button" className="feed-prompt-close" onClick={onDismiss} aria-label="Dismiss">&times;</button>
-    </div>
-  );
-}
-
 export function FeedView({
-  cards, featured, closingSoon, signedIn, unavailable, nowIso,
+  cards, featured, closingSoon, unavailable, nowIso,
 }: {
   cards: CardData[];
   featured: FeaturedData | null;
   closingSoon: CardData[];
-  signedIn: boolean;
   unavailable: boolean;
   nowIso: string;
 }) {
@@ -99,7 +80,6 @@ export function FeedView({
   const query = (params.get("q") ?? "").slice(0, 80);
   const requested = params.get("tab");
   const tab: FeedTab = isFeedTab(requested) ? requested : "anything";
-  const [showPrompt, setShowPrompt] = useState(false);
 
   // One poll for every goal on the page, however many lists it appears in.
   const ids = useMemo(
@@ -112,26 +92,6 @@ export function FeedView({
     for (const card of cards) out.set(card.id, flashFor(card.yesPrice, live.get(card.id)));
     return out;
   }, [cards, live]);
-
-  useEffect(() => {
-    if (signedIn) return;
-    try {
-      if (window.sessionStorage.getItem(PROMPT_DISMISSED_KEY) === "1") return;
-    } catch {
-      // Storage can be unavailable or blocked; the prompt still works without it.
-    }
-    const timer = window.setTimeout(() => setShowPrompt(true), PROMPT_AFTER_MS);
-    return () => window.clearTimeout(timer);
-  }, [signedIn]);
-
-  function dismissPrompt() {
-    setShowPrompt(false);
-    try {
-      window.sessionStorage.setItem(PROMPT_DISMISSED_KEY, "1");
-    } catch {
-      // Dismissal simply will not be remembered.
-    }
-  }
 
   function pickTab(next: FeedTab, event: React.MouseEvent) {
     event.preventDefault();
@@ -181,9 +141,9 @@ export function FeedView({
             <h1>No goals are open yet.</h1>
             <p>
               Goals appear here once someone posts one about themselves and the owner approves it.
-              {signedIn ? " Yours can be the first." : " Create an account to add yours."}
+              Yours can be the first.
             </p>
-            <Link className="btn btn-primary" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
+            <Link className="btn btn-primary" href="/goals/new">Post a goal</Link>
           </section>
         ) : (
           <>
@@ -219,8 +179,6 @@ export function FeedView({
           </>
         )}
       </main>
-
-      {showPrompt && <SignUpPrompt onDismiss={dismissPrompt} />}
     </>
   );
 }

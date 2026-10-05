@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
@@ -37,9 +37,11 @@ const loadMarket = cache(async (id: string) => {
 });
 
 export async function generateMetadata({ params }: PageProps<"/markets/[id]">): Promise<Metadata> {
+  const identity = await currentIdentity().catch(() => null);
+  if (!identity) return { title: "Mitra", robots: { index: false, follow: false } };
   try {
     const market = await loadMarket((await params).id);
-    return { title: market?.question ?? "Goal unavailable", robots: { index: !!market, follow: !!market } };
+    return { title: market?.question ?? "Goal unavailable", robots: { index: false, follow: false } };
   } catch { return { title: "Goal unavailable", robots: { index: false } }; }
 }
 
@@ -81,6 +83,9 @@ function Position({ held, yesPrice, className }: { held: Held; yesPrice: number;
 }
 
 export default async function MarketPage({ params, searchParams }: PageProps<"/markets/[id]">) {
+  const identity = await currentIdentity().catch(() => null);
+  if (!identity) redirect("/sign-up");
+
   const { id } = await params;
   const now = new Date();
   let market;
@@ -92,16 +97,12 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
   // Feed measurement. recordClick swallows its own failures, and is called here
   // rather than in the cached loader so generateMetadata does not double-count.
   await recordClick(getDb(), id);
-  let identity = null;
   let trader = null;
   let objections: Awaited<ReturnType<typeof readObjections>> = [];
   let accountUnavailable = false;
   try {
-    identity = await currentIdentity();
-    if (identity) {
-      trader = await readTrader(getDb(), identity.id, id);
-      if (trader) objections = await readObjections(getDb(), identity.id, id);
-    }
+    trader = await readTrader(getDb(), identity.id, id);
+    if (trader) objections = await readObjections(getDb(), identity.id, id);
   } catch { accountUnavailable = true; }
 
   // Proof. listPublished is public by decision; the other two are only ever
@@ -111,10 +112,8 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
   let maySendProof = false;
   try {
     publishedProof = await listPublished(getDb(), id);
-    if (identity) {
-      maySendProof = await canSubmit(getDb(), identity.id, id);
-      if (maySendProof) myProof = await listForSubject(getDb(), identity.id, id);
-    }
+    maySendProof = await canSubmit(getDb(), identity.id, id);
+    if (maySendProof) myProof = await listForSubject(getDb(), identity.id, id);
   } catch {
     // Proof is additive to this page; never let it take the goal down with it.
   }
@@ -142,7 +141,6 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     : market.status === "ruled" ? `Ruled ${market.ruledOutcome === "yes" ? "Yes" : "No"} · ${market.contestOpen ? "objections open" : "payout pending"}` : "Trading closed";
   const access: TradeAccess = !open ? { kind: "closed" }
     : accountUnavailable ? { kind: "unavailable" }
-    : !identity ? { kind: "signed-out" }
     : !trader ? { kind: "no-profile" }
     : trader.blocked ? { kind: "blocked", message: trader.blocked }
     : { kind: "open" };
@@ -192,7 +190,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
           {market.status === "settled" ? <p className="muted">Winning shares paid 1 point each; losing shares paid 0. Balances have been updated. This result is final.</p>
             : <p className="muted">Objections close {market.contestEndsAt && dateTime(market.contestEndsAt)}. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
           {market.contestOpen && (trader ? <ObjectionForm marketId={id} version={market.rulingVersion} />
-            : <Link className="btn btn-quiet" href={identity ? "/account" : "/sign-in"}>{identity ? "Complete your profile to object" : "Log in to object"}</Link>)}
+            : <Link className="btn btn-quiet" href="/account">Complete your profile to object</Link>)}
         </section>}
         {market.status === "cancelled" && <section className="goal-notice"><h2>Cancelled. Held costs refunded.</h2><p className="goal-text">Every participant received the cost of the shares they still held. This is a refund, not a Yes or No payout.</p></section>}
         {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {dateTime(objection.createdAt)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}
@@ -207,7 +205,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
             {market.approvedAt && <div><dt>Opened</dt><dd>{longDate(market.approvedAt)}, approved by the owner</dd></div>}
             <div><dt>If cancelled</dt><dd>Shares refunded at what you paid</dd></div>
           </dl>
-          <p className="muted goal-small">Trading ends at the deadline, or earlier if the owner closes it. Missing proof resolves No. Each ruling has a 24-hour window for objections before payout. This page is public; private proof documents never appear on it.</p>
+          <p className="muted goal-small">Trading ends at the deadline, or earlier if the owner closes it. Missing proof resolves No. Each ruling has a 24-hour window for objections before payout. This page is visible only inside the signed-in community; private proof documents never appear on it.</p>
         </section>
 
         <section className="goal-section" aria-labelledby="proof-title">

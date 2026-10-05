@@ -15,7 +15,7 @@ The app lets users forecast people's goals using play money. The PDF emphasized 
 - Nobody trades a market about their own goal, and neither do people who decide its outcome (Kalshi-style). The owner does not approve goals that can be achieved simply by deciding to.
 - Trades execute against an app-run market-maker bot, so a trade never waits for another person. Prices appear Kalshi-style in cents.
 - Provisionally, friends may trade using what they know, with a per-person maximum per market. The user asked for more research on collusion.
-- Market pages are public: anyone with the link can view them and search engines may index them. What logged-out visitors see in detail is not decided.
+- Goal feeds, market pages, live prices and profile photos require a verified signed-in account. Signed-out visitors see neutral Mitra onboarding plus FAQ, privacy and account-recovery pages; search engines must not index market details.
 - Sign-in at launch requires a verified OSU or UIUC email address. This excludes friends outside those campuses and does not establish anyone's age.
 - The owner sets each market's opening price when approving it.
 - Economy, subject to change: 1,000 starting play money; refills restore cash to 1,000 at most twice a month; at most 100 points per person in one market; selling allowed while trading is open.
