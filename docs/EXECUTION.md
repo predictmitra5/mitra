@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ## Read this first
 
@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- **2026-10-04 — Make onboarding the signed-out home and lock market content behind sign-in.** This implements the owner's new direction that the first page be a straight Mitra signup experience, not a campus edition or a feed. Signed-out `/` will render a neutral, subdued blue Mitra onboarding screen with no live goals or betting/event content; university selection and verification remain within that flow, but campus colors and the `Mitra at …` lockup begin only after authentication. The ranked feed at `/` and individual market pages will require a confirmed supported-university identity, while signup, signin, recovery, FAQ and privacy remain available. Remove the obsolete two-minute signed-out feed prompt and avoid reading or measuring feed data before authorization. Update the earlier public-browsing/search-indexing decisions as superseded. No schema or provider setting changes are planned. Verify both signed-out and signed-in route behavior, neutral/campus theming, responsive layout, tests, typecheck, lint and production build before deployment.
+_None._
 
 ## Deferred, to come back to
 
@@ -37,14 +37,14 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- Stage: the core goal-to-payout flow is built. Sign-up now starts with OSU or UIUC, requires a matching verified university mailbox, and applies a campus-specific scarlet or Illinois-orange interface. Public FAQ and privacy pages describe Mitra as an independent platform and contain no build-origin claim. Production deployment `dpl_BGFBi6un18fbSrqDTZCeJ18Snr29` from source `f18df0a` is Ready at https://mitra-gamma-ten.vercel.app. Vercel Authentication is set to `all`; an unauthenticated production request returns a 302 to Vercel SSO. Nobody has yet completed a real OSU/UIUC code-delivery signup or the full goal-to-payout flow with live accounts.
+- Stage: the core goal-to-payout flow is built. Signed-out `/` is now a neutral Mitra signup experience with OSU/UIUC selection and no live goals, prices or betting/event content; campus naming and scarlet/orange themes begin only after authentication. Feed, market, quote and profile-photo reads require a confirmed supported-university identity. Public FAQ and privacy pages describe Mitra as an independent platform and contain no build-origin claim. Production deployment `dpl_G6qspYkXoWTfnKupUMYL82m833rN` from source `a60c4ec` is Ready at https://mitra-gamma-ten.vercel.app. The signup page returns 200 publicly, while a signed-out direct market request returns 307 to `/sign-up`. Nobody has yet completed a real OSU/UIUC code-delivery signup or the full goal-to-payout flow with live accounts.
 - Implemented:
   - Next.js 16.3.5 app with Vitest, ESLint, route-type generation and a production build.
   - `src/modules/auth` and the sign-up, sign-in, forgot-password and reset-password pages: university selection precedes signup; Supabase email-and-password authentication admits confirmed `@osu.edu`/`@buckeyemail.osu.edu` or `@illinois.edu` identities and re-verifies the campus server-side at every boundary. Signup fails closed if Supabase returns a session before verification and accepts the supported six-digit email code through `verifyOtp`. `src/proxy.ts` refreshes sessions; it does not authorize.
   - `src/modules/account` and the account page: profile setup with display name, unique handle and an 18+ self-confirmation, plus the one-time 1,000-point grant, all written in one transaction that is safe to retry.
   - `src/modules/goals`, `/goals/new` and `/review`: templates for GPA, internship, club, gym and running goals plus own-words goals; drafts created only for the signed-in subject; an owner-only review queue that opens a draft at the owner's opening odds (LMSR state and first price point) or rejects it with a reason shown to the subject, each decision written to `admin_actions`. The account page lists the subject's goals and their status.
   - `src/app/globals.css`, `src/config/campus.ts` and `src/app/components/market`: one dark theme on every page, with Inter, tabular numbers and flat surfaces; Yes green and No red for market semantics; OSU scarlet and UIUC orange for campus identity; and a signed display cookie that never authorizes access. The header, footer, FAQ, privacy and account surfaces derive their campus presentation from the verified identity or selected display campus. See DESIGN.md, sections 9 and 10.
-  - `src/modules/discovery` and `/`: the public feed, ranked from recent activity over time decay with a new-goal head start and a per-person cap; the goal moving most today with its chart, a Closing soon list beside it on a desktop, and every goal as a framed card; category tabs and search (`browse.ts`) that filter the loaded goals in the address without reloading; and a dismissible sign-up prompt after two minutes. `feed_events` records views and opens with no viewer identity. See ALGORITHM.md and DESIGN.md.
+  - `src/modules/discovery` and `/`: after server-verified authentication, the feed is ranked from recent activity over time decay with a new-goal head start and a per-person cap; the goal moving most today with its chart, a Closing soon list beside it on a desktop, and every goal as a framed card; category tabs and search (`browse.ts`) filter the loaded goals in the address without reloading. `feed_events` records views and opens with no viewer identity, but no feed query or measurement occurs for signed-out requests. See ALGORITHM.md and DESIGN.md.
   - `src/modules/evidence`: subjects send a document (PDF or image) or a link; documents stay in a private bucket and are never published; the owner reads each one, with wording suggested by `claude-haiku-4-5`, and publishes a short verified statement. See VERIFICATION.md. Since 2026-09-24 documents and profile photos go from the browser straight to storage through one-time signed upload links (Vercel refuses request bodies over 4.5 MB), and the server reads each back and checks it before recording it; photos wait in the private `photo-uploads` bucket until checked and re-encoded.
   - `src/modules/account/standing.ts`, `moderation.ts`, `photos.ts`, `photo-check.ts` and `owner-queue.ts`, with `/review/people` and `/photos/[handle]`: bans enforced at sign-in and at every write, profile photos with the AI-label check and metadata stripping, owner photo removal, and the owner's waiting count. `/api/quotes` and `src/app/components/market/live-quotes.ts`: live prices every 15 seconds, recording nothing. See DECISIONS.md and DATA_MODEL.md, 2026-09-24.
   - `src/modules/account/positions.ts`, `viewer.ts`, `/positions` and the account page: the signed-in person's own holdings with the side, shares and price paid, the value at today's price and the gain or loss since bought, and totals across every holding, in pages of 20; the top bar's points and photo. See MARKETS.md.
@@ -74,7 +74,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 - Economy, subject to change: 1,000 starting points; refills restore cash to 1,000, at most twice per Eastern calendar month, counting cash only; at most 100 points per person per market, measured as cost basis currently held.
 - Lifecycle: trading closes at the deadline or earlier by the owner; 7 days to supply proof; missing proof resolves NO; a 24-hour contest window follows each ruling, then payout is final; wording is frozen once trading opens; a subject leaving cancels their markets; cancellation refunds cost basis. See MARKETS.md.
 - Ruling follow-up (2026-09-18): changing a ruling starts a fresh full 24 hours. The explanation is public; objections are private to their author and the owner. Objections alone do not extend the cutoff. These decisions are implemented; evidence-original privacy and retention remain open.
-- Visibility: market pages are public and search engines may index them. Private evidence stays off them.
+- Visibility: feed, market, live-price and profile-photo routes require a verified signed-in campus account and market metadata is no-index. FAQ, privacy, signup, signin and recovery remain public. Private evidence stays off every community-visible page.
 - Feed direction: maximize trades, with educating traders secondary. Formula, measurement and discovery allocation remain open.
 - Name: Mitra, chosen by the owner on 2026-09-16 (replacing Mirai, chosen earlier the same day).
 - Not yet decided: a launch-goal template and when to add another campus.
@@ -197,6 +197,14 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-05 - Neutral signup home and authenticated market surface (Codex)
+
+The owner reversed the earlier public-browsing rule: the first page is now straight Mitra onboarding, not the market feed, and campus identity begins only after signup. Built a restrained blue/blue-gray entry shell with only the parent `mitra` wordmark, OSU/UIUC selection, verification flow and concise product/trust context; it contains no live or example events, goals, prices or market cards. Selecting a university changes validation but does not repaint onboarding or add a `Mitra at …` lockup. The signed-in feed keeps the campus edition design.
+
+Moved the access boundary ahead of every home-feed query and exposure, redirected signed-out market requests before loading a market, marked market metadata no-index, required server-verified identity for live quotes and profile photos, and changed authenticated photo responses from public to private browser caching. Removed the two-minute signup prompt and updated privacy/product/design/safety/roadmap copy to supersede public browsing. Added access-boundary tests for home, quotes and photos.
+
+Verified 483 tests pass with 17 hosted-only skipped across 38 files; typecheck, lint and the Webpack production build pass. Desktop and 390-by-844 browser checks showed the neutral theme before and after university selection, no campus lockup, no horizontal overflow, no framework overlay and no console errors. A signed-out local market URL redirected to signup. Source `a60c4ec`, authored with global Git email `predictmitra@gmail.com`, was pushed to `main`; Vercel deployment `dpl_G6qspYkXoWTfnKupUMYL82m833rN` reached Ready. Production `/` returned the neutral signup page and `/markets/private-check` returned 307 to `/sign-up`. No schema, Supabase row or provider setting changed.
 
 ### 2026-10-04 - Campus onboarding, verified email codes and UIUC edition (Codex)
 
