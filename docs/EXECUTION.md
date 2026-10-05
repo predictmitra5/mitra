@@ -24,7 +24,20 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-05 - Browse first, Kalshi-style sign-up and onboarding, logo, Helvetica, baby blue (Claude Code)
+
+Relies on DECISIONS.md, 2026-10-05 "Browse first, Kalshi-style sign-up and onboarding…", and the reviewed canvas https://claude.ai/artifact/CRVbTCMDaHEyE6w3sm6xkP. Siyansh's 2026-10-04/05 work is the starting point; the points economy, campus registry, server-side campus checks and email-code verification stay.
+
+Plan, in slices, each tested and committed before the next:
+
+1. **Look.** Helvetica stack in place of Inter/Inter Tight; black and white token sets with a remembered theme choice (cookie, so the server renders the right one with no flash); baby blue main buttons; higher-contrast Yes/No, tabs and borders; hover/press feedback with reduced-motion respected; the traced logo as a component and as the app/tab icon; "MITRA | Ohio State" or "| Illinois" in school colour when signed in; scarlet/orange page themes removed.
+2. **Browsing signed out.** Feed, goal pages, live quotes and profile photos readable without an account (writes unchanged); the 30-second closable sign-up pop-up, reopened by Yes/No/trade controls.
+3. **Sign-up steps.** School email, then the six-digit code (Supabase email OTP), then a password set on the verified session; progress bar, back and close. Sign-in restyled to match.
+4. **Onboarding.** Name and @handle, 18+, photo (skippable), topics (new nullable `profiles.topics` column, one additive migration), how Mitra works; then the feed.
+5. **Charts.** Two-line Yes/No chart on the goal page and the featured goal; Closing soon tab.
+6. Update DESIGN.md, MARKETS/ALGORITHM where touched, README, this file; run tests, typecheck, lint, build; phone and desktop screenshots.
+
+Not in scope: the directory name lookup (needs the owner's go-ahead), Supabase settings (Confirm email, SMTP, templates: the owner's), pushing or deploying (ask first).
 
 ## Deferred, to come back to
 
