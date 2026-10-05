@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+- Owner access and requested account cleanup (2026-10-05): admit the explicitly authorized `predictmitra@gmail.com` identity as a verified OSU-owner exception, grant owner status when that verified identity completes its profile, preserve the existing `murugan.23@osu.edu` owner, and remove the four specifically named authentication accounts using the product's withdrawal semantics (retain anonymized market/accounting history, remove login access and personal profile fields). This relies on the owner's explicit instructions in the current session and does not broaden general campus eligibility.
 
 ## Deferred, to come back to
 
