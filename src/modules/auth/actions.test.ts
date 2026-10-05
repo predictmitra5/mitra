@@ -100,13 +100,19 @@ describe("auth server actions", () => {
   });
 
   it("signs in using the canonical mailbox and validates the resulting user before redirecting", async () => {
-    await expect(signIn({}, form({ next: "https://evil.example" }))).rejects.toThrow("NEXT_REDIRECT:/account");
+    await expect(signIn({}, form({ next: "https://evil.example" }))).rejects.toThrow("NEXT_REDIRECT:/welcome");
     expect(mocks.auth.signInWithPassword).toHaveBeenCalledWith({ email: user.email, password });
     expect(mocks.auth.getUser).toHaveBeenCalledOnce();
     expect(mocks.auth.getUser.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.auth.signInWithPassword.mock.invocationCallOrder[0]);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(mocks.rememberCampus).toHaveBeenCalledWith("osu");
-    expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/account");
+    expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/welcome");
+  });
+
+  it("sends a member who finished onboarding to the feed", async () => {
+    mocks.hasProfile.mockResolvedValue(true);
+    await expect(signIn({}, form())).rejects.toThrow("NEXT_REDIRECT:/");
+    expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/");
   });
 
   it("refuses a banned account and signs its session back out", async () => {
@@ -287,7 +293,7 @@ describe("email code verification", () => {
 
 describe("sign-up password", () => {
   it("sets the password only on a verified university session, then goes on to set-up", async () => {
-    await expect(setSignupPassword({}, form({ userId: "another-user", isOwner: "true" }))).rejects.toThrow("NEXT_REDIRECT:/account");
+    await expect(setSignupPassword({}, form({ userId: "another-user", isOwner: "true" }))).rejects.toThrow("NEXT_REDIRECT:/welcome");
     expect(mocks.auth.updateUser).toHaveBeenCalledExactlyOnceWith({ password });
     expect(mocks.auth.updateUser.mock.invocationCallOrder[0]).toBeGreaterThan(mocks.auth.getUser.mock.invocationCallOrder[0]);
   });

@@ -85,6 +85,9 @@ export const profiles = pgTable(
     bannedAt: timestamp("banned_at", { withTimezone: true }),
     bannedBy: uuid("banned_by"),
     banReason: text("ban_reason"),
+    // Topics picked during onboarding, decided 2026-10-05. Stored only: nothing
+    // uses them to change the feed until the discovery decision (D08, D09).
+    topics: text("topics").array(),
   },
   (table) => [uniqueIndex("profiles_handle_key").on(table.handle)],
 );

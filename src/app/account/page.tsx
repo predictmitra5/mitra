@@ -16,7 +16,6 @@ import { percent, pointsText } from "@/modules/discovery/present";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { Avatar, Gain } from "@/app/components/market/goal-card";
 import { PositionRows } from "@/app/positions/positions-view";
-import { ProfileForm } from "./profile-form";
 import { PhotoForm } from "./photo-form";
 import { photoUrl } from "@/modules/account/photo-url";
 
@@ -77,12 +76,14 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const viewer = await readViewerOrNull(getDb(), identity.id);
   const { notice } = await searchParams;
   const blocked = account?.profile.withdrawnAt || (account && !account.wallet);
+  // Profile set-up is onboarding's first steps now (2026-10-05).
+  if (!unavailable && !blocked && !account?.profile.adultConfirmedAt) redirect("/welcome");
   // Rounded down to a tenth, never showing more than is there.
   const balanceMicro = Math.floor((account?.wallet?.balanceMicro ?? 0) / 100_000) * 100_000;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} active="positions" /><main className="account">
     {unavailable || blocked ? <section className="account-empty"><h1>{account?.profile.withdrawnAt ? "This account is inactive." : "Your account is temporarily unavailable."}</h1><p>Please contact the app owner before continuing.</p></section>
-      : !account?.profile.adultConfirmedAt ? <section className="account-card profile-card"><span className="eyebrow">ONE MORE STEP</span><h1>Make it yours.</h1><p>Your email is verified. Set up your profile and confirm you’re 18 or older to join.</p><ProfileForm displayName={account?.profile.displayName} handle={account?.profile.handle} /></section>
+      : !account ? null
       : <>
         {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
 

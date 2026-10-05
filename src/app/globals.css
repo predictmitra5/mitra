@@ -160,6 +160,37 @@ html[data-theme="light"] .step-logo { color: #3aa3d9; }
 }
 @media (prefers-reduced-motion: reduce) { .step-progress i { transition: none; } }
 
+/* Onboarding screens (2026-10-05). */
+.handle-input { display: flex; align-items: center; height: 58px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card); }
+.handle-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.handle-input span { padding: 0 2px 0 16px; color: var(--muted); font-size: 17px; }
+.step-form .handle-input input { flex: 1; min-width: 0; height: 100%; padding: 0 16px 0 2px; border: 0; background: transparent; box-shadow: none; }
+.check-card { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--card); cursor: pointer; }
+.check-card input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+.check-card span { display: flex; flex-direction: column; gap: 4px; }
+.check-card strong { font-size: 16px; }
+.check-card small { color: var(--muted); font-size: 14px; line-height: 1.45; }
+.check-card:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.photo-drop { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 8px 0; cursor: pointer; }
+.photo-drop-empty, .photo-drop-image, .photo-drop .avatar { width: 168px; height: 168px; border-radius: 999px; }
+.photo-drop-empty { display: grid; place-items: center; border: 2px dashed var(--line-strong); color: var(--muted); }
+.photo-drop-image { object-fit: cover; }
+.photo-drop-label { color: var(--ink); font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.photo-drop:has(input:focus-visible) .photo-drop-label { outline: 2px solid var(--focus); outline-offset: 4px; border-radius: 4px; }
+.photo-drop-hint { text-align: center; }
+.step-skip { align-self: center; }
+.topics { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; }
+.topic { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 700; cursor: pointer; user-select: none; }
+.topic.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.topic:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.how-list { display: flex; flex-direction: column; margin: 0 0 8px; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.how-list li { display: flex; gap: 14px; padding: 16px; border-top: 1px solid var(--line); }
+.how-list li:first-child { border-top: 0; }
+.how-list li > span { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 14px; font-weight: 700; }
+.how-list p { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+.how-list strong { font-size: 15px; }
+.how-list small { color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+
 /* Forms */
 .auth-form, .review-form { display: grid; gap: 1rem; }
 .field { display: grid; gap: 0.4rem; }
@@ -721,6 +752,9 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
   .closing li:hover + li .closing-row, .holdings li:hover + li .holding { border-top-color: transparent; }
   .trade-modes button:hover:not([aria-pressed="true"]) { color: var(--ink-soft); }
   .topbar-nav a:hover { color: var(--ink); }
+  .topic:hover:not(.on), .check-card:hover { border-color: var(--ink-soft); background: var(--hover); }
+  .photo-drop:hover .photo-drop-empty { border-color: var(--ink-soft); color: var(--ink); }
+  .text-button:hover { color: var(--ink); }
   .school-button:hover { background: #ffffff; box-shadow: 0 0 0 4px rgb(255 255 255 / 0.12); }
   html[data-theme="light"] .school-button:hover { background: var(--hover); border-color: var(--ink-soft); box-shadow: none; }
   .signup-prompt-login a:hover, .signup-prompt-fine a:hover { text-decoration: underline; text-underline-offset: 3px; }

@@ -20,6 +20,7 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
   const password = form.get("password");
   if (!email) return { error: emailMessage };
   if (typeof password !== "string" || !password || password.length > 128) return { error: "Enter your password." };
+  let finished = false;
   try {
     const client = await createAuthClient();
     const { error } = await client.auth.signInWithPassword({ email, password });
@@ -39,9 +40,11 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
       return { error: "This account has been banned from Mitra." };
     }
     await rememberCampus(identity.campus);
+    finished = await hasCompletedProfile(getDb(), identity.id);
   } catch { return unavailable; }
   revalidatePath("/", "layout");
-  redirect("/account");
+  // Members land on the feed; anyone who never finished onboarding picks it up again.
+  redirect(finished ? "/" : "/welcome");
 }
 
 /**
@@ -122,7 +125,7 @@ export async function setSignupPassword(_state: FormState, form: FormData): Prom
     if (result.error) return { error: "Choose a different password and try again.", verified: true };
   } catch { return { ...unavailable, verified: true }; }
   revalidatePath("/", "layout");
-  redirect("/account");
+  redirect("/welcome");
 }
 
 export async function requestPasswordReset(_state: FormState, form: FormData): Promise<FormState> {

@@ -66,6 +66,9 @@ export { default as OutcomesPage } from "@/app/review/markets/page";
 export { default as MarketPage } from "@/app/markets/[id]/page";
 export { default as PeoplePage } from "@/app/review/people/page";
 export { default as FeedPage } from "@/app/page";
+export { default as SignUpPage } from "@/app/sign-up/page";
+export { default as SignInPage } from "@/app/sign-in/page";
+export { default as WelcomePage } from "@/app/welcome/page";
 export { banPerson } from "@/modules/account/moderation";
 export { provisionAccount } from "@/modules/account/provision";
 export { createGoalDraft, approveDraft, rejectDraft } from "@/modules/goals/service";
@@ -232,6 +235,7 @@ const personas = {
 const pages = {
   "/account": app.AccountPage, "/goals/new": app.NewGoalPage, "/positions": app.PositionsPage,
   "/review": app.ReviewPage, "/review/markets": app.OutcomesPage, "/review/people": app.PeoplePage, "/feed": app.FeedPage,
+  "/sign-up": app.SignUpPage, "/sign-in": app.SignInPage, "/welcome": app.WelcomePage,
 };
 
 /** A fictional photo: a silhouette on a colour picked from the handle. Nobody real. */
@@ -261,10 +265,10 @@ function index() {
     const routes = key === "owner" ? ["/feed", "/account", "/review", "/review/markets", "/review/people", `/markets/${gym}`]
       : key === "subject" ? ["/account", `/markets/${club}`]
       : key === "own" ? [`/markets/${fiveK}`]
-      : key === "newcomer" ? ["/account"]
+      : key === "newcomer" ? ["/account", "/welcome"]
       : key === "nophoto" ? ["/goals/new", "/account"]
-      : key === "out" ? ["/feed"]
-      : ["/feed", "/account", "/positions", "/goals/new", `/markets/${lift}`, `/markets/${lift}?side=yes`, `/markets/${club}`, `/markets/${gpa}`];
+      : key === "out" ? ["/feed", "/sign-up", "/sign-up?school=osu", "/sign-in"]
+      : ["/feed", "/account", "/positions", "/goals/new", "/welcome?step=photo", "/welcome?step=topics", "/welcome?step=how", `/markets/${lift}`, `/markets/${lift}?side=yes`, `/markets/${club}`, `/markets/${gpa}`];
     links.push(`<section class="account-card"><h2>As ${persona.label}</h2>${routes.map((r) => `<p><a href="${r}${r.includes("?") ? "&" : "?"}as=${key}">${r}</a></p>`).join("")}</section>`);
   }
   return documentFor("Signed-in pages", `<div class="market-shell"><main class="account-main"><section class="account-welcome"><span class="eyebrow">FICTIONAL PREVIEW</span><h1>Signed-in pages</h1><p>Real page components, in-memory data, nobody real. Forms do not submit.</p></section>${links.join("")}</main></div>`);
