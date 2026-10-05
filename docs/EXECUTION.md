@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-05 - Helvetica look-alike for devices without Helvetica (Claude Code)
+
+The owner supplied a "helvetica-255.zip" from a free-font site. Its own name tables show Apple's macOS Helvetica (© Apple, © Linotype) and Adobe Type 1 conversions with no licence, so it was not used: serving a font on a website hands the file to every visitor, which needs a web licence. Asked, the owner chose "Free look-alike". Plan: self-host TeX Gyre Heros (GUST e-foundry, LPPL 1.3c, downloaded unmodified from CTAN) in `public/fonts/tex-gyre-heros/` with its licence; add `@font-face` rules and put it after Helvetica Neue and Helvetica in `--font-sans`, so Apple devices keep real Helvetica and only others download it; let the preview serve it; update DESIGN.md section 12 and DECISIONS.md. Relies on DECISIONS.md 2026-10-05 ("Helvetica for everything").
 
 ## Deferred, to come back to
 
