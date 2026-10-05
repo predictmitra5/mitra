@@ -1,30 +1,22 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { cookies } from "next/headers";
 import { selectedCampus } from "@/config/campus-server";
+import { THEME_COOKIE, themeFor } from "@/config/theme";
 import "./globals.css";
 
-// Inter with tabular numbers, decided 2026-09-24 (docs/DESIGN.md section 9).
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
+// Helvetica throughout, decided 2026-10-05: the font stack lives in globals.css
+// (--font-sans), so nothing is downloaded.
 
 export const metadata: Metadata = {
   title: { default: "Mitra", template: "%s · Mitra" },
-  description: "A private university prediction community for personal goals.",
+  description: "Bet on your classmates’ goals with points. For Ohio State and Illinois students.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const campus = await selectedCampus();
+  const theme = themeFor((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en" data-campus={campus.key} className={`${inter.variable} ${interTight.variable} h-full antialiased`}>
+    <html lang="en" data-campus={campus.key} data-theme={theme} className="h-full">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

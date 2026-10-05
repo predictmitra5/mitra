@@ -1,20 +1,23 @@
 import Link from "next/link";
 import { CAMPUSES } from "@/config/campus";
 import type { Viewer } from "@/modules/account/viewer";
+import { Logo } from "../brand/logo";
+import { ThemeToggle } from "../theme-toggle";
 import { Avatar } from "./goal-card";
 import { SearchBox } from "./search-box";
 
 /**
- * The top bar on every page, in the Kalshi direction (2026-09-24): the wordmark
- * with the motto, search, Goals and Positions, the viewer's available points, a
- * scarlet "Post a goal" and their photo. Log in and Sign up when signed out.
+ * The top bar on every page: the Mitra logo (2026-10-05) with, once someone is
+ * signed in, their school's name in its colour; search; Goals and Positions;
+ * the viewer's available points; a baby blue "Post a goal"; the black/white
+ * switch and their photo. Log in and Sign up when signed out.
  *
  * `viewer.ownerQueue` is set only for the owner: how many goals and pieces of
  * proof are waiting. That link stays visible on a phone, because nothing else
  * tells the owner something is waiting.
  *
- * On a phone the bar keeps the wordmark, points and photo; the search drops to
- * its own row on the feed (`search="feed"`) and is left out elsewhere.
+ * On a phone the bar keeps the logo, points and photo; the search drops to its
+ * own row on the feed (`search="feed"`) and is left out elsewhere.
  */
 export function MarketHeader({ viewer, active, query = "", search = "desktop", brandMode = "campus", entryAction }: {
   viewer: Viewer | null;
@@ -31,11 +34,13 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
     <header className={`topbar${search === "feed" && !neutral ? " topbar-with-search" : ""}${neutral ? " topbar-entry" : ""}`}>
       <Link className="brand" href="/" prefetch={false}>
         <span className="brand-lockup">
-          <span className="brand-word">mitra</span>
-          {!neutral && <><span className="brand-campus campus-only campus-osu">at {CAMPUSES.osu.shortName}</span>
-          <span className="brand-campus campus-only campus-uiuc">at {CAMPUSES.uiuc.shortName}</span></>}
+          <Logo className="brand-logo" title="Mitra" />
+          {viewer && <>
+            <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
+            <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
+          </>}
         </span>
-        {!neutral && <span className="brand-motto">Bet on literally anything</span>}
+        {!neutral && <span className="brand-motto">Bet on literally anything.</span>}
       </Link>
       {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
       {!neutral && <nav className="topbar-nav" aria-label="Main">
@@ -43,6 +48,7 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
         {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
       </nav>}
       <div className="topbar-actions">
+        <ThemeToggle />
         {viewer?.ownerQueue != null && (
           <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
             Review
@@ -95,9 +101,8 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
   return (
     <footer className="market-footer">
       <div className="footer-brand">
-        <span className="footer-edition campus-only campus-osu">{CAMPUSES.osu.editionName}</span>
-        <span className="footer-edition campus-only campus-uiuc">{CAMPUSES.uiuc.editionName}</span>
-        <span>Bet on literally anything. Points only.</span>
+        <span className="footer-edition">Mitra</span>
+        <span>Bet on literally anything. Points have no cash value.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>

@@ -2,64 +2,119 @@
 
 /*
  * App styles. Mobile-first where it matters: phone rules sit in max-width
- * queries under each component, because the Kalshi-direction boards were drawn
- * desktop and phone side by side.
+ * queries under each component, because the boards were drawn desktop and
+ * phone side by side.
  *
- * The look since 2026-09-24 (DECISIONS.md, docs/DESIGN.md section 9): calm and
- * data-first like Kalshi's dark mode. Flat surfaces, thin dividers, no
- * gradients or stickers, Inter with tabular numbers. Yes and upward moves are
- * green, No and downward moves are red; the owner chose these and waived the
- * colour-blindness concern, so direction always also rides on ▲ ▼ and the
- * words Yes and No. Signed-in communities use their campus accent; every auth
- * surface uses Mitra's neutral blue-gray entry layer without university marks.
+ * The look since 2026-10-05 (DECISIONS.md, docs/DESIGN.md section 12): Kalshi's
+ * calm data-first layout, black by default with a white theme the person picks
+ * (html[data-theme], remembered in a cookie so the server paints the right one),
+ * Helvetica throughout, baby blue main buttons, green Yes and red No. Direction
+ * always also rides on ▲ ▼ and the words Yes and No. The school appears only as
+ * its name beside the logo, in the school's colour, once someone is signed in.
  */
 
 :root {
-  --paper: #0c0d0f;
-  --card: #141518;
-  --raised: #1c1e22;
-  --line: #282a2f;
-  --line-strong: #373a40;
-  --ink: #f3f3f4;
-  --ink-soft: #d0d1d4;
-  --muted: #989ba2;
-  --accent: #ba0c2f;
-  --accent-hover: #d0193d;
-  --accent-ink: #ffffff;
-  --focus: #e75b73;
-  --yes: #34c77b;
-  --yes-wash: #10251a;
-  --no: #f2545b;
-  --no-wash: #2a1517;
-  --accent-wash: #2a1016;
-  --accent-wash-ink: #ffb6c3;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --paper: #0b0c0e;
+  --card: #141619;
+  --raised: #1d2024;
+  --hover: #22262b;
+  --line: #262a30;
+  --line-strong: #3a3f47;
+  --ink: #f3f4f6;
+  --ink-soft: #d0d4da;
+  --muted: #9aa1ab;
+  --accent: #89cff0;
+  --accent-ink: #04212f;
+  --accent-wash: #102430;
+  --accent-wash-ink: #b6e2f7;
+  --focus: #89cff0;
+  --ring: rgb(137 207 240 / 0.22);
+  --bright: 1.08;
+  --yes: #3fd38a;
+  --yes-tint: rgb(63 211 138 / 0.14);
+  --yes-ink: #04170c;
+  --no: #ff5c63;
+  --no-tint: rgb(255 92 99 / 0.14);
+  --no-ink: #1c0405;
   --danger: #ff8f85;
   --danger-bg: #2c1512;
   --success: #74e0a8;
   --success-bg: #0f271c;
+  --lift: 0 10px 30px rgb(0 0 0 / 0.45);
+  --scrim: rgb(4 5 6 / 0.72);
+  --bar: rgb(11 12 14 / 0.94);
+  --school: #ff6b86;
   --radius: 12px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
   color-scheme: dark;
 }
 
-html[data-campus="uiuc"] {
-  --accent: #ff5f05;
-  --accent-hover: #ff762b;
-  --focus: #ff955c;
-  --accent-wash: #2d180e;
-  --accent-wash-ink: #ffc29f;
+/* The white theme. */
+html[data-theme="light"] {
+  --paper: #f5f6f8;
+  --card: #ffffff;
+  --raised: #eef0f3;
+  --hover: #e6e9ed;
+  --line: #e2e5e9;
+  --line-strong: #c9ced5;
+  --ink: #0b0c0e;
+  --ink-soft: #2f343b;
+  --muted: #59606b;
+  --accent-wash: #e6f5fd;
+  --accent-wash-ink: #0b4a68;
+  --focus: #2b8fc4;
+  --ring: rgb(137 207 240 / 0.38);
+  --bright: 0.94;
+  --yes: #0e8546;
+  --yes-tint: #e2f4e9;
+  --yes-ink: #ffffff;
+  --no: #c8323a;
+  --no-tint: #fbe9ea;
+  --no-ink: #ffffff;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --success: #0e7a43;
+  --success-bg: #e3f5ea;
+  --lift: 0 10px 28px rgb(16 24 40 / 0.1);
+  --scrim: rgb(14 15 17 / 0.45);
+  --bar: rgb(245 246 248 / 0.92);
+  color-scheme: light;
 }
+
+/* The school's name beside the logo. Scarlet and orange are lightened on black
+   and darkened on white so the name stays readable on both. */
+html[data-campus="osu"] { --school: #ff6b86; }
+html[data-campus="uiuc"] { --school: #ff7a2e; }
+html[data-theme="light"][data-campus="osu"] { --school: #ba0c2f; }
+html[data-theme="light"][data-campus="uiuc"] { --school: #c84113; }
 
 body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 .campus-only { display: none; }
 html[data-campus="osu"] .campus-osu,
 html[data-campus="uiuc"] .campus-uiuc { display: var(--campus-display, inline); }
+
+/* Hover and press feedback, shared by every control (decided 2026-10-05): quick
+   colour changes on mouse-over, a slight press, nothing for touch-only hover,
+   and no movement for people who ask their device to reduce motion. */
+a, button { -webkit-tap-highlight-color: transparent; }
+.btn, .primary-button, .secondary-button, .price-button, .trade-side, .tabs a, .chart-ranges button,
+.quick button, .card, .closing-row, .holding, .icon-button, .school-button, .topic, .step-input,
+.featured, .my-goal, .trade-modes button, .type-option span, .idea {
+  transition: background-color 160ms var(--ease), border-color 160ms var(--ease), color 160ms var(--ease),
+    box-shadow 200ms var(--ease), transform 160ms var(--ease), filter 160ms var(--ease);
+}
+.btn:active:not(:disabled), .primary-button:active:not(:disabled), .secondary-button:active:not(:disabled),
+.price-button:active, .trade-side:active, .tabs a:active, .chart-ranges button:active, .quick button:active:not(:disabled),
+.icon-button:active, .school-button:active, .topic:active { transform: scale(0.97); }
 
 /* Shared. The app’s arrow (U+2197) is always followed by U+FE0E, which asks for
    the text glyph: without it Windows draws a blue emoji tile, and font-variant-emoji
@@ -70,27 +125,7 @@ html[data-campus="uiuc"] .campus-uiuc { display: var(--campus-display, inline); 
 a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Sign-in and sign-up */
-.entry-shell {
-  --paper: #0b111a;
-  --card: #111a26;
-  --raised: #172333;
-  --line: #243246;
-  --line-strong: #354a64;
-  --ink: #f2f6fb;
-  --ink-soft: #c5d1df;
-  --muted: #8495a9;
-  --accent: #6f96c2;
-  --accent-hover: #83a8d1;
-  --accent-ink: #08111d;
-  --focus: #9dbce0;
-  --accent-wash: #15253a;
-  --accent-wash-ink: #b9d1ed;
-  background: var(--paper);
-}
-.entry-shell .topbar { position: relative; background: rgb(11 17 26 / 0.96); }
-.entry-shell .topbar::before { height: 1px; }
-.entry-shell .brand-word { color: var(--ink); letter-spacing: -0.055em; }
-.entry-shell .entry-header-action { min-width: 96px; }
+.entry-shell { background: var(--paper); }
 .entry-grid { flex: 1; display: grid; gap: 1.5rem; width: 100%; max-width: 1120px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 2.5rem; }
 @media (min-width: 900px) {
   .entry-grid { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); align-items: center; padding-top: 3rem; padding-bottom: 3rem; }
@@ -98,10 +133,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .entry-form-panel { background: var(--card); border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); padding: clamp(1.25rem, 4vw, 2.25rem); box-shadow: 0 24px 70px rgb(0 0 0 / 0.2); }
 .form-heading { display: grid; gap: 0.5rem; margin-bottom: 1.5rem; }
 .entry-form-panel > .form-error { margin-bottom: 1rem; }
-.form-heading h1, .account-card h1, .account-welcome h1 { font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif; font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; }
+.form-heading h1, .account-card h1, .account-welcome h1 { font-family: var(--font-sans); font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; }
 .form-heading p, .account-card > p { color: var(--ink-soft); line-height: 1.5; }
 .entry-story { display: grid; gap: 1.15rem; background: color-mix(in srgb, var(--card) 82%, var(--accent-wash)); border: 1px solid var(--line); color: var(--ink); border-radius: calc(var(--radius) + 4px); padding: clamp(1.5rem, 4vw, 2.75rem); }
-.entry-story h2 { font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif; font-size: clamp(1.9rem, 5vw, 2.8rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.04em; }
+.entry-story h2 { font-family: var(--font-sans); font-size: clamp(1.9rem, 5vw, 2.8rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.04em; }
 .entry-story em { font-style: normal; color: var(--accent); }
 .story-description { color: var(--ink-soft); line-height: 1.5; }
 .entry-principles { display: grid; gap: 0.55rem; margin-top: 0.5rem; }
@@ -153,7 +188,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
   padding: 0.75rem 0.85rem; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--paper); color: var(--ink);
 }
 .field textarea { resize: vertical; }
-.field input:focus, .field textarea:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 16%, transparent); }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
 .field input::file-selector-button { background: var(--raised); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 6px; padding: 0.35rem 0.7rem; margin-right: 0.7rem; }
 .field-hint { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
 .checkbox-row { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.92rem; line-height: 1.4; }
@@ -166,22 +201,18 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .rule-note { padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--raised); color: var(--ink-soft); font-size: 0.88rem; line-height: 1.45; }
 
 /* Brand actions use the active campus accent. */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid transparent; font: inherit; font-size: 14.5px; font-weight: 600; white-space: nowrap; cursor: pointer; text-decoration: none; transition: background 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; font: inherit; font-size: 14.5px; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
-.btn-primary:hover { background: var(--accent-hover); }
 .btn-quiet { border-color: var(--line-strong); background: transparent; color: var(--ink); }
-.btn-quiet:hover { border-color: var(--muted); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
 .primary-button, .secondary-button {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  min-height: 44px; padding: 0.6rem 1.1rem; border: 1px solid var(--line-strong); border-radius: 8px;
-  font: inherit; font-size: 0.95rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  min-height: 48px; padding: 0.6rem 1.2rem; border: 1px solid var(--line-strong); border-radius: 999px;
+  font: inherit; font-size: 0.98rem; font-weight: 700; text-decoration: none; cursor: pointer;
 }
-.primary-button { width: 100%; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transition: background 140ms ease, transform 140ms ease; }
-.primary-button:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+.primary-button { width: 100%; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .primary-button span { color: var(--accent-ink); }
 .secondary-button { background: transparent; color: var(--ink); }
-.secondary-button:hover:not(:disabled) { border-color: var(--muted); }
 .primary-button:disabled, .secondary-button:disabled { opacity: 0.55; cursor: progress; }
 .text-button {
   background: none; border: none; padding: 0.25rem 0; font: inherit; font-size: 0.85rem; font-weight: 600;
@@ -203,7 +234,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
   justify-self: start; display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px;
   font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; background: var(--raised); color: var(--ink-soft);
 }
-.status-open { background: var(--yes-wash); color: var(--yes); }
+.status-open { background: var(--yes-tint); color: var(--yes); }
 .status-rejected, .status-cancelled { background: var(--danger-bg); color: var(--danger); }
 .status-settled { background: var(--success-bg); color: var(--success); }
 .type-picker { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; border: none; }
@@ -256,7 +287,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .evidence-mine li { display: grid; gap: 0.25rem; border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 0.85rem; font-size: 0.85rem; overflow-wrap: anywhere; }
 .evidence-mine-what { font-weight: 600; }
 .evidence-status { justify-self: start; border-radius: 6px; padding: 0.1rem 0.45rem; font-size: 0.7rem; font-weight: 600; background: var(--raised); color: var(--ink-soft); }
-.evidence-status-published { background: var(--yes-wash); color: var(--yes); }
+.evidence-status-published { background: var(--yes-tint); color: var(--yes); }
 .evidence-status-rejected { background: var(--danger-bg); color: var(--danger); }
 .owner-proof { display: grid; gap: 0.75rem; }
 .owner-proof h3 { font-weight: 600; }
@@ -331,17 +362,18 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .avatar-photo { object-fit: cover; }
 
 /* Top bar */
-.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px; height: 66px; padding: 2px 48px 0; background: rgb(12 13 15 / 0.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
-.topbar::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--accent); }
-.brand { display: flex; align-items: baseline; gap: 12px; flex: none; color: var(--ink); }
-.brand-lockup { display: inline-flex; align-items: center; gap: 8px; }
-.brand-word { font-size: 22px; font-weight: 750; letter-spacing: -0.045em; }
-.brand-campus { --campus-display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--accent) 72%, white); border-radius: 999px; background: var(--accent-wash); color: var(--accent-wash-ink); font-size: 10px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px; height: 66px; padding: 0 48px; background: var(--bar); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
+.brand { display: flex; align-items: center; gap: 14px; flex: none; color: var(--ink); }
+.brand-lockup { display: inline-flex; align-items: center; gap: 12px; }
+.brand-logo { display: block; height: 32px; width: auto; color: var(--accent); }
+html[data-theme="light"] .brand-logo { color: #3aa3d9; }
+.brand-school { --campus-display: inline-flex; align-items: center; gap: 12px; color: var(--school); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+.brand-school::before { content: ""; width: 1px; height: 20px; background: var(--line-strong); }
 .brand-motto { font-size: 13px; color: var(--muted); }
 .topbar-search { flex: 0 1 420px; min-width: 0; }
 .search { margin: 0; }
-.search-field { display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--muted); cursor: text; }
-.search-field:focus-within { border-color: var(--line-strong); outline: 2px solid var(--ink-soft); outline-offset: 1px; }
+.search-field { display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--card); color: var(--muted); cursor: text; }
+.search-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
 .search-field svg { flex: none; }
 .search-field input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14.5px; outline: none; }
 .search-field input::placeholder { color: var(--muted); }
@@ -349,6 +381,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .topbar-nav a { color: var(--muted); }
 .topbar-nav a:hover, .topbar-nav a[aria-current="page"] { color: var(--ink); }
 .topbar-actions { display: flex; align-items: center; gap: 20px; }
+html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light { display: none; }
+.icon-button { display: grid; place-items: center; width: 40px; height: 40px; flex: none; padding: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--ink-soft); cursor: pointer; }
 .topbar-points { font-size: 14.5px; font-weight: 600; color: var(--ink); white-space: nowrap; }
 .topbar-points span { font-weight: 400; color: var(--muted); }
 .topbar-me { display: grid; place-items: center; width: 44px; height: 44px; margin: -6px; border-radius: 999px; }
@@ -386,11 +420,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 /* Category tabs */
 .tabs { border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-.tabs ul { display: flex; gap: 28px; width: max-content; height: 46px; margin: 0; padding: 0 48px; list-style: none; }
-.tabs a { display: flex; align-items: center; height: 100%; font-size: 14.5px; font-weight: 500; white-space: nowrap; color: var(--muted); border-bottom: 2px solid transparent; }
-.tabs a:hover { color: var(--ink-soft); }
-.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
-.tabs .tab-coming-soon { display: flex; align-items: center; height: 100%; color: color-mix(in srgb, var(--muted) 62%, transparent); font-size: 14.5px; font-weight: 500; white-space: nowrap; cursor: default; }
+.tabs ul { display: flex; align-items: center; gap: 6px; width: max-content; height: 56px; margin: 0; padding: 0 48px; list-style: none; }
+.tabs a { display: flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; font-size: 14.5px; font-weight: 600; white-space: nowrap; color: var(--muted); }
+.tabs a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.tabs .tab-coming-soon { display: flex; align-items: center; height: 36px; padding: 0 14px; color: color-mix(in srgb, var(--muted) 62%, transparent); font-size: 14.5px; font-weight: 500; white-space: nowrap; cursor: default; }
 
 /* Feed */
 .feed { flex: 1; display: flex; flex-direction: column; gap: 40px; width: 100%; max-width: 1440px; margin: 0 auto; padding: 32px 48px 48px; box-sizing: border-box; }
@@ -398,7 +431,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .feed-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
 .feed-empty h1 { font-size: 20px; font-weight: 600; margin: 0; }
 .feed-empty p { color: var(--ink-soft); max-width: 52ch; margin: 0; line-height: 1.5; }
-.feed-grid h2 { margin: 0 0 16px; font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.feed-grid h2 { margin: 0 0 16px; font-family: var(--font-sans); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
 .feed-grid > .muted { margin: 0; font-size: 14px; }
 .kicker { font-size: 13px; color: var(--muted); }
 
@@ -406,7 +439,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .featured-top { display: flex; align-items: center; gap: 14px; }
 .featured-top .avatar { width: 48px; height: 48px; font-size: 18px; }
 .featured-head { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.featured-title { font-family: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif; font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; color: var(--ink); overflow-wrap: anywhere; }
+.featured-title { font-family: var(--font-sans); font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; color: var(--ink); overflow-wrap: anywhere; }
 .featured-title:hover, .card-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .featured-stats { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
 .featured-odds { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin: 0; }
@@ -419,8 +452,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .closing { padding: 20px 20px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
 .closing h2 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
 .closing ul { margin: 0; padding: 0; list-style: none; }
-.closing-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); color: var(--ink); }
-.closing-row:hover .closing-title { text-decoration: underline; text-underline-offset: 3px; }
+.closing-row { display: flex; align-items: center; gap: 12px; margin: 0 -10px; padding: 12px 10px; border-top: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
 .closing-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .closing-title { font-size: 14px; font-weight: 500; line-height: 1.3; }
 .closing-left { font-size: 12.5px; color: var(--muted); }
@@ -444,11 +476,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 /* Yes and No buttons, in words, with their prices. */
 .price-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto; }
 .price-buttons-large { gap: 12px; }
-.price-button { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+.price-button { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 700; }
 .price-buttons-large .price-button { height: 48px; font-size: 15.5px; }
-.price-yes { background: var(--yes-wash); color: var(--yes); }
-.price-no { background: var(--no-wash); color: var(--no); }
-.price-button:hover { filter: brightness(1.3); }
+.price-yes { background: var(--yes-tint); color: var(--yes); }
+.price-no { background: var(--no-tint); color: var(--no); }
 
 /* Chart: the chance large, a step line on dashed gridlines, labels on the right. */
 .chart { --series: var(--yes); --plot: 340px; --gutter: 54px; display: flex; flex-direction: column; gap: 16px; margin: 0; min-width: 0; }
@@ -464,9 +495,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .chart-delta-flat { color: var(--muted); }
 .chart-delta-range { font-weight: 400; color: var(--muted); }
 .chart-ranges { display: flex; gap: 2px; }
-.chart-ranges button { min-width: 44px; height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.chart-ranges button:hover { color: var(--ink); }
-.chart-ranges button[aria-pressed="true"] { background: var(--raised); color: var(--ink); }
+.chart-ranges button { min-width: 44px; height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chart-ranges button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .chart-plot { position: relative; height: var(--plot); outline: none; touch-action: pan-y; }
 .chart-plot:focus-visible { outline: 2px solid var(--ink-soft); outline-offset: 4px; border-radius: 4px; }
 .chart-area { position: absolute; top: 8px; left: 0; right: var(--gutter); bottom: 26px; }
@@ -546,10 +576,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .trade-modes button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 .trade-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .trade-side { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 14px; border: 0; border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
-.trade-side-yes { background: var(--yes-wash); color: var(--yes); }
-.trade-side-no { background: var(--no-wash); color: var(--no); }
-.trade-side-yes[aria-pressed="true"] { background: var(--yes); color: var(--paper); }
-.trade-side-no[aria-pressed="true"] { background: var(--no); color: var(--paper); }
+.trade-side-yes { background: var(--yes-tint); color: var(--yes); }
+.trade-side-no { background: var(--no-tint); color: var(--no); }
+.trade-side-yes[aria-pressed="true"] { background: var(--yes); color: var(--yes-ink); }
+.trade-side-no[aria-pressed="true"] { background: var(--no); color: var(--no-ink); }
 .trade-sides-static .trade-side { cursor: default; }
 .trade-form { display: flex; flex-direction: column; gap: 18px; }
 .trade-amount { display: flex; flex-direction: column; gap: 8px; }
@@ -562,7 +592,6 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .amount-box span { font-size: 15px; color: var(--muted); }
 .quick { display: flex; gap: 8px; }
 .quick button { flex: 1; height: 36px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
-.quick button:hover:not(:disabled) { border-color: var(--muted); }
 .quick button:disabled { opacity: 0.45; cursor: not-allowed; }
 .trade-over { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--danger); }
 .trade-estimate, .trade-lines { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 14px; }
@@ -608,8 +637,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .account-none a, .account-more a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .account-more { margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
 .holdings { margin: 0; padding: 0; list-style: none; }
-.holding { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); color: var(--ink); }
-.holding:hover .holding-title { text-decoration: underline; text-underline-offset: 3px; }
+.holding { display: flex; align-items: center; gap: 12px; margin: 0 -10px; padding: 14px 10px; border-top: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
 .holding-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
 .holding-title { font-size: 14.5px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
 .holding-sub, .holding-note { font-size: 12.5px; color: var(--muted); }
@@ -669,6 +697,25 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .info-callout strong { display: block; margin-bottom: 4px; color: var(--ink); }
 .info-callout-wide { align-items: flex-end; }
 
+
+/* Mouse-over (2026-10-05). Touch screens get the press feedback only. */
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover, .primary-button:hover:not(:disabled) { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
+  .btn-quiet:hover, .secondary-button:hover:not(:disabled), .quick button:hover:not(:disabled), .icon-button:hover { background: var(--raised); border-color: var(--ink-soft); color: var(--ink); }
+  .price-yes:hover, .trade-side-yes:hover { background: var(--yes); color: var(--yes-ink); }
+  .price-no:hover, .trade-side-no:hover { background: var(--no); color: var(--no-ink); }
+  .tabs a:hover:not([aria-current="page"]), .chart-ranges button:hover:not([aria-pressed="true"]) { background: var(--hover); color: var(--ink); }
+  .card:hover, .my-goal:hover { border-color: var(--line-strong); transform: translateY(-2px); box-shadow: var(--lift); }
+  .featured:hover { border-color: var(--line-strong); }
+  .closing-row:hover, .holding:hover { background: var(--raised); border-top-color: transparent; }
+  .closing li:hover + li .closing-row, .holdings li:hover + li .holding { border-top-color: transparent; }
+  .trade-modes button:hover:not([aria-pressed="true"]) { color: var(--ink-soft); }
+  .topbar-nav a:hover { color: var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card:hover, .my-goal:hover { transform: none; }
+}
+
 /* In between: fewer card columns before the phone layout. */
 @media (max-width: 1279px) {
   .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -688,8 +735,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 /* Phones and narrow windows: one column, the trade panel in a bottom sheet. */
 @media (max-width: 899px) {
   .topbar { gap: 12px; height: 58px; padding: 2px 16px 0; }
-  .brand-word { font-size: 21px; }
-  .brand-campus { min-height: 20px; padding: 0 6px; font-size: 9px; }
+  .brand-logo { height: 27px; }
+  .brand-school { gap: 9px; font-size: 14px; }
+  .brand-school::before { height: 16px; }
   .topbar-search, .topbar-nav, .topbar-post { display: none; }
   .topbar-actions { margin-left: auto; gap: 12px; }
   .topbar-me { margin: -6px -6px -6px 0; }
@@ -737,14 +785,14 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
   .goal-position.goal-position-phone { flex-direction: row; align-items: center; justify-content: space-between; padding: 14px 16px; }
   .dock { display: none; position: static; }
   .dock.is-open { display: block; position: fixed; inset: 0; z-index: 50; }
-  .dock-backdrop { display: block; position: absolute; inset: 0; width: 100%; border: 0; background: rgb(5 6 7 / 0.72); cursor: default; }
+  .dock-backdrop { display: block; position: absolute; inset: 0; width: 100%; border: 0; background: var(--scrim); cursor: default; }
   .dock-sheet { position: absolute; left: 0; right: 0; bottom: 0; gap: 16px; max-height: 92dvh; overflow-y: auto; padding: 10px 16px calc(28px + env(safe-area-inset-bottom)); border: 0; border-top: 1px solid var(--line-strong); border-radius: 16px 16px 0 0; overscroll-behavior: contain; }
   .dock-grip { display: block; align-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--line-strong); }
   .dock-close { display: block; min-height: 44px; margin-left: auto; padding: 0 2px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 15px; cursor: pointer; }
   .buy-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card); }
-  .buy-bar button { display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 16px; border: 0; border-radius: 8px; color: var(--paper); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .buy-bar-yes { background: var(--yes); }
-  .buy-bar-no { background: var(--no); }
+  .buy-bar button { display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 16px; border: 0; border-radius: 10px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .buy-bar-yes { background: var(--yes); color: var(--yes-ink); }
+  .buy-bar-no { background: var(--no); color: var(--no-ink); }
   .goal-shell .market-footer { padding-bottom: calc(22px + 84px); }
   .account { gap: 32px; padding: 20px 16px 32px; }
   .market-footer { grid-template-columns: minmax(0, 1fr); padding: 24px 16px; }

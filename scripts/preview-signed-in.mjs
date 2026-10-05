@@ -250,11 +250,9 @@ async function servePhoto(handle, response) {
   response.end(photoCache.get(handle));
 }
 
-// The class the root layout puts on <html> so Inter applies; the build names it.
-const fontClass = css.match(/\.([\w-]+)\{--font-inter:/)?.[1] ?? "";
-
-function documentFor(title, body) {
-  return `<!doctype html><html lang="en" class="${fontClass} h-full antialiased"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} · fictional preview</title><link rel="stylesheet" href="/styles.css"></head><body class="min-h-full flex flex-col">${body}</body></html>`;
+// The root layout sets the theme and campus on <html>; ?theme=light and ?campus=uiuc pick them here.
+function documentFor(title, body, { theme, campus } = {}) {
+  return `<!doctype html><html lang="en" data-theme="${theme === "light" ? "light" : "dark"}" data-campus="${campus === "uiuc" ? "uiuc" : "osu"}" class="h-full"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title} · fictional preview</title><link rel="stylesheet" href="/styles.css"></head><body class="min-h-full flex flex-col">${body}</body></html>`;
 }
 
 function index() {
@@ -299,7 +297,7 @@ const server = createServer(async (request, response) => {
   try {
     const element = await Page({ params: Promise.resolve(market ? { id: market[1] } : {}), searchParams: Promise.resolve(query) });
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    response.end(documentFor(url.pathname, renderToStaticMarkup(element)));
+    response.end(documentFor(url.pathname, renderToStaticMarkup(element), { theme: url.searchParams.get("theme"), campus: url.searchParams.get("campus") }));
   } catch (error) {
     const where = error.previewRedirect ? `redirected to ${error.previewRedirect}` : error.previewNotFound ? "not found" : String(error?.stack ?? error);
     response.writeHead(error.previewRedirect || error.previewNotFound ? 200 : 500, { "Content-Type": "text/plain; charset=utf-8" });
