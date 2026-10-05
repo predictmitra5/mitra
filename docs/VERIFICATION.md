@@ -181,7 +181,7 @@ For an app among friends at one university, with one known owner whose judgment 
 
 - **Correcting a published statement.** Not decided. A wrong statement currently stands.
 - **Deleting a single item without leaving.** Not decided.
-- **Deletion on withdrawal.** Decided, unbuilt: withdrawing removes that person's documents and leaves a tombstone plus the ruling record. Payouts are unaffected, since settlement is already final and the ledger is untouched.
+- **Deletion on withdrawal.** Built 2026-10-05: withdrawing removes that person's private originals and published statement/link/caption, leaves a tombstone plus the ruling record, and removes their profile photo. Payouts are unaffected, since settlement is already final and the ledger is untouched.
 
 ---
 

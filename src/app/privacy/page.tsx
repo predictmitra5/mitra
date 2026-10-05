@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">06</span>
           <h2>Leaving the pilot</h2>
-          <p>There is not yet a self-service account-deletion button. Until that is built, contact the person who invited you before submitting sensitive material if this limitation does not work for you.</p>
+          <p>You can permanently delete your account from the account page. Mitra removes your login, profile details, photo, and submitted evidence; goals that have not been ruled are cancelled and traders are refunded. Settled trades and ledger entries remain as anonymized accounting records.</p>
         </section>
       </div>
       <aside className="info-callout info-callout-wide">

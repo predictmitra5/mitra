@@ -224,9 +224,11 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
                 <time dateTime={at.toISOString()}>{shortDate(at)}</time>
                 {item ? (
                   <div>
-                    {item.verifiedStatement && <p>{item.verifiedStatement}</p>}
-                    {item.kind === "link" && item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>}
-                    {item.caption && <p className="muted">Described by {market.displayName} as: {item.caption}</p>}
+                    {item.removedAt ? <p>Proof was supplied and later removed when the member deleted their account.</p> : <>
+                      {item.verifiedStatement && <p>{item.verifiedStatement}</p>}
+                      {item.kind === "link" && item.linkUrl && <a href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>}
+                      {item.caption && <p className="muted">Described by {market.displayName} as: {item.caption}</p>}
+                    </>}
                   </div>
                 ) : (
                   <p>Goal approved and opened at {Math.round((market.openingProbabilityBp ?? 5000) / 100)}%.</p>

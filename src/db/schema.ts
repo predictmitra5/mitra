@@ -65,6 +65,7 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "ban",
   "unban",
   "remove_photo",
+  "withdraw_account",
 ]);
 
 export const profiles = pgTable(
@@ -371,6 +372,8 @@ export const evidence = pgTable(
     reviewNote: text("review_note"),
     reviewedBy: uuid("reviewed_by").references(() => profiles.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    /** Set when the subject deletes their account. The row stays as an audit tombstone. */
+    removedAt: timestamp("removed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -378,14 +381,15 @@ export const evidence = pgTable(
     // A file carries an original and no link; a link carries a URL and no file.
     check(
       "evidence_shape_matches_kind",
-      sql`(${table.kind} = 'file' and ${table.originalPath} is not null and ${table.linkUrl} is null)
+      sql`${table.removedAt} is not null
+          or (${table.kind} = 'file' and ${table.originalPath} is not null and ${table.linkUrl} is null)
           or (${table.kind} = 'link' and ${table.linkUrl} is not null and ${table.originalPath} is null)`,
     ),
     // Publishing requires an attributable review, and an uploaded document can
     // only be published as a statement, never as the document itself.
     check(
       "evidence_published_is_reviewed",
-      sql`${table.status} <> 'published'
+      sql`${table.status} <> 'published' or ${table.removedAt} is not null
           or (${table.reviewedBy} is not null and ${table.reviewedAt} is not null
               and (${table.kind} = 'link' or ${table.verifiedStatement} is not null))`,
     ),

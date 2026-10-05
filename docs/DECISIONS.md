@@ -522,3 +522,11 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 - **Kept:** points only (1,000 at sign-up, no top-ups), the feed tabs plus Closing soon, the owner's approval of every goal, no betting on your own goal, the 100-point limit, photos on goals, and the independence statement in the footer.
 
 **Not built, and why:** filling in the name from the university directory. The lookup could not be checked from the development machine on 2026-10-05, and it sends the student's address to a university service, which needs the owner's explicit go-ahead. The name step starts empty for now.
+
+## 2026-10-05 - Self-service account deletion and existing-account feedback
+
+**User instruction:** fix signup, say when an account already exists, and "create a crud thing so delete acc also."
+
+**Existing account:** the current email-code signup deliberately does not reveal whether an address exists before inbox ownership is proven. After a returning member enters the valid six-digit code, Mitra signs them in and displays, "This account already exists, so we signed you in." The email step also keeps a prominent "Already have an account? Log in" action. Provider rate limiting has a distinct wait-and-retry message.
+
+**Deletion:** the account page exposes one permanent-delete operation with typed `DELETE` confirmation. The owner account cannot self-delete until ownership is transferred. Draft, open and closed goals owned by the person are cancelled and every participant is refunded at held cost. Ruled and settled goals stay final. Private evidence originals, profile photos and temporary photo uploads are removed; evidence statements, links, captions and review notes are cleared into a dated tombstone; the profile is anonymized; and the Supabase Auth identity is deleted. Trades, ledger entries, wallets, rulings and audit records remain as anonymized accounting history. This implements the proof and photo deletion decisions from 2026-09-19 and 2026-09-24.

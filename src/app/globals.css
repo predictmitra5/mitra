@@ -702,11 +702,28 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 .account-links summary::-webkit-details-marker { display: none; }
 .account-links details[open] > summary { border-bottom: 0; }
 .account-links details > .photo-card { margin-bottom: 16px; }
+.delete-account-panel { display: grid; gap: 16px; padding: 0 0 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
+.delete-account-panel > p { max-width: 68ch; }
+.delete-account-form { display: grid; gap: 12px; max-width: 440px; }
+.danger-button { min-height: 44px; padding: 0.65rem 1rem; border: 1px solid color-mix(in srgb, var(--danger) 65%, var(--line)); border-radius: 8px; background: var(--danger-bg); color: var(--danger); font: inherit; font-weight: 650; cursor: pointer; }
+.danger-button:hover { border-color: var(--danger); }
+.danger-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .account-links form { margin: 0; }
 .account-signout { width: 100%; min-height: 52px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .account-signout:hover { color: var(--ink); }
 
-/* Public trust pages: one calm reading column with compact policy cards. */
+/* Public trust pages stay campus-neutral, even when a campus cookie is set. */
+.info-shell {
+  --accent: #a8adb5;
+  --accent-hover: #c3c7cd;
+  --accent-ink: #0c0d0f;
+  --focus: #aeb7c4;
+  --accent-wash: #191b1f;
+  --accent-wash-ink: #c6cad0;
+  background: var(--paper);
+}
+
+/* One calm reading column with compact policy cards. */
 .info-page { flex: 1; display: grid; gap: 36px; align-content: start; width: min(100% - 32px, 1040px); margin: 0 auto; padding: 64px 0 80px; }
 .info-hero { display: grid; gap: 14px; max-width: 760px; }
 .info-hero .eyebrow { color: var(--accent-wash-ink); }

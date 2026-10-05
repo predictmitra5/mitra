@@ -3,10 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
-import { currentIdentity } from "@/modules/auth/server";
+import { createAuthClient, currentIdentity } from "@/modules/auth/server";
+import { deleteAuthIdentity } from "@/modules/auth/admin";
 import type { FormState } from "@/modules/auth/policy";
 import { AccountError, provisionAccount } from "./provision";
 import { saveTopics } from "./topics";
+import { WithdrawalError, withdrawAccount } from "./withdrawal";
+import { withdrawalStorage } from "./withdrawal-storage";
 
 export async function completeProfile(_state: FormState, form: FormData): Promise<FormState> {
   try {
@@ -37,4 +40,25 @@ export async function saveOnboardingTopics(_state: FormState, form: FormData): P
     return { error: "We couldn’t save your topics. Please try again shortly." };
   }
   redirect("/welcome?step=how");
+}
+
+export async function deleteAccount(_state: FormState, form: FormData): Promise<FormState> {
+  if (form.get("confirmation") !== "DELETE") return { error: "Type DELETE exactly to confirm." };
+  const identity = await currentIdentity();
+  if (!identity) return { error: "Sign in again before deleting your account." };
+  try {
+    await withdrawAccount(getDb(), identity.id, withdrawalStorage);
+    await deleteAuthIdentity(identity.id);
+  } catch (error) {
+    if (error instanceof WithdrawalError) return { error: error.message };
+    return { error: "Your account could not be deleted completely. Please try again." };
+  }
+  try {
+    const client = await createAuthClient();
+    await client.auth.signOut({ scope: "local" });
+  } catch {
+    // The identity is already gone; stale local cookies cannot authenticate.
+  }
+  revalidatePath("/", "layout");
+  redirect("/sign-in?notice=account-deleted");
 }

@@ -17,6 +17,7 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { Avatar, Gain } from "@/app/components/market/goal-card";
 import { PositionRows } from "@/app/positions/positions-view";
 import { PhotoForm } from "./photo-form";
+import { DeleteAccountForm } from "./delete-account-form";
 import { photoUrl } from "@/modules/account/photo-url";
 
 /*
@@ -75,17 +76,20 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   }
   const viewer = await readViewerOrNull(getDb(), identity.id);
   const { notice } = await searchParams;
-  const blocked = account?.profile.withdrawnAt || (account && !account.wallet);
+  const blocked = account && !account.wallet;
   // Profile set-up is onboarding's first steps now (2026-10-05).
   if (!unavailable && !blocked && !account?.profile.adultConfirmedAt) redirect("/welcome");
   // Rounded down to a tenth, never showing more than is there.
   const balanceMicro = Math.floor((account?.wallet?.balanceMicro ?? 0) / 100_000) * 100_000;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} active="positions" /><main className="account">
-    {unavailable || blocked ? <section className="account-empty"><h1>{account?.profile.withdrawnAt ? "This account is inactive." : "Your account is temporarily unavailable."}</h1><p>Please contact the app owner before continuing.</p></section>
+    {unavailable ? <section className="account-empty"><h1>Your account is temporarily unavailable.</h1><p>Please contact the app owner before continuing.</p></section>
+      : account?.profile.withdrawnAt ? <section className="account-empty"><h1>Finish deleting this account.</h1><p>The account is inactive. Retry below to finish removing its login and private files.</p><DeleteAccountForm /></section>
+      : blocked ? <section className="account-empty"><h1>Your account is temporarily unavailable.</h1><p>Please contact the app owner before continuing.</p></section>
       : !account ? null
       : <>
         {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
+        {notice === "account-exists" && <p className="form-success" role="status">This account already exists, so we signed you in.</p>}
 
         <div className="me">
           <Avatar name={account.profile.displayName} photo={photoUrl(account.profile.handle, account.profile.photoUpdatedAt)} size={72} />
@@ -136,6 +140,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <details id="photo" open={!account.profile.photoPath}>
             <summary>Profile photo</summary>
             <PhotoForm name={account.profile.displayName} photo={photoUrl(account.profile.handle, account.profile.photoUpdatedAt)} />
+          </details>
+          <details id="delete-account">
+            <summary>Delete account</summary>
+            <DeleteAccountForm />
           </details>
           <form action={signOut}><button className="account-signout" type="submit">Sign out</button></form>
         </nav>

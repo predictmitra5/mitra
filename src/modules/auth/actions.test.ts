@@ -260,9 +260,9 @@ describe("email code verification", () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
-  it("sends a returning member who signs in with a code straight to the feed", async () => {
+  it("tells a returning member the account already exists after the code proves ownership", async () => {
     mocks.hasProfile.mockResolvedValue(true);
-    await expect(verifyEmailCode({}, form({ token: "123456" }))).rejects.toThrow("NEXT_REDIRECT:/");
+    await expect(verifyEmailCode({}, form({ token: "123456" }))).rejects.toThrow("NEXT_REDIRECT:/account?notice=account-exists");
     expect(mocks.auth.updateUser).not.toHaveBeenCalled();
   });
 

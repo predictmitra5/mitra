@@ -66,7 +66,8 @@ export async function sendSignupCode(_state: FormState, form: FormData): Promise
       options: { shouldCreateUser: true, emailRedirectTo: `${appOrigin()}/auth/callback` },
     });
     if (error) {
-      return { error: error.status === 429 ? "Too many codes in a row. Wait a minute, then ask for a new one." : signupFailed };
+      const limited = error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "email_rate_limit_exceeded";
+      return { error: limited ? "Too many codes in a row. Wait a minute, then ask for a new one." : signupFailed };
     }
     await rememberCampus(campus);
     return { success: `We sent a six-digit code to ${email}.`, verification: { email, campus } };
@@ -107,7 +108,7 @@ export async function verifyEmailCode(_state: FormState, form: FormData): Promis
   revalidatePath("/", "layout");
   // A member who already set up their profile is simply signed in; a new one
   // goes on to choose a password.
-  if (returning) redirect("/");
+  if (returning) redirect("/account?notice=account-exists");
   return { verified: true, verification: { email, campus } };
 }
 

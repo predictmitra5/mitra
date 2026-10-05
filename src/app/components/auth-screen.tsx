@@ -19,13 +19,15 @@ export function AuthScreen({ mode, notice, school = null }: { mode: AuthMode; no
   const { title, description } = copy[mode];
   const message = notice === "link-expired"
     ? "That email link is invalid or has expired. Open the latest link in the browser where you requested it, or request a new one."
-    : notice === "signout-failed" ? "We couldn’t finish signing out. Please try again from your account." : undefined;
+    : notice === "signout-failed" ? "We couldn’t finish signing out. Please try again from your account."
+      : notice === "account-deleted" ? "Your Mitra account was deleted." : undefined;
+  const success = notice === "account-deleted";
   return (
     <StepFrame back={<BackLink href={mode === "sign-in" ? "/" : "/sign-in"} label={mode === "sign-in" ? "Back to goals" : "Back to log in"} />}>
       <div className="step-form">
         <h1>{title}</h1>
         <p className="step-sub">{description}</p>
-        {message && <p className="form-error" role="alert">{message}</p>}
+        {message && <p className={success ? "form-success" : "form-error"} role={success ? "status" : "alert"}>{message}</p>}
       </div>
       <AuthForm mode={mode} />
     </StepFrame>

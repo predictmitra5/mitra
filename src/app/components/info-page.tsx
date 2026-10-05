@@ -18,7 +18,7 @@ export async function InfoPage({ eyebrow, title, intro, children }: {
     // These pages remain public even when identity or the database is unavailable.
   }
   return (
-    <div className="market-shell">
+    <div className="market-shell info-shell">
       <MarketHeader viewer={viewer} brandMode="neutral" />
       <main className="info-page">
         <header className="info-hero">

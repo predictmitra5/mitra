@@ -32,7 +32,9 @@ Also done (2026-09-18): public approved-market pages and authenticated buy/sell 
 
 Also done: deadline/early closure, owner rulings and revisions, private objections, final payouts and owner cancellation refunds. Revisions reset the full 24-hour window; terminal accounting is atomic and protected against retries and concurrent trades. Due close/payout transitions run on relevant page access. Public outcome pages are browser-checked.
 
-Remaining: deployed periodic scheduling; account withdrawal with its automatic cancellations and proof deletion; outcome-decider assignment. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
+Done 2026-10-05: self-service account deletion, including typed confirmation, nonterminal goal cancellation and held-cost refunds, private proof/photo deletion, evidence tombstones, profile anonymization and Auth identity deletion.
+
+Remaining: deployed periodic scheduling and outcome-decider assignment. Signed-in trade/owner/objection controls still need a real-account browser walkthrough after SMTP setup. No discovery ranking has been introduced.
 
 Verify: concurrent and retried actions cannot duplicate balances; ledger replay reconciles accounting; resolution and cancellation follow approved rules; migrations, type checks, lint and appropriate tests pass.
 
@@ -42,7 +44,7 @@ Decisions taken 2026-09-19 (D06, D07, revised the same day); see DECISIONS.md. B
 
 The redaction design that preceded it was built, measured and removed the same day: a model asked for bounding boxes named the right private items and placed them badly enough to leave an address readable. Publishing a statement instead removes the failure mode rather than managing it.
 
-Remaining here: deleting a withdrawing person's documents, which is decided and belongs with the unbuilt withdrawal flow; deleting a single item while staying, which is not decided; corrections to a published statement, which is not decided.
+Done 2026-10-05: withdrawing deletes the person's private documents and removes the public statement/link/caption while leaving a visible tombstone and the final ruling/accounting record. Remaining here: deleting a single item while staying, which is not decided; corrections to a published statement, which is not decided.
 
 After verification/privacy decisions: update submission, source/evidence handling, admin review, public claim presentation, corrections, revocations and the agreed dispute path.
 

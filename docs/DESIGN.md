@@ -208,7 +208,7 @@ Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch e
 - `src/config/campus.ts` holds both editions' names, university names, email domains, onboarding hints and independence statements. The server derives the account campus from the confirmed email; a cookie remembers only the display edition.
 - The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` or `at UIUC` capsule. It is an original text treatment with no university logo, mascot, official typeface or artwork.
 - Every footer links to `/faq` and `/privacy` and says that Mitra is an independent platform, not affiliated with, endorsed by or sponsored by any university.
-- FAQ and Privacy always use the neutral Mitra header/footer, regardless of the selected campus. The FAQ explains the current 1,000-point grant once, alongside eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what signed-in community members can see, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
+- FAQ and Privacy always use neutral graphite design tokens and the neutral Mitra header/footer, regardless of the selected campus or campus cookie. The FAQ explains the current 1,000-point grant once, alongside eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what signed-in community members can see, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the self-service deletion policy.
 
 ### Neutral entry refinement (2026-10-05)
 
