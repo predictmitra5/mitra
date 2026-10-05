@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+- **2026-10-04 — Make onboarding the signed-out home and lock market content behind sign-in.** This implements the owner's new direction that the first page be a straight Mitra signup experience, not a campus edition or a feed. Signed-out `/` will render a neutral, subdued blue Mitra onboarding screen with no live goals or betting/event content; university selection and verification remain within that flow, but campus colors and the `Mitra at …` lockup begin only after authentication. The ranked feed at `/` and individual market pages will require a confirmed supported-university identity, while signup, signin, recovery, FAQ and privacy remain available. Remove the obsolete two-minute signed-out feed prompt and avoid reading or measuring feed data before authorization. Update the earlier public-browsing/search-indexing decisions as superseded. No schema or provider setting changes are planned. Verify both signed-out and signed-in route behavior, neutral/campus theming, responsive layout, tests, typecheck, lint and production build before deployment.
 
 ## Deferred, to come back to
 
