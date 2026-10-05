@@ -6,6 +6,7 @@ import { CAMPUSES, canonicalUniversityEmail, isCampusKey } from "@/config/campus
 import { rememberCampus } from "@/config/campus-server";
 import { getDb } from "@/db/client";
 import { isBanned } from "@/modules/account/standing";
+import { hasCompletedProfile } from "@/modules/account/viewer";
 import { createAuthClient } from "./server";
 import { appOrigin } from "./config";
 import { eligibleIdentity, passwordError, type FormState } from "./policy";
@@ -43,32 +44,29 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
   redirect("/account");
 }
 
-export async function signUp(_state: FormState, form: FormData): Promise<FormState> {
+/**
+ * Sign-up, step one (2026-10-05): email a six-digit code to the school address.
+ * Supabase's email sign-in creates the account if it is new, but nobody gets a
+ * session until the code from that inbox is entered, so owning the mailbox is
+ * proved first whatever the project's confirmation setting. The password comes
+ * after, on the verified session.
+ */
+export async function sendSignupCode(_state: FormState, form: FormData): Promise<FormState> {
   const campus = form.get("campus");
   if (!isCampusKey(campus)) return { error: "Choose your university first." };
   const email = canonicalUniversityEmail(form.get("email"), campus);
-  const password = form.get("password");
-  if (!email) return { error: `Use the @${CAMPUSES[campus].emailDomain} address for ${CAMPUSES[campus].shortName}.` };
-  const invalid = passwordError(password);
-  if (invalid) return { error: invalid };
-  if (password !== form.get("confirmPassword")) return { error: "Your passwords don’t match." };
+  if (!email) return { error: `Use your @${CAMPUSES[campus].emailDomain} address for ${CAMPUSES[campus].communityName}.` };
   try {
     const client = await createAuthClient();
-    const { data, error } = await client.auth.signUp({
-      email, password: password as string,
-      options: { emailRedirectTo: `${appOrigin()}/auth/callback` },
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: `${appOrigin()}/auth/callback` },
     });
-    if (error) return { error: signupFailed };
-    if (data.session) {
-      // Signup must never bypass mailbox ownership, even if provider settings drift.
-      await client.auth.signOut({ scope: "local" });
-      return { error: "Email verification is unavailable. Please contact the app owner." };
+    if (error) {
+      return { error: error.status === 429 ? "Too many codes in a row. Wait a minute, then ask for a new one." : signupFailed };
     }
     await rememberCampus(campus);
-    return {
-      success: `We sent a six-digit code to ${email}.`,
-      verification: { email, campus },
-    };
+    return { success: `We sent a six-digit code to ${email}.`, verification: { email, campus } };
   } catch { return unavailable; }
 }
 
@@ -81,6 +79,7 @@ export async function verifyEmailCode(_state: FormState, form: FormData): Promis
   if (typeof token !== "string" || !/^\d{6}$/.test(token)) {
     return { error: "Enter the six-digit code from your email.", verification: { email, campus } };
   }
+  let returning = false;
   try {
     const client = await createAuthClient();
     const verifiedOtp = await client.auth.verifyOtp({ email, token, type: "email" });
@@ -98,9 +97,30 @@ export async function verifyEmailCode(_state: FormState, form: FormData): Promis
       return { error: "This account has been banned from Mitra.", verification: { email, campus } };
     }
     await rememberCampus(identity.campus);
+    returning = await hasCompletedProfile(getDb(), identity.id);
   } catch {
     return { ...unavailable, verification: { email, campus } };
   }
+  revalidatePath("/", "layout");
+  // A member who already set up their profile is simply signed in; a new one
+  // goes on to choose a password.
+  if (returning) redirect("/");
+  return { verified: true, verification: { email, campus } };
+}
+
+/** Sign-up, last step: the password, set only on a session the email code verified. */
+export async function setSignupPassword(_state: FormState, form: FormData): Promise<FormState> {
+  const password = form.get("password");
+  const invalid = passwordError(password);
+  if (invalid) return { error: invalid, verified: true };
+  if (password !== form.get("confirmPassword")) return { error: "Your passwords don’t match.", verified: true };
+  try {
+    const client = await createAuthClient();
+    const { data, error } = await client.auth.getUser();
+    if (error || !eligibleIdentity(data.user)) return { error: "Your sign-up has expired. Start again with your school email." };
+    const result = await client.auth.updateUser({ password: password as string });
+    if (result.error) return { error: "Choose a different password and try again.", verified: true };
+  } catch { return { ...unavailable, verified: true }; }
   revalidatePath("/", "layout");
   redirect("/account");
 }

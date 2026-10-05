@@ -35,4 +35,6 @@ export type FormState = {
   error?: string;
   success?: string;
   verification?: { email: string; campus: CampusKey };
+  /** Sign-up: the email code was accepted and a new member may now set a password. */
+  verified?: boolean;
 };

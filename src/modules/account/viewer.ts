@@ -56,3 +56,17 @@ export async function readViewerOrNull<Q extends PgQueryResultHKT>(
     return { displayName: null, photo: null, balanceMicro: null, ownerQueue: null };
   }
 }
+
+/**
+ * Whether this person finished setting up (name, handle, 18+) and is still
+ * active. Sign-up uses it to send a returning member who signs in with an email
+ * code straight to the feed instead of into the password and onboarding steps.
+ */
+export async function hasCompletedProfile<Q extends PgQueryResultHKT>(
+  database: PgDatabase<Q, typeof schema>,
+  userId: string,
+): Promise<boolean> {
+  if (!isUuid(userId)) return false;
+  const [row] = await database.select({ profile: profiles }).from(profiles).where(eq(profiles.id, userId)).limit(1);
+  return !!row && !!row.profile.adultConfirmedAt && !isInactive(row.profile);
+}
