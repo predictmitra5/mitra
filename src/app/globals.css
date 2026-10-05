@@ -13,8 +13,18 @@
  * its name beside the logo, in the school's colour, once someone is signed in.
  */
 
+/* Helvetica everywhere (2026-10-05). Apple devices have Helvetica Neue; everyone else
+   gets TeX Gyre Heros, a freely licensed match (public/fonts/tex-gyre-heros,
+   LPPL 1.3c), downloaded only when Helvetica is missing. */
+@font-face { font-family: "TeX Gyre Heros"; src: local("TeX Gyre Heros"), local("TeXGyreHeros-Regular"), url("/fonts/tex-gyre-heros/texgyreheros-regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "TeX Gyre Heros"; src: local("TeX Gyre Heros Bold"), local("TeXGyreHeros-Bold"), url("/fonts/tex-gyre-heros/texgyreheros-bold.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "TeX Gyre Heros"; src: local("TeX Gyre Heros Italic"), local("TeXGyreHeros-Italic"), url("/fonts/tex-gyre-heros/texgyreheros-italic.otf") format("opentype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "TeX Gyre Heros"; src: local("TeX Gyre Heros Bold Italic"), local("TeXGyreHeros-BoldItalic"), url("/fonts/tex-gyre-heros/texgyreheros-bolditalic.otf") format("opentype"); font-weight: 700; font-style: italic; font-display: swap; }
+
 :root {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  /* Plain "Helvetica" is left out on purpose: Windows maps that name to Arial, which
+     would stop the browser before it reached TeX Gyre Heros. */
+  --font-sans: "Helvetica Neue", "TeX Gyre Heros", Arial, system-ui, sans-serif;
   --paper: #0b0c0e;
   --card: #141619;
   --raised: #1d2024;

@@ -286,6 +286,14 @@ const server = createServer(async (request, response) => {
     response.end(file ?? "Not found.");
     return;
   }
+  // The self-hosted fonts in public/fonts (TeX Gyre Heros, for devices without Helvetica).
+  const font = url.pathname.match(/^\/fonts\/([\w-]+\/[\w.-]+\.otf)$/);
+  if (font) {
+    const file = await readFile(join(project, "public/fonts", font[1])).catch(() => null);
+    response.writeHead(file ? 200 : 404, { "Content-Type": "font/otf" });
+    response.end(file ?? "Not found.");
+    return;
+  }
   if (url.pathname === "/styles.css") { response.writeHead(200, { "Content-Type": "text/css; charset=utf-8" }); response.end(css); return; }
   if (url.pathname === "/") { response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); response.end(index()); return; }
   const photo = url.pathname.match(/^\/photos\/([a-z0-9_]{3,24})$/);

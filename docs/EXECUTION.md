@@ -24,9 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-05 - Helvetica look-alike for devices without Helvetica (Claude Code)
-
-The owner supplied a "helvetica-255.zip" from a free-font site. Its own name tables show Apple's macOS Helvetica (© Apple, © Linotype) and Adobe Type 1 conversions with no licence, so it was not used: serving a font on a website hands the file to every visitor, which needs a web licence. Asked, the owner chose "Free look-alike". Plan: self-host TeX Gyre Heros (GUST e-foundry, LPPL 1.3c, downloaded unmodified from CTAN) in `public/fonts/tex-gyre-heros/` with its licence; add `@font-face` rules and put it after Helvetica Neue and Helvetica in `--font-sans`, so Apple devices keep real Helvetica and only others download it; let the preview serve it; update DESIGN.md section 12 and DECISIONS.md. Relies on DECISIONS.md 2026-10-05 ("Helvetica for everything").
+_None._
 
 ## Deferred, to come back to
 
@@ -199,6 +197,12 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-05 - Helvetica look-alike for devices without Helvetica (Claude Code)
+
+The owner supplied "helvetica-255.zip" from a free-font site. Its name tables show Apple's macOS Helvetica (© Apple, © Linotype) and Adobe Type 1 conversions with no licence; serving a font on a website hands the file to every visitor, so it was not used and the extracted copy was deleted. Given Adobe Fonts, a free look-alike, a paid licence or no change, the owner chose the free look-alike. TeX Gyre Heros 2.004 (GUST e-foundry, LPPL 1.3c) was downloaded unmodified from CTAN into `public/fonts/tex-gyre-heros/` with its licence and a README; four `@font-face` rules name it, and `--font-sans` is now Helvetica Neue, TeX Gyre Heros, Arial. The first attempt kept plain "Helvetica" in the list and the look-alike never loaded on Windows, which maps that name to Arial; it was taken out. Also found and fixed: `/welcome` was missing from the session middleware's matcher, so an expired session there would not refresh. The preview serves the fonts too.
+
+Verified: 492 tests pass with 17 hosted-only skipped; typecheck, lint and the production build pass; the built stylesheet points at `/fonts/tex-gyre-heros/`. In the preview on Windows, TeX Gyre Heros regular and bold report "loaded" and the feed renders in it. Not checked on a real Mac or iPhone, where Helvetica Neue should be used and nothing downloaded.
 
 ### 2026-10-05 - Browse first, Kalshi-style sign-up and onboarding, the logo, Helvetica (Claude Code)
 
