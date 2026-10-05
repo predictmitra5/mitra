@@ -24,7 +24,10 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-10-05 - Restore points-only product copy after upstream integration
+
+- Remove repeated play-money/no-cash-value language reintroduced by the newer browse-first redesign from the signup shell, signup prompt, onboarding explanation and signed-in footer.
+- Keep the one concise FAQ disclosure that points are not currently cash or prizes, as previously decided; validate, document, commit and redeploy without changing market mechanics.
 
 ## Deferred, to come back to
 
