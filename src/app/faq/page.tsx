@@ -1,31 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoPage } from "@/app/components/info-page";
-import { selectedCampus } from "@/config/campus-server";
 
 export const metadata: Metadata = {
   title: "FAQ",
   description: "How Mitra works, who can join, and how goals are resolved.",
 };
 
-export default async function FaqPage() {
-  const campus = await selectedCampus();
+export default function FaqPage() {
   const questions = [
     {
-      question: `What is ${campus.editionName}?`,
-      answer: "A play-money prediction community for personal goals. People post goals about themselves, and the community trades Yes or No points on whether those goals will happen.",
+      question: "What is Mitra?",
+      answer: "A private university prediction community for personal goals. People post goals about themselves, and their community uses Yes or No points to forecast whether those goals will happen.",
     },
     {
-      question: `Is Mitra affiliated with ${campus.key === "uiuc" ? "the " : ""}${campus.universityName}?`,
-      answer: campus.independenceStatement,
+      question: "Is Mitra affiliated with a university?",
+      answer: "No. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.",
     },
     {
-      question: "Is this real-money betting?",
-      answer: "No. Mitra uses play points only. Points cannot be purchased, withdrawn, redeemed, or exchanged for cash or prizes.",
+      question: "How do points work?",
+      answer: "Every account starts with 1,000 points. Points are not currently cash or prizes.",
     },
     {
       question: "Who can post a goal?",
-      answer: `The ${campus.shortName} edition is for adults with an @${campus.emailDomain} account. You can post a goal only about yourself, and a profile photo is required before posting.`,
+      answer: "The current communities are for adults with a verified OSU or UIUC email. You can post a goal only about yourself, and a profile photo is required before posting.",
     },
     {
       question: "Can I trade on my own goal?",
@@ -45,7 +43,7 @@ export default async function FaqPage() {
     },
   ];
   return (
-    <InfoPage eyebrow={campus.editionName.toUpperCase()} title="Questions, answered." intro="The short version of how the campus pilot works and where its boundaries are.">
+    <InfoPage eyebrow="MITRA FAQ" title="Questions, answered." intro="The short version of how Mitra works and where its current boundaries are.">
       <section className="faq-list" aria-label="Frequently asked questions">
         {questions.map((item, index) => (
           <details key={item.question} open={index === 0}>

@@ -5,7 +5,6 @@ import { getDb, schema } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { CAMPUSES } from "@/config/campus";
 import { signOut } from "@/modules/auth/actions";
-import { readRefillStatus, type RefillStatus } from "@/modules/account/refill";
 import { readPositions, type PositionsPage } from "@/modules/account/positions";
 import { readViewerOrNull } from "@/modules/account/viewer";
 import { listGoalsForSubject } from "@/modules/goals/service";
@@ -18,14 +17,13 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { Avatar, Gain } from "@/app/components/market/goal-card";
 import { PositionRows } from "@/app/positions/positions-view";
 import { ProfileForm } from "./profile-form";
-import { RefillButton } from "./refill-card";
 import { PhotoForm } from "./photo-form";
 import { photoUrl } from "@/modules/account/photo-url";
 
 /*
- * The account page in the Kalshi direction (2026-09-24): available points and
- * the top-up, positions with their gain or loss since bought, and the person's
- * own goals in plain words. Private to the signed-in person.
+ * The account page in the Kalshi direction (2026-09-24): available points,
+ * positions with their gain or loss since bought, and the person's own goals
+ * in plain words. Private to the signed-in person.
  */
 
 type GoalRow = { market: typeof schema.markets.$inferSelect; rejectionReason: string | null };
@@ -58,7 +56,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   if (!identity) redirect("/sign-in");
   const now = new Date();
   let account;
-  let refillStatus: RefillStatus | undefined;
   let holdings: PositionsPage | undefined;
   let goals: GoalRow[] = [];
   let unavailable = false;
@@ -71,10 +68,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     account = rows[0];
     if (account?.profile.adultConfirmedAt && !account.profile.withdrawnAt) {
       goals = await listGoalsForSubject(db, identity.id);
-      refillStatus = await readRefillStatus(db, identity.id);
     }
   } catch { unavailable = true; }
-  if (!unavailable && refillStatus) {
+  if (!unavailable && account?.profile.adultConfirmedAt && !account.profile.withdrawnAt && account.wallet) {
     // Positions are additive here: the page still works if they cannot load.
     try { holdings = await readPositions(getDb(), identity.id, 1); } catch { holdings = undefined; }
   }
@@ -82,7 +78,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const { notice } = await searchParams;
   const blocked = account?.profile.withdrawnAt || (account && !account.wallet);
   // Rounded down to a tenth, never showing more than is there.
-  const balanceMicro = Math.floor((refillStatus?.balanceMicro ?? account?.wallet?.balanceMicro ?? 0) / 100_000) * 100_000;
+  const balanceMicro = Math.floor((account?.wallet?.balanceMicro ?? 0) / 100_000) * 100_000;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} active="positions" /><main className="account">
     {unavailable || blocked ? <section className="account-empty"><h1>{account?.profile.withdrawnAt ? "This account is inactive." : "Your account is temporarily unavailable."}</h1><p>Please contact the app owner before continuing.</p></section>
@@ -99,9 +95,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <p className="points-available"><span className="muted">Available</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)} <span>pts</span></strong></p>
           <dl className="points-facts">
             <div><dt>In positions</dt><dd>{pointsText(holdings?.totals.valueMicro ?? 0)} pts {holdings && holdings.total > 0 && <Gain micro={holdings.totals.gainMicro} />}</dd></div>
-            {refillStatus && <div><dt>Refills left this month</dt><dd>{refillStatus.remaining} of {refillStatus.monthlyLimit}</dd></div>}
           </dl>
-          {refillStatus && <RefillButton status={refillStatus} />}
         </section>
 
         <section aria-labelledby="positions-title">

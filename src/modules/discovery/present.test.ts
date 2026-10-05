@@ -128,7 +128,7 @@ describe("initials", () => {
 });
 
 describe("points", () => {
-  it("reads volume as whole play points traded", () => {
+  it("reads volume as whole points traded", () => {
     expect(volumeLabel(0)).toBe("No trades yet");
     expect(volumeLabel(400_000)).toBe("<1 pt traded");
     expect(volumeLabel(45_000_000)).toBe("45 pts traded");

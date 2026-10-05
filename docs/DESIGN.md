@@ -62,7 +62,7 @@ Each reference is strongest at one layer, so the card stacks them top to bottom.
 - **Top bar** (Kalshi): brand, sign in and sign up.
 - **Person chips** (YouTube's topic row). Tabs by person was decided on 2026-09-19; categories stay on the cards.
 - **Featured carousel** (Kalshi): a goal, its YES and NO prices, volume, time left, the day's change, and its price chart.
-- **Trust notes** (Kalshi): play money only; proof checked by a person; nobody bets on their own goal.
+- **Trust notes** (Kalshi): points only; proof checked by a person; nobody bets on their own goal.
 - **Just added** (Kalshi's upcoming strip): decided on 2026-09-19, now with thumbnails and closing dates.
 - **The grid** in ranked order.
 - **Rundown** down the side (Kalshi's Trending): closing soon, and moving today.
@@ -164,7 +164,7 @@ The owner said the app "needs to look more like kalshi, not tiktok", picked a di
 | No / down | `#f2545b` on `#2a1517` | No buttons, falls, the chart when it ended down |
 | Lime | `#d2f24a` with `#141a00` text | Main actions only: Post a goal, Buy |
 
-Inter at 400/500/600/700 with tabular numbers everywhere. Radii: 12px cards, 8px buttons and inputs, 6px photo squares. No gradients, no shadows, no generated thumbnail art on the feed.
+Inter at 400/500/600/700 with tabular numbers everywhere, with Inter Tight for major headlines. Radii: 12px cards, 8px buttons and inputs, 6px photo squares. No gradients and no generated thumbnail art on the feed; restrained shadow is limited to the neutral entry card.
 
 The owner chose green for Yes and red for No and waived the colour-blindness concern. Direction never rests on colour alone: every change carries ▲ or ▼, and every button says Yes or No in words.
 
@@ -172,7 +172,7 @@ The owner chose green for Yes and red for No and waived the colour-blindness con
 
 - **Header:** "mitra" wordmark and the motto, search, Goals and Positions, the viewer's points, a lime "Post a goal" and their photo; Log in and Sign up when signed out; the owner's Review count stays. On a phone: wordmark, points and photo; the search sits under the header.
 - **Ticker:** one still row of first name and stake, chance and today's change. Scrolls sideways by hand; it no longer moves on its own.
-- **Tabs:** Anything (every goal), Gym, Grades, Internships, Clubs, Running, Closing soon (every open goal, soonest close first). Music is hidden until it has a template.
+- **Tabs:** Competitions / Awards (club and running outcomes), Academics (GPA), Anything (every goal), and a disabled Coming soon label. Search still exposes every goal under Anything.
 - **Search:** filters the cards as you type, on the question, name and handle. The text lives in the address (`/?q=`), updated without reloading, so a search from any page lands on the filtered feed and typing records no extra exposures.
 - **Featured goal:** the open goal that moved most in the last 24 hours, with its chart over that day, its volume and close date, and Yes and No. On a desktop, the Closing soon list sits beside it.
 - **Cards:** photo square, category · name, the question, a large chance, today's change to one decimal and time left, and Yes and No buttons with prices that open the goal with that side chosen.
@@ -183,7 +183,7 @@ Breadcrumb, person, question; the chance large in Yes green with the change over
 
 ### Account
 
-Name and handle, available points large, points in positions with the gain or loss, refills left, the top-up, positions valued at today's price with the change since bought, your goals with their status wording, owner tools for the owner, the photo and sign out. `/positions` is the same list with every holding, 20 to a page, and the header's Positions link goes there.
+Name and handle, available points large, points in positions with the gain or loss, positions valued at today's price with the change since bought, your goals with their status wording, owner tools for the owner, the photo and sign out. There is no top-up or refill control. `/positions` is the same list with every holding, 20 to a page, and the header's Positions link goes there.
 
 ### How it is built, and what the build taught
 
@@ -205,8 +205,12 @@ Mitra is the parent product with **Mitra at OSU** and **Mitra at UIUC** launch e
 
 - `src/config/campus.ts` holds both editions' names, university names, email domains, onboarding hints and independence statements. The server derives the account campus from the confirmed email; a cookie remembers only the display edition.
 - The header lockup is the lowercase Mitra wordmark plus a small outlined `at OSU` or `at UIUC` capsule. It is an original text treatment with no university logo, mascot, official typeface or artwork.
-- Every footer links to `/faq` and `/privacy` and says that Mitra is an independent platform, not affiliated with, endorsed by or sponsored by the displayed university.
-- The public FAQ explains play money, eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what signed-in community members can see, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
+- Every footer links to `/faq` and `/privacy` and says that Mitra is an independent platform, not affiliated with, endorsed by or sponsored by any university.
+- FAQ and Privacy always use the neutral Mitra header/footer, regardless of the selected campus. The FAQ explains the current 1,000-point grant once, alongside eligibility, self-posted goals, trading restrictions, approval and resolution. The privacy page states what signed-in community members can see, what remains private, how automated evidence reading works, the infrastructure providers, anonymous feed measurement and the lack of self-service deletion in the current pilot.
+
+### Neutral entry refinement (2026-10-05)
+
+The signed-out entry stays subdued blue-gray and says only Mitra. Its two university choices now use actual identity accents—OSU scarlet `#ba0c2f` and UIUC orange `#ff5f05`—in the selector swatches, selected-state border and hover treatment. The rest of the entry remains neutral, so selecting a community does not turn the public page into a university-branded landing page. Copy is shorter and utility-first: choose a university, verify the inbox, start with 1,000 points, then enter the private community.
 
 ### Tokens
 

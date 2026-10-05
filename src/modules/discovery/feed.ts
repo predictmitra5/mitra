@@ -32,7 +32,7 @@ export type FeedCard = {
   /** When the goal went live, for "2d ago" in the card's meta line. */
   approvedAt: Date;
   /**
-   * Play points traded on this goal, all time. An aggregate, shown the way
+   * Points traded on this goal, all time. An aggregate, shown the way
    * Kalshi shows volume. Trader counts are deliberately not exposed: in a small
    * group "1 trader" can identify a person.
    */

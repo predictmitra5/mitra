@@ -22,11 +22,11 @@ Remaining: the owner's custom SMTP and redirect URL setup (without it students r
 
 Verify: authorized users can complete it; unauthorized actors cannot approve or impersonate a subject; unsupported domains and campus/email mismatches cannot sign in; terms and permissions are attributable.
 
-## Slice 2 - Complete play-money lifecycle
+## Slice 2 - Complete points lifecycle
 
-Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban, refill eligibility and shared buy/sell rules exist as tested pure logic in `src/modules/market`. Monthly cash refills are built end to end, from the account card through the locked wallet write.
+Done: pricing, quotes, positions with cost basis, the per-market limit, the trading ban and shared buy/sell rules exist as tested logic in `src/modules/market`. The account refill card and server action were removed on 2026-10-05; current accounts receive one 1,000-point starting grant with no user top-up or periodic reset.
 
-Refill validation was extended on 2026-09-19 with authorization, rollback, exact Eastern boundaries and hosted races against buys, sells and payouts. Private navigation to existing positions is built at `/positions` (finished 2026-09-23): active holdings, held costs, each goal's public chance and status, and links to the market controls. It introduces no valuation, ranking or leaderboard.
+The old refill engine and its validation remain only as historical tested code and have no product entry point. Private navigation to existing positions is built at `/positions` (finished 2026-09-23): active holdings, held costs, each goal's public chance and status, and links to the market controls. It introduces no valuation, ranking or leaderboard.
 
 Also done (2026-09-18): public approved-market pages and authenticated buy/sell previews and confirmations. The transaction writes trade, wallet, ledger, position, market state and price history together. Retry protection, deadline enforcement, wallet/ledger reconciliation and multi-connection hosted concurrency checks pass.
 

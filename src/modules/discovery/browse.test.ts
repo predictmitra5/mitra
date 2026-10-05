@@ -16,10 +16,10 @@ const cards = [
 const ids = (list: { id: string }[]) => list.map((c) => c.id);
 
 describe("feed tabs", () => {
-  it("are the owner's list, without Music until it has a template", () => {
-    expect(FEED_TABS.map((tab) => tab.label)).toEqual(["Anything", "Gym", "Grades", "Internships", "Clubs", "Running", "Closing soon"]);
+  it("are the focused launch groups", () => {
+    expect(FEED_TABS.map((tab) => tab.label)).toEqual(["Competitions / Awards", "Academics", "Anything"]);
     expect(isFeedTab("music")).toBe(false);
-    expect(isFeedTab("running")).toBe(true);
+    expect(isFeedTab("competitions")).toBe(true);
     expect(isFeedTab(undefined)).toBe(false);
   });
 
@@ -27,16 +27,9 @@ describe("feed tabs", () => {
     expect(ids(browse(cards, "anything", ""))).toEqual(["gym", "gpa", "run", "own", "late"]);
   });
 
-  it("show one template per category tab", () => {
-    expect(ids(browse(cards, "gym", ""))).toEqual(["gym"]);
-    expect(ids(browse(cards, "grades", ""))).toEqual(["gpa"]);
-    expect(ids(browse(cards, "running", ""))).toEqual(["run"]);
-    expect(ids(browse(cards, "clubs", ""))).toEqual(["late"]);
-    expect(ids(browse(cards, "internships", ""))).toEqual([]);
-  });
-
-  it("show every open goal under Closing soon, soonest close first", () => {
-    expect(ids(browse(cards, "closing", ""))).toEqual(["gym", "run", "gpa", "own"]);
+  it("groups academic and competitive outcomes", () => {
+    expect(ids(browse(cards, "academics", ""))).toEqual(["gpa"]);
+    expect(ids(browse(cards, "competitions", ""))).toEqual(["run", "late"]);
   });
 });
 
@@ -55,7 +48,7 @@ describe("search", () => {
   });
 
   it("combines with a tab", () => {
-    expect(ids(browse(cards, "grades", "maya"))).toEqual(["gpa"]);
+    expect(ids(browse(cards, "academics", "maya"))).toEqual(["gpa"]);
   });
 
   it("treats a blank query as no search", () => {

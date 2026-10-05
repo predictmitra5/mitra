@@ -4,7 +4,7 @@ Status: participation rules, accounts, economy, market lifecycle and goal templa
 
 ## Source-grounded concept
 
-The app lets users forecast people's goals using play money. The PDF emphasized professional/creative achievements, but the user explicitly broadened the product to any kind of goal on 2026-09-15. Do not treat founders or creators as an exclusive audience. Subjects contribute information that helps forecasts become better informed. Discovery should give unknown subjects a path to an audience. Original source: PDF sections 2-4, pages 3-5; sections 28-30, pages 17-18.
+The app lets users forecast people's goals using points. The PDF emphasized professional/creative achievements, but the user explicitly broadened the product to any kind of goal on 2026-09-15. Do not treat founders or creators as an exclusive audience. Subjects contribute information that helps forecasts become better informed. Discovery should give unknown subjects a path to an audience. Original source: PDF sections 2-4, pages 3-5; sections 28-30, pages 17-18.
 
 ## Confirmed user direction - 2026-09-15
 
@@ -18,7 +18,7 @@ The app lets users forecast people's goals using play money. The PDF emphasized 
 - Goal feeds, market pages, live prices and profile photos require a verified signed-in account. Signed-out visitors see neutral Mitra onboarding plus FAQ, privacy and account-recovery pages; search engines must not index market details.
 - Sign-in at launch requires a verified OSU or UIUC email address. This excludes friends outside those campuses and does not establish anyone's age.
 - The owner sets each market's opening price when approving it.
-- Economy, subject to change: 1,000 starting play money; refills restore cash to 1,000 at most twice a month; at most 100 points per person in one market; selling allowed while trading is open.
+- Current economy: one 1,000-point starting grant; no user top-ups or periodic resets; at most 100 points per person in one market; selling allowed while trading is open. Points are not currently cash or prizes. Future prize or cash concepts are not promised or implemented.
 - Public sources and private documents are acceptable evidence categories for initial owner review; actual sufficiency/privacy rules remain open.
 
 Market probabilities describe a particular outcome by a particular time. They must not become a general measure of a person's worth. Trading, verification, and attention allocation have separate roles.

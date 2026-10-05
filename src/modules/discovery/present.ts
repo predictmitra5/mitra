@@ -106,7 +106,7 @@ export function initials(displayName: string): string {
 
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
-/** Play points traded, as "4,138 pts traded". Micro-units in. */
+/** Points traded, as "4,138 pts traded". Micro-units in. */
 export function volumeLabel(volumeMicro: number): string {
   const points = Math.max(0, volumeMicro) / 1_000_000;
   if (points === 0) return "No trades yet";

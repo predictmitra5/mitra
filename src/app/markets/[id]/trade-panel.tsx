@@ -14,7 +14,7 @@ import { percent } from "@/modules/discovery/present";
  * The trade panel (decided 2026-09-24): Buy or Sell, Yes or No, an amount with
  * +10, +25 and Max, an estimate with "To win", and a brand button. The button
  * asks the server for the exact preview, which the trader then confirms, as
- * before; the estimate never charges anyone. Play points only, up to 100 points
+ * before; the estimate never charges anyone. Points only, up to 100 points
  * of held cost per goal.
  */
 

@@ -1,5 +1,5 @@
 /**
- * Play money and share quantities are stored as integers so ledger sums are
+ * Points and share quantities are stored as integers so ledger sums are
  * exact. One point is 1,000,000 micro-points and one share is 1,000,000
  * micro-shares; a winning micro-share pays one micro-point.
  */

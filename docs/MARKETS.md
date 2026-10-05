@@ -1,6 +1,6 @@
 # Markets
 
-Status: goal drafting, owner approval, the public feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, monthly cash refills, and proof submission with owner-published statements are built. Account withdrawal and deployed background scheduling remain to be implemented.
+Status: goal drafting, owner approval, the private signed-in feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, and proof submission with owner-published statements are built. Account withdrawal and deployed background scheduling remain to be implemented. User refills were disabled and removed from the product on 2026-10-05.
 
 ## Confirmed direction - 2026-09-15
 
@@ -37,14 +37,14 @@ Implementation: binary LMSR. Worst-case play-money subsidy is b ln 2 for a marke
 Decided 2026-09-15 and explicitly "subject to change". Values live in `src/modules/market/economy.ts`.
 
 - Starting balance: 1,000 points.
-- Refills: when the available balance is below 1,000, the user may tap Refill to restore it to 1,000, at most twice per calendar month in Eastern time. Confirmed 2026-09-15: only cash counts, so money in open positions does not block a refill and a trader's cash plus positions can exceed 1,000. Built 2026-09-18 in `src/modules/account/refill.ts`: the wallet row is locked before the amount and the monthly quota are recomputed, the credit and its ledger entry commit together, and the ledger row id doubles as the request id so a retry returns the original receipt rather than crediting twice.
+- Current points supply: a profile receives one 1,000-point signup grant. There is no user top-up or automatic/periodic reset. This supersedes the September refill decision. The historical refill engine and ledger kind remain for audit/history but are unreachable from the product.
 - Per-market maximum: 100 points per person, counting the cost basis of shares currently held on both sides. Selling releases cost basis at average cost and frees allowance.
 - Selling: allowed back to the market maker while trading is open.
 - Liquidity parameter b: 150 for new markets, so a 100-point bet moves a 50% market to 74%. The user asked for Kalshi's behavior and accepted this option; Kalshi's order book has no equivalent parameter.
 - Opening price: the owner sets each market's opening probability when approving it.
 - Unit: a winning share is worth 1 point (brief section 5), displayed Kalshi-style as 100¢, so a price of 62¢ means 0.62 points per share.
 
-Still open: fees (none proposed), minimum trade size, rounding presentation, and whether a leaderboard ranks profit rather than balance given refills. Do not equate an available quote with reliable crowd consensus.
+Still open: fees (none proposed), minimum trade size, rounding presentation, and any future prize/cash concept. Do not equate an available quote with reliable crowd consensus, and do not represent a future prize or cash concept as available now.
 
 ## User-provided goals and contract questions
 
@@ -117,11 +117,11 @@ Implemented and unit-tested pure logic in `src/modules/market`:
 - `quote.ts`, `units.ts`: integer quotes in micro-points and micro-shares (1 point = 1,000,000 micro-points; a winning micro-share pays one micro-point). Rounding favours the market maker: shares round down, costs round up without exceeding the spend, sale proceeds round down.
 - `position.ts`: holdings with average-cost basis per side, the amount currently in a market, and the remaining per-market allowance. Kept basis rounds up after a partial sale so rounding never frees extra allowance.
 - `eligibility.ts`: the Kalshi-style ban on the subject and outcome decision-makers.
-- `refill.ts`: refill eligibility and amount, with calendar months counted in Eastern time.
+- `refill.ts`: historical refill eligibility logic retained for audit and regression reference; it has no UI or server-action entry point.
 - `trade.ts`: `planBuy` and `planSell` apply the ban, the per-market limit, balance and share checks, and return the quote with the resulting position and balance.
-- `economy.ts`: the owner's settings (1,000 start, two refills a month, 100-point limit, b = 150).
+- `economy.ts`: the owner's settings (1,000 start, 100-point limit, b = 150); legacy refill fields remain only for the unreachable historical engine.
 
-Account refill persistence and controls are implemented in `src/modules/account` and `/account`. Additional validation on 2026-09-19 covers exact micro-point credits, Eastern year/month and daylight-saving boundaries, retry receipts after later spending/month changes, missing wallets, stale eligibility, rollback, authenticated action errors, and hosted concurrency with trades and payouts. The committed original refill tests are preserved alongside the added `refill-safety.test.ts` cases. A real signed-in walkthrough has still not been done; email confirmation is switched off for the pilot, so it no longer waits on email setup.
+Historical refill persistence validation remains in `src/modules/account` and its tests, but `/account` no longer reads or exposes it and the refill server action was deleted on 2026-10-05. A real signed-in walkthrough has still not been done; email delivery remains an external provider setup item.
 
 `/positions` (`src/modules/account/positions.ts`) lists only the signed-in active adult's own nonzero holdings in approved open, closed or ruled markets. The owner gets no view of anyone else's. Holdings are listed soonest deadline first, in pages of 20, with shares and held cost at the engine's six-decimal precision. Since 2026-09-24 each row shows the person's photo, the side, shares and average price paid, and the holding's value at the current public price with the gain or loss since bought (`valueHolding`): a YES share is valued at the YES price, a NO share at one minus it. That value is not what selling would return, which is lower for a large holding because a sale moves the price, and the page says so. The account page shows the first page and the total value and gain across all holdings. Nothing ranks anybody. Status labels distinguish trading open, trading closed, an open objection window and a pending payout. Sold, settled and refunded holdings leave the list, and an empty list links to the public feed. The count and rows are read in one repeatable-read snapshot, after due closes and payouts are processed.
 

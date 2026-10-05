@@ -101,7 +101,7 @@ const rejectionMessages: Record<string, string> = {
   SUBJECT_OF_MARKET: "You can follow your goal, but you cannot trade it.",
   DECIDES_OUTCOME: "You cannot trade this goal because you help decide its outcome.",
   OVER_MARKET_LIMIT: "This would exceed your 100-point held-cost limit for this goal. Reduce the amount.",
-  INSUFFICIENT_BALANCE: "You do not have enough available play points.",
+  INSUFFICIENT_BALANCE: "You do not have enough available points.",
   INSUFFICIENT_SHARES: "You cannot sell more shares than you hold.",
 };
 

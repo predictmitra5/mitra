@@ -86,7 +86,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
   if (brandMode === "neutral") {
     return (
       <footer className="market-footer market-footer-entry">
-        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Play money only.</span></div>
+        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Points only.</span></div>
         <nav className="footer-links" aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link></nav>
         <p className="footer-disclaimer">Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
       </footer>
@@ -97,7 +97,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
       <div className="footer-brand">
         <span className="footer-edition campus-only campus-osu">{CAMPUSES.osu.editionName}</span>
         <span className="footer-edition campus-only campus-uiuc">{CAMPUSES.uiuc.editionName}</span>
-        <span>Bet on literally anything. Play money only.</span>
+        <span>Bet on literally anything. Points only.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>

@@ -19,7 +19,7 @@ export async function InfoPage({ eyebrow, title, intro, children }: {
   }
   return (
     <div className="market-shell">
-      <MarketHeader viewer={viewer} />
+      <MarketHeader viewer={viewer} brandMode="neutral" />
       <main className="info-page">
         <header className="info-hero">
           <span className="eyebrow">{eyebrow}</span>
@@ -28,7 +28,7 @@ export async function InfoPage({ eyebrow, title, intro, children }: {
         </header>
         {children}
       </main>
-      <MarketFooter />
+      <MarketFooter brandMode="neutral" />
     </div>
   );
 }

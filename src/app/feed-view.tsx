@@ -127,6 +127,7 @@ export function FeedView({
               </Link>
             </li>
           ))}
+          <li><span className="tab-coming-soon" aria-disabled="true">Coming soon</span></li>
         </ul>
       </nav>
 

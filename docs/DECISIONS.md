@@ -487,3 +487,15 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 **Decision:** signed-out `/` is the onboarding surface, not the discovery feed. It contains no live goal, market, price, position or betting/event data. The feed at `/` appears only for a verified signed-in account, and direct market pages also require that identity. Signup, signin, password recovery, FAQ and privacy remain reachable without an account. This supersedes the public signed-out feed, two-minute prompt, public market-page and search-indexing decisions from 2026-09-16 and 2026-09-19.
 
 **Presentation:** every authentication screen uses the parent **Mitra** brand and a restrained blue/blue-gray entry palette. Selecting OSU or UIUC still validates the university email and stores the display choice, but does not repaint the onboarding screen or add an `at OSU`/`at UIUC` lockup. Campus-specific naming and colors begin only after a verified session exists. No official university marks are introduced.
+
+## 2026-10-05 - Points-only economy and focused campus entry/feed polish
+
+**User instruction:** show the OSU and UIUC choices in their actual colors; use Inter and related fonts with a functional-minimal, data-dense fintech direction; remove repeated play-money language; use 1,000 points; remove top-ups; reset current wallets to 1,000; group feed tabs as Competitions / Awards, Academics, Anything and Coming soon; and keep FAQ and Privacy generic rather than campus-branded.
+
+**Decision:** the current product uses points. Each completed account receives one 1,000-point signup grant, with no user top-up and no automatic or periodic reset. Points are not currently cash or prizes. A possible later prize pool or cash product is exploratory only and is neither promised nor implemented. This supersedes the September two-refills-per-month decision and the refill portions of the 2026-09-24 interface decision.
+
+**Presentation:** the neutral signup surface keeps the Mitra-only blue-gray frame while OSU and UIUC selectors use scarlet `#ba0c2f` and orange `#ff5f05`. Inter remains the UI/data face and Inter Tight is the related display face for major headings. Copy says "Real accountability", "Put belief behind your next move", and "A private university community for following through." FAQ and Privacy use neutral Mitra framing and a university-agnostic independence statement.
+
+**Discovery:** tabs are Competitions / Awards (club and running goals), Academics (GPA), Anything (the full feed) and a visibly disabled Coming soon label. Other goal types remain discoverable under Anything and search.
+
+**One-time production adjustment:** live read-only counts showed four Auth accounts, three completed profiles/wallets and one wallet at 965 points. One atomic ledger-plus-wallet adjustment added 35 points to that wallet. Verification then showed all three wallets at exactly 1,000 points and both ledger and wallet totals at 3,000 points. The fourth account has no profile/wallet and will receive the standard grant if onboarding is completed. No identities were exposed and no schema changed.

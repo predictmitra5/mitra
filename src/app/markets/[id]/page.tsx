@@ -51,7 +51,7 @@ const longDate = (value: Date) => new Intl.DateTimeFormat("en-US", { dateStyle: 
 const shortDate = (value: Date) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: zone }).format(value);
 
 /** The goal's tab on the feed, for the breadcrumb. */
-const TAB_OF: Record<string, string> = { gym: "gym", gpa: "grades", internship: "internships", club: "clubs", running: "running" };
+const TAB_OF: Record<string, string> = { gpa: "academics", club: "competitions", running: "competitions" };
 
 function toTickerCard(card: FeedCard): CardData {
   return {
