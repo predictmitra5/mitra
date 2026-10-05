@@ -24,7 +24,11 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-05 - Campus-neutral public information pages
+
+- Give the shared FAQ/Privacy shell its own neutral graphite design tokens so a previously selected OSU or UIUC campus cannot tint public information pages.
+- Keep the change presentation-only: no FAQ/Privacy copy, authentication, database rows, or provider configuration will change.
+- Validate the focused UI change with typecheck, lint, build, and browser checks, then record the result and push it to `origin/main` using the owner's required global Git email.
 
 ## Deferred, to come back to
 
