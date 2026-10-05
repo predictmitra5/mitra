@@ -49,7 +49,7 @@ export function StepFrame({ fills, label, back, closeHref = "/", children }: {
         {children}
       </main>
       <footer className="step-foot">
-        Points are play money with no cash value. <Link href="/faq">FAQ</Link> · <Link href="/privacy">Privacy</Link>
+        Mitra uses points. <Link href="/faq">FAQ</Link> · <Link href="/privacy">Privacy</Link>
       </footer>
     </div>
   );

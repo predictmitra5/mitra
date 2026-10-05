@@ -102,7 +102,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
     <footer className="market-footer">
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Bet on literally anything. Points have no cash value.</span>
+        <span>Bet on literally anything. Start with 1,000 points.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>

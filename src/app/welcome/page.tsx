@@ -65,7 +65,7 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
       <div className="step-form">
         <h1>How Mitra works</h1>
         <ol className="how-list">
-          <li><span>1</span><p><strong>You start with 1,000 points</strong><small>Points are for fun. They have no cash value.</small></p></li>
+          <li><span>1</span><p><strong>You start with 1,000 points</strong><small>Use them to back the outcomes you believe in.</small></p></li>
           <li><span>2</span><p><strong>Buy Yes or No on a goal</strong><small>Yes 71¢ means people think there’s a 71% chance it happens.</small></p></li>
           <li><span>3</span><p><strong>Proof settles it</strong><small>When a goal ends, the person sends proof and it’s checked before anyone is paid.</small></p></li>
           <li><span>4</span><p><strong>Fair play</strong><small>No betting on your own goals, and at most 100 points on any one goal.</small></p></li>

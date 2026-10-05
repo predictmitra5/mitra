@@ -24,10 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-05 - Restore points-only product copy after upstream integration
-
-- Remove repeated play-money/no-cash-value language reintroduced by the newer browse-first redesign from the signup shell, signup prompt, onboarding explanation and signed-in footer.
-- Keep the one concise FAQ disclosure that points are not currently cash or prizes, as previously decided; validate, document, commit and redeploy without changing market mechanics.
+None.
 
 ## Deferred, to come back to
 
@@ -207,6 +204,8 @@ Integrated this work on top of the newer browse-first, OTP-first onboarding and 
 FAQ and Privacy now override campus styling with neutral graphite tokens, and Privacy accurately describes deletion. Self-service deletion is available from the account page with typed `DELETE`: the owner account is protected; draft/open/closed subject goals cancel and refund held cost; ruled/settled accounting stays final; private evidence/photo/staging objects are removed; evidence becomes a tombstone; the profile is anonymized; and the Supabase Auth identity is deleted. Live schema changes for the withdrawal audit kind, `evidence.removed_at`, and its constraints were applied and verified; the repository records them after the existing onboarding-topics migration as migration 0012.
 
 After integrating the newer upstream design, 496 tests pass with 17 hosted-only cases skipped across 40 files; typecheck, lint and the webpack production build pass. The neutral FAQ/Privacy pages were browser-checked locally before the integration; production browser verification follows deployment. Production Auth logs identified the old screenshot failures: `virmani.20@osu.edu` was already registered, while `testing@illinois.edu` had been auto-confirmed under the provider setting. A current Auth read found five confirmed identities, three with completed app profiles/wallets and two without. No existing identity was deleted during the work.
+
+The first production check found that the newer browse-first redesign had reintroduced repeated play-money/no-cash-value copy. The signup shell, signup prompt, onboarding explanation and signed-in footer now use only points/1,000-point language; the one concise FAQ disclosure remains. The final integrated tree again passes all 496 tests plus typecheck, lint and the webpack production build, and the local signup accessibility tree shows "Mitra uses points" with the existing-account Log in action.
 
 ### 2026-10-05 - Helvetica look-alike for devices without Helvetica (Claude Code)
 

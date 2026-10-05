@@ -80,7 +80,7 @@ export function SignupPrompt() {
           </Link>
         ))}
         <p className="signup-prompt-login">Already have an account? <Link href="/sign-in" prefetch={false}>Log in</Link></p>
-        <p className="signup-prompt-fine">Points are play money with no cash value. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
+        <p className="signup-prompt-fine">Start with 1,000 points. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
       </div>
     </dialog>
   );

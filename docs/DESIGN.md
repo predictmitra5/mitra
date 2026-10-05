@@ -262,7 +262,7 @@ Decided by the owner after reviewing a canvas of the screens (https://claude.ai/
 
 ### Browsing and the pop-up
 
-Visitors see the same feed and goal pages as members. After 30 seconds a native `<dialog>` opens (centred on a laptop, a bottom sheet on a phone): "Create your account", one button per school, Log in, and the play-money line. Closing it stops it opening by itself again for the browser session; any Yes, No or trade control opens it at once instead of acting (`src/app/components/signup-prompt.tsx`).
+Visitors see the same feed and goal pages as members. After 30 seconds a native `<dialog>` opens (centred on a laptop, a bottom sheet on a phone): "Create your account", one button per school, Log in, and a concise 1,000-point line. Closing it stops it opening by itself again for the browser session; any Yes, No or trade control opens it at once instead of acting (`src/app/components/signup-prompt.tsx`).
 
 ### Sign-up, sign-in and onboarding
 
@@ -275,4 +275,3 @@ One screen per step (`src/app/components/step-frame.tsx`): a four-part progress 
 ### Chart
 
 Yes and No are two step lines, green and red, with a dot at each end, dotted gridlines labelled on the right, dates below, and a legend with both values that follows the crosshair (`price-chart.tsx`). The headline chance and the 1D/1W/1M/All pills stay. Not built from the reference: the floating "+ 10" trade amounts, which would need a new public feed of individual trade sizes.
-
