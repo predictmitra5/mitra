@@ -1,4 +1,4 @@
-# Agent instructions
+
 
 This repository is Mitra, a play-money social prediction app about people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`.
 
@@ -12,6 +12,7 @@ This repository is Mitra, a play-money social prediction app about people's goal
    - **When finished**, update Current state, Session history and any affected design documents to describe what actually exists, then clear In progress.
 
 ## Secrets
+
 
 Real credentials live only in `.env.local`, which Git ignores. `.env.example` lists the variable names and where each value comes from.
 
