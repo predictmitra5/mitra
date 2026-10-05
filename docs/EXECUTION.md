@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-05 - Points-only economy and focused campus entry/feed polish
+
+- Rework the neutral signed-out entry surface around functional minimalism: keep the page generic Mitra, use Inter plus a closely related display face, tighten the grid and copy, and give the OSU/UIUC choices their actual scarlet/orange identity colors without campus-branding the page itself.
+- Replace repeated "play money" / "play points" language with concise current-state points language. Keep one plain disclosure that accounts start with 1,000 points and that points are not currently cash or prizes; do not promise a future prize pool or cash product.
+- Remove the user-facing refill/top-up path and make the current economy a one-time 1,000-point starting balance with no periodic reset. Preserve the old implementation only where needed for historical migrations/tests, but make it unreachable from the product.
+- Change feed navigation to Competitions / Awards, Academics, Anything and a disabled Coming soon label. Competitions / Awards groups club and running goals; Academics groups GPA goals; Anything remains the complete feed.
+- Make FAQ and Privacy use neutral Mitra framing independent of the selected campus.
+- Inspect production account/wallet counts, then perform a one-time, ledger-reconciled reset of every existing wallet to exactly 1,000 points. Report the verified account count without exposing identities.
+- Update the product/design/market/data-model records to mark prior refill and play-money wording as superseded, run unit/type/lint/build checks plus a signed-out browser check, then push and verify the production deployment. Immediately before pushing, set and verify the global Git email as `predictmitra@gmail.com`.
 
 ## Deferred, to come back to
 
