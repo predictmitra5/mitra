@@ -4,14 +4,15 @@ import { useId, useMemo, useRef, useState } from "react";
 import { changeLabel } from "@/modules/discovery/present";
 
 /*
- * A goal's chance of Yes over time, in the Kalshi direction (2026-09-24,
- * docs/DESIGN.md section 9): the chance large above a step line, dashed
+ * A goal's chance over time, in the Kalshi direction (2026-09-24, docs/DESIGN.md
+ * sections 9 and 12): the chance large, then Yes and No as two step lines (green
+ * and red, decided 2026-10-05 from Kalshi's chart) with a dot at each end, dotted
  * gridlines, labels on the right, and 1D, 1W, 1M and All.
  *
- * - A step line. A market's price holds flat between trades, so a sloped line
- *   would draw movement that never happened.
- * - The line is green when the chosen range ended up and red when it ended
- *   down; the ▲ or ▼ in the headline carries the direction in words too.
+ * - Step lines. A market's price holds flat between trades, so a sloped line
+ *   would draw movement that never happened. No is always 100 minus Yes.
+ * - The legend names both lines with their values, and follows the crosshair;
+ *   the ▲ or ▼ in the headline carries the direction in words too.
  * - Everything is placed by percentage inside the plot: the line is an SVG
  *   stretched to the plot with a stroke that does not stretch, and the
  *   gridlines, labels and end dot are ordinary elements. So the chart is right
@@ -151,9 +152,16 @@ export function PriceChart({
     }
   }
 
-  const summary = `${label}: ${pct(first.v)} on ${day.format(first.t)}, ${pct(last.v)} now, `
+  const summary = `${label}: ${pct(first.v)} on ${day.format(first.t)}, ${pct(last.v)} now (No ${pct(10_000 - last.v)}), `
     + `${trend === "flat" ? "unchanged" : `${trend} ${move.text} points`} ${chosen.words}.`;
   const tipLeft = shown ? Math.min(Math.max(xPct(shown.t), 12), 88) : 0;
+  const now = shown ?? last;
+  const legend = (
+    <div className="chart-legend" aria-hidden="true">
+      <span><i className="chart-key-yes" />Yes <strong>{pct(now.v)}</strong></span>
+      <span><i className="chart-key-no" />No <strong>{pct(10_000 - now.v)}</strong></span>
+    </div>
+  );
 
   return (
     <figure className={`chart chart-${variant} chart-${trend}`}>
@@ -177,6 +185,7 @@ export function PriceChart({
           </div>
         </div>
       )}
+      {legend}
       <div
         className="chart-plot"
         tabIndex={0}
@@ -196,19 +205,16 @@ export function PriceChart({
             </div>
           ))}
           <svg className="chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
-            <path className="chart-line" d={stepPath(data)} vectorEffect="non-scaling-stroke" />
+            <path className="chart-line chart-line-no" d={stepPath(data.map((p) => ({ t: p.t, v: 10_000 - p.v })))} vectorEffect="non-scaling-stroke" />
+            <path className="chart-line chart-line-yes" d={stepPath(data)} vectorEffect="non-scaling-stroke" />
           </svg>
-          {shown ? (
-            <>
-              <span className="chart-crosshair" style={{ left: `${xPct(shown.t)}%` }} />
-              <span className="chart-dot" style={{ left: `${xPct(shown.t)}%`, top: `${yPct(shown.v)}%` }} />
-            </>
-          ) : (
-            <span className="chart-dot" style={{ left: `${xPct(last.t)}%`, top: `${yPct(last.v)}%` }} />
-          )}
+          {shown && <span className="chart-crosshair" style={{ left: `${xPct(shown.t)}%` }} />}
+          <span className="chart-dot chart-dot-no" style={{ left: `${xPct(now.t)}%`, top: `${yPct(10_000 - now.v)}%` }} />
+          <span className="chart-dot chart-dot-yes" style={{ left: `${xPct(now.t)}%`, top: `${yPct(now.v)}%` }} />
           {shown && (
             <div className="chart-tip" style={{ left: `${tipLeft}%` }}>
-              <strong>{pct(shown.v)}</strong>
+              <strong className="tip-yes">Yes {pct(shown.v)}</strong>
+              <strong className="tip-no">No {pct(10_000 - shown.v)}</strong>
               <span>{moment.format(shown.t)}</span>
             </div>
           )}
@@ -221,10 +227,10 @@ export function PriceChart({
         <details className="chart-table">
           <summary>Show as a table</summary>
           <table>
-            <thead><tr><th scope="col">When (ET)</th><th scope="col">Chance of Yes</th></tr></thead>
+            <thead><tr><th scope="col">When (ET)</th><th scope="col">Yes</th><th scope="col">No</th></tr></thead>
             <tbody>
               {[...all].reverse().map((point, i) => (
-                <tr key={`${point.t}-${i}`}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td></tr>
+                <tr key={`${point.t}-${i}`}><td>{moment.format(point.t)}</td><td>{pct(point.v)}</td><td>{pct(10_000 - point.v)}</td></tr>
               ))}
             </tbody>
           </table>

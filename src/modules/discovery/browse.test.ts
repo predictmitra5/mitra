@@ -17,7 +17,7 @@ const ids = (list: { id: string }[]) => list.map((c) => c.id);
 
 describe("feed tabs", () => {
   it("are the focused launch groups", () => {
-    expect(FEED_TABS.map((tab) => tab.label)).toEqual(["Competitions / Awards", "Academics", "Anything"]);
+    expect(FEED_TABS.map((tab) => tab.label)).toEqual(["Anything", "Academics", "Competitions / Awards", "Closing soon"]);
     expect(isFeedTab("music")).toBe(false);
     expect(isFeedTab("competitions")).toBe(true);
     expect(isFeedTab(undefined)).toBe(false);
@@ -30,6 +30,10 @@ describe("feed tabs", () => {
   it("groups academic and competitive outcomes", () => {
     expect(ids(browse(cards, "academics", ""))).toEqual(["gpa"]);
     expect(ids(browse(cards, "competitions", ""))).toEqual(["run", "late"]);
+  });
+
+  it("lists only goals still open under Closing soon, soonest deadline first", () => {
+    expect(ids(browse(cards, "closing", ""))).toEqual(["gym", "run", "gpa", "own"]);
   });
 });
 

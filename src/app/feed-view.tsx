@@ -171,7 +171,7 @@ export function FeedView({
               <h2 id="grid-title">{heading}</h2>
               {shown.length === 0 ? (
                 <p className="muted">
-                  {query.trim() ? `No goals match “${query.trim()}”${tab === "anything" ? "" : ` in ${tabLabel(tab)}`}.` : `No ${tabLabel(tab)} goals are open right now.`}
+                  {query.trim() ? `No goals match “${query.trim()}”${tab === "anything" ? "" : ` in ${tabLabel(tab)}`}.` : tab === "closing" ? "No goals are open for trading right now." : `No ${tabLabel(tab)} goals are open right now.`}
                 </p>
               ) : (
                 <div className="grid">
