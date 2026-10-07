@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+Security remediation for the 2026-10-07 Standard scan findings, based on recorded product rules: replace per-request feed event inserts with bounded, privacy-preserving market/hour aggregates; reserve and expire direct-upload grants and add an authenticated daily cleanup route for abandoned private objects; and block the outcome-controlling owner from both trade preview and execution (including sells). Add regressions for each boundary, update the migration/schema and operational docs, then run focused tests, typecheck, lint and build. Do not add viewer identity, alter market visibility, delete valid evidence, change points, or deploy/apply production changes in this slice. Owner-only adjudication and no-trade-for-decision-makers are already recorded in DECISIONS.md / SAFETY_AND_INTEGRITY.md. For storage, only expired upload intents with no corresponding evidence/profile reference may be deleted; keep valid completed originals. Feed aggregation is a technical bound, preserving the existing categories and the no-viewer-identity privacy choice.
 
 ## Deferred, to come back to
 
