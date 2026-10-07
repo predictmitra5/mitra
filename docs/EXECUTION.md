@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-10-06 - One consistent UI system: the "not vibe coded" rules (Claude Code)
+
+The owner shared a post's five rules (one font and one accent colour, reuse existing components, real empty states, decide mobile early, one animation used everywhere) and asked "can u make this". Plan, keeping every owner decision (Helvetica, baby blue, green/red, school name colours): (1) only two font weights, 400 and 700, which is also all the Windows look-alike has; every colour from a token, adding an inverse token for the school buttons and a logo token; (2) one button system, \`.btn\` with \`-primary\`, \`-secondary\`, \`-danger\`, \`-text\`, sizes \`-lg\` and \`-block\`, replacing \`primary-button\`, \`secondary-button\`, \`text-button\`, \`danger-button\`, \`btn-quiet\` and \`trade-back\` across the pages; (3) a shared \`EmptyState\` (title, one line saying what happens next, an action) for the feed's empty search or tab, account positions and goals, the positions page and the owner's empty queues; (4) mobile first, checked at 375, 768 and 1440 pixels; (5) one entrance animation, a short fade, on pages, steps and the pop-up, replacing the scale and slide versions; hover and press feedback and the price flash stay. Then write the rules into AGENTS.md and DESIGN.md (new section 13) so every agent reuses them. Not pushed without asking.
 
 ## Deferred, to come back to
 
