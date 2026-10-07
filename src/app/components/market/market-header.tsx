@@ -68,12 +68,12 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
             </Link>
           </>
         ) : neutral ? (
-          <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
+          <Link className="btn btn-secondary entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
             {entryAction === "sign-in" ? "Sign in" : "Create account"}
           </Link>
         ) : (
           <>
-            <Link className="btn btn-quiet" href="/sign-in">Log in</Link>
+            <Link className="btn btn-secondary" href="/sign-in">Log in</Link>
             <Link className="btn btn-primary" href="/sign-up">Sign up</Link>
           </>
         )}

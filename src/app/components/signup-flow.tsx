@@ -55,7 +55,7 @@ function SchoolStep({ onPick }: { onPick: (key: CampusKey) => void }) {
           <span className="school-dot" aria-hidden="true" />{campus.communityName}
         </button>
       ))}
-      <Link className="secondary-button" href="/sign-in" prefetch={false}>Already have an account? Log in</Link>
+      <Link className="btn btn-secondary btn-lg btn-block" href="/sign-in" prefetch={false}>Already have an account? Log in</Link>
     </div>
   );
 }
@@ -85,8 +85,8 @@ function EmailStep({ school, defaultEmail, onSent, onChangeSchool }: {
         <p id="email-hint" className="field-hint">We’ll email you a 6-digit code to prove it’s yours. {campus.emailHint}</p>
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <button className="primary-button" type="submit" disabled={pending}>{pending ? "Sending your code…" : "Continue"}</button>
-      <Link className="secondary-button" href="/sign-in" prefetch={false}>Already have an account? Log in</Link>
+      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>{pending ? "Sending your code…" : "Continue"}</button>
+      <Link className="btn btn-secondary btn-lg btn-block" href="/sign-in" prefetch={false}>Already have an account? Log in</Link>
     </form>
   );
 }
@@ -125,7 +125,7 @@ function CodeStep({ school, email, onVerified, onChangeEmail }: {
             pattern="[0-9]{6}" minLength={6} maxLength={6} placeholder="000000" required autoFocus />
         </div>
         {state.error && <p className="form-error" role="alert">{state.error}</p>}
-        <button className="primary-button" type="submit" disabled={pending}>{pending ? "Checking…" : "Continue"}</button>
+        <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>{pending ? "Checking…" : "Continue"}</button>
       </form>
       <form action={resend} className="step-resend">
         <input type="hidden" name="email" value={email} />
@@ -134,8 +134,8 @@ function CodeStep({ school, email, onVerified, onChangeEmail }: {
           : resent.success ? <p className="field-hint" role="status">A new code is on its way.</p> : null}
         {wait > 0
           ? <p className="field-hint">Didn’t get it? You can ask for a new code in 0:{String(wait).padStart(2, "0")}.</p>
-          : <button className="text-button" type="submit" disabled={resending}>{resending ? "Sending…" : "Send a new code"}</button>}
-        <button className="text-button" type="button" onClick={onChangeEmail}>Wrong email? Change it</button>
+          : <button className="btn btn-text" type="submit" disabled={resending}>{resending ? "Sending…" : "Send a new code"}</button>}
+        <button className="btn btn-text" type="button" onClick={onChangeEmail}>Wrong email? Change it</button>
       </form>
     </div>
   );
@@ -157,8 +157,8 @@ function PasswordStep({ onRestart }: { onRestart: () => void }) {
         <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={12} maxLength={128} required />
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      {state.error && !state.verified && <button className="secondary-button" type="button" onClick={onRestart}>Start again</button>}
-      <button className="primary-button" type="submit" disabled={pending}>{pending ? "Saving…" : "Continue"}</button>
+      {state.error && !state.verified && <button className="btn btn-secondary btn-lg btn-block" type="button" onClick={onRestart}>Start again</button>}
+      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>{pending ? "Saving…" : "Continue"}</button>
     </form>
   );
 }

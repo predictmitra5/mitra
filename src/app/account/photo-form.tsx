@@ -50,10 +50,10 @@ export function PhotoForm({ name, photo, heading = "Profile photo" }: { name: st
           }} />
       </label>
       <p className="field-hint">JPEG, PNG or WebP, up to 8 MB. It is cropped to a square, and the location and camera details inside the file are removed.</p>
-      <button className="primary-button" type="submit" disabled={busy}>{uploading ? "Saving…" : photo ? "Replace photo" : "Save photo"}</button>
+      <button className="btn btn-primary" type="submit" disabled={busy}>{uploading ? "Saving…" : photo ? "Replace photo" : "Save photo"}</button>
     </form>
     {photo && <form action={remove}>
-      <button className="text-button" type="submit" disabled={busy}>{removing ? "Removing…" : "Remove my photo"}</button>
+      <button className="btn btn-text" type="submit" disabled={busy}>{removing ? "Removing…" : "Remove my photo"}</button>
     </form>}
     {state.error && <p className="form-error" role="alert">{state.error}</p>}
     {state.success && <p className="form-success" role="status">{state.success}</p>}

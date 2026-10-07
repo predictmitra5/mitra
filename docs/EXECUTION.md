@@ -24,9 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-06 - One consistent UI system: the "not vibe coded" rules (Claude Code)
-
-The owner shared a post's five rules (one font and one accent colour, reuse existing components, real empty states, decide mobile early, one animation used everywhere) and asked "can u make this". Plan, keeping every owner decision (Helvetica, baby blue, green/red, school name colours): (1) only two font weights, 400 and 700, which is also all the Windows look-alike has; every colour from a token, adding an inverse token for the school buttons and a logo token; (2) one button system, \`.btn\` with \`-primary\`, \`-secondary\`, \`-danger\`, \`-text\`, sizes \`-lg\` and \`-block\`, replacing \`primary-button\`, \`secondary-button\`, \`text-button\`, \`danger-button\`, \`btn-quiet\` and \`trade-back\` across the pages; (3) a shared \`EmptyState\` (title, one line saying what happens next, an action) for the feed's empty search or tab, account positions and goals, the positions page and the owner's empty queues; (4) mobile first, checked at 375, 768 and 1440 pixels; (5) one entrance animation, a short fade, on pages, steps and the pop-up, replacing the scale and slide versions; hover and press feedback and the price flash stay. Then write the rules into AGENTS.md and DESIGN.md (new section 13) so every agent reuses them. Not pushed without asking.
+_None._
 
 ## Deferred, to come back to
 
@@ -198,6 +196,16 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-06 - One consistent UI system (Claude Code)
+
+The owner shared a post's five rules for apps that do not look AI-built and asked "can u make this"; recorded in DECISIONS.md. Pulled Siyansh's eight commits from the evening of 2026-10-05 first (account deletion, a sign-up repair, an owner mailbox exception, points-first copy); their In progress was empty.
+
+Audit: six font weights in use, a few hard-coded colours, two button systems plus one-offs, bare grey empty text in five places, no tablet check, and three different entrance animations. Changed: weights are 400 and 700 only; the remaining colours are tokens (`--inverse`, `--logo`, `--osu`, `--uiuc`); one button system (`.btn` + `-primary`, `-secondary`, `-danger`, `-text`, `-lg`, `-block`) across 25 page files, replacing `primary-button`, `secondary-button`, `text-button`, `danger-button` and `btn-quiet`; `EmptyState` (`components/empty-state.tsx`) on the feed's unavailable, empty, no-results and empty-tab states, account positions and goals, the positions page and the owner's two queues; tablets show two cards per row instead of one; one `fade-in` replaces the pop-up's scale and the sheet's slide. Rules written into AGENTS.md ("UI rules") and docs/DESIGN.md section 13.
+
+Found while checking: the owner pages' headings had lost their size on 2026-10-05, when the old sign-in styles holding that rule were removed; restored.
+
+Verified: 498 tests pass with 17 hosted-only skipped; typecheck, lint and the production build pass. In the fictional preview: the visitor feed at 768 pixels (two columns), a goal page at 768 and 1440, the account at 375 and 768 including the empty goals state, an empty search at 375, the owner's review queue and outcomes at 1440. Not pushed: waiting for the owner.
 
 ### 2026-10-05 - Neutral information pages, signup diagnosis and account deletion (Codex)
 

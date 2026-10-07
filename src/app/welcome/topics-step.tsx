@@ -39,7 +39,7 @@ export function TopicsStep({ initial }: { initial: readonly string[] }) {
         })}
       </fieldset>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <button className="primary-button" type="submit" disabled={pending}>{pending ? "Saving…" : "Continue"}</button>
+      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>{pending ? "Saving…" : "Continue"}</button>
     </form>
   );
 }

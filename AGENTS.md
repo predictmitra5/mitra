@@ -20,6 +20,16 @@ Real credentials live only in `.env.local`, which Git ignores. `.env.example` li
 - The owner pastes values into `.env.local` themselves. Do not ask them to send a key to you, and do not type one for them.
 - If a key is ever exposed, rotate it in the provider's dashboard; editing history is not enough.
 
+## UI rules
+
+Set by the owner on 2026-10-06 so the app stays consistent whoever builds it. Read docs/DESIGN.md, section 13, before building or changing any screen, and reuse what is listed there.
+
+1. **One font, one accent.** Helvetica (`--font-sans`) at two weights only, 400 and 700. Baby blue (`--accent`) is the only accent. Everything else is greys from the tokens. The only other colours are the owner's: green Yes and red No, danger and success for messages, and the school's colour on its name beside the logo. Never write a hex colour outside the token blocks in `globals.css`.
+2. **Reuse before you build.** Buttons are `.btn` plus one variant (`-primary`, `-secondary`, `-danger`, `-text`) and optionally `-lg` or `-block`. Use the existing frames and components (`StepFrame`, `EmptyState`, `.card`, `.field`, `.icon-button`, `MarketHeader`). Do not add a new button style, card style or font size scale.
+3. **Every empty list gets an `EmptyState`**: a short title, one line saying what happens next, and the action that gets there. Never bare grey text.
+4. **Mobile first, fully responsive.** Every screen must work at 375, 768 and 1440 pixels wide; check all three before calling UI work done.
+5. **One animation.** Pages, steps and the pop-up fade in (`fade-in`). Controls use the shared hover and press feedback. Do not add slides, bounces, scales or other entrance effects. Respect reduced motion.
+
 ## Commands
 
 - `npm run dev` starts the local app.

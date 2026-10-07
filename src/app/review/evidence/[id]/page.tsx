@@ -36,7 +36,7 @@ export default async function ReviewEvidencePage({ params }: PageProps<"/review/
       <main className="account-main">
         <div className="account-topline">
           <span className="eyebrow">REVIEW PROOF</span>
-          <Link className="text-button" href="/review/markets">Back to outcomes</Link>
+          <Link className="btn btn-text" href="/review/markets">Back to outcomes</Link>
         </div>
         {children}
       </main>

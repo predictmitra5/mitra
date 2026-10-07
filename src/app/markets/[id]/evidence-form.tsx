@@ -140,7 +140,7 @@ export function EvidenceForm({
         </label>
         <p className="field-hint">This description is published with the proof.</p>
 
-        <button className="secondary-button" disabled={pending}>
+        <button className="btn btn-secondary btn-lg" disabled={pending}>
           {pending ? "Sending…" : "Send proof"}
         </button>
       </form>

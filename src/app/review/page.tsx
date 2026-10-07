@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/app/components/empty-state";
 import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
@@ -32,10 +33,11 @@ export default async function ReviewPage({ searchParams }: PageProps<"/review">)
   const message = notice === "approved" ? "Goal opened for trading." : notice === "rejected" ? "Goal rejected. They can see your reason." : undefined;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER REVIEW</span><Link className="text-button" href="/account">Back to account</Link></div>
-    <div className="owner-links"><Link className="secondary-button" href="/review/markets">Outcomes and objections ↗︎</Link><Link className="secondary-button" href="/review/people">People: photos and bans ↗︎</Link></div>
+    <div className="account-topline"><span className="eyebrow">OWNER REVIEW</span><Link className="btn btn-text" href="/account">Back to account</Link></div>
+    <div className="owner-links"><Link className="btn btn-secondary btn-lg" href="/review/markets">Outcomes and objections ↗︎</Link><Link className="btn btn-secondary btn-lg" href="/review/people">People: photos and bans ↗︎</Link></div>
     <section className="account-welcome"><h1>{drafts.length === 0 ? "Nothing to review." : `${drafts.length} goal${drafts.length === 1 ? "" : "s"} waiting.`}</h1><p>Approve only goals that can’t be won or lost just by deciding to. Set the opening odds to your honest guess.</p></section>
     {message && <p className="form-success" role="status">{message}</p>}
+    {drafts.length === 0 && <EmptyState title="No new goals waiting" action={<Link className="btn btn-secondary" href="/review/markets">Manage outcomes</Link>}>When someone posts a goal it waits here until you approve it or say why not.</EmptyState>}
     {drafts.map(({ market, subject }) => <article key={market.id} className="review-card">
       {/* The person's photo goes public with the goal: see it before approving (2026-09-24). */}
       <div className="review-person"><Avatar name={subject.displayName} photo={photoUrl(subject.handle, subject.photoUpdatedAt)} size={56} /><div className="review-meta"><span className="status-pill status-draft">{market.goalType === "own_words" ? "anything" : market.goalType?.replace("_", " ") ?? "goal"}</span><span>{subject.displayName} · @{subject.handle}</span></div></div>

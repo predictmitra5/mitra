@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/app/components/empty-state";
 import { valueHolding, type HeldGoal, type PositionsPage } from "@/modules/account/positions";
 import { cardTitle, percent, pointsText } from "@/modules/discovery/present";
 import { Avatar, Gain } from "@/app/components/market/goal-card";
@@ -87,11 +88,9 @@ export function PositionsView({ data }: { data: PositionsPage }) {
         )}
       </div>
       {data.total === 0 ? (
-        <section className="account-empty">
-          <h2>No positions yet.</h2>
-          <p className="muted">When you buy Yes or No on a goal, it shows up here with what it is worth today.</p>
-          <Link className="btn btn-primary" href="/" prefetch={false}>Browse goals</Link>
-        </section>
+        <EmptyState title="No positions yet" action={<Link className="btn btn-primary" href="/" prefetch={false}>Browse goals</Link>}>
+          When you buy Yes or No on a goal, it shows up here with what it is worth today.
+        </EmptyState>
       ) : (
         <section aria-labelledby="holdings-title">
           <div className="account-section-head">
@@ -102,9 +101,9 @@ export function PositionsView({ data }: { data: PositionsPage }) {
           <p className="muted account-small">Value is the shares at today&rsquo;s price, not what selling them would return. Soonest deadline first. Sold, paid-out and refunded positions leave this list.</p>
           {data.pages > 1 && (
             <nav className="pager" aria-label="Positions pages">
-              {data.page > 1 ? <Link className="btn btn-quiet" href={`/positions?page=${data.page - 1}`} prefetch={false}>Previous</Link> : <span />}
+              {data.page > 1 ? <Link className="btn btn-secondary" href={`/positions?page=${data.page - 1}`} prefetch={false}>Previous</Link> : <span />}
               <span>Page {data.page} of {data.pages}</span>
-              {data.page < data.pages ? <Link className="btn btn-quiet" href={`/positions?page=${data.page + 1}`} prefetch={false}>Next</Link> : <span />}
+              {data.page < data.pages ? <Link className="btn btn-secondary" href={`/positions?page=${data.page + 1}`} prefetch={false}>Next</Link> : <span />}
             </nav>
           )}
         </section>

@@ -47,7 +47,7 @@ export function ProfileSteps() {
             <p id="handle-hint" className="field-hint">3–24 letters, numbers or underscores.</p>
           </div>
           {state.error && <p className="form-error" role="alert">{state.error}</p>}
-          <button className="primary-button" type="submit">Continue</button>
+          <button className="btn btn-primary btn-lg btn-block" type="submit">Continue</button>
         </form>
       ) : (
         <form action={action} className="step-form" aria-busy={pending}>
@@ -59,7 +59,7 @@ export function ProfileSteps() {
             <input type="checkbox" name="adultConfirmed" required />
             <span><strong>I’m 18 or older</strong><small>We take your word for it, so please be honest.</small></span>
           </label>
-          <button className="primary-button" type="submit" disabled={pending}>{pending ? "Setting up your account…" : "Continue"}</button>
+          <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>{pending ? "Setting up your account…" : "Continue"}</button>
         </form>
       )}
     </StepFrame>
