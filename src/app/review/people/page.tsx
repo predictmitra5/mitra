@@ -64,7 +64,7 @@ export default async function PeoplePage() {
   const banned = people.filter((p) => p.bannedAt).length;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER · PEOPLE</span><Link className="btn btn-text" href="/review">Review goals</Link></div>
+    <div className="account-topline"><span className="eyebrow">OWNER · PEOPLE</span><Link className="text-button" href="/review">Review goals</Link></div>
     <section className="account-welcome">
       <h1>{people.length} {people.length === 1 ? "person" : "people"}.</h1>
       <p>{banned ? `${banned} banned. ` : ""}Banning someone signs them out and keeps them out, cancels their goals that still need proof and refunds everyone. You can lift a ban; cancelled goals stay cancelled.</p>

@@ -197,8 +197,8 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
           {market.status === "settled" ? <p className="muted">Winning shares paid 1 point each; losing shares paid 0. Balances have been updated. This result is final.</p>
             : <p className="muted">Objections close {market.contestEndsAt && dateTime(market.contestEndsAt)}. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
           {market.contestOpen && (trader ? <ObjectionForm marketId={id} version={market.rulingVersion} />
-            : identity ? <Link className="btn btn-secondary" href="/account">Complete your profile to object</Link>
-            : <Link className="btn btn-secondary" href="/sign-in" data-needs-account>Log in to object</Link>)}
+            : identity ? <Link className="btn btn-quiet" href="/account">Complete your profile to object</Link>
+            : <Link className="btn btn-quiet" href="/sign-in" data-needs-account>Log in to object</Link>)}
         </section>}
         {market.status === "cancelled" && <section className="goal-notice"><h2>Cancelled. Held costs refunded.</h2><p className="goal-text">Every participant received the cost of the shares they still held. This is a refund, not a Yes or No payout.</p></section>}
         {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {dateTime(objection.createdAt)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}

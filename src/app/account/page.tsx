@@ -17,7 +17,6 @@ import { MarketFooter, MarketHeader } from "@/app/components/market/market-heade
 import { Avatar, Gain } from "@/app/components/market/goal-card";
 import { PositionRows } from "@/app/positions/positions-view";
 import { PhotoForm } from "./photo-form";
-import { EmptyState } from "@/app/components/empty-state";
 import { DeleteAccountForm } from "./delete-account-form";
 import { photoUrl } from "@/modules/account/photo-url";
 
@@ -107,7 +106,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <section aria-labelledby="positions-title">
           <div className="account-section-head"><h2 id="positions-title">Positions</h2><span className="muted">Value · since you bought</span></div>
           {!holdings || holdings.total === 0
-            ? <EmptyState title="No positions yet" action={<Link className="btn btn-secondary" href="/" prefetch={false}>Browse goals</Link>}>Buy Yes or No on any goal and it shows up here with what it’s worth today.</EmptyState>
+            ? <p className="muted account-none">No positions yet. <Link href="/" prefetch={false}>Browse goals</Link> and buy Yes or No to start.</p>
             : <>
               <PositionRows goals={holdings.goals} />
               {holdings.total > holdings.goals.length && <p className="account-more"><Link href="/positions" prefetch={false}>See all {holdings.total} positions</Link></p>}
@@ -115,9 +114,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         </section>
 
         <section aria-labelledby="goals-title">
-          <div className="account-section-head"><h2 id="goals-title">Your goals</h2>{goals.length > 0 && <Link className="btn btn-primary" href="/goals/new">Post a goal</Link>}</div>
+          <div className="account-section-head"><h2 id="goals-title">Your goals</h2><Link className="btn btn-primary" href="/goals/new">Post a goal</Link></div>
           {goals.length === 0
-            ? <EmptyState title="You haven’t posted a goal" action={<Link className="btn btn-primary" href="/goals/new">Post a goal</Link>}>A race, a grade, an internship: anything about your own life. The owner approves it, then friends trade on it.</EmptyState>
+            ? <p className="muted account-none">No goals yet. Put one out there: a race, a grade, an internship, anything about your own life.</p>
             : <ul className="my-goals">{goals.map((row) => {
               const status = goalStatus(row, now);
               const chance = row.market.status === "open" ? chanceOf(row.market) : null;

@@ -253,7 +253,7 @@ Decided by the owner after reviewing a canvas of the screens (https://claude.ai/
 ### Look
 
 - **Themes.** Black by default, white when the person picks it with the moon/sun button in the top bar. The choice is a cookie (`mitra_theme`), so the server sets `html[data-theme]` and the first paint is right; both icons and labels are in the button and CSS shows the pair for the theme.
-- **Type.** Helvetica throughout (`--font-sans`: Helvetica Neue, then TeX Gyre Heros, then Arial). Apple devices use their own Helvetica Neue and download nothing; Windows and Android download TeX Gyre Heros (regular and bold, about 135 KB each), a freely licensed Helvetica match self-hosted from `public/fonts/tex-gyre-heros` (GUST e-foundry, LPPL 1.3c, unmodified, licence alongside). Plain "Helvetica" is not in the list because Windows maps that name to Arial, which would stop the browser before the look-alike. Tabular numbers everywhere.
+- **Type.** Helvetica throughout (`--font-sans`: Helvetica Neue, then TeX Gyre Heros, then Arial). Apple devices use their own Helvetica Neue and download nothing; Windows and Android download TeX Gyre Heros (regular and bold, about 135 KB each), a freely licensed Helvetica match self-hosted from `public/fonts/tex-gyre-heros` (GUST e-foundry, LPPL 1.3c, unmodified, licence alongside). Plain "Helvetica" is not in the list because Windows maps that name to Arial, which would stop the browser before the look-alike. Two weights only, 400 and 700 (2026-10-06), because the look-alike has no others. Tabular numbers everywhere.
 - **Colour.** Baby blue `#89cff0` for main actions with dark ink `#04212f`; green Yes and red No, brighter on black (`#3fd38a`, `#ff5c63`) and darker on white (`#0e8546`, `#c8323a`) so text on their tints passes contrast. Black: page `#0b0c0e`, cards `#141619`, borders `#262a30`/`#3a3f47`. White: page `#f5f6f8` so white cards stand out, borders `#e2e5e9`/`#c9ced5`.
 - **Controls.** Pill buttons. The selected tab or chart range is a solid pill in the text colour. Yes/No buttons are tinted at rest and fill solid on hover.
 - **Hover and press.** About 160 ms: main buttons brighten with a soft baby blue ring, outline buttons and tabs fill lightly, goal cards lift 2 px with a shadow, list rows highlight, everything presses to 97%. Hover rules apply only where there is a mouse; reduced motion keeps the colour changes and drops the movement.
@@ -275,37 +275,3 @@ One screen per step (`src/app/components/step-frame.tsx`): a four-part progress 
 ### Chart
 
 Yes and No are two step lines, green and red, with a dot at each end, dotted gridlines labelled on the right, dates below, and a legend with both values that follows the crosshair (`price-chart.tsx`). The headline chance and the 1D/1W/1M/All pills stay. Not built from the reference: the floating "+ 10" trade amounts, which would need a new public feed of individual trade sizes.
-
-## 13. The UI system: what to reuse (2026-10-06)
-
-The owner asked for the app to follow five rules that keep AI-built products from looking AI-built: one font and one accent, reuse existing components, real empty states, decide mobile early, one animation. They are binding for every agent (AGENTS.md, UI rules). This section is the catalogue to reuse; extend it here first if something new is truly needed.
-
-### Type and colour
-
-- **Font:** `--font-sans` (Helvetica Neue, TeX Gyre Heros, Arial). **Weights 400 and 700 only**; the Windows look-alike has no others, so anything else renders differently per device.
-- **Colours are tokens** in `src/app/globals.css` (`:root` for black, `html[data-theme="light"]` for white): `--paper`, `--card`, `--raised`, `--hover`, `--line`, `--line-strong`, `--ink`, `--ink-soft`, `--muted`; the accent `--accent` / `--accent-ink` / `--ring`; `--yes`, `--no` and their `-tint` and `-ink`; `--danger`, `--success` and their backgrounds; `--inverse` / `--inverse-ink` (near-white on black, near-black on white); `--logo`; `--school`, `--osu`, `--uiuc`. No hex colour appears outside those blocks.
-
-### Components
-
-| Need | Use | Where |
-| --- | --- | --- |
-| Any button or button-like link | `.btn` + `.btn-primary` (main action, baby blue), `.btn-secondary` (outline), `.btn-danger` (destructive), `.btn-text` (quiet link-style); add `.btn-lg` (52 px) on forms and steps, `.btn-block` for full width | `globals.css`, "Buttons" |
-| Round icon control | `.icon-button` with an `aria-label` | theme switch, close, back |
-| Yes / No | `.price-button` (cards), `.trade-side` (trade panel), `.buy-bar` (phone) | `goal-card.tsx`, `trade-panel.tsx` |
-| A screen in steps | `StepFrame` (progress, back, logo, close) with `.step-form` | `components/step-frame.tsx` |
-| An empty list | `EmptyState` (title, one line, action) | `components/empty-state.tsx` |
-| Text input | `.field` wrapping a `label` and `input`, `.field-hint` below | everywhere |
-| Messages | `.form-error` (role alert), `.form-success` (role status) | everywhere |
-| A goal | `GoalCard`, `ClosingRow`, `Avatar`, `Change`, `Gain` | `components/market/goal-card.tsx` |
-| Chart | `PriceChart` (two lines) | `components/market/price-chart.tsx` |
-| Page chrome | `MarketHeader`, `MarketFooter` | `components/market/market-header.tsx` |
-| Sign-up prompt | `SignupPrompt` (native dialog) | `components/signup-prompt.tsx` |
-
-### Layout and breakpoints
-
-Mobile first and fully responsive: every screen is checked at 375, 768 and 1440 pixels. Shared breakpoints: 599 px (phones: one card per row), 899 px (the phone layout: the trade panel becomes a bottom sheet, the header drops search to its own row), 1099 px and 1279 px (fewer card columns). Reading columns: 560 px for steps, 720 px for account pages, 1440 px for the feed and goal page.
-
-### Motion
-
-One entrance animation, `fade-in` (200 ms opacity), on the feed, goal page, account pages, information pages, each step and the pop-up. Controls share one hover and press language (about 160 ms colour changes, cards lift 2 px, a 97% press). The live price flash and the progress bar's fill are the only other motion, because they show data changing. Reduced motion removes the fade and the movement.
-

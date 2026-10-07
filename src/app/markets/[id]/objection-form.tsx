@@ -28,6 +28,6 @@ export function ObjectionForm({ marketId, version }: { marketId: string; version
     {error && <p className="form-error" role="alert">{error}</p>}
     {success && <p className="form-success" role="status">Your objection was sent to the owner.</p>}
     {retry ? <p className="market-criteria">{retry.reason}</p> : <label className="field">Your objection<textarea name="reason" required minLength={3} maxLength={2000} rows={4} disabled={pending} /></label>}
-    <button className="btn btn-secondary btn-lg" disabled={pending}>{pending ? "Submitting…" : retry ? "Retry same objection" : "Submit objection"}</button>
+    <button className="secondary-button" disabled={pending}>{pending ? "Submitting…" : retry ? "Retry same objection" : "Submit objection"}</button>
   </form>;
 }

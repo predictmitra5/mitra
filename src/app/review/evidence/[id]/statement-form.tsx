@@ -159,10 +159,10 @@ export function StatementForm({
             placeholder="Registrar letterhead, dated 18 December" />
         </label>
 
-        <button type="button" className="btn btn-primary btn-lg btn-block" disabled={pending || !canPublish} onClick={publish}>
+        <button type="button" className="primary-button" disabled={pending || !canPublish} onClick={publish}>
           {pending ? "Working…" : "Publish this statement"}
         </button>
-        <button type="button" className="btn btn-secondary btn-lg btn-block" disabled={pending} onClick={reject}>
+        <button type="button" className="secondary-button" disabled={pending} onClick={reject}>
           Reject this proof
         </button>
         <p className="field-hint">

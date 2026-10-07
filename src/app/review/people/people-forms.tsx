@@ -30,7 +30,7 @@ export function BanForm({ userId, name, liveGoals }: { userId: string; name: str
         </span>
       </label>
       <Result state={state} />
-      <button className="btn btn-danger btn-lg" type="submit" disabled={pending}>{pending ? "Banning…" : "Ban"}</button>
+      <button className="secondary-button danger-button" type="submit" disabled={pending}>{pending ? "Banning…" : "Ban"}</button>
     </form>
   </details>;
 }
@@ -39,7 +39,7 @@ export function UnbanForm({ userId }: { userId: string }) {
   const [state, action, pending] = useActionState(unbanAction, {} as FormState);
   return <form action={action} className="person-inline">
     <input type="hidden" name="userId" value={userId} />
-    <button className="btn btn-secondary btn-lg" type="submit" disabled={pending}>{pending ? "Lifting…" : "Lift ban"}</button>
+    <button className="secondary-button" type="submit" disabled={pending}>{pending ? "Lifting…" : "Lift ban"}</button>
     <Result state={state} />
   </form>;
 }
@@ -51,7 +51,7 @@ export function FinishBanForm({ userId, reason, pending: remaining }: { userId: 
     <input type="hidden" name="userId" value={userId} />
     <input type="hidden" name="reason" value={reason} />
     <input type="hidden" name="confirm" value="yes" />
-    <button className="btn btn-secondary btn-lg" type="submit" disabled={pending}>
+    <button className="secondary-button" type="submit" disabled={pending}>
       {pending ? "Cancelling…" : `Finish cancelling ${remaining} goal${remaining === 1 ? "" : "s"}`}
     </button>
     <Result state={state} />
@@ -62,7 +62,7 @@ export function RemovePhotoForm({ userId }: { userId: string }) {
   const [state, action, pending] = useActionState(removePersonPhotoAction, {} as FormState);
   return <form action={action} className="person-inline">
     <input type="hidden" name="userId" value={userId} />
-    <button className="btn btn-text" type="submit" disabled={pending}>{pending ? "Removing…" : "Remove photo"}</button>
+    <button className="text-button" type="submit" disabled={pending}>{pending ? "Removing…" : "Remove photo"}</button>
     <Result state={state} />
   </form>;
 }

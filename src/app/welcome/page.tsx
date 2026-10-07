@@ -70,7 +70,7 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
           <li><span>3</span><p><strong>Proof settles it</strong><small>When a goal ends, the person sends proof and it’s checked before anyone is paid.</small></p></li>
           <li><span>4</span><p><strong>Fair play</strong><small>No betting on your own goals, and at most 100 points on any one goal.</small></p></li>
         </ol>
-        <Link className="btn btn-primary btn-lg btn-block" href="/" prefetch={false}>Start exploring</Link>
+        <Link className="primary-button" href="/" prefetch={false}>Start exploring</Link>
       </div>
     </StepFrame>
   );

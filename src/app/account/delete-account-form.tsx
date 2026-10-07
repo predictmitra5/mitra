@@ -14,7 +14,7 @@ export function DeleteAccountForm() {
         <input id="delete-confirmation" name="confirmation" autoComplete="off" pattern="DELETE" required />
       </div>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <button className="btn btn-danger btn-lg" disabled={pending} type="submit">{pending ? "Deleting account…" : "Delete account permanently"}</button>
+      <button className="danger-button" disabled={pending} type="submit">{pending ? "Deleting account…" : "Delete account permanently"}</button>
     </form>
   </div>;
 }

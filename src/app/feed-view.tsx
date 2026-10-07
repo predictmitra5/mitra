@@ -8,7 +8,6 @@ import { categoryLabel, percent, volumeLabel } from "@/modules/discovery/present
 import { Avatar, Change, ClosingRow, GoalCard, PriceButtons, type CardData } from "./components/market/goal-card";
 import { PriceChart, type ChartPoint } from "./components/market/price-chart";
 import { Ticker } from "./components/market/ticker";
-import { EmptyState } from "./components/empty-state";
 import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
@@ -136,15 +135,19 @@ export function FeedView({
 
       <main className="feed">
         {unavailable ? (
-          <EmptyState as="h1" title="Goals are temporarily unavailable" action={<Link className="btn btn-secondary" href="/" prefetch={false}>Try again</Link>}>
-            Nothing is lost; the feed couldn’t load just now.
-          </EmptyState>
+          <section className="feed-empty">
+            <h1>Goals are temporarily unavailable.</h1>
+            <p>Please try again shortly.</p>
+          </section>
         ) : cards.length === 0 ? (
-          <EmptyState as="h1" title="No goals are open yet"
-            action={<Link className="btn btn-primary" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>}>
-            Goals appear here once someone posts one about themselves and the owner approves it.
-            {signedIn ? " Yours can be the first." : " Create an account to add yours."}
-          </EmptyState>
+          <section className="feed-empty">
+            <h1>No goals are open yet.</h1>
+            <p>
+              Goals appear here once someone posts one about themselves and the owner approves it.
+              {signedIn ? " Yours can be the first." : " Create an account to add yours."}
+            </p>
+            <Link className="btn btn-primary" href={signedIn ? "/goals/new" : "/sign-up"}>{signedIn ? "Post a goal" : "Create an account"}</Link>
+          </section>
         ) : (
           <>
             <h1 className="sr-only">Bet on literally anything</h1>
@@ -167,11 +170,9 @@ export function FeedView({
             <section className="feed-grid" aria-labelledby="grid-title">
               <h2 id="grid-title">{heading}</h2>
               {shown.length === 0 ? (
-                <EmptyState
-                  title={query.trim() ? `No goals match “${query.trim()}”${tab === "anything" ? "" : ` in ${tabLabel(tab)}`}` : tab === "closing" ? "Nothing is open for trading" : `No ${tabLabel(tab)} goals yet`}
-                  action={<Link className="btn btn-secondary" href="/" prefetch={false}>See all goals</Link>}>
-                  {query.trim() ? "Try a name, a school subject or a single word." : "New goals show up here as soon as the owner approves them."}
-                </EmptyState>
+                <p className="muted">
+                  {query.trim() ? `No goals match “${query.trim()}”${tab === "anything" ? "" : ` in ${tabLabel(tab)}`}.` : tab === "closing" ? "No goals are open for trading right now." : `No ${tabLabel(tab)} goals are open right now.`}
+                </p>
               ) : (
                 <div className="grid">
                   {shown.map((card) => <GoalCard key={card.id} card={card} now={now} flash={flashes.get(card.id)} />)}

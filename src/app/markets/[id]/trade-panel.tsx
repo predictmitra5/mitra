@@ -156,7 +156,7 @@ export function TradePanel({
           <button type="button" className="btn btn-primary trade-cta" disabled={pending} onClick={confirm}>
             {pending ? "Confirming…" : uncertain ? "Retry the same confirmation" : `Confirm ${preview.action === "buy" ? "buy" : "sale"}`}
           </button>
-          {!uncertain && <button type="button" className="btn btn-text trade-back" disabled={pending} onClick={() => { setPreview(null); setError(""); }}>Change trade</button>}
+          {!uncertain && <button type="button" className="trade-back" disabled={pending} onClick={() => { setPreview(null); setError(""); }}>Change trade</button>}
         </section>
       </div>
     );

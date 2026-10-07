@@ -52,14 +52,14 @@ export function OwnerControls({ marketId, version, canClose, canRule, isRevision
         ? "This explanation is public. A fresh 24-hour objection window starts, including when you revise an earlier ruling. Payout becomes final when that window ends."
         : review.action === "cancel" ? "Every participant gets back the cost of the shares they still hold. This ends the market permanently."
         : "Both buying and selling will stop. The goal's proof deadline stays the same."}</p>
-      <button className="btn btn-primary btn-lg btn-block" type="button" disabled={pending} onClick={confirm}>{pending ? "Saving…" : uncertain ? "Retry same update" : "Confirm update"}</button>
-      {!uncertain && <button className="btn btn-text" type="button" disabled={pending} onClick={() => setReview(null)}>Back to edit</button>}
+      <button className="primary-button" type="button" disabled={pending} onClick={confirm}>{pending ? "Saving…" : uncertain ? "Retry same update" : "Confirm update"}</button>
+      {!uncertain && <button className="text-button" type="button" disabled={pending} onClick={() => setReview(null)}>Back to edit</button>}
     </section> : <>
       {canClose && <details><summary>Close trading early</summary><form action={prepare} className="auth-form">
         <input type="hidden" name="action" value="close" />
         <label className="checkbox-row"><input type="checkbox" name="publicOutcome" required />The outcome is already public.</label>
         <label className="field">Owner note<textarea name="reason" required minLength={3} maxLength={2000} rows={3} /></label>
-        <button className="btn btn-secondary btn-lg btn-block">Review early close</button>
+        <button className="secondary-button">Review early close</button>
       </form></details>}
       {canRule ? <details><summary>{isRevision ? "Revise the ruling" : "Record the ruling"}</summary><form action={prepare} className="auth-form">
         <input type="hidden" name="action" value="rule" />
@@ -69,13 +69,13 @@ export function OwnerControls({ marketId, version, canClose, canRule, isRevision
           <label className="checkbox-row"><input type="radio" name="basis" value="missing_proof" required />No proof arrived by the proof deadline. The outcome must be NO.</label>
         </fieldset>
         <label className="field">Public explanation<textarea name="reason" required minLength={3} maxLength={2000} rows={4} /><span className="field-hint">Explain the outcome without copying private documents or personal details. This text appears on the public goal page.</span></label>
-        <button className="btn btn-secondary btn-lg btn-block">Review ruling</button>
+        <button className="secondary-button">Review ruling</button>
       </form></details> : <p className="field-hint">Ruling opens after the seven-day proof period. Proof the subject sends before then is listed on this card for you to review.</p>}
       <details><summary>Cancel this goal</summary><form action={prepare} className="auth-form">
         <input type="hidden" name="action" value="cancel" />
         <p className="field-hint">For a broken market: refund held costs and end trading. Missing proof is a NO ruling, not a reason to refund.</p>
         <label className="field">Owner cancellation note<textarea name="reason" required minLength={3} maxLength={2000} rows={3} /></label>
-        <button className="btn btn-secondary btn-lg btn-block">Review cancellation</button>
+        <button className="secondary-button">Review cancellation</button>
       </form></details>
     </>}
   </div>;

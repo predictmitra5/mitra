@@ -25,6 +25,7 @@
   /* Plain "Helvetica" is left out on purpose: Windows maps that name to Arial, which
      would stop the browser before it reached TeX Gyre Heros. */
   --font-sans: "Helvetica Neue", "TeX Gyre Heros", Arial, system-ui, sans-serif;
+  /* Two weights only, 400 and 700 (2026-10-06): the look-alike has no others, so every device matches. */
   --paper: #0b0c0e;
   --card: #141619;
   --raised: #1d2024;
@@ -55,12 +56,6 @@
   --scrim: rgb(4 5 6 / 0.72);
   --bar: rgb(11 12 14 / 0.94);
   --school: #ff6b86;
-  --osu: #ba0c2f;
-  --uiuc: #ff5f05;
-  --logo: var(--accent);
-  /* An inverse surface: near-white on black, near-black on white. */
-  --inverse: var(--ink);
-  --inverse-ink: var(--paper);
   --radius: 12px;
   --ease: cubic-bezier(0.2, 0, 0, 1);
   color-scheme: dark;
@@ -95,7 +90,6 @@ html[data-theme="light"] {
   --lift: 0 10px 28px rgb(16 24 40 / 0.1);
   --scrim: rgb(14 15 17 / 0.45);
   --bar: rgb(245 246 248 / 0.92);
-  --logo: #3aa3d9;
   color-scheme: light;
 }
 
@@ -119,25 +113,17 @@ body {
 html[data-campus="osu"] .campus-osu,
 html[data-campus="uiuc"] .campus-uiuc { display: var(--campus-display, inline); }
 
-/* The one entrance animation (2026-10-06): a short fade when a page, a step or
-   the pop-up appears. Nothing slides, bounces or scales in. */
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.feed, .goal, .account, .account-main, .info-page, .step-main, .signup-prompt[open] { animation: fade-in 200ms var(--ease) both; }
-@media (prefers-reduced-motion: reduce) {
-  .feed, .goal, .account, .account-main, .info-page, .step-main, .signup-prompt[open] { animation: none; }
-}
-
 /* Hover and press feedback, shared by every control (decided 2026-10-05): quick
    colour changes on mouse-over, a slight press, nothing for touch-only hover,
    and no movement for people who ask their device to reduce motion. */
 a, button { -webkit-tap-highlight-color: transparent; }
-.btn, .price-button, .trade-side, .tabs a, .chart-ranges button,
+.btn, .primary-button, .secondary-button, .price-button, .trade-side, .tabs a, .chart-ranges button,
 .quick button, .card, .closing-row, .holding, .icon-button, .school-button, .topic, .step-input,
 .featured, .my-goal, .trade-modes button, .type-option span, .idea {
   transition: background-color 160ms var(--ease), border-color 160ms var(--ease), color 160ms var(--ease),
     box-shadow 200ms var(--ease), transform 160ms var(--ease), filter 160ms var(--ease);
 }
-.btn:active:not(:disabled),
+.btn:active:not(:disabled), .primary-button:active:not(:disabled), .secondary-button:active:not(:disabled),
 .price-button:active, .trade-side:active, .tabs a:active, .chart-ranges button:active, .quick button:active:not(:disabled),
 .icon-button:active, .school-button:active, .topic:active { transform: scale(0.97); }
 
@@ -160,7 +146,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .step-nav-side { display: flex; align-items: center; }
 .step-nav-end { justify-content: flex-end; }
 .step-icon { width: 44px; height: 44px; border-color: transparent; color: var(--ink); }
-.step-logo { display: flex; color: var(--logo); }
+.step-logo { display: flex; color: var(--accent); }
+html[data-theme="light"] .step-logo { color: #3aa3d9; }
 .step-logo-mark { height: 34px; width: auto; }
 .step-main { flex: 1; display: flex; flex-direction: column; gap: 16px; width: min(560px, calc(100% - 40px)); margin: 0 auto; padding: 56px 0 40px; }
 .step-form { display: flex; flex-direction: column; gap: 16px; }
@@ -168,8 +155,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .step-sub { margin: -4px 0 4px; color: var(--muted); font-size: 16px; line-height: 1.5; }
 .step-sub strong { color: var(--ink); font-weight: 700; }
 .step-form .field input { height: 58px; padding: 0 16px; border-radius: 12px; font-size: 17px; background: var(--card); }
+.step-form .primary-button, .step-form .secondary-button { width: 100%; min-height: 56px; font-size: 16px; }
 .step-resend { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 4px; }
-.step-resend .btn-text { padding: 10px; }
+.step-resend .text-button { padding: 10px; }
 .code-input { letter-spacing: 0.5em; text-align: center; font-size: 26px !important; font-weight: 700 !important; }
 .school-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px 0 14px; border-radius: 999px; background: var(--raised); font-size: 14px; font-weight: 700; }
 .school-chip button { min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -237,23 +225,24 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .form-switch a { font-weight: 700; }
 .rule-note { padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--raised); color: var(--ink-soft); font-size: 0.88rem; line-height: 1.45; }
 
-/* Buttons: one system (2026-10-06, docs/DESIGN.md section 13). Always .btn plus
-   one variant, optionally a size. Do not add other button styles. */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; }
+/* Brand actions use the active campus accent. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; font: inherit; font-size: 14.5px; font-weight: 700; white-space: nowrap; cursor: pointer; text-decoration: none; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
-.btn-secondary { border-color: var(--line-strong); }
-.btn-danger { border-color: color-mix(in srgb, var(--danger) 65%, var(--line)); background: var(--danger-bg); color: var(--danger); }
-.btn-text { height: auto; padding: 8px 4px; border: 0; border-radius: 6px; color: var(--ink-soft); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
-.btn-lg { height: 52px; padding: 0 24px; font-size: 16px; }
-.btn-block { width: 100%; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; box-shadow: none; }
-
-/* Empty states (2026-10-06): never bare grey text. A short title, one line on what
-   happens next, and the action that gets there. See EmptyState. */
-.empty-state { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 24px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--card); }
-.empty-state h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-.empty-state p { margin: 0; max-width: 56ch; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
-.empty-state .btn { margin-top: 6px; }
+.btn-quiet { border-color: var(--line-strong); background: transparent; color: var(--ink); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+.primary-button, .secondary-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 48px; padding: 0.6rem 1.2rem; border: 1px solid var(--line-strong); border-radius: 999px;
+  font: inherit; font-size: 0.98rem; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.primary-button { width: 100%; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.primary-button span { color: var(--accent-ink); }
+.secondary-button { background: transparent; color: var(--ink); }
+.primary-button:disabled, .secondary-button:disabled { opacity: 0.55; cursor: progress; }
+.text-button {
+  background: none; border: none; padding: 0.25rem 0; font: inherit; font-size: 0.85rem; font-weight: 700;
+  color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
 
 /* Cards on the pages the redesign did not reshape: new goal and the owner's pages */
 .account-main { flex: 1; display: grid; gap: 1rem; align-content: start; width: 100%; max-width: 720px; margin: 0 auto; padding: 1.5rem clamp(1rem, 4vw, 2rem) 3rem; }
@@ -301,6 +290,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 @media (min-width: 720px) {
   .review-actions { grid-template-columns: 1fr 1fr; align-items: start; }
 }
+.review-form .secondary-button { width: 100%; }
 .market-rules { display: grid; gap: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 2rem); overflow-wrap: anywhere; }
 .market-rules h2 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
 .market-criteria { white-space: pre-wrap; line-height: 1.6; }
@@ -336,6 +326,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .redact-stage { display: grid; gap: 0.75rem; min-width: 0; }
 .redact-panel { display: grid; gap: 1rem; align-content: start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: clamp(1.25rem, 3vw, 1.75rem); }
 .redact-panel h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+.redact-panel .primary-button, .redact-panel .secondary-button { width: 100%; }
 @media (min-width: 900px) {
   .redact-layout { grid-template-columns: minmax(0, 1fr) 340px; }
   .redact-panel { position: sticky; top: 5.5rem; }
@@ -365,6 +356,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .person-action summary { cursor: pointer; font-weight: 700; font-size: 0.88rem; color: var(--danger); padding: 0.2rem 0; }
 .person-action[open] summary { margin-bottom: 0.6rem; }
 .person-inline { display: grid; gap: 0.4rem; justify-items: start; }
+.danger-button { border-color: var(--danger); color: var(--danger); width: auto; }
+.danger-button:hover:not(:disabled) { border-color: var(--danger); background: var(--danger-bg); }
 
 /* Photos: a 512px square WebP from /photos. */
 .photo-card { gap: 1rem; }
@@ -373,7 +366,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .photo-copy { display: grid; gap: 0.3rem; }
 .photo-copy p { color: var(--ink-soft); font-size: 0.9rem; line-height: 1.45; }
 .photo-upload { display: grid; gap: 0.6rem; }
-.photo-upload .btn { justify-self: start; }
+.photo-upload .primary-button { width: auto; justify-self: start; }
 
 /* ========================================================================
    The Kalshi direction, 2026-09-24 (docs/DESIGN.md section 9): the shell,
@@ -399,7 +392,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 28px; height: 66px; padding: 0 48px; background: var(--bar); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
 .brand { display: flex; align-items: center; gap: 14px; flex: none; color: var(--ink); }
 .brand-lockup { display: inline-flex; align-items: center; gap: 12px; }
-.brand-logo { display: block; height: 32px; width: auto; color: var(--logo); }
+.brand-logo { display: block; height: 32px; width: auto; color: var(--accent); }
+html[data-theme="light"] .brand-logo { color: #3aa3d9; }
 .brand-school { --campus-display: inline-flex; align-items: center; gap: 12px; color: var(--school); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
 .brand-school::before { content: ""; width: 1px; height: 20px; background: var(--line-strong); }
 .brand-motto { font-size: 13px; color: var(--muted); }
@@ -464,7 +458,7 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 .feed-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
 .feed-empty h1 { font-size: 20px; font-weight: 700; margin: 0; }
 .feed-empty p { color: var(--ink-soft); max-width: 52ch; margin: 0; line-height: 1.5; }
-.feed-grid > h2 { margin: 0 0 16px; font-family: var(--font-sans); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.feed-grid h2 { margin: 0 0 16px; font-family: var(--font-sans); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 .feed-grid > .muted { margin: 0; font-size: 14px; }
 .kicker { font-size: 13px; color: var(--muted); }
 
@@ -652,7 +646,7 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 .trade-notice { margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--raised); color: var(--ink-soft); font-size: 14px; line-height: 1.45; }
 .trade-review { display: flex; flex-direction: column; gap: 14px; }
 .trade-review h3 { margin: 0; font-size: 15px; font-weight: 700; }
-.trade-review .trade-back { align-self: center; }
+.trade-back { align-self: center; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Account and positions */
 .account { flex: 1; display: flex; flex-direction: column; gap: 32px; width: 100%; max-width: 720px; margin: 0 auto; padding: 28px 24px 48px; box-sizing: border-box; }
@@ -714,6 +708,9 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 .delete-account-panel { display: grid; gap: 16px; padding: 0 0 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
 .delete-account-panel > p { max-width: 68ch; }
 .delete-account-form { display: grid; gap: 12px; max-width: 440px; }
+.danger-button { min-height: 44px; padding: 0.65rem 1rem; border: 1px solid color-mix(in srgb, var(--danger) 65%, var(--line)); border-radius: 8px; background: var(--danger-bg); color: var(--danger); font: inherit; font-weight: 700; cursor: pointer; }
+.danger-button:hover { border-color: var(--danger); }
+.danger-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .account-links form { margin: 0; }
 .account-signout { width: 100%; min-height: 52px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .account-signout:hover { color: var(--ink); }
@@ -761,30 +758,34 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
 /* The sign-up pop-up for visitors (2026-10-05): centred on a desktop, a bottom sheet on a phone. */
 .signup-prompt { width: min(520px, calc(100% - 32px)); max-width: none; max-height: none; margin: auto; padding: 0; border: 0; background: transparent; color: var(--ink); overflow: visible; }
 .signup-prompt::backdrop { background: var(--scrim); }
+.signup-prompt[open] { animation: prompt-in 220ms var(--ease); }
+@keyframes prompt-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 .signup-prompt-panel { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 40px 40px 30px; border: 1px solid var(--line-strong); border-radius: 20px; background: var(--card); box-shadow: 0 30px 80px rgb(0 0 0 / 0.45); }
 .signup-prompt-close { position: absolute; top: 16px; right: 16px; border-color: transparent; }
 .signup-prompt h2 { margin: 0; padding-right: 40px; font-size: 36px; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; }
 .signup-prompt-sub { margin: 0 0 12px; color: var(--muted); font-size: 16px; line-height: 1.5; }
-.school-button { display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; border-radius: 12px; background: var(--inverse); color: var(--inverse-ink); font-size: 17px; font-weight: 700; text-decoration: none; }
+.school-button { display: flex; align-items: center; justify-content: center; gap: 12px; height: 56px; border-radius: 12px; background: #e9eaec; color: #0b0c0e; font-size: 17px; font-weight: 700; text-decoration: none; }
+html[data-theme="light"] .school-button { background: var(--raised); border: 1px solid var(--line-strong); }
 .school-dot { width: 12px; height: 12px; border-radius: 999px; }
-.school-osu .school-dot { background: var(--osu); }
-.school-uiuc .school-dot { background: var(--uiuc); }
+.school-osu .school-dot { background: #ba0c2f; }
+.school-uiuc .school-dot { background: #ff5f05; }
 .signup-prompt-login { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: 15px; }
 .signup-prompt-login a { margin-left: 4px; color: var(--ink); font-weight: 700; }
 .signup-prompt-fine { margin: 0; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .signup-prompt-fine a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 599px) {
   .signup-prompt { width: 100%; margin: auto 0 0; }
+  .signup-prompt[open] { animation-name: sheet-in; }
+  @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
   .signup-prompt-panel { padding: 28px 20px calc(24px + env(safe-area-inset-bottom)); border-width: 1px 0 0; border-radius: 22px 22px 0 0; }
   .signup-prompt h2 { font-size: 30px; }
 }
+@media (prefers-reduced-motion: reduce) { .signup-prompt[open] { animation: none; } }
 
 /* Mouse-over (2026-10-05). Touch screens get the press feedback only. */
 @media (hover: hover) and (pointer: fine) {
-  .btn-primary:hover:not(:disabled) { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
-  .btn-danger:hover:not(:disabled) { border-color: var(--danger); }
-  .btn-text:hover:not(:disabled) { color: var(--ink); }
-  .btn-secondary:hover:not(:disabled), .quick button:hover:not(:disabled), .icon-button:hover { background: var(--raised); border-color: var(--ink-soft); color: var(--ink); }
+  .btn-primary:hover, .primary-button:hover:not(:disabled) { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
+  .btn-quiet:hover, .secondary-button:hover:not(:disabled), .quick button:hover:not(:disabled), .icon-button:hover { background: var(--raised); border-color: var(--ink-soft); color: var(--ink); }
   .price-yes:hover, .trade-side-yes:hover { background: var(--yes); color: var(--yes-ink); }
   .price-no:hover, .trade-side-no:hover { background: var(--no); color: var(--no-ink); }
   .tabs a:hover:not([aria-current="page"]), .chart-ranges button:hover:not([aria-pressed="true"]) { background: var(--hover); color: var(--ink); }
@@ -796,7 +797,9 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
   .topbar-nav a:hover { color: var(--ink); }
   .topic:hover:not(.on), .check-card:hover { border-color: var(--ink-soft); background: var(--hover); }
   .photo-drop:hover .photo-drop-empty { border-color: var(--ink-soft); color: var(--ink); }
-  .school-button:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--inverse) 18%, transparent); }
+  .text-button:hover { color: var(--ink); }
+  .school-button:hover { background: #ffffff; box-shadow: 0 0 0 4px rgb(255 255 255 / 0.12); }
+  html[data-theme="light"] .school-button:hover { background: var(--hover); border-color: var(--ink-soft); box-shadow: none; }
   .signup-prompt-login a:hover, .signup-prompt-fine a:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -834,7 +837,7 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
   .topbar-with-search .topbar-search { display: block; order: 10; flex: 1 1 100%; margin: 0 -16px; padding: 12px 16px; border-top: 1px solid var(--line); }
   .ticker ul, .tabs ul { gap: 20px; padding: 0 16px; }
   .feed { gap: 24px; padding: 16px 16px 32px; }
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .closing { display: none; }
   .featured { gap: 14px; padding: 16px; }
   .featured-top { align-items: flex-start; gap: 12px; }
@@ -889,9 +892,4 @@ html[data-theme="light"] .when-dark, html:not([data-theme="light"]) .when-light 
   .info-grid { grid-template-columns: minmax(0, 1fr); }
   .info-card { min-height: 0; padding: 20px; }
   .info-callout, .info-callout-wide { align-items: flex-start; flex-direction: column; }
-}
-
-/* Phones: one card per row. Tablets keep two (decided 2026-10-06: mobile first, checked at 375, 768 and 1440). */
-@media (max-width: 599px) {
-  .grid { grid-template-columns: minmax(0, 1fr); }
 }

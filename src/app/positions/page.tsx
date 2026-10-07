@@ -31,7 +31,7 @@ export default async function Positions({ searchParams }: PageProps<"/positions"
     {data ? <PositionsView data={data} /> : <section className="account-empty">
       <h1>{failure?.code === "PROFILE_REQUIRED" ? "Finish setting up your account." : "Positions unavailable."}</h1>
       <p role="alert">{failure?.message}</p>
-      <Link className="btn btn-secondary" href={failure?.code === "PROFILE_REQUIRED" ? "/account" : "/positions"}>{failure?.code === "PROFILE_REQUIRED" ? "Open your account" : "Reload positions"}</Link>
+      <Link className="btn btn-quiet" href={failure?.code === "PROFILE_REQUIRED" ? "/account" : "/positions"}>{failure?.code === "PROFILE_REQUIRED" ? "Open your account" : "Reload positions"}</Link>
     </section>}
   </main><MarketFooter /></div>;
 }

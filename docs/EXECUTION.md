@@ -24,9 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-06 - Undo the UI system, keep only the font change (Claude Code)
-
-The owner, after seeing it: "go back to the old app. i just sent that to mak ti not liek vibecoded. i liekd the how the makets and evyerhitgn looked. just he fonts and shit bro. chang eevyerhting back but hte fonts and shiet". Plan: revert commit 610fe01 (buttons, empty states, tablet grid, fade-in, colour tokens, the AGENTS.md and DESIGN.md rules), then re-apply only the font part (weights 400 and 700, which on Windows already rendered that way) and the owner-page heading sizes that were lost on 2026-10-05; record the reversal in DECISIONS.md; push, since the owner asked for the app back.
+_None._
 
 ## Deferred, to come back to
 
@@ -198,6 +196,10 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-06 - UI system undone, fonts kept (Claude Code)
+
+The owner did not want the consistency pass beyond the fonts ("chang eevyerhting back but hte fonts and shiet"); recorded in DECISIONS.md. Reverted 610fe01 and kept only the font change: weights 400 and 700 (Windows already rendered that way, since the look-alike has no other weights) and a two-weight rule in AGENTS.md. Also kept the fix for the owner pages' heading sizes, which had been lost on 2026-10-05, because it restores the old look. Buttons, empty states, the tablet grid, the animations and the colours are back to the 2026-10-05 version.
 
 ### 2026-10-06 - One consistent UI system (Claude Code)
 

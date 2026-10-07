@@ -45,10 +45,10 @@ export function AuthForm({ mode }: { mode: FormMode }) {
       )}
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       {state.success && <p className="form-success" role="status">{state.success}</p>}
-      <button className="btn btn-primary btn-lg btn-block" disabled={pending} type="submit">{pending ? busy[mode] : labels[mode]}</button>
+      <button className="primary-button" disabled={pending} type="submit">{pending ? busy[mode] : labels[mode]}</button>
       {mode === "sign-in"
-        ? <Link className="btn btn-secondary btn-lg btn-block" href="/sign-up" prefetch={false}>No account? Create one</Link>
-        : <Link className="btn btn-secondary btn-lg btn-block" href="/sign-in" prefetch={false}>Back to log in</Link>}
+        ? <Link className="secondary-button" href="/sign-up" prefetch={false}>No account? Create one</Link>
+        : <Link className="secondary-button" href="/sign-in" prefetch={false}>Back to log in</Link>}
     </form>
   );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { EmptyState } from "@/app/components/empty-state";
 import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
@@ -48,9 +47,9 @@ export default async function ManageMarketsPage() {
     proof: await loadProof(identity.id, row.market.id),
   })));
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="btn btn-text" href="/review">Review new goals</Link></div>
+    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review new goals</Link></div>
     <section className="account-welcome"><h1>Follow every goal through.</h1><p>Close trading, review proof, and explain each outcome. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
-    {!items.length && <EmptyState title="No goals to manage" action={<Link className="btn btn-secondary" href="/review">Review new goals</Link>}>Approved goals show up here so you can close trading, review proof and record outcomes.</EmptyState>}
+    {!items.length && <section className="account-card"><h2>No active goals to manage.</h2><Link href="/account">Your account</Link></section>}
     {items.map(({ market, displayName, handle, objections, proof }) => <article className="review-card" key={market.id}>
       <div className="review-meta"><span className={`status-pill status-${market.status}`}>{market.status}</span><span>{displayName} · @{handle}</span></div>
       <h2><Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link></h2><p className="market-criteria">{market.resolutionCriteria}</p>
@@ -67,7 +66,7 @@ export default async function ManageMarketsPage() {
             : item.viewUrl
               ? <a href={item.viewUrl} target="_blank" rel="noopener noreferrer">Open the original image (link expires in 5 minutes)</a>
               : <span className="muted">That image could not be opened. Reload the page for a fresh link.</span>}
-          {item.status === "submitted" && <Link className="btn btn-text" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗︎</Link>}
+          {item.status === "submitted" && <Link className="text-button" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗︎</Link>}
         </article>)}
       </section>}
       <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}

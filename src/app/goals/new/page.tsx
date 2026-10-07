@@ -26,7 +26,7 @@ export default async function NewGoalPage() {
   const minDate = new Intl.DateTimeFormat("en-CA", { timeZone: DEADLINE_TIME_ZONE }).format(new Date());
 
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main">
-    <div className="account-topline"><span className="eyebrow">NEW GOAL</span><Link className="btn btn-text" href="/account">Back to account</Link></div>
+    <div className="account-topline"><span className="eyebrow">NEW GOAL</span><Link className="text-button" href="/account">Back to account</Link></div>
     <section className="account-card profile-card">
       <span className="eyebrow motto-eyebrow">BET ON LITERALLY ANYTHING</span>
       <h1>What are you going for?</h1>

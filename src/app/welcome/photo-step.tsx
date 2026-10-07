@@ -41,8 +41,8 @@ export function PhotoStep({ name, photo }: { name: string; photo: string | null 
       </label>
       <p className="field-hint photo-drop-hint">JPEG, PNG or WebP, up to 8 MB. A real photo of you: images labelled as AI-generated are turned away.</p>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={uploading || !preview}>{uploading ? "Saving…" : "Upload photo"}</button>
-      <Link className="btn btn-text step-skip" href="/welcome?step=topics" prefetch={false}>{photo ? "Keep this photo" : "Skip for now"}</Link>
+      <button className="primary-button" type="submit" disabled={uploading || !preview}>{uploading ? "Saving…" : "Upload photo"}</button>
+      <Link className="text-button step-skip" href="/welcome?step=topics" prefetch={false}>{photo ? "Keep this photo" : "Skip for now"}</Link>
     </form>
   );
 }
