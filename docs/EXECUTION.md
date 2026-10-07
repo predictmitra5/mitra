@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-06 - Undo the UI system, keep only the font change (Claude Code)
+
+The owner, after seeing it: "go back to the old app. i just sent that to mak ti not liek vibecoded. i liekd the how the makets and evyerhitgn looked. just he fonts and shit bro. chang eevyerhting back but hte fonts and shiet". Plan: revert commit 610fe01 (buttons, empty states, tablet grid, fade-in, colour tokens, the AGENTS.md and DESIGN.md rules), then re-apply only the font part (weights 400 and 700, which on Windows already rendered that way) and the owner-page heading sizes that were lost on 2026-10-05; record the reversal in DECISIONS.md; push, since the owner asked for the app back.
 
 ## Deferred, to come back to
 
