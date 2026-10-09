@@ -1,6 +1,6 @@
 # Roadmap
 
-> **2026-10-08:** the product pivoted to campus event markets (DECISIONS.md). Built: venues, events, sources, suggestions, owner publishing, category/venue/status/closing filters, venue pages, trade history and three Ohio State samples. Next: the owner's go-ahead for the live steps (`scripts/event-pivot-go-live.mjs`), then real markets with sources that actually report, and retiring the samples.
+> **2026-10-08:** the product pivoted to campus event markets (DECISIONS.md). Built: venues, events, sources, suggestions, owner publishing, category/venue/status/closing filters, venue pages, trade history and three Ohio State samples. Live the same day. Next: real markets with sources that actually report, and retiring the samples.
 
 Status: proposed implementation sequence, conditional on user decisions. No milestones, dates or final P0 scope approved.
 

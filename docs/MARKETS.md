@@ -160,4 +160,4 @@ Decided by the owner's pivot brief and answers (DECISIONS.md, 2026-10-08). Goal 
 - **Sources:** each says whether it is connected or a placeholder. Every source today is a placeholder: no venue shares data with Mitra yet.
 - **Samples:** three hypothetical Ohio State markets (Midway on High drinks, Buckeye Donuts donuts, a Gateway Film Center screening), labelled Sample everywhere, with demonstration price history before they open. They are live and tradeable with real points and are voided with refunds when real markets replace them (the owner's answers of 2026-10-08). Fixtures: `src/modules/events/samples.ts`.
 - **Campuses:** venues and markets carry a campus; the feed shows the viewer's campus, and visitors see Ohio State.
-- **The goal market that was live** is voided with refunds when the live steps run (`scripts/event-pivot-go-live.mjs`).
+- **The goal market that was live** (Jane Street) was voided on 2026-10-08 with both holders refunded at held cost, and the three samples were published, by `scripts/event-pivot-go-live.mjs`, recorded under both owner accounts.

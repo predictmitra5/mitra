@@ -2,7 +2,7 @@
 
 > **2026-10-08, migration 0013:** four new tables (`venues`, `events`, `resolution_sources`, `market_proposals`) and new `markets` columns (campus, category, venue, event, source, window start and end, time zone, Yes and No conditions, `is_sample`); `markets.subject_user_id` is nullable, and a check requires each market to be a legacy goal or a fully specified event market. See Event markets below.
 
-Status: sixteen tables and fourteen migrations in the repository. On the live project 0000 to 0012 are applied and 0013 (event markets) waits for the owner's go-ahead; see Event markets at the end. The candidate inventory that follows is kept for entities not yet modelled.
+Status: sixteen tables and fourteen migrations in the repository. All fourteen are applied and recorded on the live project since 2026-10-08; see Event markets at the end. The candidate inventory that follows is kept for entities not yet modelled.
 
 Source: PDF sections 5.2, 7.3, 16, 20-22, pages 5, 7, 11-14.
 
@@ -127,4 +127,4 @@ Status words: the engine keeps `open`, `closed`, `ruled`, `settled` and `cancell
 
 Publishing writes the venue (if new), the event, the source (if new), the market at the owner's opening price, its first price point and an `approve` row in `admin_actions` in one transaction; publishing a suggestion marks it approved in the same transaction. Turning a suggestion down writes a `reject` row with no market. Sample markets may carry demonstration price points dated before they opened.
 
-Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 and is not recorded in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` records it before applying 0013.
+Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 without a record in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` recorded it and applied 0013 on 2026-10-08, so a plain `drizzle-kit migrate` works again.
