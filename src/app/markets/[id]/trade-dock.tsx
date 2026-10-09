@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Side } from "@/modules/market/lmsr";
 import { percent } from "@/modules/discovery/present";
-import { Avatar } from "@/app/components/market/goal-card";
+import { Avatar } from "@/app/components/market/market-card";
 import { useLiveQuotes } from "@/app/components/market/live-quotes";
 import { TradePanel, type TradeAccess } from "./trade-panel";
 
@@ -13,7 +13,7 @@ import { TradePanel, type TradeAccess } from "./trade-panel";
  * Buy No with their prices, and opens as a bottom sheet. It is one panel either
  * way, moved by the stylesheet, so there is only ever one form on the page.
  *
- * Opening the goal from a feed card's Yes or No (?side=) chooses that side and,
+ * Opening a market from a feed card's Yes or No (?side=) chooses that side and,
  * on a phone, opens the sheet.
  */
 
@@ -91,7 +91,7 @@ export function TradeDock({
   const yes = percent(price);
   return (
     <>
-      <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this goal">
+      <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this market">
         <button type="button" className="dock-backdrop" tabIndex={-1} aria-hidden="true" onClick={() => setOpen(false)} />
         <div className="dock-sheet" ref={sheet} tabIndex={-1}
           role={modal ? "dialog" : undefined} aria-modal={modal ? true : undefined} aria-labelledby={`trade-title-${marketId}`}>

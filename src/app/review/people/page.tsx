@@ -5,7 +5,7 @@ import { currentIdentity } from "@/modules/auth/server";
 import { listPeople, ModerationError, type Person } from "@/modules/account/moderation";
 import { photoUrl } from "@/modules/account/photo-url";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { Avatar } from "@/app/components/market/goal-card";
+import { Avatar } from "@/app/components/market/market-card";
 import { BanForm, FinishBanForm, RemovePhotoForm, UnbanForm } from "./people-forms";
 import { readViewerOrNull } from "@/modules/account/viewer";
 
@@ -33,7 +33,7 @@ function PersonCard({ person }: { person: Person }) {
       {person.bannedAt && <span className="status-pill status-rejected">Banned</span>}
       {person.withdrawn && <span className="status-pill">Withdrawn</span>}
       {!hasPhoto && <span className="status-pill">No photo</span>}
-      <span className="status-pill">{person.activeGoals} live goal{person.activeGoals === 1 ? "" : "s"}</span>
+      <span className="status-pill">{person.pendingSuggestions} suggestion{person.pendingSuggestions === 1 ? "" : "s"} waiting</span>
     </div>
     {person.bannedAt && <p className="ban-note">Banned {day.format(person.bannedAt)}. Reason: {person.banReason}</p>}
     {!person.isOwner && <div className="person-actions">
@@ -42,7 +42,7 @@ function PersonCard({ person }: { person: Person }) {
           <UnbanForm userId={person.id} />
           {person.pendingCancellations > 0 && <FinishBanForm userId={person.id} reason={person.banReason ?? "Banned."} pending={person.pendingCancellations} />}
         </>
-        : <BanForm userId={person.id} name={person.displayName} liveGoals={person.activeGoals} />}
+        : <BanForm userId={person.id} name={person.displayName} waiting={person.pendingSuggestions} />}
       {hasPhoto && <RemovePhotoForm userId={person.id} />}
     </div>}
   </article>;
@@ -64,10 +64,10 @@ export default async function PeoplePage() {
   const banned = people.filter((p) => p.bannedAt).length;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER · PEOPLE</span><Link className="text-button" href="/review">Review goals</Link></div>
+    <div className="account-topline"><span className="eyebrow">OWNER · PEOPLE</span><Link className="text-button" href="/review">Review suggestions</Link></div>
     <section className="account-welcome">
       <h1>{people.length} {people.length === 1 ? "person" : "people"}.</h1>
-      <p>{banned ? `${banned} banned. ` : ""}Banning someone signs them out and keeps them out, cancels their goals that still need proof and refunds everyone. You can lift a ban; cancelled goals stay cancelled.</p>
+      <p>{banned ? `${banned} banned. ` : ""}Banning someone signs them out and keeps them out, and turns down their suggestions that are still waiting. Their positions settle normally. You can lift a ban; what it turned down stays turned down.</p>
     </section>
     <div className="person-list">{people.map((person) => <PersonCard key={person.id} person={person} />)}</div>
   </main><MarketFooter /></div>;

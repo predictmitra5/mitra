@@ -275,3 +275,17 @@ One screen per step (`src/app/components/step-frame.tsx`): a four-part progress 
 ### Chart
 
 Yes and No are two step lines, green and red, with a dot at each end, dotted gridlines labelled on the right, dates below, and a legend with both values that follows the crosshair (`price-chart.tsx`). The headline chance and the 1D/1W/1M/All pills stay. Not built from the reference: the floating "+ 10" trade amounts, which would need a new public feed of individual trade sizes.
+
+## 13. Campus event markets (2026-10-08)
+
+The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of section 12 stays: tokens, Helvetica at 400 and 700, pills, the chart, the trade panel. What changed is what a market is about, so every place that showed a person now shows a venue.
+
+- **Opening card** on the feed (`src/app/components/campus-hero.tsx`), from the owner's image: "mitra." large in the logo's colour (baby blue on black, `#3aa3d9` on white), "Trade on what happens here.", the campus's name and "Your campus. Your market." as pills, on a faint wash of the accent. The pills stack on a phone, as in the image, and sit in a row on wider screens. It hides while a tab, filter or search narrows the feed. The top bar's motto and the footer say "Trade on what happens here." too.
+- **Tabs and filters:** All, Nightlife, Food, Events, Entertainment, Campus and the disabled Coming soon label, then three pill selects beside the grid's heading: venue, status (Open by default; Closed, Resolved, Void, Any status) and closing date (within a day, this week, this month). All of them live in the address (`?cat=`, `?venue=`, `?status=`, `?closes=`, `?q=`) and change it without a request, like the tabs before them. An empty result says so and offers Suggest a market.
+- **Cards:** the venue's initials in the photo square, category · venue (a link to the venue page) and a Sample tag where it applies, the question, the chance, today's change and points traded, then the closing time and time left; a market no longer open shows where it stands (Trading closed · awaiting result, Resolved: Yes, Void · refunded) instead of the Yes and No buttons.
+- **Market page:** venue and event above the question; a Sample note under it for samples; the chart and trade panel as before; Rules opens with two tinted boxes, Resolves Yes if (green) and Resolves No if (red), then the full rules and the facts (event window, trading cutoff, results due, opened at, if no result arrives: No, if voided: refunded); then Verification source with a Connected or "Placeholder · not connected" badge, how it counts and its link. The proof list is gone.
+- **Venue page** (`/venues/<slug>`): the venue's mark, name, category and area, one line about it, then its open markets and its closed, resolved and void ones.
+- **Sample label:** a small outlined tag in the accent wash wherever a sample appears (cards, the featured market, Closing soon, positions, the venue page), and a fuller note on its own page saying it is hypothetical, that Mitra has no partnership with the venue and that its early price history is demonstration data.
+- **Suggest a market** and the owner's publish form reuse the existing form fields, with selects styled as fields and two-up rows that stack on a phone.
+- **Positions:** each holding shows category · venue above its question; `/positions` adds a Trade history list.
+- The owner's phone top bar drops the points figure when the Review link is present, so it fits at 375 pixels (it overflowed before this change).

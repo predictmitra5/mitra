@@ -1,15 +1,16 @@
-// Local presentation check for the signed-in pages: account, new goal, your
-// predictions, the owner's review queue, outcomes and people, a goal page with
-// the trade ticket, and the feed as a signed-in person would see it. The real page components render against an in-memory
-// PostgreSQL (PGlite) seeded with fictional people through the app's own
-// services. No Supabase, no Auth users, no network, no credentials.
+// Local presentation check for the signed-in pages: the feed, a venue, a market
+// with the trade ticket, suggesting a market, the account and positions, and the
+// owner's review queue, outcomes and people. The real page components render
+// against an in-memory PostgreSQL (PGlite) seeded through the app's own
+// services with the three hypothetical Ohio State samples, fictional venues and
+// fictional people. No Supabase, no Auth users, no network, no credentials.
 //
 // Run after `npm run build` (the stylesheet comes from the build):
 //   node scripts/preview-signed-in.mjs
 // then open http://127.0.0.1:3120. Stop with Ctrl+C or "stop" on stdin.
 // Add --phone to open it from a phone on the same Wi-Fi; the addresses are printed.
 // Forms render but do not submit: this checks how pages look, not what they do.
-// A goal page opened with ?side=yes shows the phone's trade sheet open.
+// A market page opened with ?side=yes shows the phone's trade sheet open.
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { readFile, readdir } from "node:fs/promises";
@@ -36,12 +37,6 @@ const stubs = {
   "@/modules/auth/server": `
     export async function currentIdentity() { return globalThis.__preview.identity; }
     export async function createAuthClient() { throw new Error("No Supabase in the preview."); }`,
-  "@/modules/evidence/storage": `
-    export const ORIGINALS_BUCKET = "evidence-originals"; export const ORIGINAL_VIEW_SECONDS = 300;
-    export class StorageError extends Error {}
-    const offline = async () => { throw new StorageError("No storage in the preview."); };
-    export const putOriginal = offline, readOriginal = offline, discardOrphan = offline, createOriginalUploadUrl = offline;
-    export async function signedOriginalUrl() { return "#fictional-original"; }`,
   "next/navigation": `
     export function redirect(to) { const e = new Error("redirect"); e.previewRedirect = to; throw e; }
     export function notFound() { const e = new Error("not found"); e.previewNotFound = true; throw e; }
@@ -59,7 +54,8 @@ const stubs = {
 
 const entry = `
 export { default as AccountPage } from "@/app/account/page";
-export { default as NewGoalPage } from "@/app/goals/new/page";
+export { default as SuggestPage } from "@/app/suggest/page";
+export { default as VenuePage } from "@/app/venues/[slug]/page";
 export { default as PositionsPage } from "@/app/positions/page";
 export { default as ReviewPage } from "@/app/review/page";
 export { default as OutcomesPage } from "@/app/review/markets/page";
@@ -71,9 +67,10 @@ export { default as SignInPage } from "@/app/sign-in/page";
 export { default as WelcomePage } from "@/app/welcome/page";
 export { banPerson } from "@/modules/account/moderation";
 export { provisionAccount } from "@/modules/account/provision";
-export { createGoalDraft, approveDraft, rejectDraft } from "@/modules/goals/service";
+export { publishMarket, submitProposal, rejectProposal } from "@/modules/events/service";
+export { osuSampleMarkets } from "@/modules/events/samples";
 export { previewTrade, executeTrade } from "@/modules/market/service";
-export { applyOwnerCommand } from "@/modules/market/lifecycle";
+export { applyOwnerCommand, advanceMarket } from "@/modules/market/lifecycle";
 export * as schema from "@/db/schema";
 `;
 
@@ -111,7 +108,6 @@ globalThis.__preview = { db, identity: null };
 const DAY = 86_400_000;
 const now = Date.now();
 const at = (days) => new Date(now + days * DAY);
-const easternDate = (date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(date);
 
 async function person(handle, displayName, photo = true) {
   const id = randomUUID();
@@ -123,16 +119,9 @@ const people = {
   owner: await person("ava", "Ava Okafor"),
   trader: await person("leo", "Leo Park"),
   maya: await person("maya_builds", "Maya Chen"),
-  jordan: await person("jordan_p", "Jordan Patel"),
-  sam: await person("sam_r", "Sam Rivera"),
-  priya: await person("priya_n", "Priya Nair"),
   ben: await person("ben_k", "Ben Kowalski", false),
   quinn: await person("quinn_t", "Quinn Taylor"),
-  luis: await person("luis_lifts", "Luis Ortega"),
-  aisha: await person("aisha_b", "Aisha Bello"),
-  noor: await person("noor_h", "Noor Haddad"),
-  andre: await person("andre_f", "Andre Fontaine"),
-  // People who only bet, so prices have somewhere to move.
+  // People who only trade, so prices have somewhere to move.
   kai: await person("kai_w", "Kai Wong"),
   rosa: await person("rosa_m", "Rosa Mendes"),
   theo: await person("theo_b", "Theo Brandt"),
@@ -140,100 +129,91 @@ const people = {
 };
 await db.update(app.schema.profiles).set({ isOwner: 1 }).where(eq(app.schema.profiles.id, people.owner));
 
-async function goal(subject, input, openingBp, createdDaysAgo) {
-  const clock = at(-createdDaysAgo);
-  const draft = await app.createGoalDraft(db, subject, input, clock);
-  if (openingBp !== null) await app.approveDraft(db, people.owner, draft.id, openingBp, "Fictional preview approval.", clock);
-  return draft.id;
+// The three hypothetical Ohio State samples, exactly as the seeding script publishes them.
+const samples = {};
+for (const { slug, ...input } of app.osuSampleMarkets(new Date(now))) {
+  samples[slug] = (await app.publishMarket(db, people.owner, input, new Date(now))).id;
+}
+
+/** A fictional event market, opened `openedDaysAgo` with trading until `cutoffDays` from now. */
+async function market({ venue, category, question, cutoffDays, windowHours = 4, openingBp, openedDaysAgo, area = "Fictional Avenue" }) {
+  const cutoff = at(cutoffDays);
+  const windowEnd = new Date(cutoff.getTime() + windowHours * 3_600_000);
+  const created = await app.publishMarket(db, people.owner, {
+    campus: "osu", category, question, venue: { name: venue, area, description: "A fictional venue for the preview." },
+    eventTitle: new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long", month: "short", day: "numeric" }).format(cutoff),
+    windowStartAt: cutoff, windowEndAt: windowEnd, timeZone: "America/New_York",
+    tradingCutoffAt: cutoff, resultsDueAt: new Date(windowEnd.getTime() + 3 * DAY),
+    yesCondition: "The venue's own count for the window is above the number in the question.",
+    noCondition: "The count is at or below that number, or no count arrives by the results deadline.",
+    rules: "Fictional market for the preview. Don't buy, or ask anyone to buy, at the venue to move this market.",
+    source: { name: `${venue} door count (fictional)`, method: "A fictional count from the venue's own system.", operational: true },
+    openingProbabilityBp: openingBp, isSample: false,
+  }, at(-openedDaysAgo));
+  return created.id;
 }
 async function trade(userId, marketId, side, points, daysAgo) {
   const clock = () => at(-daysAgo);
   const preview = await app.previewTrade(db, userId, { marketId, side, action: "buy", amountMicro: points * 1_000_000 }, clock);
   await app.executeTrade(db, userId, preview, clock);
 }
-/** Trades run oldest first across every goal, so each price path is in order. */
+/** Trades run oldest first across every market, so each price path is in order. */
 async function trades(list) {
   for (const [userId, marketId, side, points, daysAgo] of [...list].sort((a, b) => b[4] - a[4])) {
     await trade(userId, marketId, side, points, daysAgo);
   }
 }
 
-// Open goals across every tab, each with a price path and most with a move today.
-const lift = await goal(people.luis, { type: "gym", achievement: "deadlift 315 lb", deadline: easternDate(at(12)) }, 5000, 12);
-const club = await goal(people.maya, { type: "club", club: "Buckeye Robotics", deadline: easternDate(at(20)) }, 5500, 6);
-const plank = await goal(people.sam, { type: "gym", achievement: "hold a 3-minute plank", deadline: easternDate(at(17)) }, 4500, 9);
-const internship = await goal(people.priya, { type: "internship", company: "Google", deadline: easternDate(at(120)) }, 3500, 14);
-const cabinet = await goal(people.aisha, { type: "club", club: "the USG cabinet", deadline: easternDate(at(9)) }, 5000, 8);
-const race = await goal(people.jordan, { type: "running", distance: "half", time: "1:59:00", deadline: easternDate(at(150)) }, 4500, 10);
-const orgo = await goal(people.noor, { type: "own_words", question: "Will I get an A in Organic Chemistry II?",
-  criteria: "YES if Noor's official grade for Organic Chemistry II this semester is an A, shown on the grade report.", deadline: easternDate(at(77)) }, 5000, 7);
-const song = await goal(people.andre, { type: "own_words", question: "Will I put my first song on Spotify?",
-  criteria: "YES if a song credited to Andre is live on Spotify before the deadline.", deadline: easternDate(at(42)) }, 3500, 11);
-// Leo's own goal: open, so he sees that he can't trade it.
-const fiveK = await goal(people.trader, { type: "running", distance: "5k", time: "25:00", deadline: easternDate(at(38)) }, 5800, 4);
-// Older goals for the owner's pages: one past its deadline, one ruled.
-const gym = await goal(people.sam, { type: "gym", achievement: "bench press 225 lb", deadline: easternDate(at(-9)) }, 5000, 25);
-const gpa = await goal(people.priya, { type: "gpa", gpa: "3.8", semester: "Fall 2026", deadline: easternDate(at(-2)) }, 6000, 20);
+// Open markets across the categories, each with a price path and most with a move today.
+const comedy = await market({ venue: "Lakeside Comedy Club", category: "events", question: "Will the Lakeside Comedy Club's 9 PM show sell out on Saturday?", cutoffDays: 3, openingBp: 4500, openedDaysAgo: 6 });
+const rec = await market({ venue: "North Quad Rec", category: "campus", question: "Will more than 300 people check in at North Quad Rec on Sunday?", cutoffDays: 4, openingBp: 5500, openedDaysAgo: 5 });
+const bowling = await market({ venue: "Brick Row Lanes", category: "entertainment", question: "Will Brick Row Lanes book every lane for Friday's late session?", cutoffDays: 9, openingBp: 3500, openedDaysAgo: 8 });
+const tacos = await market({ venue: "Lantern Tacos", category: "food", question: "Will Lantern Tacos sell more than 800 tacos on Taco Tuesday?", cutoffDays: 13, openingBp: 6000, openedDaysAgo: 4, area: "Fictional Street" });
+// Past markets for the status filter and the owner's outcomes page.
+const closed = await market({ venue: "Lantern Tacos", category: "food", question: "Will Lantern Tacos run out of al pastor before 10 PM?", cutoffDays: -1, openingBp: 5000, openedDaysAgo: 9, area: "Fictional Street" });
+const ruled = await market({ venue: "Brick Row Lanes", category: "entertainment", question: "Will Brick Row Lanes' trivia night draw 20 teams?", cutoffDays: -2, windowHours: 3, openingBp: 4000, openedDaysAgo: 10 });
+const voided = await market({ venue: "North Quad Rec", category: "campus", question: "Will the North Quad Rec climbing wall open on time?", cutoffDays: -3, openingBp: 5000, openedDaysAgo: 12 });
 
-const { kai, rosa, theo, wen, ben, trader: leo } = people;
+const { kai, rosa, theo, wen, ben, trader: leo, maya } = people;
 await trades([
-  [kai, lift, "YES", 30, 11], [rosa, lift, "YES", 25, 9], [theo, lift, "NO", 15, 7], [wen, lift, "YES", 30, 5],
-  [ben, lift, "YES", 20, 3], [leo, lift, "YES", 40, 0.6],
-  [leo, club, "NO", 30, 5], [ben, club, "YES", 25, 3], [people.priya, club, "NO", 15, 1], [kai, club, "YES", 20, 0.3],
-  [leo, plank, "YES", 35, 4], [theo, plank, "YES", 15, 2], [rosa, plank, "YES", 30, 0.4],
-  [theo, internship, "YES", 15, 8], [wen, internship, "NO", 10, 2], [kai, internship, "YES", 10, 0.5],
-  [rosa, cabinet, "YES", 20, 6], [theo, cabinet, "NO", 20, 2],
-  [wen, race, "NO", 25, 3], [ben, race, "NO", 10, 0.7],
-  [kai, orgo, "NO", 10, 4], [rosa, orgo, "NO", 8, 0.8],
-  [theo, song, "NO", 30, 2], [wen, song, "NO", 20, 0.3],
-  [kai, fiveK, "YES", 10, 1],
-  [leo, gym, "YES", 60, 20], [ben, gym, "NO", 10, 15],
-  [leo, gpa, "YES", 25, 12], [people.maya, gpa, "NO", 35, 6],
+  [kai, samples["midway-on-high"], "YES", 20, 0.4], [rosa, samples["buckeye-donuts"], "NO", 15, 0.2], [leo, samples["gateway-film-center"], "YES", 25, 0.3],
+  [kai, comedy, "YES", 30, 5], [rosa, comedy, "YES", 25, 3], [theo, comedy, "NO", 15, 2], [leo, comedy, "YES", 40, 0.6],
+  [leo, rec, "NO", 30, 4], [ben, rec, "YES", 25, 3], [maya, rec, "NO", 15, 1], [kai, rec, "YES", 20, 0.3],
+  [theo, bowling, "YES", 15, 7], [wen, bowling, "NO", 10, 2], [kai, bowling, "YES", 10, 0.5],
+  [rosa, tacos, "YES", 20, 3], [theo, tacos, "NO", 20, 1],
+  [leo, closed, "YES", 30, 5], [wen, closed, "NO", 15, 3],
+  [leo, ruled, "YES", 20, 8], [maya, ruled, "NO", 25, 6],
+  [leo, voided, "NO", 15, 10],
 ]);
 
-// Proof the owner verified on the deadlift goal, for the dated proof list.
-await db.insert(app.schema.evidence).values({
-  marketId: lift, submittedBy: people.luis, kind: "file", originalPath: "fixture/luis-gym-log.pdf", originalContentType: "application/pdf",
-  originalBytes: 48_000, status: "published", reviewedBy: people.owner, reviewedAt: at(-4), createdAt: at(-4.2),
-  verifiedStatement: "Luis sent a gym log showing a 295 lb deadlift last week. Verified by the owner. The original stays private.",
-});
+// Close the past ones, rule one an hour ago (objections open), void another.
+for (const id of [closed, ruled, voided]) await app.advanceMarket(db, id, () => new Date(now));
+await app.applyOwnerCommand(db, people.owner, { marketId: ruled, requestId: randomUUID(), action: "rule", expectedVersion: 0,
+  outcome: "yes", basis: "checked_source", reason: "Brick Row's sign-in sheet shows 23 teams." }, () => new Date(now - 3_600_000));
+await app.applyOwnerCommand(db, people.owner, { marketId: voided, requestId: randomUUID(), action: "cancel", expectedVersion: 0,
+  reason: "The climbing wall's opening was rescheduled, so the market can't be settled as written." }, () => new Date(now - 2 * 3_600_000));
 
-// The gym goal: past its deadline and proof period, ruled YES an hour ago, so
-// its objection window is open.
-const [gymRow] = await db.select().from(app.schema.markets).where(eq(app.schema.markets.id, gym));
-await app.applyOwnerCommand(db, people.owner, { marketId: gym, requestId: randomUUID(), action: "rule", expectedVersion: 0,
-  outcome: "yes", basis: "reviewed_proof", reason: "Uncut video of the lift reviewed; plates and bar checked." },
-  () => new Date(Math.max(gymRow.evidenceDeadlineAt.getTime(), now - 3_600_000)));
-
-// Quinn is banned: their open goal is cancelled and Leo, who bet on it, refunded.
-const quinnGoal = await goal(people.quinn, { type: "own_words", question: "Will Quinn swim across Mirror Lake and back?",
-  criteria: "YES if a public video shows Quinn swimming across Mirror Lake and back before the deadline.", deadline: easternDate(at(30)) }, 3000, 5);
-await trade(people.trader, quinnGoal, "NO", 15, 2);
-await app.banPerson(db, people.owner, people.quinn, "Fictional: posting other students' private details.", () => at(-1));
-
-// Proof waiting for the owner.
-await db.insert(app.schema.evidence).values({ marketId: gpa, submittedBy: people.priya, kind: "link", linkUrl: "https://example.com/fictional-grade-report" });
-
-// Waiting for the owner, and one turned down, for the review queue and account.
-await goal(people.priya, { type: "own_words", question: "Will Priya publish her study-planner app on the App Store?",
-  criteria: "YES if the app is listed on the App Store under Priya's developer name before the deadline.", deadline: easternDate(at(60)) }, null, 1);
-await goal(people.trader, { type: "gpa", gpa: "3.5", semester: "Fall 2026", deadline: easternDate(at(90)) }, null, 1);
-const turnedDown = await goal(people.trader, { type: "own_words", question: "Will Leo feel more confident this semester?",
-  criteria: "YES if Leo tells his friends he feels more confident by the deadline.", deadline: easternDate(at(50)) }, null, 3);
-await app.rejectDraft(db, people.owner, turnedDown, "Only Leo could decide this one. Try something anyone could check.", at(-2));
+// Suggestions: two waiting, one turned down, one published as the tacos market's sibling.
+const suggestion = (who, question, category, venueName, days, note) => app.submitProposal(db, who, "osu", {
+  question, category, venueName, windowStartAt: at(days), windowEndAt: new Date(at(days).getTime() + 3 * 3_600_000), resolutionNote: note,
+}, at(-1));
+await suggestion(maya, "Will the Lakeside Comedy Club add a second show on Friday?", "events", "Lakeside Comedy Club", 6, "The club's own listings page.");
+await suggestion(leo, "Will Buckeye Donuts sell more than 2,000 donuts on game day?", "food", "Buckeye Donuts", 10, "The shop's register count for the day.");
+const turnedDown = await suggestion(leo, "Will my roommate finally do the dishes?", "campus", "Our apartment", 3, "I'll check the sink.");
+await app.rejectProposal(db, people.owner, turnedDown.id, "That's about one person, and Mitra's markets are about places. Try a venue's count.", at(-0.5));
+// Quinn is banned: their waiting suggestion is turned down with the ban.
+await suggestion(people.quinn, "Will the Oval be packed on Saturday?", "campus", "The Oval", 4, "A headcount.");
+await app.banPerson(db, people.owner, people.quinn, "Fictional: posting other students' private details.", () => at(-0.2));
 
 // ------------------------------------------------------------ server
 const personas = {
-  trader: { id: people.trader, label: "Leo, a trader with holdings" },
+  trader: { id: people.trader, label: "Leo, a trader with holdings and suggestions" },
   owner: { id: people.owner, label: "Ava, the owner" },
-  subject: { id: people.maya, label: "Maya, whose goal is open" },
-  own: { id: people.trader, label: "Leo, on his own open goal" },
   newcomer: { id: randomUUID(), label: "a new sign-up with no profile yet" },
-  nophoto: { id: people.ben, label: "Ben, who has no profile photo" },
   out: { id: null, label: "someone signed out" },
 };
 const pages = {
-  "/account": app.AccountPage, "/goals/new": app.NewGoalPage, "/positions": app.PositionsPage,
+  "/account": app.AccountPage, "/suggest": app.SuggestPage, "/positions": app.PositionsPage,
   "/review": app.ReviewPage, "/review/markets": app.OutcomesPage, "/review/people": app.PeoplePage, "/feed": app.FeedPage,
   "/sign-up": app.SignUpPage, "/sign-in": app.SignInPage, "/welcome": app.WelcomePage,
 };
@@ -262,13 +242,11 @@ function documentFor(title, body, { theme, campus } = {}) {
 function index() {
   const links = [];
   for (const [key, persona] of Object.entries(personas)) {
-    const routes = key === "owner" ? ["/feed", "/account", "/review", "/review/markets", "/review/people", `/markets/${gym}`]
-      : key === "subject" ? ["/account", `/markets/${club}`]
-      : key === "own" ? [`/markets/${fiveK}`]
+    const routes = key === "owner" ? ["/feed", "/account", "/review", "/review/markets", "/review/people", `/markets/${ruled}`]
       : key === "newcomer" ? ["/account", "/welcome"]
-      : key === "nophoto" ? ["/goals/new", "/account"]
-      : key === "out" ? ["/feed", "/sign-up", "/sign-up?school=osu", "/sign-in"]
-      : ["/feed", "/account", "/positions", "/goals/new", "/welcome?step=photo", "/welcome?step=topics", "/welcome?step=how", `/markets/${lift}`, `/markets/${lift}?side=yes`, `/markets/${club}`, `/markets/${gpa}`];
+      : key === "out" ? ["/feed", `/markets/${samples["midway-on-high"]}`, "/venues/midway-on-high", "/sign-up", "/sign-in"]
+      : ["/feed", "/feed?status=all", "/feed?cat=food", "/venues/lantern-tacos", "/account", "/positions", "/suggest", "/welcome?step=topics", "/welcome?step=how",
+        `/markets/${samples["midway-on-high"]}`, `/markets/${comedy}`, `/markets/${comedy}?side=yes`, `/markets/${ruled}`, `/markets/${voided}`];
     links.push(`<section class="account-card"><h2>As ${persona.label}</h2>${routes.map((r) => `<p><a href="${r}${r.includes("?") ? "&" : "?"}as=${key}">${r}</a></p>`).join("")}</section>`);
   }
   return documentFor("Signed-in pages", `<div class="market-shell"><main class="account-main"><section class="account-welcome"><span class="eyebrow">FICTIONAL PREVIEW</span><h1>Signed-in pages</h1><p>Real page components, in-memory data, nobody real. Forms do not submit.</p></section>${links.join("")}</main></div>`);
@@ -302,12 +280,13 @@ const server = createServer(async (request, response) => {
   globalThis.__preview.identity = persona.id ? { id: persona.id, email: "fictional@osu.edu", campus: "osu" } : null;
   const query = Object.fromEntries(url.searchParams);
   const market = url.pathname.match(/^\/markets\/([0-9a-f-]{36})$/);
-  const Page = market ? app.MarketPage : pages[url.pathname];
+  const venue = url.pathname.match(/^\/venues\/([a-z0-9-]{1,70})$/);
+  const Page = market ? app.MarketPage : venue ? app.VenuePage : pages[url.pathname];
   // The pages read where they are from the address; the preview serves the feed at /feed.
   globalThis.__preview.search = url.searchParams;
   if (!Page) { response.writeHead(404); response.end("Preview route not found."); return; }
   try {
-    const element = await Page({ params: Promise.resolve(market ? { id: market[1] } : {}), searchParams: Promise.resolve(query) });
+    const element = await Page({ params: Promise.resolve(market ? { id: market[1] } : venue ? { slug: venue[1] } : {}), searchParams: Promise.resolve(query) });
     response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     response.end(documentFor(url.pathname, renderToStaticMarkup(element), { theme: url.searchParams.get("theme"), campus: url.searchParams.get("campus") }));
   } catch (error) {

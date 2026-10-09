@@ -9,7 +9,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Mitra", template: "%s · Mitra" },
-  description: "Bet on your classmates’ goals with points. For Ohio State and Illinois students.",
+  description: "Trade on what happens around campus with points. For Ohio State and Illinois students.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

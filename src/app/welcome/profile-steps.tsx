@@ -31,7 +31,7 @@ export function ProfileSteps() {
       {step === "name" ? (
         <form className="step-form" onSubmit={(event) => { event.preventDefault(); setStep("age"); }}>
           <h1>What should we call you?</h1>
-          <p className="step-sub">Your name and username show next to your goals and on your profile.</p>
+          <p className="step-sub">Your name and username show on your profile.</p>
           <div className="field">
             <label htmlFor="displayName">Name</label>
             <input id="displayName" autoComplete="name" placeholder="Your full name" minLength={2} maxLength={80} required autoFocus

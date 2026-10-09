@@ -65,10 +65,10 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
       <div className="step-form">
         <h1>How Mitra works</h1>
         <ol className="how-list">
-          <li><span>1</span><p><strong>You start with 1,000 points</strong><small>Use them to back the outcomes you believe in.</small></p></li>
-          <li><span>2</span><p><strong>Buy Yes or No on a goal</strong><small>Yes 71¢ means people think there’s a 71% chance it happens.</small></p></li>
-          <li><span>3</span><p><strong>Proof settles it</strong><small>When a goal ends, the person sends proof and it’s checked before anyone is paid.</small></p></li>
-          <li><span>4</span><p><strong>Fair play</strong><small>No betting on your own goals, and at most 100 points on any one goal.</small></p></li>
+          <li><span>1</span><p><strong>You start with 1,000 points</strong><small>Use them on what you think will happen around campus.</small></p></li>
+          <li><span>2</span><p><strong>Buy Yes or No on a market</strong><small>Yes 71¢ means people think there’s a 71% chance it happens.</small></p></li>
+          <li><span>3</span><p><strong>A named source settles it</strong><small>Each market says where its number comes from, like a venue’s sales count. The owner checks it before anyone is paid.</small></p></li>
+          <li><span>4</span><p><strong>Fair play</strong><small>At most 100 points on any one market. Don’t trade a place where you work, and never buy at a venue to move a market.</small></p></li>
         </ol>
         <Link className="primary-button" href="/" prefetch={false}>Start exploring</Link>
       </div>

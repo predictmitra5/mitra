@@ -24,7 +24,7 @@ export function ObjectionForm({ marketId, version }: { marketId: string; version
   }
   return <form action={submit} className="auth-form">
     <h3>Object to this ruling</h3>
-    <p className="field-hint">Only you and the owner can read your objection. Explain which goal term or evidence you think was missed. Submitting an objection does not extend the cutoff; a changed ruling does.</p>
+    <p className="field-hint">Only you and the owner can read your objection. Explain which rule or source reading you think was missed. Submitting an objection does not extend the cutoff; a changed ruling does.</p>
     {error && <p className="form-error" role="alert">{error}</p>}
     {success && <p className="form-success" role="status">Your objection was sent to the owner.</p>}
     {retry ? <p className="market-criteria">{retry.reason}</p> : <label className="field">Your objection<textarea name="reason" required minLength={3} maxLength={2000} rows={4} disabled={pending} /></label>}

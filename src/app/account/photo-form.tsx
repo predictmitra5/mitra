@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { removeOwnPhotoAction } from "@/modules/account/photo-actions";
 import type { FormState } from "@/modules/auth/policy";
-import { Avatar } from "@/app/components/market/goal-card";
+import { Avatar } from "@/app/components/market/market-card";
 import { usePhotoUpload } from "./use-photo-upload";
 
 /**
@@ -37,7 +37,7 @@ export function PhotoForm({ name, photo, heading = "Profile photo" }: { name: st
       </span>
       <div className="photo-copy">
         <h2 id="photo-heading">{heading}</h2>
-        <p>Required to post a goal, and shown next to your name wherever it appears. Use a real photo of yourself: images labelled as AI-generated are refused.</p>
+        <p>Shown on your account. Use a real photo of yourself: images labelled as AI-generated are refused.</p>
       </div>
     </div>
     <form action={upload} className="photo-upload" aria-busy={uploading}>

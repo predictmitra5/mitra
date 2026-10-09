@@ -8,11 +8,11 @@
  *
  * - An activity score over time decay, as Reddit and Hacker News use, because
  *   that behaves sensibly with almost no data and can always be explained.
- * - A guaranteed head start for a new goal, as TikTok gives a new video, so that
- *   a quiet person's goal is seen at all before it is judged on its numbers.
- * - A cap on how much of the top one person can occupy, because a pure activity
- *   score lets the most popular person crowd everyone else out, which is the
- *   opposite of what the owner wants from the app.
+ * - A guaranteed head start for a new market, as TikTok gives a new video, so
+ *   that a quiet one is seen at all before it is judged on its numbers.
+ * - A cap on how much of the top one venue can occupy (one person, before the
+ *   2026-10-08 pivot to event markets), because a pure activity score lets the
+ *   busiest place crowd everything else out.
  *
  * Pure functions only: no database, no clock of its own, no I/O. The caller
  * supplies the counts and the current time so every case here is testable.
@@ -31,8 +31,8 @@ export const URGENT_WITHIN_HOURS = 72;
 const URGENCY_MULTIPLIER = 1.5;
 /** How many of the leading slots the cap applies to. */
 export const CAPPED_SLOTS = 10;
-/** How many of those slots one subject may hold. */
-export const MAX_PER_SUBJECT_IN_TOP = 2;
+/** How many of those slots one venue may hold. */
+export const MAX_PER_GROUP_IN_TOP = 2;
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -43,7 +43,8 @@ const TRADER_WEIGHT = 3;
 
 export type MarketSignals = {
   id: string;
-  subjectUserId: string;
+  /** What the top-slot cap counts: the venue, or the person behind a retired goal market. */
+  groupKey: string;
   approvedAt: Date;
   deadlineAt: Date;
   /** Feed cards opened in the last 24 hours. Not deduplicated; see the schema note. */
@@ -110,19 +111,20 @@ function reasonFor(signals: MarketSignals, now: Date): FeedReason {
 }
 
 /**
- * Hold one subject to at most MAX_PER_SUBJECT_IN_TOP of the first CAPPED_SLOTS
- * places. A goal displaced this way is not dropped: it moves down to just after
- * the capped region, keeping its order relative to the others displaced with it.
+ * Hold one venue to at most MAX_PER_GROUP_IN_TOP of the first CAPPED_SLOTS
+ * places. A market displaced this way is not dropped: it moves down to just
+ * after the capped region, keeping its order relative to the others displaced
+ * with it.
  *
- * The cap is best effort, and deliberately so. It can only promote a goal that
- * exists: when too few other people have open goals to fill the leading slots,
- * the displaced goals come back up to fill them rather than leaving the feed
- * short. Early on, with two or three subjects, that is the normal case.
+ * The cap is best effort, and deliberately so. It can only promote a market
+ * that exists: when too few other venues have open markets to fill the leading
+ * slots, the displaced ones come back up to fill them rather than leaving the
+ * feed short. Early on, with a handful of venues, that is the normal case.
  */
-export function applySubjectCap<T extends MarketSignals>(ordered: RankedMarket<T>[]): RankedMarket<T>[] {
+export function applyGroupCap<T extends MarketSignals>(ordered: RankedMarket<T>[]): RankedMarket<T>[] {
   const kept: RankedMarket<T>[] = [];
   const displaced: RankedMarket<T>[] = [];
-  const perSubject = new Map<string, number>();
+  const perGroup = new Map<string, number>();
 
   for (const market of ordered) {
     if (kept.length >= CAPPED_SLOTS) {
@@ -130,17 +132,17 @@ export function applySubjectCap<T extends MarketSignals>(ordered: RankedMarket<T
       kept.push(market);
       continue;
     }
-    const held = perSubject.get(market.subjectUserId) ?? 0;
-    if (held >= MAX_PER_SUBJECT_IN_TOP) {
+    const held = perGroup.get(market.groupKey) ?? 0;
+    if (held >= MAX_PER_GROUP_IN_TOP) {
       displaced.push(market);
       continue;
     }
-    perSubject.set(market.subjectUserId, held + 1);
+    perGroup.set(market.groupKey, held + 1);
     kept.push(market);
   }
 
   if (displaced.length === 0) return kept;
-  // Re-insert the displaced goals directly after the capped region.
+  // Re-insert the displaced markets directly after the capped region.
   const head = kept.slice(0, CAPPED_SLOTS);
   const tail = kept.slice(CAPPED_SLOTS);
   return [...head, ...displaced, ...tail];
@@ -165,5 +167,5 @@ export function rankMarkets<T extends MarketSignals>(markets: readonly T[], now:
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
-  return applySubjectCap(scored);
+  return applyGroupCap(scored);
 }

@@ -1,41 +1,23 @@
 import { getDb } from "@/db/client";
+import { DEFAULT_CAMPUS_KEY, type CampusKey } from "@/config/campus";
 import { currentIdentity } from "@/modules/auth/server";
-import { readFeed, recordExposures, type Feed, type FeedCard } from "@/modules/discovery/feed";
-import { photoUrl } from "@/modules/account/photo-url";
+import { EMPTY_FEED, readFeed, recordExposures, type Feed } from "@/modules/discovery/feed";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import type { CardData } from "./components/market/goal-card";
+import { toCardData } from "./components/market/card-data";
 import { MarketFooter, MarketHeader } from "./components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
 import { SignupPrompt } from "./components/signup-prompt";
 
 /*
- * The home route is the ranked feed for everyone (browsing without an account
- * returned on 2026-10-05). Visitors also get the sign-up pop-up; exposures are
- * recorded without any viewer identity, as before.
+ * The home route is the campus feed for everyone (browsing without an account
+ * returned on 2026-10-05; event markets since 2026-10-08). A member sees their
+ * own campus; a visitor sees Ohio State, the launch campus. Visitors also get
+ * the sign-up pop-up; exposures are recorded without any viewer identity.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
 // viewer. Never put this in a shared cache.
 export const dynamic = "force-dynamic";
-
-/** Dates cross into a client component as ISO strings. */
-function toCard(card: FeedCard): CardData {
-  return {
-    id: card.id,
-    question: card.question,
-    goalType: card.goalType,
-    displayName: card.displayName,
-    handle: card.handle,
-    photo: photoUrl(card.handle, card.photoUpdatedAt),
-    yesPrice: card.yesPrice,
-    tradingOpen: card.tradingOpen,
-    deadlineAt: card.deadlineAt.toISOString(),
-    approvedAt: card.approvedAt.toISOString(),
-    volumeMicro: card.volumeMicro,
-    change24hBp: card.change24hBp,
-    reason: card.reason,
-  };
-}
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   let identity = null;
@@ -44,14 +26,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   } catch {
     // If Auth is unavailable, show the feed as a visitor would see it.
   }
+  const campus: CampusKey = identity?.campus ?? DEFAULT_CAMPUS_KEY;
 
   const now = new Date();
-  let feed: Feed = { cards: [], featured: null, closingSoon: [] };
+  let feed: Feed = EMPTY_FEED;
   let unavailable = false;
 
   try {
     const database = getDb();
-    feed = await readFeed(database, now);
+    feed = await readFeed(database, now, { campus });
     // Measurement, not display: a failure inside here is already swallowed.
     await recordExposures(database, feed.cards.map((card) => card.id));
   } catch {
@@ -63,18 +46,20 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const { q } = await searchParams;
 
   const featured: FeaturedData | null = feed.featured && {
-    ...toCard(feed.featured),
+    ...toCardData(feed.featured),
     moving: feed.featured.moving,
     series: feed.featured.series.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp })),
   };
 
   return (
     <div className="market-shell">
-      <MarketHeader viewer={viewer} active="goals" search="feed" query={typeof q === "string" ? q.slice(0, 80) : ""} />
+      <MarketHeader viewer={viewer} active="markets" search="feed" query={typeof q === "string" ? q.slice(0, 80) : ""} />
       <FeedView
-        cards={feed.cards.map(toCard)}
+        cards={feed.cards.map(toCardData)}
+        past={feed.past.map(toCardData)}
         featured={featured}
-        closingSoon={feed.closingSoon.map(toCard)}
+        closingSoon={feed.closingSoon.map(toCardData)}
+        campus={campus}
         signedIn={!!identity}
         unavailable={unavailable}
         nowIso={now.toISOString()}

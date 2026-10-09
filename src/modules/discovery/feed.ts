@@ -1,67 +1,79 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
-import { rankMarkets, type FeedReason, type MarketSignals, type RankedMarket } from "./ranking";
+import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
-const { markets, profiles, trades, feedEvents, priceHistory } = schema;
+const { markets, venues, events, trades, feedEvents, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
+type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
 
 /**
- * The public feed, decided 2026-09-19. Anyone may read this without an account,
- * so the projection below is the whole contract: it carries exactly what an
- * approved market page already shows in public, and nothing else. No account
- * identifiers, no wallet or position data, no owner notes, no objections.
+ * The public feed, decided 2026-09-19 and moved to event markets on
+ * 2026-10-08. Anyone may read this without an account, so the projection below
+ * is the whole contract: it carries exactly what a market page already shows in
+ * public, and nothing else. No account identifiers, no wallet or position data,
+ * no owner notes, no objections, and no people.
  */
 export type FeedCard = {
   id: string;
   question: string;
-  goalType: string | null;
+  category: string | null;
+  venueName: string | null;
+  venueSlug: string | null;
+  eventTitle: string | null;
+  /** When the measured window starts. */
+  windowStartAt: Date | null;
+  timeZone: string | null;
+  /** A hypothetical demonstration market (2026-10-08), labelled wherever it appears. */
+  isSample: boolean;
+  /** The trading cutoff. */
   deadlineAt: Date;
-  /** The subject's public display name and handle, as the market page shows them. */
-  displayName: string;
-  handle: string;
-  /** When their profile photo last changed, which versions its public URL; null without one. */
-  photoUpdatedAt: Date | null;
+  status: MarketStatus;
+  ruledOutcome: "yes" | "no" | null;
   yesPrice: number;
   tradingOpen: boolean;
   reason: FeedReason;
-  /** When the goal went live, for "2d ago" in the card's meta line. */
+  /** When the market opened, for "2d ago". */
   approvedAt: Date;
   /**
-   * Points traded on this goal, all time. An aggregate, shown the way
-   * Kalshi shows volume. Trader counts are deliberately not exposed: in a small
-   * group "1 trader" can identify a person.
+   * Points traded on this market, all time. An aggregate, shown the way Kalshi
+   * shows volume. Trader counts are deliberately not exposed: in a small group
+   * "1 trader" can identify a person.
    */
   volumeMicro: number;
   /** YES price now minus 24 hours ago, in basis points. Opening price if younger. */
   change24hBp: number;
 };
 
-/** One point of a goal's price history, for a chart. */
+/** One point of a market's price history, for a chart. */
 export type PricePoint = { at: Date; yesBp: number };
 
 /**
- * The featured goal carries its history, so the feed can draw its chart.
- * `moving` says it was chosen as the goal moving most today; when nothing
- * moved, the leading traded goal stands in and is not called a mover.
+ * The featured market carries its history, so the feed can draw its chart.
+ * `moving` says it was chosen as the market moving most today; when nothing
+ * moved, the leading traded market stands in and is not called a mover.
  */
-export type FeaturedGoal = FeedCard & { series: PricePoint[]; moving: boolean };
+export type FeaturedMarket = FeedCard & { series: PricePoint[]; moving: boolean };
 
 export type Feed = {
-  /** Every open goal, in ranked order. */
+  /** Every open market in scope, in ranked order. */
   cards: FeedCard[];
-  /** One goal with its chart, decided 2026-09-24: the one moving most today. */
-  featured: FeaturedGoal | null;
-  /** Open goals whose trading deadline is nearest, for the desktop side list. */
+  /** Recently closed, resolved and void markets, latest cutoff first, for the status filter. */
+  past: FeedCard[];
+  /** One market with its chart: the one moving most today. */
+  featured: FeaturedMarket | null;
+  /** Open markets whose trading cutoff is nearest, for the desktop side list. */
   closingSoon: FeedCard[];
 };
 
+export const EMPTY_FEED: Feed = { cards: [], past: [], featured: null, closingSoon: [] };
+
 const CLOSING_SOON_COUNT = 5;
-/** How many goals the ticker carries. */
+/** How many markets the ticker carries. */
 export const TICKER_COUNT = 20;
 /** A chart wider than this many points is visually identical; keep payloads small. */
 const MAX_SERIES_POINTS = 120;
@@ -69,28 +81,81 @@ const MAX_SERIES_POINTS = 120;
 const SIGNAL_WINDOW_HOURS = 24;
 /** An upper bound on one page of the feed, so a busy app cannot render forever. */
 const MAX_CARDS = 60;
+const MAX_PAST = 40;
 
-type FeedRow = MarketSignals & {
+/** Which markets a read covers: one campus's, or one venue's. */
+export type FeedScope = { campus: string } | { venueId: string };
+
+const cardColumns = {
+  id: markets.id,
+  venueId: markets.venueId,
+  approvedAt: markets.approvedAt,
+  deadlineAt: markets.deadlineAt,
+  tradingClosedAt: markets.tradingClosedAt,
+  question: markets.question,
+  category: markets.category,
+  status: markets.status,
+  ruledOutcome: markets.ruledOutcome,
+  windowStartAt: markets.windowStartAt,
+  timeZone: markets.timeZone,
+  isSample: markets.isSample,
+  venueName: venues.name,
+  venueSlug: venues.slug,
+  eventTitle: events.title,
+  liquidityMicro: markets.liquidityMicro,
+  yesSharesMicro: markets.yesSharesMicro,
+  noSharesMicro: markets.noSharesMicro,
+};
+
+type CardRow = {
+  id: string;
+  venueId: string | null;
+  approvedAt: Date | null;
+  deadlineAt: Date;
+  tradingClosedAt: Date | null;
   question: string;
-  goalType: string | null;
-  displayName: string;
-  handle: string;
-  photoUpdatedAt: Date | null;
+  category: string | null;
+  status: MarketStatus;
+  ruledOutcome: "yes" | "no" | null;
+  windowStartAt: Date | null;
+  timeZone: string | null;
+  isSample: boolean;
+  venueName: string | null;
+  venueSlug: string | null;
+  eventTitle: string | null;
   liquidityMicro: number;
   yesSharesMicro: number | null;
   noSharesMicro: number | null;
-  tradingClosedAt: Date | null;
 };
 
-function toCard(row: RankedMarket<FeedRow>, now: Date): FeedCard {
+type FeedRow = MarketSignals & Omit<CardRow, "approvedAt">;
+
+function toSignals(row: CardRow, counts = { clicks: 0, trades: 0, traders: 0 }): FeedRow {
+  return {
+    ...row,
+    // The cap counts venues; every event market has one.
+    groupKey: row.venueId ?? row.id,
+    approvedAt: row.approvedAt as Date,
+    clicks24h: counts.clicks,
+    trades24h: counts.trades,
+    uniqueTraders24h: counts.traders,
+  };
+}
+
+function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
   return {
     id: row.id,
     question: row.question,
-    goalType: row.goalType,
+    category: row.category,
+    venueName: row.venueName,
+    venueSlug: row.venueSlug,
+    eventTitle: row.eventTitle,
+    windowStartAt: row.windowStartAt,
+    timeZone: row.timeZone,
+    isSample: row.isSample,
     deadlineAt: row.deadlineAt,
-    displayName: row.displayName,
-    handle: row.handle,
-    photoUpdatedAt: row.photoUpdatedAt,
+    status: row.status,
+    ruledOutcome: row.ruledOutcome,
     yesPrice: price(
       toLmsr({
         liquidity: row.liquidityMicro / MICRO_PER_UNIT,
@@ -99,10 +164,10 @@ function toCard(row: RankedMarket<FeedRow>, now: Date): FeedCard {
       }),
       "YES",
     ),
-    tradingOpen: !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
-    reason: row.reason,
+    tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
+    reason,
     approvedAt: row.approvedAt,
-    // Filled in by readFeed once volume and history are loaded.
+    // Filled in once volume and history are loaded.
     volumeMicro: 0,
     change24hBp: 0,
   };
@@ -118,25 +183,28 @@ export function thinSeries(points: readonly PricePoint[], max = MAX_SERIES_POINT
 }
 
 /**
- * Read every open, approved goal with its last 24 hours of activity, then rank
- * it. The counts come from `feed_events` and `trades`; `feed_events` carries no
- * viewer identity, so clicks cannot be deduplicated per person.
+ * Read every open event market in scope with its last 24 hours of activity,
+ * rank it, and add the recent past for the status filter. The counts come from
+ * `feed_events` and `trades`; `feed_events` carries no viewer identity, so
+ * clicks cannot be deduplicated per person.
  */
 export async function readFeed<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
+  scope: FeedScope = { campus: "osu" },
 ): Promise<Feed> {
-  const cards = await readRankedCards(database, now);
+  const cards = await readRankedCards(database, now, scope);
+  const past = await readPastCards(database, now, scope);
   const open = cards.filter((card) => card.tradingOpen);
 
   // "Moving most today" (2026-09-24): the biggest 24-hour move either way, ties
-  // kept in rank order. When nothing moved, the leading traded goal stands in,
-  // because a chart of a goal nobody has traded is a flat line.
+  // kept in rank order. When nothing moved, the leading traded market stands
+  // in, because a chart of a market nobody has traded is a flat line.
   const mover = [...open]
     .filter((card) => card.change24hBp !== 0)
     .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))[0];
   const pick = mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
-  let featured: FeaturedGoal | null = null;
+  let featured: FeaturedMarket | null = null;
   if (pick) {
     const history = (await readSeries(database, [pick.id])).get(pick.id) ?? [];
     // End the line at the live price, so the chart agrees with the buttons beside it.
@@ -146,6 +214,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
 
   return {
     cards,
+    past,
     featured,
     closingSoon: [...open]
       .sort((a, b) => a.deadlineAt.getTime() - b.deadlineAt.getTime())
@@ -153,18 +222,24 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   };
 }
 
-/** The leading goals for the price ticker on pages other than the feed. */
+/** The leading markets for the price ticker on pages other than the feed. */
 export async function readTicker<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
+  scope: FeedScope = { campus: "osu" },
 ): Promise<FeedCard[]> {
-  return (await readRankedCards(database, now)).slice(0, TICKER_COUNT);
+  return (await readRankedCards(database, now, scope)).slice(0, TICKER_COUNT);
 }
 
-/** Every open goal, ranked, with its volume and 24-hour change filled in. */
+function inScope(scope: FeedScope) {
+  return "venueId" in scope ? eq(markets.venueId, scope.venueId) : eq(markets.campus, scope.campus);
+}
+
+/** Every open event market in scope, ranked, with its volume and 24-hour change filled in. */
 async function readRankedCards<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date,
+  scope: FeedScope,
 ): Promise<FeedCard[]> {
   const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
 
@@ -191,65 +266,63 @@ async function readRankedCards<Q extends PgQueryResultHKT>(
 
   const rows = await database
     .select({
-      id: markets.id,
-      subjectUserId: markets.subjectUserId,
-      approvedAt: markets.approvedAt,
-      deadlineAt: markets.deadlineAt,
-      tradingClosedAt: markets.tradingClosedAt,
-      question: markets.question,
-      goalType: markets.goalType,
-      displayName: profiles.displayName,
-      handle: profiles.handle,
-      photoUpdatedAt: profiles.photoUpdatedAt,
-      liquidityMicro: markets.liquidityMicro,
-      yesSharesMicro: markets.yesSharesMicro,
-      noSharesMicro: markets.noSharesMicro,
+      ...cardColumns,
       clicks: sql<number>`coalesce(${clickCounts.clicks}, 0)`,
       trades: sql<number>`coalesce(${tradeCounts.trades}, 0)`,
       traders: sql<number>`coalesce(${tradeCounts.traders}, 0)`,
     })
     .from(markets)
-    .innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
+    // Event markets only: a retired goal market has no venue and never shows here.
+    .innerJoin(venues, eq(venues.id, markets.venueId))
+    .leftJoin(events, eq(events.id, markets.eventId))
     .leftJoin(clickCounts, eq(clickCounts.marketId, markets.id))
     .leftJoin(tradeCounts, eq(tradeCounts.marketId, markets.id))
-    // A banned or withdrawn person's goals are being cancelled; never show them meanwhile.
-    .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt), isNull(profiles.bannedAt), isNull(profiles.withdrawnAt)))
+    .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt), inScope(scope)))
     .limit(MAX_CARDS);
 
   const signals: FeedRow[] = rows
-    // Approval sets the price; a row without one cannot be shown or ranked.
+    // Publishing sets the price; a row without one cannot be shown or ranked.
     .filter((row) => row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null)
-    .map((row) => ({
-      id: row.id,
-      subjectUserId: row.subjectUserId,
-      approvedAt: row.approvedAt as Date,
-      deadlineAt: row.deadlineAt,
-      tradingClosedAt: row.tradingClosedAt,
-      clicks24h: Number(row.clicks),
-      trades24h: Number(row.trades),
-      uniqueTraders24h: Number(row.traders),
-      question: row.question,
-      goalType: row.goalType,
-      displayName: row.displayName,
-      handle: row.handle,
-      photoUpdatedAt: row.photoUpdatedAt,
-      liquidityMicro: row.liquidityMicro,
-      yesSharesMicro: row.yesSharesMicro,
-      noSharesMicro: row.noSharesMicro,
-    }));
+    .map(({ clicks, trades: tradeCount, traders, ...row }) =>
+      toSignals(row, { clicks: Number(clicks), trades: Number(tradeCount), traders: Number(traders) }));
 
-  const cards = rankMarkets(signals, now).map((row) => toCard(row, now));
-  const ids = cards.map((card) => card.id);
-  const info = await readMarketInformation(database, ids, since);
+  const cards = rankMarkets(signals, now).map((row) => toCard(row, row.reason, now));
+  await fillInformation(database, cards, now);
+  return cards;
+}
+
+/** Recent markets in scope that are no longer open: closed, resolved or void. */
+async function readPastCards<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  now: Date,
+  scope: FeedScope,
+): Promise<FeedCard[]> {
+  const rows = await database
+    .select(cardColumns)
+    .from(markets)
+    .innerJoin(venues, eq(venues.id, markets.venueId))
+    .leftJoin(events, eq(events.id, markets.eventId))
+    .where(and(inArray(markets.status, ["closed", "ruled", "settled", "cancelled"]), isNotNull(markets.approvedAt), inScope(scope)))
+    .orderBy(desc(markets.deadlineAt))
+    .limit(MAX_PAST);
+  const cards = rows
+    .filter((row) => row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null)
+    .map((row) => toCard(toSignals(row), "quiet", now));
+  await fillInformation(database, cards, now);
+  return cards;
+}
+
+async function fillInformation<Q extends PgQueryResultHKT>(database: Database<Q>, cards: FeedCard[], now: Date) {
+  const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
+  const info = await readMarketInformation(database, cards.map((card) => card.id), since);
   for (const card of cards) {
     card.volumeMicro = info.volume.get(card.id) ?? 0;
     const then = info.priceThen.get(card.id);
     card.change24hBp = then === undefined ? 0 : Math.round(card.yesPrice * 10_000) - then;
   }
-  return cards;
 }
 
-/** A goal's live numbers, for pages that refresh prices while open. */
+/** A market's live numbers, for pages that refresh prices while open. */
 export type Quote = { id: string; yesBp: number; change24hBp: number; volumeMicro: number; tradingOpen: boolean };
 
 /** One request refreshes at most a full feed page. */
@@ -257,10 +330,10 @@ export const MAX_QUOTES = MAX_CARDS;
 const QUOTABLE = ["open", "closed", "ruled", "settled", "cancelled"] as const;
 
 /**
- * Live prices for goals a page is already showing (decided 2026-09-24: prices
+ * Live prices for markets a page is already showing (decided 2026-09-24: prices
  * refresh about every 15 seconds). Read-only on purpose: it records no view or
  * click, so a page polling it cannot inflate the counts the feed ranks by. It
- * returns only numbers the goal's public page already shows.
+ * returns only numbers the market's public page already shows.
  */
 export async function readQuotes<Q extends PgQueryResultHKT>(
   database: Database<Q>,
@@ -295,9 +368,9 @@ export async function readQuotes<Q extends PgQueryResultHKT>(
 }
 
 /**
- * Volume and the price 24 hours ago, for a set of goals. The earlier price is
- * the last recorded point at or before the window; a goal younger than that
- * falls back to its first point, which approval writes at the opening price.
+ * Volume and the price 24 hours ago, for a set of markets. The earlier price is
+ * the last recorded point at or before the window; a market younger than that
+ * falls back to its first point, which publishing writes at the opening price.
  */
 async function readMarketInformation<Q extends PgQueryResultHKT>(
   database: Database<Q>,
@@ -336,7 +409,7 @@ async function readMarketInformation<Q extends PgQueryResultHKT>(
   return { volume, priceThen };
 }
 
-/** Full recorded price history for a few goals, oldest first. */
+/** Full recorded price history for a few markets, oldest first. */
 async function readSeries<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   ids: readonly string[],
@@ -356,7 +429,7 @@ async function readSeries<Q extends PgQueryResultHKT>(
   return out;
 }
 
-/** One goal's price history, for its own page. Public: prices are already public. */
+/** One market's price history, for its own page. Public: prices are already public. */
 export async function readPriceSeries<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketId: string,
@@ -367,7 +440,7 @@ export async function readPriceSeries<Q extends PgQueryResultHKT>(
 }
 
 /**
- * Record that these goals were shown in the feed. Measurement must never break
+ * Record that these markets were shown in the feed. Measurement must never break
  * the page, so a failure here is swallowed: a missing row costs a little ranking
  * accuracy, while a thrown error would blank the home page for every visitor.
  */
@@ -385,7 +458,7 @@ export async function recordExposures<Q extends PgQueryResultHKT>(
   }
 }
 
-/** Record that a goal page was opened. Swallowed on failure for the same reason. */
+/** Record that a market page was opened. Swallowed on failure for the same reason. */
 export async function recordClick<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketId: string,
@@ -397,7 +470,7 @@ export async function recordClick<Q extends PgQueryResultHKT>(
   }
 }
 
-/** Counts for a set of goals, for checking that measurement actually records. */
+/** Counts for a set of markets, for checking that measurement actually records. */
 export async function readEventCounts<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketIds: readonly string[],

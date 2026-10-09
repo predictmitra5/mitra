@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { percent, tickerLabel } from "@/modules/discovery/present";
-import { Change, type CardData } from "./goal-card";
+import { Change, type CardData } from "./market-card";
 import { useLiveQuotes, withQuote } from "./live-quotes";
 
 /*
  * The price ticker under the top bar (2026-09-24): "a slim, quiet price
- * ticker". One still row of first name and stake, chance and today's change,
+ * ticker". One still row of venue, chance and today's change,
  * which scrolls sideways by hand. It no longer moves on its own. Prices come in
  * live from the page's shared quote store.
  */
@@ -26,7 +26,7 @@ export function Ticker({ cards }: { cards: CardData[] }) {
           return (
             <li key={card.id}>
               <Link className="ticker-item" href={`/markets/${card.id}`} prefetch={false} title={card.question}>
-                <span className="ticker-name">{tickerLabel(card.goalType, card.question, card.displayName)}</span>
+                <span className="ticker-name">{tickerLabel(card.question, card.venueName)}</span>
                 <span className="ticker-odds">{percent(card.yesPrice)}%</span>
                 <Change bp={card.change24hBp} when="today" />
               </Link>

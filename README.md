@@ -1,6 +1,6 @@
 # Mitra
 
-A points-based social prediction app about people's goals, launching as private campus communities for OSU and UIUC. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by either university. The product was built from `Prediction_Market_MVP_Master_Prompt.pdf`, an 18-page question-first brief.
+A points-based campus prediction market about what happens at local venues and events, launching at Ohio State with room for more campuses (Illinois sign-ups already work). Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university or venue. It was first built from `Prediction_Market_MVP_Master_Prompt.pdf` as a market on people's goals, and pivoted to campus event markets on 2026-10-08 from the owner's `Mitra_Event_Market_Pivot_Coding_Agent_Prompt.pdf`.
 
 Start with [docs/EXECUTION.md](docs/EXECUTION.md) for current state, decisions and next work. Coding agents should also read [AGENTS.md](AGENTS.md).
 
@@ -8,26 +8,24 @@ Start with [docs/EXECUTION.md](docs/EXECUTION.md) for current state, decisions a
 
 Implemented:
 
-- **Browse first** (2026-10-05): the feed at `/`, goal pages, live prices and photos are open to everyone; trading, posting and every write need a verified university account. Visitors get a Kalshi-style sign-up pop-up after 30 seconds (closable; Yes, No and trade buttons reopen it). Goal pages ask search engines not to list them.
-- The home feed: Anything, Academics, Competitions / Awards and Closing soon tabs narrow the cards in place, with a disabled Coming soon label; the goal moving most today leads with its chart beside a Closing soon list. Ranking uses recent activity over time decay, a head start for new goals and a two-leading-slot cap per person. Exposure and click counts are recorded without a viewer identity.
-- Proof submission and verified statements: the subject of a goal can attach documents (PDF or image) or links to it from approval until the proof deadline. **An uploaded document is never published.** The owner reads it, with suggested wording from an automatic read, and publishes a short statement such as "Fall 2026 GPA is 3.85". The document stays private and is kept as the record behind that statement.
+- **Campus event markets** (2026-10-08): each market is about a venue and an event window, with exact Yes and No conditions, a time zone, a trading cutoff, a results deadline and a named resolution source that says whether it is connected or still a placeholder. A source that never reports by the results deadline resolves No. Three hypothetical Ohio State samples (Midway on High, Buckeye Donuts, Gateway Film Center) are labelled Sample everywhere they appear.
+- **Browse first:** the feed at `/`, market pages, venue pages at `/venues/<slug>` and live prices are open to everyone; trading, suggesting and every write need a verified university account. Visitors get a Kalshi-style sign-up pop-up after 30 seconds (closable; Yes, No and trade buttons reopen it). Market pages ask search engines not to list them.
+- **The home feed:** the owner's opening card ("mitra.", "Trade on what happens here.", the campus, "Your campus. Your market."), category tabs (Nightlife, Food, Events, Entertainment, Campus), search, and filters by venue, status (open, closed, resolved, void) and closing date, all in the address. The market moving most today leads with its chart beside a Closing soon list. Ranking uses recent activity over time decay, a head start for new markets and a two-leading-slot cap per venue. Exposure and click counts are recorded without a viewer identity. A member sees their own campus; visitors see Ohio State.
+- **Suggest a market** at `/suggest`: question, category, venue, when it happens and how it could be checked. Suggestions are private to their author and the owner, wait for review, and are never published by themselves.
+- **Owner review** at `/review`: publish a suggestion (or a market from scratch) with exact terms, the venue and event, the window, cutoff and results deadline, the source and whether it works, and the opening odds; or turn it down with a reason the student reads. Outcomes at `/review/markets`: early close, rulings from the source once the window ends, a No when the source never reported, revised rulings with fresh 24-hour objection windows, and voiding with held-cost refunds.
 - **Sign-up in Kalshi's shape**, one screen per step with a progress bar: school, school email, the six-digit code from that inbox, then a password set on the verified session. Sign-in, sign-out and password reset for canonical `@osu.edu` and `@illinois.edu` identities. See Supabase Auth setup below.
-- **Onboarding after sign-up:** name and @username, an 18+ self-confirmation (which creates the profile and its one-time 1,000-point grant in a single transaction), a profile photo (skippable until posting a goal), topics to follow (stored only) and how Mitra works.
-- The market engine (LMSR pricing, positions, the per-market limit and the trading ban) as tested logic.
-- Goal creation from templates (GPA, internship, club, gym, running) or your own words, and an owner-only queue to approve goals with opening odds or reject them with a reason.
-- **Bet on literally anything.** The motto, on the feed and sign-up. A goal can be anything about the poster's own life; "Anything" is the default in the goal form, with GPA, internship, club, gym and running as quick starts. A running goal counts only an official race result, chip time when listed.
-- **Profile photos**, required to post a goal and shown wherever a name appears. Uploads are checked for AI-generated labels, re-encoded to a 512-pixel square with all metadata (including location) removed, stored privately and served through `/photos/<handle>`. The check only catches images that still carry their labels.
-- **Owner tools:** a People page at `/review/people` to ban and unban people and remove photos, and a count in the top bar of goals and proof waiting. A ban signs the person out and keeps them out, cancels their goals that still need proof with refunds, and rejects their drafts; goals already ruled finish normally.
-- **Live prices** every 15 seconds while a page is open, a quiet price ticker under the top bar with today's change, and a chart with 1D, 1W, 1M and All. Polling records nothing, so it cannot inflate the feed's counts.
-- **Positions** on the account page and at `/positions` (in pages of 20): each goal you hold shares in, the side, shares and average price paid, and what the shares are worth at today's price with the gain or loss since you bought. That value is not what selling would return, which is lower for a large holding. Sold, paid-out and refunded holdings leave the list.
-- The 2026-10-05 look: the Mitra logo, Helvetica, black by default with a white theme the person picks, baby blue main buttons, green Yes and red No (including the two-line Yes/No chart), higher contrast and quick hover and press feedback. The school's name sits beside the logo in its colour once someone is signed in. See [docs/DESIGN.md](docs/DESIGN.md), section 12.
-- Signed-in approved-goal pages with prices, resolution terms and deadlines; a trade panel (on a phone, a bottom sheet) estimates shares and "To win" with quick amounts, and traders then preview and confirm YES/NO buys and sells. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
-- Owner outcome management at `/review/markets`: early close, public YES/NO rulings, revised rulings with fresh 24-hour objection windows, and cancellation with held-cost refunds. Objections are private to their author and the owner. Final payouts update every participant atomically and cannot run twice.
+- **Onboarding after sign-up:** name and @username, an 18+ self-confirmation (which creates the profile and its one-time 1,000-point grant in a single transaction), an optional profile photo, topics to follow (the event categories, stored only) and how Mitra works.
+- The market engine (LMSR pricing, positions, the per-market limit and the trading ban for recorded outcome deciders) as tested logic. Trades atomically update the wallet, ledger, position and market price, with retry protection and concurrent-request checks.
+- **Positions** on the account page and at `/positions` (in pages of 20): each market's venue and question, the side, shares and average price paid, and the value at today's price with the gain or loss since bought; `/positions` also lists the latest 20 trades, each linked to its market. The account page lists your suggestions and where each stands.
+- **Profile photos**, optional, checked for AI-generated labels, re-encoded to a 512-pixel square with all metadata removed, stored privately and served through `/photos/<handle>`.
+- **Owner tools:** a People page at `/review/people` to ban and unban people and remove photos, and a count in the top bar of suggestions waiting. A ban signs the person out, keeps them out and turns down their waiting suggestions.
+- **Live prices** every 15 seconds while a page is open, a quiet price ticker under the top bar, and a two-line Yes/No chart with 1D, 1W, 1M and All. Polling records nothing.
+- The 2026-10-05 look: the Mitra logo, Helvetica at two weights, black by default with a white theme the person picks, baby blue main buttons, green Yes and red No. See [docs/DESIGN.md](docs/DESIGN.md), sections 12 and 13.
 - The database schema on Supabase, with row-level security on every table.
 
-Not yet implemented: outcome-decider assignment, notifications and deployed background scheduling. The feed ranks from what the app can already measure; it does not personalize per viewer, and there is no follow or leaderboard. Search only filters the goals already on the feed. Deadline closure and due payouts are processed when market/account/owner pages are accessed; no periodic background runner is deployed. Trading stops at the deadline even without a page visit. First rulings follow the seven-day proof period; the owner still records a missing-proof NO explicitly rather than the app inferring it from an empty proof list. Self-service deletion is available from the account page: it removes the Auth identity and personal files, anonymizes the profile, cancels and refunds not-yet-ruled goals, and retains anonymized settled accounting records.
+Not yet implemented: any working data feed from a venue (every source today is a placeholder the owner reads by hand), outcome-decider assignment, notifications and deployed background scheduling. The feed does not personalize per viewer. Cutoff closure and due payouts are processed when market/account/owner pages are accessed; trading stops at the cutoff even without a page visit. Self-service deletion removes the Auth identity and personal files, anonymizes the profile, deletes unpublished suggestions and keeps anonymized settled accounting records.
 
-The first users are friends and students in the OSU and UIUC communities, with goals such as GPA, clubs, internships, launches and gym achievements. People create goals about themselves and the owner approves each one. Kalshi's rules are the trading reference: nobody trades a market about their own goal, and trades execute against an app-run market-maker bot. Current economy: one 1,000-point starting grant, no top-ups or periodic resets, and at most 100 points per person per market.
+Goal markets about people ended on 2026-10-08: their pages still open at their old addresses and show no person, `/goals/new` sends people to `/suggest`, and proof uploads are gone.
 
 ## Local setup
 
@@ -86,7 +84,7 @@ These are dashboard settings in your Supabase project. The app never changes the
 
 ## Evidence storage
 
-Proof and profile photos need three private Supabase Storage buckets. Run this once per environment; it is safe to repeat, and it verifies each bucket's privacy rather than trusting the setting:
+Profile photos, and the proof originals kept from goal markets before 2026-10-08, use three private Supabase Storage buckets. Proof uploads ended with goal markets; the originals bucket stays private and in account deletion. Run this once per environment; it is safe to repeat, and it verifies each bucket's privacy rather than trusting the setting:
 
 ```bash
 node --env-file=.env.local scripts/setup-evidence-storage.mjs
@@ -96,7 +94,7 @@ node --env-file=.env.local scripts/setup-evidence-storage.mjs
 - `profile-photos` is **private** and accepts only the WebP the app produces. Photos reach browsers through the app's `/photos` route, so a ban or withdrawal stops them at once.
 - `photo-uploads` is **private**. A browser uploads the original photo here; the app reads it, checks it for AI labels, re-encodes it into `profile-photos` and deletes it.
 
-Files go from the browser straight to storage through one-time signed upload links, because Vercel refuses request bodies over 4.5 MB. The app checks each file after it arrives (its real size, and for proof its file signature) before recording it.
+Photos go from the browser straight to storage through one-time signed upload links, because Vercel refuses request bodies over 4.5 MB. The app checks each file after it arrives before recording it.
 
 There is deliberately no public bucket: no uploaded document is ever published, so there is nowhere for one to be published to. If an earlier `evidence-public` bucket still exists in your project, it is unused and can be deleted.
 
@@ -144,6 +142,8 @@ Migrations live in `drizzle/` and run over the session pooler (`DIRECT_DATABASE_
 node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate
 ```
 
+Until the event-market go-live has run, use `scripts/event-pivot-go-live.mjs` instead (see Going live with event markets): on the live project, migration 0012 was applied by hand and is not recorded, so a plain migrate would try to apply it again and fail.
+
 ## Checks
 
 ```bash
@@ -176,21 +176,13 @@ These commands create uniquely named `mitra_trade_test_*`, `mitra_lifecycle_test
 
 Refill coverage includes retries, authorization, exact credits, Eastern month/year boundaries, daylight-saving changes, rollback and stale account views. Hosted cases also exercise claims racing buys, sells and final payouts, cross-user request reuse, and a month rollover while a claim waits on a wallet lock.
 
-To inspect the actual public page without creating a live goal, build first and run:
-
-```bash
-node --env-file=.env.local scripts/preview-market.mjs
-```
-
-The helper prints localhost:3100 links to fictional open, ruled, settled and cancelled goals, uses a disposable `mitra_preview_*` schema, and removes it on normal exit or Ctrl+C.
-
-To inspect the feed with enough goals to see the tabs, search, the featured goal and the per-subject cap, with the app's scripts running:
+To inspect the real app, signed out, with enough fictional markets to try the tabs, filters, search, the featured market, the per-venue cap and a market page's trade panel, build first and run:
 
 ```bash
 node --env-file=.env.local scripts/preview-feed.mjs
 ```
 
-That one seeds seven fictional people and fourteen goals, with trades and price history, into a disposable `mitra_feed_preview_*` schema and serves the whole app at localhost:3100, signed out. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
+That one seeds eight fictional venues and fourteen markets (open, closed and void, two marked Sample), with trades and price history, into a disposable `mitra_feed_preview_*` schema and serves the whole app at localhost:3100. For automation, use an interactive terminal so `stop` can be sent on stdin. This helper is for local inspection, not a deployment or a demo account.
 
 A preview killed outright, for example by closing its terminal on Windows, cannot remove its schema. This removes every preview schema left behind, and nothing else:
 
@@ -198,10 +190,20 @@ A preview killed outright, for example by closing its terminal on Windows, canno
 node --env-file=.env.local scripts/preview-feed.mjs --cleanup
 ```
 
-To see the signed-in pages (account, new goal, your predictions, the owner's review queue and outcomes, and a goal page with the trade ticket and proof form) without an account:
+To see the signed-in pages (the feed and its filters, a venue, market pages including a ruled and a void one, suggesting a market, the account and positions, onboarding, and the owner's review queue, outcomes and people) without an account:
 
 ```bash
 node scripts/preview-signed-in.mjs
 ```
 
-It renders the real page components against an in-memory database seeded with fictional people (with generated silhouette photos, one person without a photo, one banned person, proof waiting for the owner, eight open goals across every tab with price paths and moves today, and published proof on the deadlift goal), so it needs no credentials, touches no Supabase project and creates no Auth users. Open http://127.0.0.1:3120 and pick a person. Forms render but do not submit and no scripts run: it shows how pages look, not what they do. A goal page opened with `?side=yes` shows the phone's trade sheet open. Build first; it takes the stylesheet and fonts from the build.
+It renders the real page components against an in-memory database seeded through the app's own services with the three Ohio State samples, fictional venues and fictional people (with generated silhouette photos, suggestions waiting and turned down, and one banned person), so it needs no credentials, touches no Supabase project and creates no Auth users. Open http://127.0.0.1:3120 and pick a person. Forms render but do not submit and no scripts run: it shows how pages look, not what they do. A market page opened with `?side=yes` shows the phone's trade sheet open. Build first; it takes the stylesheet and fonts from the build.
+
+## Going live with event markets
+
+The live steps of the 2026-10-08 pivot wait for the owner's go-ahead. A read-only report first:
+
+```bash
+node --env-file=.env.local scripts/event-pivot-go-live.mjs
+```
+
+Then, with `--apply` (and `--owner=<handle>` while there is more than one owner account): record migration 0012, which was applied by hand on 2026-10-05 and never recorded; apply 0013; void the remaining goal markets with held-cost refunds; publish the three Ohio State samples. Each step is safe to run again. The steps live in `src/modules/events/go-live.ts` and are tested against an in-memory copy of that live state.

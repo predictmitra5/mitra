@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
@@ -8,7 +8,7 @@ import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
 import { isInactive } from "@/modules/account/standing";
 
-const { profiles, positions, markets } = schema;
+const { profiles, positions, markets, venues, trades } = schema;
 export const POSITIONS_PAGE_SIZE = 20;
 
 export class PositionsError extends Error {
@@ -17,20 +17,19 @@ export class PositionsError extends Error {
   }
 }
 
-export interface HeldGoal {
+export interface HeldMarket {
   marketId: string;
   question: string;
-  goalType: string | null;
+  category: string | null;
+  /** The venue, for an event market; null on a retired goal market. */
+  venueName: string | null;
+  isSample: boolean;
   /**
    * The market's public chance of YES, the same number its page shows: the
    * live price while trading is open, the last traded one after. It is not a
    * valuation of the holding; held cost stays separate from sale value.
    */
   yesPrice: number | null;
-  displayName: string;
-  handle: string;
-  /** Versions the subject's public photo URL; null without a photo. */
-  photoUpdatedAt: Date | null;
   status: "open" | "closed" | "ruled";
   deadlineAt: Date;
   evidenceDeadlineAt: Date;
@@ -45,7 +44,7 @@ export interface HeldGoal {
 }
 
 export interface PositionsPage {
-  goals: HeldGoal[];
+  markets: HeldMarket[];
   total: number;
   page: number;
   pages: number;
@@ -68,23 +67,23 @@ export interface SideValue {
   gainMicro: number;
 }
 
-type Holding = Pick<HeldGoal, "yesPrice" | "yesSharesMicro" | "noSharesMicro" | "yesCostBasisMicro" | "noCostBasisMicro">;
+type Holding = Pick<HeldMarket, "yesPrice" | "yesSharesMicro" | "noSharesMicro" | "yesCostBasisMicro" | "noCostBasisMicro">;
 
 /**
  * A holding's value and its gain or loss since bought (decided 2026-09-24).
  * Value is the shares at the current price of their side, as Kalshi shows it:
  * a YES share is worth the YES price, a NO share one minus it. It is not what
  * selling would return, which is lower for a large holding because a sale moves
- * the price. Null when the goal has no price.
+ * the price. Null when the market has no price.
  */
-export function valueHolding(goal: Holding): (HoldingTotals & { sides: SideValue[] }) | null {
-  if (goal.yesPrice === null) return null;
+export function valueHolding(holding: Holding): (HoldingTotals & { sides: SideValue[] }) | null {
+  if (holding.yesPrice === null) return null;
   const sides: SideValue[] = [];
   for (const side of ["yes", "no"] as const) {
-    const sharesMicro = side === "yes" ? goal.yesSharesMicro : goal.noSharesMicro;
+    const sharesMicro = side === "yes" ? holding.yesSharesMicro : holding.noSharesMicro;
     if (sharesMicro <= 0) continue;
-    const costMicro = side === "yes" ? goal.yesCostBasisMicro : goal.noCostBasisMicro;
-    const valueMicro = Math.round(sharesMicro * (side === "yes" ? goal.yesPrice : 1 - goal.yesPrice));
+    const costMicro = side === "yes" ? holding.yesCostBasisMicro : holding.noCostBasisMicro;
+    const valueMicro = Math.round(sharesMicro * (side === "yes" ? holding.yesPrice : 1 - holding.yesPrice));
     sides.push({ side, sharesMicro, costMicro, valueMicro, gainMicro: valueMicro - costMicro });
   }
   const valueMicro = sides.reduce((sum, entry) => sum + entry.valueMicro, 0);
@@ -160,16 +159,14 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       // final remaining page instead of a misleading empty portfolio.
       const page = Math.min(requestedPage, pages);
       const rows = await tx.select({
-        marketId: markets.id, question: markets.question, goalType: markets.goalType,
+        marketId: markets.id, question: markets.question, category: markets.category, venueName: venues.name, isSample: markets.isSample,
         liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
-        displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
-        subjectWithdrawnAt: profiles.withdrawnAt, subjectBannedAt: profiles.bannedAt,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
         yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
         yesCostBasisMicro: positions.yesCostBasisMicro, noCostBasisMicro: positions.noCostBasisMicro,
       }).from(positions).innerJoin(markets, eq(markets.id, positions.marketId))
-        .innerJoin(profiles, eq(profiles.id, markets.subjectUserId)).where(visible)
+        .leftJoin(venues, eq(venues.id, markets.venueId)).where(visible)
         .orderBy(asc(markets.deadlineAt), asc(markets.id)).limit(POSITIONS_PAGE_SIZE).offset((page - 1) * POSITIONS_PAGE_SIZE);
       // Totals cover every holding, not just this page, for the account summary.
       const all = await tx.select({
@@ -185,10 +182,8 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       }
       const now = clock();
       if (!Number.isFinite(now.getTime())) throw new Error("Invalid clock.");
-      return { total, page, pages, totals, goals: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, subjectWithdrawnAt, subjectBannedAt, ...row }) => ({
-        ...row, status: row.status as HeldGoal["status"],
-        // The photo route refuses a banned or withdrawn person, so never link to it.
-        photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
+      return { total, page, pages, totals, markets: rows.map(({ tradingClosedAt, liquidityMicro, marketYesMicro, marketNoMicro, ...row }) => ({
+        ...row, status: row.status as HeldMarket["status"],
         yesPrice: marketPrice(liquidityMicro, marketYesMicro, marketNoMicro),
         tradingOpen: row.status === "open" && !tradingClosedAt && row.deadlineAt > now,
         contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt > now,
@@ -198,4 +193,38 @@ export async function readPositions<Q extends PgQueryResultHKT>(
     if (error instanceof PositionsError) throw error;
     throw new PositionsError("UNAVAILABLE", "Your predictions couldn’t load. Please try again shortly.");
   }
+}
+
+export interface TradeRecord {
+  id: string;
+  marketId: string;
+  question: string;
+  venueName: string | null;
+  action: "buy" | "sell";
+  side: "yes" | "no";
+  sharesMicro: number;
+  /** Paid on a buy, received on a sell. */
+  amountMicro: number;
+  /** The YES price after the trade, in basis points. */
+  yesPriceAfterBp: number;
+  createdAt: Date;
+}
+
+export const TRADE_HISTORY_SIZE = 20;
+
+/**
+ * The signed-in person's latest trades, newest first, each linked to its
+ * market (the brief's "trade history", 2026-10-08). Private: userId must be the
+ * freshly verified server identity.
+ */
+export async function readTradeHistory<Q extends PgQueryResultHKT>(
+  database: PgDatabase<Q, typeof schema>, userId: string, limit = TRADE_HISTORY_SIZE,
+): Promise<TradeRecord[]> {
+  if (!isUuid(userId)) return [];
+  return database.select({
+    id: trades.id, marketId: trades.marketId, question: markets.question, venueName: venues.name,
+    action: trades.action, side: trades.side, sharesMicro: trades.sharesMicro, amountMicro: trades.amountMicro,
+    yesPriceAfterBp: trades.yesPriceAfterBp, createdAt: trades.createdAt,
+  }).from(trades).innerJoin(markets, eq(markets.id, trades.marketId)).leftJoin(venues, eq(venues.id, markets.venueId))
+    .where(eq(trades.userId, userId)).orderBy(desc(trades.createdAt)).limit(Math.min(Math.max(1, limit), 100));
 }

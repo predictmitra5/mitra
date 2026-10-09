@@ -15,7 +15,7 @@ import { percent } from "@/modules/discovery/present";
  * +10, +25 and Max, an estimate with "To win", and a brand button. The button
  * asks the server for the exact preview, which the trader then confirms, as
  * before; the estimate never charges anyone. Points only, up to 100 points
- * of held cost per goal.
+ * of held cost per market.
  */
 
 export type TradeAccess =
@@ -209,7 +209,7 @@ export function TradePanel({
           </div>
           <p id={`amount-help-${marketId}`} className={over ? "trade-over" : "sr-only"}>
             {over
-              ? mode === "buy" ? `You can put in up to ${formatMicro(maxMicro ?? 0)} points here: your available points or what is left of your 100-point limit on this goal, whichever is less.` : `You hold ${formatMicro(held)} ${words(side)} shares.`
+              ? mode === "buy" ? `You can put in up to ${formatMicro(maxMicro ?? 0)} points here: your available points or what is left of your 100-point limit on this market, whichever is less.` : `You hold ${formatMicro(held)} ${words(side)} shares.`
               : mode === "buy" ? "Points to spend." : "Shares to sell."}
           </p>
         </div>
@@ -230,7 +230,7 @@ export function TradePanel({
         )}
       </form>
       <p className="trade-note">
-        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 pts per goal.
+        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 pts per market.
         {access.kind === "signed-out" && " Trading needs a verified university email and is for ages 18 and up."}
       </p>
     </div>

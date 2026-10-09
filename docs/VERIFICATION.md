@@ -1,5 +1,7 @@
 # Proving a goal without exposing the person
 
+> **Retired 2026-10-08.** Goal markets and proof uploads ended with the pivot to campus event markets. Event markets are settled by the owner from each market's named resolution source; a source that never reports by the results deadline resolves No (DECISIONS.md, 2026-10-08). The `evidence` table and the private originals bucket remain for records from before the pivot, and account deletion still removes them. The rest of this document describes the retired design.
+
 How Mitra verifies that someone did what they said they would, and why it publishes a sentence instead of a document.
 
 Decided 2026-09-19. Supersedes the redaction design of the same day. Decision records: D06 and D07 in [DECISIONS.md](DECISIONS.md).

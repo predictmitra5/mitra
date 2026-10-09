@@ -1,6 +1,6 @@
 # Markets
 
-Status: goal drafting, owner approval, the private signed-in feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, proof submission with owner-published statements, and account withdrawal are built. Deployed background scheduling remains to be implemented. User refills were disabled and removed from the product on 2026-10-05.
+Status (event markets since 2026-10-08, see the last section): goal drafting, owner approval, the private signed-in feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, proof submission with owner-published statements, and account withdrawal are built. Deployed background scheduling remains to be implemented. User refills were disabled and removed from the product on 2026-10-05.
 
 ## Confirmed direction - 2026-09-15
 
@@ -147,3 +147,17 @@ Price-impact simulation used to choose b, with markets opening at 50% (1,000 sta
 | 200 | 52% | 56% | 70% | 4 | 139 |
 | 300 | 52% | 54% | 64% | 5 | 208 |
 | 500 | 51% | 52% | 59% | 9 | 347 |
+
+## Event markets (2026-10-08)
+
+Decided by the owner's pivot brief and answers (DECISIONS.md, 2026-10-08). Goal markets about people ended; everything above about goals, templates and proof describes them.
+
+- **What a market is:** a yes-or-no question about something countable at a venue during a window: a bar's drink count on a Friday night, a donut shop's overnight sales, a screening's paid admissions. Each names its venue and event, campus, category, the window and its time zone, the trading cutoff, when results are due, exact Yes and No conditions, full rules, and a resolution source.
+- **Who makes them:** any member can suggest one (question, category, venue, when, how it could be checked). The owner publishes it, writing the exact terms and setting the opening odds, or turns it down with a reason. Nothing a student suggests is published by itself. The owner can also publish from scratch.
+- **Trading:** unchanged: the market maker (b = 150), the 1,000-point grant, the 100-point held-cost limit per market, selling while open. Recorded outcome deciders cannot trade. Event markets have no subject, so nobody is barred as one. Rules ask people not to buy at the venue to move a market and not to trade a venue where they work; nothing enforces that automatically.
+- **Cutoff:** usually when the window starts (the owner can set any time up to the window's end). Trading stops at the cutoff even without a page visit.
+- **Settlement:** after the window ends the owner checks the source and rules, with a public explanation and a 24-hour objection window before payout. If the source has not reported by the results deadline (usually three days after the window), the market resolves No; the owner records that ruling, which the app allows only after the deadline. A broken market (for example an event that never happens) is voided with held-cost refunds.
+- **Sources:** each says whether it is connected or a placeholder. Every source today is a placeholder: no venue shares data with Mitra yet.
+- **Samples:** three hypothetical Ohio State markets (Midway on High drinks, Buckeye Donuts donuts, a Gateway Film Center screening), labelled Sample everywhere, with demonstration price history before they open. They are live and tradeable with real points and are voided with refunds when real markets replace them (the owner's answers of 2026-10-08). Fixtures: `src/modules/events/samples.ts`.
+- **Campuses:** venues and markets carry a campus; the feed shows the viewer's campus, and visitors see Ohio State.
+- **The goal market that was live** is voided with refunds when the live steps run (`scripts/event-pivot-go-live.mjs`).

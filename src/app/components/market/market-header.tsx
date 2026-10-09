@@ -3,25 +3,25 @@ import { CAMPUSES } from "@/config/campus";
 import type { Viewer } from "@/modules/account/viewer";
 import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
-import { Avatar } from "./goal-card";
+import { Avatar } from "./market-card";
 import { SearchBox } from "./search-box";
 
 /**
  * The top bar on every page: the Mitra logo (2026-10-05) with, once someone is
- * signed in, their school's name in its colour; search; Goals and Positions;
- * the viewer's available points; a baby blue "Post a goal"; the black/white
- * switch and their photo. Log in and Sign up when signed out.
+ * signed in, their school's name in its colour; search; Markets and Positions;
+ * the viewer's available points; a baby blue "Suggest a market" (2026-10-08);
+ * the black/white switch and their photo. Log in and Sign up when signed out.
  *
- * `viewer.ownerQueue` is set only for the owner: how many goals and pieces of
- * proof are waiting. That link stays visible on a phone, because nothing else
- * tells the owner something is waiting.
+ * `viewer.ownerQueue` is set only for the owner: how many market suggestions
+ * are waiting. That link stays visible on a phone, because nothing else tells
+ * the owner something is waiting.
  *
  * On a phone the bar keeps the logo, points and photo; the search drops to its
  * own row on the feed (`search="feed"`) and is left out elsewhere.
  */
 export function MarketHeader({ viewer, active, query = "", search = "desktop", brandMode = "campus", entryAction }: {
   viewer: Viewer | null;
-  active?: "goals" | "positions";
+  active?: "markets" | "positions";
   /** The search already in the address, on the feed. */
   query?: string;
   search?: "desktop" | "feed";
@@ -40,11 +40,11 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
             <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
           </>}
         </span>
-        {!neutral && <span className="brand-motto">Bet on literally anything.</span>}
+        {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
       </Link>
       {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
       {!neutral && <nav className="topbar-nav" aria-label="Main">
-        <Link href="/" prefetch={false} aria-current={active === "goals" ? "page" : undefined}>Goals</Link>
+        <Link href="/" prefetch={false} aria-current={active === "markets" ? "page" : undefined}>Markets</Link>
         {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
       </nav>}
       <div className="topbar-actions">
@@ -62,7 +62,7 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
                 <strong>{pointsShort(points)}</strong> <span>pts</span>
               </Link>
             )}
-            <Link className="btn btn-primary topbar-post" href="/goals/new">Post a goal</Link>
+            <Link className="btn btn-primary topbar-post" href="/suggest">Suggest a market</Link>
             <Link className="topbar-me" href="/account" aria-label="Your account">
               <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
             </Link>
@@ -102,7 +102,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
     <footer className="market-footer">
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Bet on literally anything. Start with 1,000 points.</span>
+        <span>Trade on what happens here. Start with 1,000 points.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>

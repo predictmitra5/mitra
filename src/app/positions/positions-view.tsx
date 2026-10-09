@@ -1,52 +1,54 @@
 import Link from "next/link";
-import { valueHolding, type HeldGoal, type PositionsPage } from "@/modules/account/positions";
-import { cardTitle, percent, pointsText } from "@/modules/discovery/present";
-import { Avatar, Gain } from "@/app/components/market/goal-card";
-import { photoUrl } from "@/modules/account/photo-url";
+import { valueHolding, type HeldMarket, type PositionsPage, type TradeRecord } from "@/modules/account/positions";
+import { categoryLabel, percent, pointsText } from "@/modules/discovery/present";
+import { Gain, SampleTag, VenueMark } from "@/app/components/market/market-card";
 
 const date = (value: Date) => new Intl.DateTimeFormat("en-US", {
   month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York",
 }).format(value);
 
 /** Where a holding stands, when trading is no longer open. */
-function standing(goal: HeldGoal): string | null {
-  if (goal.tradingOpen) return null;
-  if (goal.status === "ruled" && goal.ruledOutcome) {
-    const ruled = `Ruled ${goal.ruledOutcome === "yes" ? "Yes" : "No"}`;
-    if (!goal.contestEndsAt) return ruled;
-    return goal.contestOpen ? `${ruled} · Objections close ${date(goal.contestEndsAt)} ET` : `${ruled} · Objections closed · Payout pending`;
+function standing(market: HeldMarket): string | null {
+  if (market.tradingOpen) return null;
+  if (market.status === "ruled" && market.ruledOutcome) {
+    const ruled = `Resolved ${market.ruledOutcome === "yes" ? "Yes" : "No"}`;
+    if (!market.contestEndsAt) return ruled;
+    return market.contestOpen ? `${ruled} · Objections close ${date(market.contestEndsAt)} ET` : `${ruled} · Objections closed · Payout pending`;
   }
-  return `Trading closed · Proof due ${date(goal.evidenceDeadlineAt)} ET`;
+  return `Trading closed · Results due ${date(market.evidenceDeadlineAt)} ET`;
 }
 
 /**
  * The signed-in person's holdings, as the account page and the positions page
- * both list them (2026-09-24): each goal's photo and question, the side, shares
- * and average price paid, then the value at today's price and the gain or loss
- * since bought. Value is what the shares are worth at the current price, not
- * what selling them would return.
+ * both list them (2026-09-24, event markets since 2026-10-08): each market's
+ * venue and question, the side, shares and average price paid, then the value
+ * at today's price and the gain or loss since bought. Value is what the shares
+ * are worth at the current price, not what selling them would return.
  */
-export function PositionRows({ goals }: { goals: HeldGoal[] }) {
+export function PositionRows({ markets }: { markets: HeldMarket[] }) {
   return (
     <ul className="holdings">
-      {goals.map((goal) => {
-        const value = valueHolding(goal);
-        const note = standing(goal);
+      {markets.map((market) => {
+        const value = valueHolding(market);
+        const note = standing(market);
         return (
-          <li key={goal.marketId}>
-            <Link className="holding" href={`/markets/${goal.marketId}`} prefetch={false}>
-              <Avatar name={goal.displayName} photo={photoUrl(goal.handle, goal.photoUpdatedAt)} size={40} shape="square" />
+          <li key={market.marketId}>
+            <Link className="holding" href={`/markets/${market.marketId}`} prefetch={false}>
+              <VenueMark name={market.venueName} size={40} />
               <span className="holding-text">
-                <span className="holding-title">{cardTitle(goal.goalType, goal.question)}</span>
-                {(value?.sides ?? sidesWithoutPrice(goal)).map((side) => (
+                <span className="holding-kicker">
+                  {categoryLabel(market.category)}{market.venueName ? ` · ${market.venueName}` : ""}{market.isSample && <> <SampleTag /></>}
+                </span>
+                <span className="holding-title">{market.question}</span>
+                {(value?.sides ?? sidesWithoutPrice(market)).map((side) => (
                   <span key={side.side} className="holding-sub">
                     <span className={`side-${side.side}`}>{side.side === "yes" ? "Yes" : "No"}</span>
                     {" · "}{pointsText(side.sharesMicro)} shares · paid {Math.round((side.costMicro / side.sharesMicro) * 100)}¢
                   </span>
                 ))}
                 {note && <span className="holding-note">{note}</span>}
-                {goal.yesPrice !== null && (
-                  <span className="sr-only">{percent(goal.yesPrice)}% chance of Yes{goal.tradingOpen ? "" : " when trading closed"}.</span>
+                {market.yesPrice !== null && (
+                  <span className="sr-only">{percent(market.yesPrice)}% chance of Yes{market.tradingOpen ? "" : " when trading closed"}.</span>
                 )}
               </span>
               {value && (
@@ -63,18 +65,41 @@ export function PositionRows({ goals }: { goals: HeldGoal[] }) {
   );
 }
 
-function sidesWithoutPrice(goal: HeldGoal) {
+function sidesWithoutPrice(market: HeldMarket) {
   return (["yes", "no"] as const)
     .map((side) => ({
       side,
-      sharesMicro: side === "yes" ? goal.yesSharesMicro : goal.noSharesMicro,
-      costMicro: side === "yes" ? goal.yesCostBasisMicro : goal.noCostBasisMicro,
+      sharesMicro: side === "yes" ? market.yesSharesMicro : market.noSharesMicro,
+      costMicro: side === "yes" ? market.yesCostBasisMicro : market.noCostBasisMicro,
     }))
     .filter((side) => side.sharesMicro > 0);
 }
 
-/** The positions page: every holding, 20 to a page, with the totals across all of them. */
-export function PositionsView({ data }: { data: PositionsPage }) {
+/** The latest trades, newest first, each linked to its market. */
+export function TradeHistory({ trades }: { trades: TradeRecord[] }) {
+  return (
+    <ul className="trade-history">
+      {trades.map((trade) => (
+        <li key={trade.id}>
+          <Link href={`/markets/${trade.marketId}`} prefetch={false}>
+            <span className="trade-history-text">
+              <span className="holding-title">{trade.question}</span>
+              <span className="holding-sub">
+                {trade.action === "buy" ? "Bought" : "Sold"} {pointsText(trade.sharesMicro)}{" "}
+                <span className={`side-${trade.side}`}>{trade.side === "yes" ? "Yes" : "No"}</span> shares
+                {trade.venueName ? ` · ${trade.venueName}` : ""} · {date(trade.createdAt)} ET
+              </span>
+            </span>
+            <span className="trade-history-amount">{trade.action === "buy" ? "−" : "+"}{pointsText(trade.amountMicro)} pts</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The positions page: every holding, 20 to a page, the totals across all of them, and recent trades. */
+export function PositionsView({ data, trades = [] }: { data: PositionsPage; trades?: TradeRecord[] }) {
   return (
     <>
       <div className="account-head">
@@ -89,17 +114,17 @@ export function PositionsView({ data }: { data: PositionsPage }) {
       {data.total === 0 ? (
         <section className="account-empty">
           <h2>No positions yet.</h2>
-          <p className="muted">When you buy Yes or No on a goal, it shows up here with what it is worth today.</p>
-          <Link className="btn btn-primary" href="/" prefetch={false}>Browse goals</Link>
+          <p className="muted">When you buy Yes or No on a market, it shows up here with what it is worth today.</p>
+          <Link className="btn btn-primary" href="/" prefetch={false}>Browse markets</Link>
         </section>
       ) : (
         <section aria-labelledby="holdings-title">
           <div className="account-section-head">
-            <h2 id="holdings-title">{data.total === 1 ? "1 goal" : `${data.total} goals`}</h2>
+            <h2 id="holdings-title">{data.total === 1 ? "1 market" : `${data.total} markets`}</h2>
             <span className="muted">Value · since you bought</span>
           </div>
-          <PositionRows goals={data.goals} />
-          <p className="muted account-small">Value is the shares at today&rsquo;s price, not what selling them would return. Soonest deadline first. Sold, paid-out and refunded positions leave this list.</p>
+          <PositionRows markets={data.markets} />
+          <p className="muted account-small">Value is the shares at today&rsquo;s price, not what selling them would return. Soonest cutoff first. Sold, paid-out and refunded positions leave this list.</p>
           {data.pages > 1 && (
             <nav className="pager" aria-label="Positions pages">
               {data.page > 1 ? <Link className="btn btn-quiet" href={`/positions?page=${data.page - 1}`} prefetch={false}>Previous</Link> : <span />}
@@ -107,6 +132,15 @@ export function PositionsView({ data }: { data: PositionsPage }) {
               {data.page < data.pages ? <Link className="btn btn-quiet" href={`/positions?page=${data.page + 1}`} prefetch={false}>Next</Link> : <span />}
             </nav>
           )}
+        </section>
+      )}
+      {trades.length > 0 && (
+        <section aria-labelledby="history-title">
+          <div className="account-section-head">
+            <h2 id="history-title">Trade history</h2>
+            <span className="muted">Latest {trades.length}</span>
+          </div>
+          <TradeHistory trades={trades} />
         </section>
       )}
     </>

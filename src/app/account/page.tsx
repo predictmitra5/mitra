@@ -7,14 +7,13 @@ import { CAMPUSES } from "@/config/campus";
 import { signOut } from "@/modules/auth/actions";
 import { readPositions, type PositionsPage } from "@/modules/account/positions";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import { listGoalsForSubject } from "@/modules/goals/service";
-import { price } from "@/modules/market/lmsr";
-import { toLmsr } from "@/modules/market/quote";
-import { MICRO_PER_UNIT } from "@/modules/market/units";
+import { listProposalsFor } from "@/modules/events/service";
+import { proposalStatusLine } from "@/modules/events/status";
+import { categoryLabel } from "@/modules/events/categories";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
-import { percent, pointsText } from "@/modules/discovery/present";
+import { pointsText } from "@/modules/discovery/present";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { Avatar, Gain } from "@/app/components/market/goal-card";
+import { Avatar, Gain } from "@/app/components/market/market-card";
 import { PositionRows } from "@/app/positions/positions-view";
 import { PhotoForm } from "./photo-form";
 import { DeleteAccountForm } from "./delete-account-form";
@@ -22,42 +21,19 @@ import { photoUrl } from "@/modules/account/photo-url";
 
 /*
  * The account page in the Kalshi direction (2026-09-24): available points,
- * positions with their gain or loss since bought, and the person's own goals
- * in plain words. Private to the signed-in person.
+ * positions with their gain or loss since bought, and, since 2026-10-08, the
+ * person's market suggestions and where each stands. Private to the signed-in
+ * person.
  */
 
-type GoalRow = { market: typeof schema.markets.$inferSelect; rejectionReason: string | null };
-
-const shortDate = (value: Date) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }).format(value);
-
-/** What each of your own goals says about where it stands. */
-function goalStatus({ market, rejectionReason }: GoalRow, now: Date): { text: string; tone: "pending" | "open" | "done" | "rejected" } {
-  switch (market.status) {
-    case "draft": return { text: "Waiting for the owner to approve it. Nobody can trade until then.", tone: "pending" };
-    case "rejected": return { text: `Not approved.${rejectionReason ? ` The owner’s note: ${rejectionReason}` : ""}`, tone: "rejected" };
-    case "open": return market.deadlineAt > now
-      ? { text: `Open · closes ${shortDate(market.deadlineAt)} · you can’t trade your own goal`, tone: "open" }
-      : { text: "Trading closed · send your proof from the goal page", tone: "open" };
-    case "closed": return { text: `Trading closed · proof due ${shortDate(market.evidenceDeadlineAt)}`, tone: "open" };
-    case "ruled": return { text: `Ruled ${market.ruledOutcome === "yes" ? "Yes" : "No"} · objections window`, tone: "done" };
-    case "settled": return { text: `Settled: ${market.ruledOutcome === "yes" ? "Yes" : "No"}`, tone: "done" };
-    case "cancelled": return { text: "Cancelled · traders refunded", tone: "done" };
-    default: return { text: market.status, tone: "done" };
-  }
-}
-
-function chanceOf(market: GoalRow["market"]): number | null {
-  if (market.yesSharesMicro === null || market.noSharesMicro === null) return null;
-  return price(toLmsr({ liquidity: market.liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: market.yesSharesMicro, noSharesMicro: market.noSharesMicro }), "YES");
-}
+type Suggestion = Awaited<ReturnType<typeof listProposalsFor>>[number];
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
-  const now = new Date();
   let account;
   let holdings: PositionsPage | undefined;
-  let goals: GoalRow[] = [];
+  let suggestions: Suggestion[] = [];
   let unavailable = false;
   try {
     const db = getDb();
@@ -67,7 +43,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       .where(eq(schema.profiles.id, identity.id)).limit(1);
     account = rows[0];
     if (account?.profile.adultConfirmedAt && !account.profile.withdrawnAt) {
-      goals = await listGoalsForSubject(db, identity.id);
+      suggestions = await listProposalsFor(db, identity.id);
     }
   } catch { unavailable = true; }
   if (!unavailable && account?.profile.adultConfirmedAt && !account.profile.withdrawnAt && account.wallet) {
@@ -88,7 +64,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       : blocked ? <section className="account-empty"><h1>Your account is temporarily unavailable.</h1><p>Please contact the app owner before continuing.</p></section>
       : !account ? null
       : <>
-        {notice === "goal-submitted" && <p className="form-success" role="status">Goal submitted. It goes live once the owner approves it and sets the opening odds.</p>}
+        {notice === "suggestion-sent" && <p className="form-success" role="status">Suggestion sent. It goes live only if the owner publishes it with exact rules and opening odds.</p>}
         {notice === "account-exists" && <p className="form-success" role="status">This account already exists, so we signed you in.</p>}
 
         <div className="me">
@@ -106,34 +82,31 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <section aria-labelledby="positions-title">
           <div className="account-section-head"><h2 id="positions-title">Positions</h2><span className="muted">Value · since you bought</span></div>
           {!holdings || holdings.total === 0
-            ? <p className="muted account-none">No positions yet. <Link href="/" prefetch={false}>Browse goals</Link> and buy Yes or No to start.</p>
+            ? <p className="muted account-none">No positions yet. <Link href="/" prefetch={false}>Browse markets</Link> and buy Yes or No to start.</p>
             : <>
-              <PositionRows goals={holdings.goals} />
-              {holdings.total > holdings.goals.length && <p className="account-more"><Link href="/positions" prefetch={false}>See all {holdings.total} positions</Link></p>}
+              <PositionRows markets={holdings.markets} />
+              {holdings.total > holdings.markets.length && <p className="account-more"><Link href="/positions" prefetch={false}>See all {holdings.total} positions</Link></p>}
             </>}
         </section>
 
-        <section aria-labelledby="goals-title">
-          <div className="account-section-head"><h2 id="goals-title">Your goals</h2><Link className="btn btn-primary" href="/goals/new">Post a goal</Link></div>
-          {goals.length === 0
-            ? <p className="muted account-none">No goals yet. Put one out there: a race, a grade, an internship, anything about your own life.</p>
-            : <ul className="my-goals">{goals.map((row) => {
-              const status = goalStatus(row, now);
-              const chance = row.market.status === "open" ? chanceOf(row.market) : null;
-              const linked = row.market.approvedAt && !["draft", "rejected"].includes(row.market.status);
-              return <li key={row.market.id} className={`my-goal my-goal-${status.tone}`}>
+        <section aria-labelledby="suggestions-title" id="suggestions">
+          <div className="account-section-head"><h2 id="suggestions-title">Your suggestions</h2><Link className="btn btn-primary" href="/suggest">Suggest a market</Link></div>
+          {suggestions.length === 0
+            ? <p className="muted account-none">No suggestions yet. Know something worth predicting around campus? A busy night, a sellout, a turnout: suggest it.</p>
+            : <ul className="my-goals">{suggestions.map((row) => {
+              const tone = row.status === "pending" ? "pending" : row.status === "rejected" ? "rejected" : "done";
+              return <li key={row.id} className={`my-goal my-goal-${tone}`}>
                 <div className="my-goal-top">
-                  {linked ? <Link href={`/markets/${row.market.id}`}>{row.market.question}</Link> : <span>{row.market.question}</span>}
-                  {chance !== null && <strong>{percent(chance)}%</strong>}
+                  {row.marketId ? <Link href={`/markets/${row.marketId}`}>{row.question}</Link> : <span>{row.question}</span>}
                 </div>
-                <p>{status.text}</p>
+                <p>{categoryLabel(row.category)} · {row.venueName} · {proposalStatusLine(row.status)}{row.status === "rejected" && row.reviewReason ? ` The owner’s note: ${row.reviewReason}` : ""}</p>
               </li>;
             })}</ul>}
         </section>
 
         {account.profile.isOwner === 1 && <section className="owner-tools" aria-labelledby="owner-title">
           <h2 id="owner-title">Owner tools</h2>
-          <ul><li><Link href="/review">Review submitted goals</Link></li><li><Link href="/review/markets">Manage outcomes and objections</Link></li><li><Link href="/review/people">People: photos and bans</Link></li></ul>
+          <ul><li><Link href="/review">Review suggestions and publish markets</Link></li><li><Link href="/review/markets">Manage outcomes and objections</Link></li><li><Link href="/review/people">People: photos and bans</Link></li></ul>
         </section>}
 
         <nav className="account-links" aria-label="Account">

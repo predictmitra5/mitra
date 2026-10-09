@@ -25,7 +25,7 @@ import { SignupPrompt } from "./components/signup-prompt";
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.database.mockReturnValue("database");
-  mocks.readFeed.mockResolvedValue({ cards: [], featured: null, closingSoon: [] });
+  mocks.readFeed.mockResolvedValue({ cards: [], past: [], featured: null, closingSoon: [] });
   mocks.recordExposures.mockResolvedValue(undefined);
   mocks.viewer.mockResolvedValue(null);
 });
@@ -38,7 +38,9 @@ describe("home feed for visitors and members", () => {
     expect(feed.type).toBe(FeedView);
     expect(feed.props.signedIn).toBe(false);
     expect(prompt.type).toBe(SignupPrompt);
-    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date));
+    // Visitors see the launch campus.
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
+    expect(feed.props.campus).toBe("osu");
     expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
     expect(mocks.viewer).not.toHaveBeenCalled();
   });
@@ -56,5 +58,12 @@ describe("home feed for visitors and members", () => {
     expect(feed.props.signedIn).toBe(true);
     expect(prompt).toBe(false);
     expect(mocks.viewer).toHaveBeenCalledWith("database", "verified-user");
+  });
+
+  it("shows a member their own campus's markets", async () => {
+    mocks.identity.mockResolvedValue({ id: "verified-user", email: "netid@illinois.edu", campus: "uiuc" });
+    const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
+    expect(view.props.children[1].props.campus).toBe("uiuc");
   });
 });

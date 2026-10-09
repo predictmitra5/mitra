@@ -12,13 +12,13 @@ import Positions, { metadata, dynamic } from "./page";
 import { PositionsView } from "./positions-view";
 import { PositionsError, type PositionsPage } from "@/modules/account/positions";
 
-const fixture: PositionsPage = { total: 1, page: 1, pages: 1, totals: { valueMicro: 12_345_678, costMicro: 4_567_891, gainMicro: 7_777_787 }, goals: [{
-  marketId: "fixture-id", question: "Will Alex be offered admission to Chess Club by October 1, 2026?", goalType: "club", yesPrice: 0.62, displayName: "Alex", handle: "alex", photoUpdatedAt: null,
+const fixture: PositionsPage = { total: 1, page: 1, pages: 1, totals: { valueMicro: 12_345_678, costMicro: 4_567_891, gainMicro: 7_777_787 }, markets: [{
+  marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", category: "nightlife", venueName: "Midway on High", isSample: true, yesPrice: 0.62,
   status: "open", deadlineAt: new Date("2026-10-01T03:59:00Z"), evidenceDeadlineAt: new Date("2026-10-08T03:59:00Z"),
   contestEndsAt: null, ruledOutcome: null, tradingOpen: true, contestOpen: false,
   yesSharesMicro: 1_000_000, noSharesMicro: 12_345_678, yesCostBasisMicro: 400_000, noCostBasisMicro: 4_567_890,
 }] };
-const empty: PositionsPage = { total: 0, goals: [], page: 1, pages: 1, totals: { valueMicro: 0, costMicro: 0, gainMicro: 0 } };
+const empty: PositionsPage = { total: 0, markets: [], page: 1, pages: 1, totals: { valueMicro: 0, costMicro: 0, gainMicro: 0 } };
 const view = (data: PositionsPage) => renderToStaticMarkup(React.createElement(PositionsView, { data }));
 beforeEach(() => {
   vi.resetAllMocks(); vi.stubGlobal("React", React);
@@ -52,8 +52,9 @@ describe("positions page authorization and presentation", () => {
   it("lists each side held with its shares and price paid, and the value with the change since bought", () => {
     const html = view(fixture);
     expect(html).toContain('/markets/fixture-id');
-    // Template wording without its deadline, since the list shows dates elsewhere.
-    expect(html).toContain("Will Alex be offered admission to Chess Club?");
+    expect(html).toContain("Will Midway on High sell more than 1,000 drinks on Friday?");
+    expect(html).toContain("Nightlife · Midway on High");
+    expect(html).toContain("Sample");
     expect(html).toContain('side-yes">Yes</span> · 1.0 shares · paid 40¢');
     expect(html).toContain('side-no">No</span> · 12.3 shares · paid 37¢');
     // 1 Yes share at 62¢ plus 12.345678 No shares at 38¢ = 5.311 points, against 4.968 paid.
@@ -61,24 +62,34 @@ describe("positions page authorization and presentation", () => {
     expect(html).toContain("12.3 pts"); expect(html).toContain("+7.8");
     expect(html).toContain("not what selling them would return");
   });
-  it("says where a closed holding stands: proof due, objections open, or payout pending", () => {
-    const closed = { ...fixture, goals: [{ ...fixture.goals[0], tradingOpen: false, status: "closed" as const }] };
-    expect(view(closed)).toContain("Trading closed · Proof due Oct 7");
-    const ruled = { ...fixture.goals[0], status: "ruled" as const, tradingOpen: false, ruledOutcome: "yes" as const, contestEndsAt: new Date("2026-10-09T03:59:00Z") };
-    expect(view({ ...fixture, goals: [{ ...ruled, contestOpen: true }] })).toContain("Ruled Yes · Objections close Oct 8");
-    expect(view({ ...fixture, goals: [{ ...ruled, contestOpen: false }] })).toContain("Objections closed · Payout pending");
+  it("says where a closed holding stands: results due, objections open, or payout pending", () => {
+    const closed = { ...fixture, markets: [{ ...fixture.markets[0], tradingOpen: false, status: "closed" as const }] };
+    expect(view(closed)).toContain("Trading closed · Results due Oct 7");
+    const ruled = { ...fixture.markets[0], status: "ruled" as const, tradingOpen: false, ruledOutcome: "yes" as const, contestEndsAt: new Date("2026-10-09T03:59:00Z") };
+    expect(view({ ...fixture, markets: [{ ...ruled, contestOpen: true }] })).toContain("Resolved Yes · Objections close Oct 8");
+    expect(view({ ...fixture, markets: [{ ...ruled, contestOpen: false }] })).toContain("Objections closed · Payout pending");
   });
   it("sends an empty portfolio to the public feed, and pages through long ones", () => {
     const html = view(empty);
-    expect(html).toContain("No positions yet"); expect(html).toContain('href="/"'); expect(html).toContain("Browse goals");
+    expect(html).toContain("No positions yet"); expect(html).toContain('href="/"'); expect(html).toContain("Browse markets");
     const pages = view({ ...fixture, page: 2, pages: 3 });
     expect(pages).toContain('/positions?page=1'); expect(pages).toContain('/positions?page=3');
   });
+  it("lists recent trades, each linked to its market", () => {
+    const html = renderToStaticMarkup(React.createElement(PositionsView, { data: fixture, trades: [{
+      id: "trade-id", marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", venueName: "Midway on High",
+      action: "buy", side: "no", sharesMicro: 12_345_678, amountMicro: 4_567_890, yesPriceAfterBp: 6200, createdAt: new Date("2026-09-30T16:00:00Z"),
+    }] }));
+    expect(html).toContain("Trade history");
+    expect(html).toContain("Bought 12.3");
+    expect(html).toContain("−4.6 pts");
+    expect(view(fixture)).not.toContain("Trade history");
+  });
   it("keeps the public chance for screen readers, and says when it is the closing number", () => {
     expect(view(fixture)).toContain("62% chance of Yes.");
-    const closed = { ...fixture, goals: [{ ...fixture.goals[0], tradingOpen: false, status: "closed" as const }] };
+    const closed = { ...fixture, markets: [{ ...fixture.markets[0], tradingOpen: false, status: "closed" as const }] };
     expect(view(closed)).toContain("62% chance of Yes when trading closed.");
-    const unpriced = view({ ...fixture, goals: [{ ...fixture.goals[0], yesPrice: null }] });
+    const unpriced = view({ ...fixture, markets: [{ ...fixture.markets[0], yesPrice: null }] });
     expect(unpriced).not.toContain("chance of Yes"); expect(unpriced).not.toContain("holding-value");
   });
 });

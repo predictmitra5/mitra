@@ -4,14 +4,14 @@
  * the discovery decision (D08, D09). Safe to import in the browser.
  */
 
+// The event-market categories since 2026-10-08. Topics saved before then
+// (academics, clubs and so on) are simply no longer offered.
 export const TOPICS = [
-  { key: "academics", label: "Academics" },
-  { key: "internships", label: "Internships" },
-  { key: "gym", label: "Gym" },
-  { key: "clubs", label: "Clubs" },
-  { key: "running", label: "Running" },
-  { key: "competitions", label: "Competitions / Awards" },
-  { key: "anything", label: "Anything else" },
+  { key: "nightlife", label: "Nightlife" },
+  { key: "food", label: "Food" },
+  { key: "events", label: "Events" },
+  { key: "entertainment", label: "Entertainment" },
+  { key: "campus", label: "Campus" },
 ] as const;
 
 export type TopicKey = (typeof TOPICS)[number]["key"];

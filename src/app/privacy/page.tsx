@@ -9,27 +9,27 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 5, 2026" title="Your goals are social. Your documents are not." intro="This is a plain-language summary of what the current pilot collects, what anyone visiting Mitra can see, and what stays private.">
+    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 8, 2026" title="Markets are public. Your account is not." intro="This is a plain-language summary of what the current pilot collects, what anyone visiting Mitra can see, and what stays private.">
       <div className="info-grid">
         <section className="info-card">
           <span className="info-number">01</span>
           <h2>What anyone can see</h2>
-          <p>Anyone who visits Mitra, with or without an account, can see your display name, handle, profile photo, approved goal terms, market prices, aggregate point volume, outcomes, and short evidence statements approved by the Mitra owner. Goal pages ask search engines not to list them.</p>
+          <p>Anyone who visits Mitra, with or without an account, can see published markets: their venues, terms, sources, prices, aggregate point volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
           <h2>What stays private</h2>
-          <p>Your sign-in details, wallet, individual positions, objections, moderation notes, and original evidence files are not shown to the community. Evidence originals are visible only to you and the Mitra owner.</p>
+          <p>Your sign-in details, wallet, individual positions, trade history, market suggestions, objections and moderation notes are not shown to the community. Suggestions and objections are visible only to you and the Mitra owner.</p>
         </section>
         <section className="info-card">
           <span className="info-number">03</span>
-          <h2>How evidence is reviewed</h2>
-          <p>An automated service may read a submitted document to suggest a short publishable statement and identify private details to omit. The owner reviews the original and decides what statement, if any, is published. The original document itself is never published.</p>
+          <h2>How markets are settled</h2>
+          <p>Markets are settled by the Mitra owner from each market’s named source, such as a venue’s own count. Mitra does not collect personal information about venue customers. Earlier goal markets that asked members for proof documents have ended.</p>
         </section>
         <section className="info-card">
           <span className="info-number">04</span>
           <h2>Basic activity measurement</h2>
-          <p>Mitra records when a goal is shown or opened, whether or not the visitor has an account, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
+          <p>Mitra records when a market is shown or opened, whether or not the visitor has an account, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
         </section>
         <section className="info-card">
           <span className="info-number">05</span>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">06</span>
           <h2>Leaving the pilot</h2>
-          <p>You can permanently delete your account from the account page. Mitra removes your login, profile details, photo, and submitted evidence; goals that have not been ruled are cancelled and traders are refunded. Settled trades and ledger entries remain as anonymized accounting records.</p>
+          <p>You can permanently delete your account from the account page. Mitra removes your login, profile details, photo, any earlier proof files, and suggestions that were never published. Settled trades and ledger entries remain as anonymized accounting records.</p>
         </section>
       </div>
       <aside className="info-callout info-callout-wide">

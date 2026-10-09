@@ -4,7 +4,7 @@ import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { EMPTY_POSITION } from "@/modules/market/position";
 
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence } = schema;
+const { profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, marketProposals } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -117,7 +117,7 @@ async function cancelGoals<Q extends PgQueryResultHKT>(database: Database<Q>, us
     try { await cancelGoal(database, userId, market.id, now); }
     catch { failed += 1; }
   }
-  if (failed) throw new WithdrawalError("CLEANUP_REQUIRED", "Some goals still need to be refunded. Please retry account deletion.");
+  if (failed) throw new WithdrawalError("CLEANUP_REQUIRED", "Some markets still need to be refunded. Please retry account deletion.");
 }
 
 async function objectsFor<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string): Promise<WithdrawalObjects> {
@@ -143,6 +143,11 @@ async function finishWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q
       reviewNote: null,
       removedAt: now,
     }).where(eq(evidence.submittedBy, userId));
+    // Suggestions are private to their author and the owner (2026-10-08). Ones
+    // never published go; a published one is the public market's history and
+    // stays, pointing at the anonymized profile.
+    await db.delete(marketProposals)
+      .where(and(eq(marketProposals.proposerUserId, userId), inArray(marketProposals.status, ["pending", "rejected"])));
     await db.update(profiles).set({
       handle: `deleted_${userId.replaceAll("-", "").slice(0, 12)}`,
       displayName: "Deleted member",

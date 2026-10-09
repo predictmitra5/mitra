@@ -1,5 +1,7 @@
 # Product
 
+> **2026-10-08: pivot to campus event markets.** Markets are now about what happens at venues and events on a campus, launching at Ohio State, not about people's goals. Students suggest markets; the owner publishes them with exact terms and a named source. What follows about goals describes the product before the pivot. See DECISIONS.md, 2026-10-08, and MARKETS.md, Event markets.
+
 Status: participation rules, accounts, economy, market lifecycle and goal templates are confirmed; verification, discovery and the final MVP screens remain open.
 
 ## Source-grounded concept

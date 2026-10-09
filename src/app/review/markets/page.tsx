@@ -3,32 +3,19 @@ import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { LifecycleError, listLifecycleMarkets, readObjections } from "@/modules/market/lifecycle";
+import { formatMoment } from "@/modules/events/time";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { listForOwner } from "@/modules/evidence/service";
-import { signedOriginalUrl } from "@/modules/evidence/storage";
 import { OwnerControls } from "./owner-controls";
 import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "Manage outcomes", robots: { index: false } };
-const when = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "America/New_York" });
+const FALLBACK_ZONE = "America/New_York";
 
 /**
- * Proof for one goal, with a short-lived link to each original. The link is
- * generated only after listForOwner has confirmed the reader is the owner, and
- * expires in minutes, so it is not a durable route to an unredacted document.
+ * Every live market for the owner (2026-10-08): close trading early, rule from
+ * the market's named source once its window ends, or rule No when the source
+ * never reported by the results deadline, then the 24-hour objection window.
  */
-async function loadProof(ownerId: string, marketId: string) {
-  try {
-    const rows = await listForOwner(getDb(), ownerId, marketId);
-    return await Promise.all(rows.map(async (row) => ({
-      ...row,
-      viewUrl: row.originalPath ? await signedOriginalUrl(row.originalPath).catch(() => null) : null,
-    })));
-  } catch {
-    return [];
-  }
-}
-
 export default async function ManageMarketsPage() {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
@@ -42,35 +29,34 @@ export default async function ManageMarketsPage() {
   const items = await Promise.all(rows.map(async (row) => ({
     ...row,
     objections: await readObjections(getDb(), identity.id, row.market.id),
-    // Proof is additive to this page: a storage failure must not take the
-    // whole outcome queue down with it.
-    proof: await loadProof(identity.id, row.market.id),
   })));
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review new goals</Link></div>
-    <section className="account-welcome"><h1>Follow every goal through.</h1><p>Close trading, review proof, and explain each outcome. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
-    {!items.length && <section className="account-card"><h2>No active goals to manage.</h2><Link href="/account">Your account</Link></section>}
-    {items.map(({ market, displayName, handle, objections, proof }) => <article className="review-card" key={market.id}>
-      <div className="review-meta"><span className={`status-pill status-${market.status}`}>{market.status}</span><span>{displayName} · @{handle}</span></div>
-      <h2><Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link></h2><p className="market-criteria">{market.resolutionCriteria}</p>
-      <dl className="goal-dates"><div><dt>Trading deadline</dt><dd>{when.format(market.deadlineAt)} ET</dd></div><div><dt>Proof deadline</dt><dd>{when.format(market.evidenceDeadlineAt)} ET</dd></div></dl>
-      {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && when.format(market.contestEndsAt)} ET</p></section>}
-      {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {when.format(objection.createdAt)} ET</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
-      {!!proof.length && <section className="owner-proof"><h3>Proof supplied ({proof.length})</h3>
-        <p className="field-hint">Documents are never published. Opening an item shows you the original and suggested wording; what you publish is a statement about it.</p>
-        {proof.map((item) => <article key={item.id}>
-          <p className="field-hint"><span className={`evidence-status evidence-status-${item.status}`}>{item.status}</span> @{item.submittedByHandle} · {when.format(item.createdAt)} ET</p>
-          {item.caption && <p className="market-criteria">{item.caption}</p>}
-          {item.kind === "link"
-            ? <a href={item.linkUrl ?? "#"} target="_blank" rel="noopener noreferrer nofollow">{item.linkUrl}</a>
-            : item.viewUrl
-              ? <a href={item.viewUrl} target="_blank" rel="noopener noreferrer">Open the original image (link expires in 5 minutes)</a>
-              : <span className="muted">That image could not be opened. Reload the page for a fresh link.</span>}
-          {item.status === "submitted" && <Link className="text-button" href={`/review/evidence/${item.id}`}>Read it and publish a statement ↗︎</Link>}
-        </article>)}
-      </section>}
-      <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}
-        canRule={market.rulingAvailable} isRevision={market.status === "ruled"} />
-    </article>)}
+    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review suggestions</Link></div>
+    <section className="account-welcome"><h1>Settle every market.</h1><p>Close trading, read each market’s source once its window ends, and explain the outcome. With no result by the results deadline, the market is ruled No. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
+    {!items.length && <section className="account-card"><h2>No live markets to manage.</h2><Link href="/review">Publish one</Link></section>}
+    {items.map(({ market, venueName, sourceName, sourceUrl, objections }) => {
+      const zone = market.timeZone ?? FALLBACK_ZONE;
+      return <article className="review-card" key={market.id}>
+        <div className="review-meta">
+          <span className={`status-pill status-${market.status}`}>{market.status}</span>
+          <span>{venueName ?? "Earlier goal market"}</span>
+          {market.isSample && <span className="sample-tag">Sample</span>}
+        </div>
+        <h2><Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link></h2>
+        {market.yesCondition && <p className="market-criteria"><strong>Yes if:</strong> {market.yesCondition}</p>}
+        {market.noCondition && <p className="market-criteria"><strong>No if:</strong> {market.noCondition}</p>}
+        <dl className="goal-dates">
+          <div><dt>Trading cutoff</dt><dd>{formatMoment(market.deadlineAt, zone)}</dd></div>
+          {market.windowEndAt && <div><dt>Window ends</dt><dd>{formatMoment(market.windowEndAt, zone)}</dd></div>}
+          <div><dt>Results due</dt><dd>{formatMoment(market.evidenceDeadlineAt, zone)}</dd></div>
+        </dl>
+        {sourceName && <p className="field-hint">Source: {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noopener noreferrer nofollow">{sourceName}</a> : sourceName}</p>}
+        {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && formatMoment(market.contestEndsAt, zone)}</p></section>}
+        {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
+        <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}
+          canRule={market.rulingAvailable} canRuleMissing={market.missingDataAvailable} isRevision={market.status === "ruled"}
+          resultsDue={formatMoment(market.evidenceDeadlineAt, zone)} />
+      </article>;
+    })}
   </main><MarketFooter /></div>;
 }

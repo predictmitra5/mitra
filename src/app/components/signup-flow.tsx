@@ -26,7 +26,7 @@ export function SignupFlow({ initialSchool }: { initialSchool: CampusKey | null 
   const [email, setEmail] = useState("");
   const previous = PREVIOUS[step];
 
-  const back = step === "school" ? <BackLink href="/" label="Back to goals" />
+  const back = step === "school" ? <BackLink href="/" label="Back to markets" />
     : previous ? <button className="icon-button step-icon" type="button" onClick={() => setStep(previous)} aria-label="Back">{arrowLeft}</button>
     : null;
 

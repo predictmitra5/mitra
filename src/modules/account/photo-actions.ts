@@ -55,7 +55,7 @@ export async function removeOwnPhotoAction(): Promise<FormState> {
     return { error: "Your photo could not be removed. Please try again." };
   }
   refresh();
-  return { success: "Photo removed. Add one again before posting a goal." };
+  return { success: "Photo removed." };
 }
 
 /** The owner removing someone else's photo. Recorded. */

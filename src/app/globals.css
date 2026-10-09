@@ -782,6 +782,91 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
 }
 @media (prefers-reduced-motion: reduce) { .signup-prompt[open] { animation: none; } }
 
+/* ========================================================================
+   Campus event markets, 2026-10-08 (DECISIONS.md, docs/DESIGN.md section 13):
+   the owner's opening card, sample labels, filters, venue pages, Yes/No rules,
+   the verification source, trade history and the owner's publish form. Same
+   tokens, type and controls as section 12.
+   ======================================================================== */
+
+/* The opening card from the owner's image: "mitra.", the line, two chips. */
+.hero-wrap { width: 100%; max-width: 1440px; margin: 0 auto; padding: 24px 48px 0; box-sizing: border-box; }
+.hero { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 28px 32px; border-radius: 20px; background: var(--accent-wash); }
+.hero-mark { margin: 0; color: var(--accent); font-size: 56px; font-weight: 700; line-height: 1; letter-spacing: -0.035em; }
+html[data-theme="light"] .hero-mark { color: #3aa3d9; }
+.hero-line { margin: 0; color: var(--ink-soft); font-size: 19px; line-height: 1.4; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.hero-chips li { padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--ink); font-size: 15px; font-weight: 700; }
+
+/* Sample markets say so wherever they appear. */
+.sample-tag { display: inline-block; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 4px; color: var(--accent-wash-ink); background: var(--accent-wash); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; vertical-align: 1px; white-space: nowrap; }
+.sample-note { margin: 0; max-width: 68ch; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 10px; background: var(--accent-wash); color: var(--accent-wash-ink); font-size: 14px; line-height: 1.5; }
+.sample-note strong { color: var(--ink); }
+
+/* Filters beside the grid's heading: venue, status, closing date. */
+.feed-grid-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 16px; }
+.feed-grid-head h2 { margin: 0; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filter select, .field select {
+  height: 36px; padding: 0 32px 0 12px; border: 1px solid var(--line-strong); border-radius: 999px; background-color: var(--card); color: var(--ink);
+  font: inherit; font-size: 14px; appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px; background-repeat: no-repeat;
+}
+.field select { height: 46px; border-radius: 8px; font-size: 1rem; background-color: var(--paper); }
+.filter select:focus-visible, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.filter-clear { font-size: 14px; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+.feed-none { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 20px; border: 1px dashed var(--line-strong); border-radius: var(--radius); }
+.feed-none p { margin: 0; font-size: 14px; }
+
+/* Cards: the activity line, then the closing time or where it stands. */
+.card-kicker a { color: inherit; }
+.card-kicker a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.card-when { display: flex; gap: 6px; margin: -6px 0 0; font-size: 12.5px; color: var(--muted); }
+.card-status { font-weight: 700; color: var(--ink-soft); }
+
+/* A venue's own page. */
+.venue { gap: 32px; }
+.venue .breadcrumb { margin-bottom: -16px; }
+.venue-head { display: flex; align-items: flex-start; gap: 16px; }
+.venue-head .avatar { font-size: 22px; }
+.venue-head h1 { margin: 0; font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
+.venue-head p { margin: 6px 0 0; }
+.venue-about { max-width: 62ch; color: var(--ink-soft); line-height: 1.5; }
+.venue-sample { max-width: 62ch; font-size: 13.5px; color: var(--accent-wash-ink); }
+
+/* Market page: exact Yes and No conditions, and the source that settles it. */
+.goal-archived { margin: 0; font-size: 13.5px; }
+.goal-person a { color: inherit; }
+.goal-person a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.outcomes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.outcome { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 10px; overflow-wrap: anywhere; }
+.outcome h3 { margin: 0; font-size: 13.5px; font-weight: 700; }
+.outcome p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+.outcome-yes { background: var(--yes-tint); }
+.outcome-yes h3 { color: var(--yes); }
+.outcome-no { background: var(--no-tint); }
+.outcome-no h3 { color: var(--no); }
+.source-state { padding: 2px 8px; border-radius: 6px; background: var(--raised); color: var(--ink-soft); font-size: 12.5px !important; font-weight: 700; white-space: nowrap; }
+.source-state.source-live { background: var(--success-bg); color: var(--success); }
+.source-name { margin: 0; font-size: 15px; font-weight: 700; }
+.source-link { font-size: 14px; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+
+/* Positions: the venue above each holding, and the trade history. */
+.holding-kicker { font-size: 12px; color: var(--muted); }
+.trade-history { margin: 0; padding: 0; list-style: none; }
+.trade-history a { display: flex; align-items: center; gap: 12px; margin: 0 -10px; padding: 12px 10px; border-top: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.trade-history-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.trade-history-amount { flex: none; font-size: 14px; font-weight: 700; }
+
+/* Forms with two fields side by side, and the owner's publish form. */
+.field-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.publish-group { display: grid; gap: 1rem; margin: 0; padding: 1rem 0 0; border: 0; border-top: 1px solid var(--line); }
+.publish-group legend { padding: 0; margin-bottom: 0.25rem; font-size: 0.95rem; font-weight: 700; }
+.publish-new > summary, .review-actions-stack summary { cursor: pointer; font-weight: 700; padding: 0.2rem 0; }
+.publish-new[open] > summary, .review-actions-stack details[open] summary { margin-bottom: 1rem; }
+.review-actions-stack { grid-template-columns: minmax(0, 1fr) !important; }
+
 /* Mouse-over (2026-10-05). Touch screens get the press feedback only. */
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover, .primary-button:hover:not(:disabled) { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
@@ -791,7 +876,8 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
   .tabs a:hover:not([aria-current="page"]), .chart-ranges button:hover:not([aria-pressed="true"]) { background: var(--hover); color: var(--ink); }
   .card:hover, .my-goal:hover { border-color: var(--line-strong); transform: translateY(-2px); box-shadow: var(--lift); }
   .featured:hover { border-color: var(--line-strong); }
-  .closing-row:hover, .holding:hover { background: var(--raised); border-top-color: transparent; }
+  .closing-row:hover, .holding:hover, .trade-history a:hover { background: var(--raised); border-top-color: transparent; }
+  .filter select:hover { border-color: var(--ink-soft); }
   .closing li:hover + li .closing-row, .holdings li:hover + li .holding { border-top-color: transparent; }
   .trade-modes button:hover:not([aria-pressed="true"]) { color: var(--ink-soft); }
   .topbar-nav a:hover { color: var(--ink); }
@@ -812,7 +898,7 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
   .topbar { gap: 20px; padding: 0 32px; }
   .topbar-search { flex-basis: 320px; }
   .ticker ul, .tabs ul { padding: 0 32px; }
-  .feed, .goal { padding-left: 32px; padding-right: 32px; }
+  .feed, .goal, .hero-wrap { padding-left: 32px; padding-right: 32px; }
   .market-footer { padding-left: 32px; padding-right: 32px; }
   .goal { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; }
 }
@@ -892,4 +978,17 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
   .info-grid { grid-template-columns: minmax(0, 1fr); }
   .info-card { min-height: 0; padding: 20px; }
   .info-callout, .info-callout-wide { align-items: flex-start; flex-direction: column; }
+  /* The owner's Review link needs the room on a phone; their points are on the account page. */
+  .topbar-actions:has(.owner-link) .topbar-points { display: none; }
+  .hero-wrap { padding: 16px 16px 0; }
+  .hero { gap: 10px; padding: 22px 20px; border-radius: 18px; }
+  .hero-mark { font-size: 46px; }
+  .hero-line { font-size: 17px; }
+  .hero-chips { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .feed-grid-head { align-items: flex-start; flex-direction: column; }
+  .filters { width: 100%; }
+  .filter { flex: 1 1 calc(50% - 8px); min-width: 0; }
+  .filter select { width: 100%; }
+  .venue-head h1 { font-size: 26px; }
+  .outcomes, .field-pair { grid-template-columns: minmax(0, 1fr); }
 }

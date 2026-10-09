@@ -5,7 +5,7 @@ import { useLiveQuotes } from "@/app/components/market/live-quotes";
 import { percent } from "@/modules/discovery/present";
 
 /*
- * The goal page's live parts (prices refresh about every 15 seconds, decided
+ * The market page's live parts (prices refresh about every 15 seconds, decided
  * 2026-09-24): the chance headline and chart, and the line of numbers under
  * it. They share the page's one quote request, so they never disagree. The
  * trade panel still has the server compute every quote, so a price shown here

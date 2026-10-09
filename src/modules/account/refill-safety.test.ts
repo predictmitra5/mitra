@@ -10,7 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "./provision";
 import { claimRefill, readRefillStatus } from "./refill";
-import { approveDraft, createGoalDraft } from "@/modules/goals/service";
+import { openEventMarket } from "@/test/markets";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { advanceMarket, applyOwnerCommand } from "@/modules/market/lifecycle";
 import { withFixturePhoto } from "@/test/photo-fixture";
@@ -71,8 +71,7 @@ async function reconcile() {
 async function expectError(promise: Promise<unknown>, code: string) { await expect(promise).rejects.toMatchObject({ code }); }
 async function openMarket() {
   await database.update(profiles).set({ isOwner: 1 }).where(eq(profiles.id, bob));
-  const draft = await createGoalDraft(database, bob, { type: "club", club: "Chess", deadline: "2026-10-01" }, start);
-  await approveDraft(database, bob, draft.id, 5000, "Clear goal", start); return draft.id;
+  return (await openEventMarket(database, bob, start, { cutoff: new Date("2026-10-01T21:00:00-04:00") })).id;
 }
 async function buy(marketId: string) {
   const quote = await previewTrade(database, alice, { marketId, side: "YES", action: "buy", amountMicro: 10_000_000 }, at());
@@ -196,7 +195,7 @@ describe.runIf(hosted)("hosted refill races", () => {
   it("preserves settlement credits racing the refill", async () => {
     const marketId = await openMarket(); await buy(marketId); await adjust(-50_000_000);
     const [market] = await database.select().from(markets).where(eq(markets.id, marketId));
-    await applyOwnerCommand(database, bob, { marketId, requestId: randomUUID(), action: "rule", expectedVersion: 0, outcome: "yes", basis: "reviewed_proof", reason: "The admission offer is verified." }, at(market.evidenceDeadlineAt));
+    await applyOwnerCommand(database, bob, { marketId, requestId: randomUUID(), action: "rule", expectedVersion: 0, outcome: "yes", basis: "checked_source", reason: "The venue count is verified." }, at(market.evidenceDeadlineAt));
     const [ruled] = await database.select().from(markets).where(eq(markets.id, marketId));
     await Promise.all([claimRefill(database, alice, randomUUID(), at(ruled.contestEndsAt!)), advanceMarket(database, marketId, at(ruled.contestEndsAt!))]);
     expect(await balance()).toBeGreaterThanOrEqual(target); expect(await refills()).toHaveLength(1);

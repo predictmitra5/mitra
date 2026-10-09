@@ -9,7 +9,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
-import { approveDraft, createGoalDraft, rejectDraft } from "@/modules/goals/service";
+import { insertGoalMarket, openEventMarket } from "@/test/markets";
 import { executeTrade, previewTrade, readPublicMarket, readTrader, type TradePreview, type TradeRequest } from "./service";
 import { withFixturePhoto } from "@/test/photo-fixture";
 
@@ -71,9 +71,11 @@ async function account(handle: string) {
   return id;
 }
 async function openMarket() {
-  const goal = await createGoalDraft(database, subject, { type: "internship", company: "Example Company", deadline: "2027-03-01" }, now);
-  await approveDraft(database, owner, goal.id, 3000, "Clear written offer", now);
-  return goal.id;
+  return (await openEventMarket(database, owner, now, { openingBp: 3000, cutoff: new Date("2027-03-01T05:00:00Z") })).id;
+}
+/** A goal market about `subject` from before the 2026-10-08 pivot. */
+async function goalMarket(status: "draft" | "open" = "open") {
+  return (await insertGoalMarket(database, subject, owner, now, { status, deadline: new Date("2027-01-01T05:00:00Z") })).id;
 }
 function request(extra: Partial<TradeRequest> = {}): TradeRequest { return { marketId, action: "buy", side: "YES", amountMicro: 10_000_000, ...extra }; }
 async function preview(user = trader, extra: Partial<TradeRequest> = {}) { return previewTrade(database, user, request(extra), clock); }
@@ -102,25 +104,35 @@ async function reconcile() {
 }
 
 describe("public market and private trader views", () => {
-  it("exposes only approved public terms, and hides drafts, rejections and never-approved cancellations", async () => {
-    const publicGoal = await readPublicMarket(database, marketId);
-    expect(publicGoal?.yesPrice).toBeCloseTo(0.3, 7);
-    expect(publicGoal).not.toHaveProperty("approvedBy");
-    expect(publicGoal).not.toHaveProperty("subjectUserId");
-    expect(publicGoal).not.toHaveProperty("yesSharesMicro");
+  it("exposes only published public terms, and hides drafts, rejections and never-approved cancellations", async () => {
+    const publicMarket = await readPublicMarket(database, marketId);
+    expect(publicMarket?.yesPrice).toBeCloseTo(0.3, 7);
+    expect(publicMarket?.venueName).toBe("Test Tavern");
+    expect(publicMarket?.sourceOperational).toBe(false);
+    expect(publicMarket?.yesCondition).toContain("more than 500");
+    expect(publicMarket).not.toHaveProperty("approvedBy");
+    expect(publicMarket).not.toHaveProperty("subjectUserId");
+    expect(publicMarket).not.toHaveProperty("yesSharesMicro");
     expect(await readPublicMarket(database, "bad-id")).toBeNull();
-    const draft = await createGoalDraft(database, subject, { type: "club", club: "Chess", deadline: "2027-01-01" }, now);
-    expect(await readPublicMarket(database, draft.id)).toBeNull();
-    await rejectDraft(database, owner, draft.id, "Private rejection", now);
-    expect(await readPublicMarket(database, draft.id)).toBeNull();
-    await database.update(markets).set({ status: "cancelled" }).where(eq(markets.id, draft.id));
-    expect(await readPublicMarket(database, draft.id)).toBeNull();
+    const draft = await goalMarket("draft");
+    expect(await readPublicMarket(database, draft)).toBeNull();
+    await database.update(markets).set({ status: "rejected" }).where(eq(markets.id, draft));
+    expect(await readPublicMarket(database, draft)).toBeNull();
+    await database.update(markets).set({ status: "cancelled" }).where(eq(markets.id, draft));
+    expect(await readPublicMarket(database, draft)).toBeNull();
+  });
+  it("still opens an earlier goal market's page without naming the person", async () => {
+    const goal = await readPublicMarket(database, await goalMarket());
+    expect(goal?.question).toContain("Chess Club");
+    expect(goal?.venueName).toBeNull();
+    expect(JSON.stringify(goal)).not.toContain("subject");
   });
   it("returns only the verified trader's holdings and reports the subject ban", async () => {
     await buy();
     expect((await readTrader(database, other, marketId))?.position.yesSharesMicro).toBe(0);
     expect((await readTrader(database, trader, marketId))?.position.yesSharesMicro).toBeGreaterThan(0);
-    expect((await readTrader(database, subject, marketId))?.blocked).toContain("cannot trade");
+    expect((await readTrader(database, subject, marketId))?.blocked).toBeNull();
+    expect((await readTrader(database, subject, await goalMarket()))?.blocked).toContain("cannot trade");
     expect(await readTrader(database, randomUUID(), marketId)).toBeNull();
   });
 });
@@ -182,7 +194,7 @@ describe("transactional trading", () => {
     await error(preview(trader, { amountMicro: 1_000_000 }), "OVER_MARKET_LIMIT");
     await reconcile();
   });
-  it("checks the wallet again at confirmation, including trades in another goal", async () => {
+  it("checks the wallet again at confirmation, including trades in another market", async () => {
     // An isolated fixture with exactly 15 points and a matching ledger.
     await database.update(wallets).set({ balanceMicro: 15_000_000 }).where(eq(wallets.userId, trader));
     await database.update(ledgerEntries).set({ amountMicro: 15_000_000 }).where(eq(ledgerEntries.userId, trader));
@@ -191,9 +203,11 @@ describe("transactional trading", () => {
     await error(executeTrade(database, trader, quote, clock), "INSUFFICIENT_BALANCE");
     await reconcile();
   });
-  it("blocks own-goal trades and outcome deciders on both buys and sells", async () => {
-    await error(preview(subject), "SUBJECT_OF_MARKET");
-    await error(preview(subject, { action: "sell" }), "SUBJECT_OF_MARKET");
+  it("blocks a goal's own subject and outcome deciders on both buys and sells", async () => {
+    const goal = await goalMarket();
+    await error(preview(subject, { marketId: goal }), "SUBJECT_OF_MARKET");
+    await error(preview(subject, { marketId: goal, action: "sell" }), "SUBJECT_OF_MARKET");
+    await buy(subject); // Event markets have no subject: anyone not deciding the outcome may trade.
     await buy(); const quote = await preview();
     await database.insert(marketOutcomeDeciders).values({ marketId, userId: trader });
     await error(executeTrade(database, trader, quote, clock), "DECIDES_OUTCOME");
@@ -207,12 +221,13 @@ describe("transactional trading", () => {
     await database.update(profiles).set({ adultConfirmedAt: now, withdrawnAt: now }).where(eq(profiles.id, trader));
     await error(preview(), "PROFILE_REQUIRED");
   });
-  it("blocks withdrawal of the subject and cannot trade an unapproved goal", async () => {
-    const quote = await preview();
+  it("closes an earlier goal market whose subject left, and cannot trade an unapproved one", async () => {
+    const goal = await goalMarket();
+    const quote = await preview(trader, { marketId: goal });
     await database.update(profiles).set({ withdrawnAt: now }).where(eq(profiles.id, subject));
     await error(executeTrade(database, trader, quote, clock), "CLOSED");
-    const draft = await createGoalDraft(database, other, { type: "club", club: "Chess", deadline: "2027-01-01" }, now);
-    await error(preview(trader, { marketId: draft.id }), "NOT_FOUND");
+    await buy(); // The person leaving does not touch event markets.
+    await error(preview(trader, { marketId: await goalMarket("draft") }), "NOT_FOUND");
   });
   it.each(["closed", "ruled", "settled", "cancelled"] as const)("blocks %s markets", async (status) => {
     const quote = await preview();

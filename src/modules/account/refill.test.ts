@@ -8,7 +8,7 @@ import { drizzle as postgresDb } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
-import { approveDraft, createGoalDraft } from "@/modules/goals/service";
+import { openEventMarket } from "@/test/markets";
 import { ECONOMY } from "@/modules/market/economy";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { claimRefill, readRefillStatus, RefillError } from "./refill";
@@ -125,9 +125,8 @@ describe("claimRefill", () => {
   });
 
   it("counts only cash, so points held in an open prediction do not block a refill", async () => {
-    const goal = await createGoalDraft(database, subject, { type: "internship", company: "Example Company", deadline: "2027-03-01" }, now);
-    await approveDraft(database, owner, goal.id, 3000, "Clear written offer", now);
-    const preview = await previewTrade(database, trader, { marketId: goal.id, action: "buy", side: "YES", amountMicro: 60_000_000 }, clock);
+    const market = await openEventMarket(database, owner, now, { openingBp: 3000 });
+    const preview = await previewTrade(database, trader, { marketId: market.id, action: "buy", side: "YES", amountMicro: 60_000_000 }, clock);
     await executeTrade(database, trader, preview, clock);
 
     const spent = start - (await balanceOf(trader));

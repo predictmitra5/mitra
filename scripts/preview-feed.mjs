@@ -5,7 +5,8 @@
 //   node --env-file=.env.local scripts/preview-feed.mjs --cleanup (remove fixtures a killed run left)
 //   node --env-file=.env.local scripts/preview-feed.mjs --phone   (also reachable from a phone on the same Wi-Fi)
 //
-// Seeds seven fictional people and fourteen goals, with price paths, trades for
+// Seeds eight fictional venues and fourteen event markets (2026-10-08), open,
+// closed and void, two of them marked Sample, with price paths, trades for
 // volume and recent movement, into an isolated, disposable schema, then serves
 // the whole app against it at http://localhost:3100, signed out. It never seeds
 // the live app or creates Auth users. Ctrl+C, or "stop" on stdin, removes it.
@@ -74,36 +75,39 @@ const random = () => {
 /** Market-maker NO shares that put the YES price at p, with YES shares at zero. */
 const noSharesFor = (p) => Math.round(LIQUIDITY * Math.log((1 - p) / p) * 1_000_000);
 
-const label = (ms) => new Intl.DateTimeFormat("en-US", {
-  month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York",
+const clock = (ms) => new Intl.DateTimeFormat("en-US", {
+  weekday: "short", month: "short", day: "numeric", hour: "numeric", timeZone: "America/New_York",
 }).format(new Date(ms));
 
-const people = [
-  ["demo_maya", "Maya Chen"],
-  ["demo_andre", "Andre Williams"],
-  ["demo_priya", "Priya Patel"],
-  ["demo_luis", "Luis Ortega"],
-  ["demo_jordan", "Jordan Kim"],
-  ["demo_sam", "Sam Lee"],
-  ["demo_aisha", "Aisha Bello"],
+// Fictional venues only: no real business appears in this preview.
+// [name, slug, category]
+const venues = [
+  ["Lantern Tacos", "lantern-tacos", "food"],
+  ["Brick Row Lanes", "brick-row-lanes", "entertainment"],
+  ["Lakeside Comedy Club", "lakeside-comedy-club", "events"],
+  ["North Quad Rec", "north-quad-rec", "campus"],
+  ["The Copper Owl", "the-copper-owl", "nightlife"],
+  ["Hilltop Cinema", "hilltop-cinema", "entertainment"],
+  ["Night Owl Noodles", "night-owl-noodles", "food"],
+  ["Fourth Street Hall", "fourth-street-hall", "events"],
 ];
 
-// [person, type, question builder, opened days ago, deadline in days, open p, final p, trades, moves in last day]
-const goals = [
-  [0, "gpa", (n) => `Will ${n} earn at least a 3.8 GPA for Fall 2026?`, 20, 88, 0.45, 0.62, 34, 3],
-  [1, "internship", (n, d) => `Will ${n} receive a written internship offer from Google by ${d}?`, 1.2, 150, 0.3, 0.38, 6, 4],
-  [2, "gym", (n, d) => `Will ${n} deadlift 315 pounds by ${d}?`, 12, 2.5, 0.5, 0.71, 22, 5],
-  [3, "club", (n, d) => `Will ${n} be offered admission to the Chess Club board by ${d}?`, 9, 38, 0.55, 0.47, 18, 2],
-  [4, "own_words", () => `Will Jordan get 100 people using their study app?`, 30, 120, 0.25, 0.19, 27, 1],
-  [5, "gym", (n, d) => `Will ${n} run a sub-25-minute 5K by ${d}?`, 6, 20, 0.5, 0.83, 19, 6],
-  [6, "internship", (n, d) => `Will ${n} receive a written internship offer from Deloitte by ${d}?`, 25, 95, 0.4, 0.58, 29, 0],
-  [0, "club", (n, d) => `Will ${n} be offered admission to the Mock Trial team by ${d}?`, 0.3, 30, 0.6, 0.6, 0, 0],
-  [2, "gpa", (n) => `Will ${n} earn at least a 3.5 GPA for Fall 2026?`, 16, 88, 0.7, 0.66, 14, 2],
-  [3, "gym", (n, d) => `Will ${n} bench 225 pounds by ${d}?`, 0.8, 60, 0.35, 0.41, 3, 3],
-  [1, "own_words", () => `Will Andre publish his first song on Spotify?`, 14, 45, 0.5, 0.29, 21, 4],
-  [4, "gpa", (n) => `Will ${n} earn at least a 4.0 GPA for Fall 2026?`, 18, 88, 0.2, 0.12, 16, 0],
-  [5, "internship", (n, d) => `Will ${n} receive a written internship offer from JPMorgan by ${d}?`, 4, 110, 0.35, 0.44, 9, 2],
-  [6, "club", (n, d) => `Will ${n} be offered admission to the Undergraduate Student Government cabinet by ${d}?`, 11, 1.6, 0.4, 0.52, 15, 3],
+// [venue, question builder, opened days ago, cutoff in days, open p, final p, trades, moves in last day, status, sample]
+const markets = [
+  [0, (w) => `Will Lantern Tacos sell more than 800 tacos on ${w}?`, 6, 3, 0.45, 0.62, 24, 3, "open", false],
+  [1, (w) => `Will Brick Row Lanes book every lane for ${w}?`, 1.2, 9, 0.3, 0.38, 6, 4, "open", false],
+  [2, (w) => `Will the Lakeside Comedy Club's late show sell out on ${w}?`, 8, 2.5, 0.5, 0.71, 22, 5, "open", true],
+  [3, (w) => `Will more than 300 people check in at North Quad Rec on ${w}?`, 9, 5, 0.55, 0.47, 18, 2, "open", false],
+  [4, (w) => `Will The Copper Owl hit capacity before 11 PM on ${w}?`, 12, 4, 0.25, 0.19, 27, 1, "open", false],
+  [5, (w) => `Will Hilltop Cinema's 7 PM showing sell more than 150 tickets on ${w}?`, 6, 6, 0.5, 0.83, 19, 6, "open", true],
+  [6, (w) => `Will Night Owl Noodles sell 400 bowls after midnight on ${w}?`, 10, 8, 0.4, 0.58, 21, 0, "open", false],
+  [7, (w) => `Will Fourth Street Hall's open mic fill all 20 slots on ${w}?`, 0.3, 12, 0.6, 0.6, 0, 0, "open", false],
+  [0, (w) => `Will Lantern Tacos run out of al pastor before 10 PM on ${w}?`, 7, 10, 0.7, 0.66, 14, 2, "open", false],
+  [4, (w) => `Will The Copper Owl's trivia night draw 25 teams on ${w}?`, 0.8, 14, 0.35, 0.41, 3, 3, "open", false],
+  [1, (w) => `Will Brick Row Lanes' cosmic bowling sell out on ${w}?`, 14, 1.6, 0.5, 0.29, 21, 4, "open", false],
+  [3, (w) => `Will the North Quad Rec pool hit 100 swimmers on ${w}?`, 4, 11, 0.35, 0.44, 9, 2, "open", false],
+  [6, (w) => `Will Night Owl Noodles open a second line on ${w}?`, 11, -1, 0.4, 0.52, 15, 0, "closed", false],
+  [2, (w) => `Will the Lakeside Comedy Club's headliner sell 200 seats on ${w}?`, 12, -2, 0.5, 0.45, 8, 0, "cancelled", false],
 ];
 
 /**
@@ -142,12 +146,12 @@ try {
   await client`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at)
     values (${owner}, 'demo_owner', 'Demo owner', 1, now())`;
 
-  const subjectIds = [];
-  for (const [handle, displayName] of people) {
+  const venueIds = [];
+  for (const [venueName, slug, category] of venues) {
     const id = randomUUID();
-    subjectIds.push(id);
-    await client`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at)
-      values (${id}, ${handle}, ${displayName}, 0, now())`;
+    venueIds.push(id);
+    await client`insert into venues (id, campus, slug, name, category, area, description)
+      values (${id}, 'osu', ${slug}, ${venueName}, ${category}, 'Fictional Avenue', 'A fictional venue for layout only.')`;
   }
 
   // Fictional traders, so trades have somebody to belong to.
@@ -161,22 +165,31 @@ try {
 
   let tradeCount = 0;
   let pointCount = 0;
-  for (const [who, type, build, openedDaysAgo, deadlineDays, openP, finalP, count, recent] of goals) {
+  for (const [venue, build, openedDaysAgo, cutoffDays, openP, finalP, count, recent, status, sample] of markets) {
     const id = randomUUID();
-    const [, displayName] = people[who];
-    const first = displayName.split(" ")[0];
+    const [venueName, , category] = venues[venue];
     const openedAt = now - openedDaysAgo * DAY;
-    const deadlineAt = now + deadlineDays * DAY;
-    const question = build(first, label(deadlineAt));
+    const cutoffAt = now + cutoffDays * DAY;
+    const windowEnd = cutoffAt + 4 * HOUR;
+    const question = build(clock(cutoffAt));
     const openNo = noSharesFor(openP);
+    const source = randomUUID();
+    const event = randomUUID();
+    await client`insert into resolution_sources (id, name, method, operational)
+      values (${source}, ${`${venueName} count (fictional)`}, 'A fictional count from the venue, for layout only.', ${!sample})`;
+    await client`insert into events (id, venue_id, title, starts_at, ends_at, time_zone)
+      values (${event}, ${venueIds[venue]}, ${clock(cutoffAt)}, ${new Date(cutoffAt)}, ${new Date(windowEnd)}, 'America/New_York')`;
 
-    await client`insert into markets (id, subject_user_id, status, question, resolution_criteria, goal_type,
-      deadline_at, evidence_deadline_at, liquidity_micro, opening_probability_bp,
+    await client`insert into markets (id, status, question, resolution_criteria, campus, category, venue_id, event_id,
+      resolution_source_id, window_start_at, window_end_at, time_zone, yes_condition, no_condition, is_sample,
+      deadline_at, evidence_deadline_at, trading_closed_at, cancelled_at, cancel_reason, liquidity_micro, opening_probability_bp,
       initial_yes_shares_micro, initial_no_shares_micro, yes_shares_micro, no_shares_micro, approved_at, approved_by)
-      values (${id}, ${subjectIds[who]}, 'open', ${question},
-      ${`YES if ${first} does this before the deadline and supplies proof the owner reviews. Fictional data for layout only.`},
-      ${type}, ${new Date(deadlineAt)}, ${new Date(deadlineAt + 7 * DAY)}, ${LIQUIDITY * 1_000_000},
-      ${Math.round(openP * 10000)}, 0, ${openNo}, 0, ${noSharesFor(finalP)}, ${new Date(openedAt)}, ${owner})`;
+      values (${id}, ${status}, ${question}, 'Fictional data for layout only.', 'osu', ${category}, ${venueIds[venue]}, ${event},
+      ${source}, ${new Date(cutoffAt)}, ${new Date(windowEnd)}, 'America/New_York',
+      'The venue count is above the number in the question.', 'The count is at or below it, or none arrives by the results deadline.', ${sample},
+      ${new Date(cutoffAt)}, ${new Date(windowEnd + 3 * DAY)}, ${status === "open" ? null : new Date(cutoffAt)},
+      ${status === "cancelled" ? new Date(now - HOUR) : null}, ${status === "cancelled" ? "Fictional: rescheduled." : null},
+      ${LIQUIDITY * 1_000_000}, ${Math.round(openP * 10000)}, 0, ${openNo}, 0, ${noSharesFor(finalP)}, ${new Date(openedAt)}, ${owner})`;
 
     const path = pricePath(openP, finalP, count, recent, openedAt);
     for (let i = 0; i < path.length; i += 1) {
@@ -218,8 +231,8 @@ try {
     for (const address of Object.values(networkInterfaces()).flat().filter((a) => a && a.family === "IPv4" && !a.internal).map((a) => a.address)) console.log(`On a phone on the same Wi-Fi: http://${address}:${port}/`);
     console.log("Anyone else on this network can open it too while it runs. Fictional data only.");
   }
-  console.log(`${goals.length} goals across ${people.length} people, ${tradeCount} trades, ${pointCount} price points.`);
-  console.log("Signed out, so the sign-in prompt appears after two minutes of browsing.");
+  console.log(`${markets.length} markets across ${venues.length} fictional venues, ${tradeCount} trades, ${pointCount} price points.`);
+  console.log("Signed out, so the sign-up pop-up appears after 30 seconds of browsing.");
   console.log("Press Ctrl+C or send 'stop' on stdin to stop and remove the isolated fixture.");
   process.on("SIGINT", () => { void cleanup(); });
   process.on("SIGTERM", () => { void cleanup(); });
