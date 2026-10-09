@@ -59,7 +59,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         past={feed.past.map(toCardData)}
         featured={featured}
         closingSoon={feed.closingSoon.map(toCardData)}
-        campus={campus}
         signedIn={!!identity}
         unavailable={unavailable}
         nowIso={now.toISOString()}

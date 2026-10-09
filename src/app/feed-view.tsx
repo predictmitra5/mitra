@@ -7,16 +7,14 @@ import {
   browse, CLOSING_FILTERS, DEFAULT_FILTERS, FEED_TABS, filtersToSearch, isNarrowed, readFilters, STATUS_FILTERS, tabLabel, type BrowseFilters,
 } from "@/modules/discovery/browse";
 import { categoryLabel, percent, volumeLabel } from "@/modules/discovery/present";
-import type { CampusKey } from "@/config/campus";
 import { Change, ClosingRow, MarketCard, PriceButtons, SampleTag, VenueMark, closesAt, type CardData } from "./components/market/market-card";
 import { PriceChart, type ChartPoint } from "./components/market/price-chart";
 import { Ticker } from "./components/market/ticker";
-import { CampusHero } from "./components/campus-hero";
 import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
 
 /*
  * The home feed in the Kalshi direction (2026-09-24), for campus event markets
- * since 2026-10-08 (DECISIONS.md): the owner's opening card, a quiet ticker,
+ * since 2026-10-08 (DECISIONS.md): a quiet ticker,
  * category tabs, filters by venue, status and closing date, the market moving
  * most today with its chart, the Closing soon list beside it on a desktop, then
  * every market as a framed card, four across or one on a phone.
@@ -114,13 +112,12 @@ function FilterBar({ filters, venues }: { filters: BrowseFilters; venues: { slug
 }
 
 export function FeedView({
-  cards, past, featured, closingSoon, campus, signedIn, unavailable, nowIso,
+  cards, past, featured, closingSoon, signedIn, unavailable, nowIso,
 }: {
   cards: CardData[];
   past: CardData[];
   featured: FeaturedData | null;
   closingSoon: CardData[];
-  campus: CampusKey;
   signedIn: boolean;
   unavailable: boolean;
   nowIso: string;
@@ -160,7 +157,6 @@ export function FeedView({
 
   return (
     <>
-      {!narrowed && <div className="hero-wrap"><CampusHero campus={campus} /></div>}
       <Ticker cards={cards} />
       <nav className="tabs" aria-label="Categories">
         <ul>
@@ -178,7 +174,7 @@ export function FeedView({
       </nav>
 
       <main className="feed">
-        {narrowed && <h1 className="sr-only">Mitra markets</h1>}
+        <h1 className="sr-only">Mitra markets</h1>
         {unavailable ? (
           <section className="feed-empty">
             <h2>Markets are temporarily unavailable.</h2>

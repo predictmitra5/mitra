@@ -40,7 +40,6 @@ describe("home feed for visitors and members", () => {
     expect(prompt.type).toBe(SignupPrompt);
     // Visitors see the launch campus.
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
-    expect(feed.props.campus).toBe("osu");
     expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
     expect(mocks.viewer).not.toHaveBeenCalled();
   });
@@ -62,8 +61,7 @@ describe("home feed for visitors and members", () => {
 
   it("shows a member their own campus's markets", async () => {
     mocks.identity.mockResolvedValue({ id: "verified-user", email: "netid@illinois.edu", campus: "uiuc" });
-    const view = await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
+    await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
-    expect(view.props.children[1].props.campus).toBe("uiuc");
   });
 });

@@ -784,19 +784,10 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
 
 /* ========================================================================
    Campus event markets, 2026-10-08 (DECISIONS.md, docs/DESIGN.md section 13):
-   the owner's opening card, sample labels, filters, venue pages, Yes/No rules,
+   sample labels, filters, venue pages, Yes/No rules,
    the verification source, trade history and the owner's publish form. Same
    tokens, type and controls as section 12.
    ======================================================================== */
-
-/* The opening card from the owner's image: "mitra.", the line, two chips. */
-.hero-wrap { width: 100%; max-width: 1440px; margin: 0 auto; padding: 24px 48px 0; box-sizing: border-box; }
-.hero { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 28px 32px; border-radius: 20px; background: var(--accent-wash); }
-.hero-mark { margin: 0; color: var(--accent); font-size: 56px; font-weight: 700; line-height: 1; letter-spacing: -0.035em; }
-html[data-theme="light"] .hero-mark { color: #3aa3d9; }
-.hero-line { margin: 0; color: var(--ink-soft); font-size: 19px; line-height: 1.4; }
-.hero-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
-.hero-chips li { padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--ink); font-size: 15px; font-weight: 700; }
 
 /* Sample markets say so wherever they appear. */
 .sample-tag { display: inline-block; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 4px; color: var(--accent-wash-ink); background: var(--accent-wash); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; vertical-align: 1px; white-space: nowrap; }
@@ -898,7 +889,7 @@ html[data-theme="light"] .hero-mark { color: #3aa3d9; }
   .topbar { gap: 20px; padding: 0 32px; }
   .topbar-search { flex-basis: 320px; }
   .ticker ul, .tabs ul { padding: 0 32px; }
-  .feed, .goal, .hero-wrap { padding-left: 32px; padding-right: 32px; }
+  .feed, .goal { padding-left: 32px; padding-right: 32px; }
   .market-footer { padding-left: 32px; padding-right: 32px; }
   .goal { grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; }
 }
@@ -980,11 +971,6 @@ html[data-theme="light"] .hero-mark { color: #3aa3d9; }
   .info-callout, .info-callout-wide { align-items: flex-start; flex-direction: column; }
   /* The owner's Review link needs the room on a phone; their points are on the account page. */
   .topbar-actions:has(.owner-link) .topbar-points { display: none; }
-  .hero-wrap { padding: 16px 16px 0; }
-  .hero { gap: 10px; padding: 22px 20px; border-radius: 18px; }
-  .hero-mark { font-size: 46px; }
-  .hero-line { font-size: 17px; }
-  .hero-chips { flex-direction: column; align-items: flex-start; gap: 8px; }
   .feed-grid-head { align-items: flex-start; flex-direction: column; }
   .filters { width: 100%; }
   .filter { flex: 1 1 calc(50% - 8px); min-width: 0; }
