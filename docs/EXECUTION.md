@@ -204,7 +204,7 @@ Operational notes for whoever works on this next:
 
 ### 2026-10-08 - Opening card removed (Claude Code)
 
-The owner, with a screenshot of the live home page's "mitra." card: "remove this as well". Deleted `campus-hero.tsx` and its styles; the feed keeps a screen-reader heading and opens with the ticker and tabs; the motto stays in the top bar and footer. 387 tests, typecheck, lint and build pass; checked in the preview. Committed locally, not pushed: waiting for the owner's word.
+The owner, with a screenshot of the live home page's "mitra." card: "remove this as well". Deleted `campus-hero.tsx` and its styles; the feed keeps a screen-reader heading and opens with the ticker and tabs; the motto stays in the top bar and footer. 387 tests, typecheck, lint and build pass; checked in the preview. Pushed on the owner's "push" (bf5146f); the live home page stopped showing the card about 45 seconds later.
 
 ### 2026-10-08 - Event markets live (Claude Code)
 
