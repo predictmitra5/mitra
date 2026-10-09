@@ -24,7 +24,16 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-08 - Pivot to campus event markets (Claude Code)
+
+Relies on DECISIONS.md, 2026-10-08 (the owner's brief and four answers). Local build and verification only; nothing is pushed, migrated live, seeded live or cancelled live until the owner says go.
+
+1. **Schema, migration 0013** (additive, so the deployed app keeps working until the new code ships): `venues` (campus, slug, name, category, area, description), `events` (venue, title, start, end, time zone), `resolution_sources` (name, method, link, working or placeholder), `market_proposals` (proposer, campus, question, category, venue name or venue, window, suggested resolution data, pending/approved/rejected, the owner's reason, the market it became); `markets` gains campus, category, venue, event, source, window start/end, time zone, Yes and No conditions and a sample flag, and `subject_user_id` becomes nullable, with a check that a market is either a legacy goal or a fully specified event market.
+2. **New module `src/modules/events`**: venue/event/source catalog, suggestion submit/list/reject, owner publishing (venue, event and source created inline, market opened at the owner's price with its first price point and an `admin_actions` record), the brief's status words, and typed sample fixtures (the three OSU samples, dates computed from when they are seeded). The goals module, `/goals/new` (redirected to `/suggest`), the subject proof form and the owner's proof pages are removed; the evidence table and the storage used by account deletion stay.
+3. **Market engine**: trading and lifecycle accept markets without a subject; ruling an event market opens when its window ends ("I checked the source"), and "no data by the results deadline" must be No. Ranking's per-person cap becomes a per-venue cap.
+4. **Pages**: home with the owner's image as the hero (wordmark, "Trade on what happens here.", campus chip, "Your campus. Your market."), category tabs, search, and venue/status/closing filters in the address; cards show venue, category, chance, activity and closing time; `/venues/[slug]`; the market page with venue and event, sample label, Yes/No conditions, window, cutoff, results due and source; `/suggest`; positions with trade history; the account page's suggestions; the owner's review queue as suggestions plus a publish form; header, footer, sign-up pop-up, onboarding topics and "how it works", FAQ and Privacy rewritten for events.
+5. **Scripts and tests**: update the previews to fictional event markets, add a sample seeding script and a one-off script to cancel the legacy goal market for the go-ahead, update or remove person-based tests, add tests for the new module.
+6. **Verify** with `npm test`, typecheck, lint, build and the previews at phone and desktop widths, then report and wait.
 
 ## Deferred, to come back to
 
