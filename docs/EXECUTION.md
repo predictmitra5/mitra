@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-08 - Record the Midway sample decision (Claude Code)
+
+The owner, asked whether the Midway on High drink-count sample suits an 18+ (not 21+) audience: "its 18+". Record it in DECISIONS.md and close the open question in SAFETY_AND_INTEGRITY.md and Next actions. Documentation only.
 
 ## Deferred, to come back to
 
