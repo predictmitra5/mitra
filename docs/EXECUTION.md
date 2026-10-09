@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-08 - Remove the home page's opening card (Claude Code)
+
+The owner, with a screenshot of the live card: "remove this as well" (DECISIONS.md, 2026-10-08). Delete `campus-hero.tsx` and its styles, keep a screen-reader heading on the feed, drop the feed view's now-unused campus prop, update the home page test and DESIGN.md section 13. Verify locally; push only on the owner's word.
 
 ## Deferred, to come back to
 

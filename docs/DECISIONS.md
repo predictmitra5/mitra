@@ -563,3 +563,5 @@ Answers to four questions asked before building:
 **Go-ahead, the same day:** after reviewing the local build and its screenshots, the owner, asked which of the two owner accounts (@ducky, @mitrapredict) the voided goal market and the samples should be recorded under: "record it under both accounts. push". An audit record names one acting account, so @mitrapredict acts and every record's reason names both accounts.
 
 **The Midway on High sample stays.** Asked whether a market on a bar's drink count suits members who must be 18 or older but may be under 21: "its 18+". The sample stays live as published; Mitra's audience remains 18+ by self-confirmation, with no 21+ gate on any market.
+
+**The opening card is removed (2026-10-08, after go-live).** Sharing a screenshot of the live home page's "mitra." card: "remove this as well". The card goes; the motto stays in the top bar and footer, and the price ticker stays.
