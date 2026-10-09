@@ -8,11 +8,11 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { approveDraft, createGoalDraft } from "@/modules/goals/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
-import { readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
+import { pruneFeedEventBuckets, readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
 import { CAPPED_SLOTS, MAX_PER_SUBJECT_IN_TOP } from "./ranking";
 import { withFixturePhoto } from "@/test/photo-fixture";
 
-const { profiles, markets, feedEvents, priceHistory } = schema;
+const { profiles, markets, feedEventBuckets, priceHistory } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
 const now = new Date("2026-09-19T12:00:00Z"), clock = () => now;
 let owner: string, alice: string, bob: string;
@@ -110,8 +110,8 @@ describe("the public feed", () => {
     await age(stale, 200);
 
     await recordClick(db, recent);
-    await db.insert(feedEvents).values({
-      marketId: stale, kind: "click", createdAt: new Date(now.getTime() - 48 * 3_600_000),
+    await db.insert(feedEventBuckets).values({
+      marketId: stale, kind: "click", bucketAt: new Date(now.getTime() - 48 * 3_600_000), eventCount: 10,
     });
 
     const order = (await readFeed(db, now)).cards.map((card) => card.id);
@@ -146,8 +146,8 @@ describe("feed measurement", () => {
     const first = await openGoal(alice, "First Club");
     const second = await openGoal(bob, "Second Club");
 
-    await recordExposures(db, [first, second, first]);
-    await recordClick(db, first);
+    await recordExposures(db, [first, second, first], now);
+    await recordClick(db, first, now);
 
     const counts = await readEventCounts(db, [first, second]);
     expect(counts.get(first)).toEqual({ exposures: 2, clicks: 1 });
@@ -161,16 +161,26 @@ describe("feed measurement", () => {
 
   it("never throws when a goal id does not exist, so measurement cannot blank the page", async () => {
     const missing = randomUUID();
-    await expect(recordExposures(db, [missing])).resolves.toBeUndefined();
-    await expect(recordClick(db, missing)).resolves.toBeUndefined();
+    await expect(recordExposures(db, [missing], now)).resolves.toBeUndefined();
+    await expect(recordClick(db, missing, now)).resolves.toBeUndefined();
     expect((await readEventCounts(db, [missing])).size).toBe(0);
   });
 
-  it("stores no viewer identity at all, by design", async () => {
+  it("aggregates events without viewer identity and caps ranking signals", async () => {
     const id = await openGoal(alice);
-    await recordClick(db, id);
-    const [row] = await db.select().from(feedEvents);
-    expect(Object.keys(row).sort()).toEqual(["createdAt", "id", "kind", "marketId"]);
+    for (let i = 0; i < 10; i++) await recordClick(db, id, now);
+    await recordClick(db, id, new Date(now.getTime() + 3_600_000));
+    const rows = await db.select().from(feedEventBuckets);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.eventCount)).toEqual([3, 1]);
+    for (const row of rows) expect(row).not.toHaveProperty("userId");
+  });
+
+  it("expires measurement buckets outside the ranking window", async () => {
+    const id = await openGoal(alice);
+    await recordClick(db, id, now);
+    await pruneFeedEventBuckets(db, new Date(now.getTime() + 26 * 3_600_000));
+    expect(await db.select().from(feedEventBuckets)).toHaveLength(0);
   });
 });
 
@@ -338,13 +348,13 @@ describe("live quotes", () => {
     const id = await openGoal(alice);
     await trade(bob, id);
     const card = (await readFeed(db, now)).cards[0];
-    const before = await db.select().from(feedEvents);
+    const before = await db.select().from(feedEventBuckets);
     const [quote] = await readQuotes(db, [id], now);
     expect(quote).toEqual({
       id, yesBp: Math.round(card.yesPrice * 10_000), change24hBp: card.change24hBp, volumeMicro: card.volumeMicro, tradingOpen: true,
     });
     await readQuotes(db, [id, id, id], now);
-    expect(await db.select().from(feedEvents)).toHaveLength(before.length);
+    expect(await db.select().from(feedEventBuckets)).toHaveLength(before.length);
   });
 
   it("returns nothing for drafts, unknown ids or anything that is not an id", async () => {

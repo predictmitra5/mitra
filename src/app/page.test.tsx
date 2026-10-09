@@ -39,7 +39,7 @@ describe("home feed for visitors and members", () => {
     expect(feed.props.signedIn).toBe(false);
     expect(prompt.type).toBe(SignupPrompt);
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date));
-    expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
+    expect(mocks.recordExposures).not.toHaveBeenCalled();
     expect(mocks.viewer).not.toHaveBeenCalled();
   });
 
@@ -56,5 +56,6 @@ describe("home feed for visitors and members", () => {
     expect(feed.props.signedIn).toBe(true);
     expect(prompt).toBe(false);
     expect(mocks.viewer).toHaveBeenCalledWith("database", "verified-user");
+    expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
   });
 });

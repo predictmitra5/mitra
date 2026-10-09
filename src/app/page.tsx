@@ -9,9 +9,8 @@ import { FeedView, type FeaturedData } from "./feed-view";
 import { SignupPrompt } from "./components/signup-prompt";
 
 /*
- * The home route is the ranked feed for everyone (browsing without an account
- * returned on 2026-10-05). Visitors also get the sign-up pop-up; exposures are
- * recorded without any viewer identity, as before.
+ * Visitors can browse the ranked feed, but only verified members contribute
+ * anonymous, bounded exposure aggregates. Viewer identity is never stored.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
@@ -52,8 +51,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   try {
     const database = getDb();
     feed = await readFeed(database, now);
-    // Measurement, not display: a failure inside here is already swallowed.
-    await recordExposures(database, feed.cards.map((card) => card.id));
+    // Signed-out browsing stays read-only. Measurement is anonymous and bounded.
+    if (identity) await recordExposures(database, feed.cards.map((card) => card.id));
   } catch {
     // Never leak a database or provider error to a visitor.
     unavailable = true;

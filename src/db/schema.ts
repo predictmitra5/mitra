@@ -34,6 +34,7 @@ export const marketStatus = pgEnum("market_status", [
 
 export const marketOutcome = pgEnum("market_outcome", ["yes", "no"]);
 export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
+export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence"]);
 export const evidenceKind = pgEnum("evidence_kind", ["file", "link"]);
 export const evidenceStatus = pgEnum("evidence_status", [
   "submitted", // waiting for the owner; visible only to the owner and the sender
@@ -326,6 +327,42 @@ export const feedEvents = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("feed_events_market_time_idx").on(table.marketId, table.createdAt)],
+);
+
+/** Anonymous measurement is retained only as hourly aggregates for ranking. */
+export const feedEventBuckets = pgTable(
+  "feed_event_buckets",
+  {
+    marketId: uuid("market_id").notNull().references(() => markets.id),
+    kind: feedEventKind("kind").notNull(),
+    bucketAt: timestamp("bucket_at", { withTimezone: true }).notNull(),
+    eventCount: integer("event_count").notNull().default(0),
+  },
+  (table) => [
+    primaryKey({ columns: [table.marketId, table.kind, table.bucketAt], name: "feed_event_buckets_pk" }),
+    index("feed_event_buckets_time_idx").on(table.bucketAt),
+    check("feed_event_buckets_count_nonnegative", sql`${table.eventCount} >= 0`),
+  ],
+);
+
+/** One row per signed direct-upload grant; expired paths can be safely swept. */
+export const uploadIntents = pgTable(
+  "upload_intents",
+  {
+    id: uuid("id").primaryKey(),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    marketId: uuid("market_id").references(() => markets.id),
+    kind: uploadIntentKind("kind").notNull(),
+    objectPath: text("object_path").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    cleaningAt: timestamp("cleaning_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("upload_intents_kind_path_uq").on(table.kind, table.objectPath),
+    index("upload_intents_user_expiry_idx").on(table.userId, table.expiresAt),
+    index("upload_intents_expiry_idx").on(table.expiresAt),
+  ],
 );
 
 /**

@@ -94,9 +94,6 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     return <div className="market-shell"><MarketHeader viewer={null} /><main className="account-main"><section className="account-card"><h1>This goal is temporarily unavailable.</h1><p>Please try again shortly.</p><Link href="/" prefetch={false}>Back to all goals</Link></section></main><MarketFooter /></div>;
   }
   if (!market) notFound();
-  // Feed measurement. recordClick swallows its own failures, and is called here
-  // rather than in the cached loader so generateMetadata does not double-count.
-  await recordClick(getDb(), id);
   let identity = null;
   let trader = null;
   let objections: Awaited<ReturnType<typeof readObjections>> = [];
@@ -108,6 +105,10 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
       if (trader) objections = await readObjections(getDb(), identity.id, id);
     }
   } catch { accountUnavailable = true; }
+
+  // Signed-out reads remain available but cannot write click telemetry. This
+  // is outside the cached loader so metadata generation never double-counts.
+  if (identity) await recordClick(getDb(), id);
 
   // Proof. listPublished is public by decision; the other two are only ever
   // read for the person they belong to, and never reveal who the subject is.

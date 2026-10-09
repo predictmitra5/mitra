@@ -150,7 +150,7 @@ describe("setting and removing photos", () => {
   });
 
   it("hands out a one-time upload link only for an allowed photo from an active profile (2026-09-24)", async () => {
-    const start = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 3_000_000 });
+    const start = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 3_000_000 }, now);
     expect(start.url).toBe(`https://storage.example.test/photo-uploads/${person}/${start.uploadId}?token=t`);
     await expect(beginPhotoUpload(db, person, { contentType: "image/gif", bytes: 10 })).rejects.toMatchObject({ code: "INVALID_FILE" });
     await expect(beginPhotoUpload(db, person, { contentType: "image/png", bytes: 9 * 1024 * 1024 })).rejects.toMatchObject({ code: "INVALID_FILE" });
@@ -158,15 +158,24 @@ describe("setting and removing photos", () => {
     await expect(beginPhotoUpload(db, other, { contentType: "image/png", bytes: 10 })).rejects.toMatchObject({ code: "PROFILE_REQUIRED" });
   });
 
+  it("bounds pending photo upload grants and rejects expired grants", async () => {
+    const first = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 }, now);
+    await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 }, now);
+    await expect(beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 }, now))
+      .rejects.toMatchObject({ code: "UPLOAD_LIMIT" });
+    await expect(completePhotoUpload(db, person, { uploadId: first.uploadId, contentType: "image/jpeg" }, new Date(now.getTime() + 49 * 3_600_000)))
+      .rejects.toMatchObject({ code: "NOT_ALLOWED" });
+  });
+
   it("checks and saves an uploaded original, then deletes the staged copy whatever happens", async () => {
-    const good = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 });
+    const good = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 }, now);
     bucket.objects.set(`${person}/${good.uploadId}`, await photo());
     await completePhotoUpload(db, person, { uploadId: good.uploadId, contentType: "image/jpeg" }, now);
     const saved = (await row(person)).photoPath!;
     expect((await sharp(bucket.objects.get(saved)!).metadata()).format).toBe("webp");
     expect(bucket.objects.has(`${person}/${good.uploadId}`)).toBe(false);
 
-    const labelled = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 });
+    const labelled = await beginPhotoUpload(db, person, { contentType: "image/jpeg", bytes: 1 }, now);
     bucket.objects.set(`${person}/${labelled.uploadId}`, await jpegWithXmp("trainedAlgorithmicMedia"));
     await expect(completePhotoUpload(db, person, { uploadId: labelled.uploadId, contentType: "image/jpeg" }, now))
       .rejects.toMatchObject({ code: "AI_LABELLED" });
@@ -175,10 +184,10 @@ describe("setting and removing photos", () => {
   });
 
   it("only ever reads the signed-in person's own staged upload", async () => {
-    const theirs = await beginPhotoUpload(db, other, { contentType: "image/jpeg", bytes: 1 });
+    const theirs = await beginPhotoUpload(db, other, { contentType: "image/jpeg", bytes: 1 }, now);
     bucket.objects.set(`${other}/${theirs.uploadId}`, await photo());
     await expect(completePhotoUpload(db, person, { uploadId: theirs.uploadId, contentType: "image/jpeg" }, now))
-      .rejects.toMatchObject({ code: "UNAVAILABLE" });
+      .rejects.toMatchObject({ code: "NOT_ALLOWED" });
     expect((await row(person)).photoPath).toBeNull();
     expect(bucket.objects.has(`${other}/${theirs.uploadId}`)).toBe(true);
     await expect(completePhotoUpload(db, person, { uploadId: "../other", contentType: "image/jpeg" }, now))

@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isInactive } from "@/modules/account/standing";
 import { isUuid } from "@/modules/market/input";
+import { reserveUploadIntent } from "@/modules/uploads/intents";
 import {
   EvidenceError,
   assertAcceptableFile,
@@ -17,7 +18,7 @@ import {
   type AcceptedUploadType,
 } from "./policy";
 
-const { evidence, markets, profiles } = schema;
+const { evidence, markets, profiles, uploadIntents } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -177,9 +178,15 @@ export async function beginFileUpload<Q extends PgQueryResultHKT>(
   // this app accept a file by guessing a goal id.
   const precheck = await loadMarket(database, input.marketId);
   if (!precheck) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
-  assertMaySubmit(precheck, userId, await countFor(database, input.marketId), clock());
+  const existing = await countFor(database, input.marketId);
+  const now = clock();
+  assertMaySubmit(precheck, userId, existing, now);
   const id = randomUUID();
-  return { id, path: originalStoragePath(input.marketId, id, contentType), contentType };
+  const path = originalStoragePath(input.marketId, id, contentType);
+  if (!await reserveUploadIntent(database, { id, userId, marketId: input.marketId, marketUsed: existing, kind: "evidence", objectPath: path }, now)) {
+    throw new EvidenceError("UPLOAD_LIMIT", "Finish or wait for an earlier proof upload before starting another.");
+  }
+  return { id, path, contentType };
 }
 
 /**
@@ -208,6 +215,7 @@ export async function completeFileUpload<Q extends PgQueryResultHKT>(
     // The record check, insert and orphan cleanup must share one lock. A
     // check-then-delete outside it can erase an original another finish keeps.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`evidence-upload:${id}`}, 0))`);
+    const now = clock();
     await requireActiveProfile(locked, userId);
     const market = await loadMarket(locked, input.marketId);
     if (!market) throw new EvidenceError("NOT_FOUND", "That goal could not be found.");
@@ -216,6 +224,12 @@ export async function completeFileUpload<Q extends PgQueryResultHKT>(
     }
     // Authorization precedes all storage access, including error cleanup.
     if (await isRecorded(locked, id)) throw new EvidenceError("ALREADY_SENT", "That file was already sent.");
+    const [intent] = await locked.select().from(uploadIntents).where(and(
+      eq(uploadIntents.id, id), eq(uploadIntents.userId, userId), eq(uploadIntents.marketId, input.marketId),
+      eq(uploadIntents.kind, "evidence"), eq(uploadIntents.objectPath, path),
+      gt(uploadIntents.expiresAt, now), isNull(uploadIntents.cleaningAt),
+    )).for("update").limit(1);
+    if (!intent) throw new EvidenceError("UPLOAD_EXPIRED", "That proof upload expired. Please start again.");
     let body: Uint8Array;
     try {
       body = await storage.readOriginal(path);
@@ -231,10 +245,15 @@ export async function completeFileUpload<Q extends PgQueryResultHKT>(
       // Only invalid stored bytes establish that this object is disposable.
       // Failed metadata, authorization or database writes must not erase a
       // valid original that a retry may still finish.
-      if (!(await isRecorded(locked, id).catch(() => true))) await storage.discardOrphan(path);
+      if (!(await isRecorded(locked, id).catch(() => true))) {
+        await storage.discardOrphan(path);
+        await locked.delete(uploadIntents).where(eq(uploadIntents.id, id));
+      }
       throw error;
     }
-    return recordFile(locked, userId, { id, marketId: input.marketId, path, contentType, bytes: body.byteLength, caption }, clock);
+    const result = await recordFile(locked, userId, { id, marketId: input.marketId, path, contentType, bytes: body.byteLength, caption }, clock);
+    await locked.delete(uploadIntents).where(eq(uploadIntents.id, id));
+    return result;
   });
 }
 

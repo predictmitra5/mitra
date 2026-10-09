@@ -6,6 +6,7 @@ import { currentIdentity } from "@/modules/auth/server";
 import { EvidenceError } from "./policy";
 import { beginFileUpload, completeFileUpload, submitLink } from "./service";
 import { createOriginalUploadUrl, discardOrphan, readOriginal } from "./storage";
+import { releaseUploadIntent } from "@/modules/uploads/intents";
 
 export type EvidenceResult = { ok: true } | { ok: false; error: string; code: string };
 
@@ -51,8 +52,14 @@ export async function startFileUpload(marketId: string, file: { contentType: str
   try {
     const identity = await currentIdentity();
     if (!identity) throw new EvidenceError("SIGNED_OUT", "Sign in with your verified university email to send proof.");
-    const start = await beginFileUpload(getDb(), identity.id, { marketId, contentType: file?.contentType, bytes: file?.bytes });
-    return { ok: true, uploadId: start.id, contentType: start.contentType, url: await createOriginalUploadUrl(start.path) };
+    const database = getDb();
+    const start = await beginFileUpload(database, identity.id, { marketId, contentType: file?.contentType, bytes: file?.bytes });
+    try {
+      return { ok: true, uploadId: start.id, contentType: start.contentType, url: await createOriginalUploadUrl(start.path) };
+    } catch (error) {
+      await releaseUploadIntent(database, { id: start.id, userId: identity.id, kind: "evidence" });
+      throw error;
+    }
   } catch (error) {
     return failure(error) as UploadStart;
   }

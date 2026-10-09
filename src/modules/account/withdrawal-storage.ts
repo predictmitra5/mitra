@@ -18,11 +18,19 @@ export const withdrawalStorage: WithdrawalStorage = {
     await removeExact(ORIGINALS_BUCKET, objects.evidencePaths);
     await removeExact(PHOTO_BUCKET, objects.photoPath ? [objects.photoPath] : []);
 
+    await removeExact(ORIGINALS_BUCKET, objects.uploadPaths.filter((item) => item.kind === "evidence").map((item) => item.path));
+    await removeExact(PHOTO_UPLOAD_BUCKET, objects.uploadPaths.filter((item) => item.kind === "photo").map((item) => item.path));
+
     // Originals normally leave the staging bucket immediately, but remove any
-    // interrupted upload that is still under this user's private prefix.
+    // interrupted upload that is still under this user's private prefix. This
+    // also recovers objects created before upload reservations were introduced.
     const client = createAuthAdminClient();
-    const { data, error } = await client.storage.from(PHOTO_UPLOAD_BUCKET).list(userId, { limit: 1000 });
-    if (error) throw new Error("Temporary account files could not be listed.");
-    await removeExact(PHOTO_UPLOAD_BUCKET, (data ?? []).map((item) => `${userId}/${item.name}`));
+    while (true) {
+      const { data, error } = await client.storage.from(PHOTO_UPLOAD_BUCKET).list(userId, { limit: 1000, offset: 0 });
+      if (error) throw new Error("Temporary account files could not be listed.");
+      const paths = (data ?? []).map((item) => `${userId}/${item.name}`);
+      if (!paths.length) break;
+      await removeExact(PHOTO_UPLOAD_BUCKET, paths);
+    }
   },
 };

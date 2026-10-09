@@ -210,6 +210,14 @@ describe("uploading straight to storage (2026-09-24)", () => {
     expect(await listForOwner(db, owner, marketId)).toHaveLength(0);
   });
 
+  it("bounds pending direct-upload grants per user", async () => {
+    for (let index = 0; index < 5; index += 1) {
+      await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 12 }, clock);
+    }
+    await expect(beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 12 }, clock))
+      .rejects.toMatchObject({ code: "UPLOAD_LIMIT" });
+  });
+
   it("records a file the browser uploaded, at the path the server worked out, with its real size", async () => {
     const bucket = uploadedBucket();
     const start = await beginFileUpload(db, subject, { marketId, contentType: "image/png", bytes: 999 }, clock);
