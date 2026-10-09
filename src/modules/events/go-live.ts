@@ -39,8 +39,12 @@ export interface GoLiveOptions {
   withdrawalMillis: number;
   /** Applies every pending migration; called only with `apply`. */
   migrate: () => Promise<void>;
-  /** Which owner acts, when there is more than one. */
-  ownerHandle?: string;
+  /**
+   * The owner accounts the steps are recorded under. An audit record names one
+   * acting account, so the first acts and every record's reason names them all.
+   * Needed when there is more than one owner account.
+   */
+  ownerHandles?: string[];
   now?: Date;
   log?: (line: string) => void;
 }
@@ -55,6 +59,26 @@ export async function runEventPivot(database: Database, options: GoLiveOptions) 
   const log = options.log ?? (() => {});
   const now = options.now ?? new Date();
   log(apply ? "Applying the event-market pivot." : "Read-only report. Nothing will change; add --apply to run it.");
+
+  // ---------------------------------------------------------------- the owners
+  // Voiding and publishing are recorded as the owners' decisions. Checked before
+  // anything is written, so a wrong --owner never leaves a half-done run.
+  const owners = await database.select({ id: profiles.id, handle: profiles.handle }).from(profiles)
+    .where(and(eq(profiles.isOwner, 1), isNull(profiles.withdrawnAt), isNull(profiles.bannedAt)));
+  const requested = options.ownerHandles?.length ? options.ownerHandles : owners.length === 1 ? [owners[0].handle] : [];
+  const chosen = requested.map((handle) => owners.find((row) => row.handle === handle));
+  const unknown = requested.filter((_, index) => !chosen[index]);
+  const recordedUnder = chosen.filter((row) => row !== undefined);
+  log(`   Owner accounts: ${owners.map((row) => `@${row.handle}`).join(", ") || "none"}.`);
+  if (unknown.length) throw new Error(`Not an active owner account: ${unknown.map((handle) => `@${handle}`).join(", ")}.`);
+  if (!recordedUnder.length) {
+    if (apply || owners.length === 0) throw new Error(owners.length ? "More than one owner account: name them with --owner=<handle>[,<handle>]." : "No active owner account.");
+    log("   More than one owner account: --apply will need --owner=<handle>[,<handle>].");
+  } else {
+    log(`   Recorded under ${recordedUnder.map((row) => `@${row.handle}`).join(" and ")}; @${recordedUnder[0].handle} acts.`);
+  }
+  const ownerId = recordedUnder[0]?.id ?? "";
+  const authority = recordedUnder.length > 1 ? ` Recorded on the go-ahead of ${recordedUnder.map((row) => `@${row.handle}`).join(" and ")}.` : "";
 
   // ---------------------------------------------------------------- 1. migrations
   const recorded = new Set(rows<{ created_at: string | number }>(await database.execute(sql`select created_at from drizzle.__drizzle_migrations`))
@@ -87,18 +111,6 @@ export async function runEventPivot(database: Database, options: GoLiveOptions) 
   }
   const eventsReady = hadEvents || apply;
 
-  // ---------------------------------------------------------------- the owner
-  // Voiding and publishing are recorded as this owner's decisions.
-  const owners = await database.select({ id: profiles.id, handle: profiles.handle }).from(profiles)
-    .where(and(eq(profiles.isOwner, 1), isNull(profiles.withdrawnAt), isNull(profiles.bannedAt)));
-  const owner = options.ownerHandle ? owners.find((row) => row.handle === options.ownerHandle) : owners.length === 1 ? owners[0] : undefined;
-  log(`   Owner accounts: ${owners.map((row) => `@${row.handle}`).join(", ") || "none"}${owner ? `; acting as @${owner.handle}.` : "."}`);
-  if (!owner) {
-    if (apply || owners.length === 0) throw new Error(owners.length ? "More than one owner account: choose one with --owner=<handle>." : "No active owner account.");
-    log("   More than one owner account: --apply will need --owner=<handle>.");
-  }
-  const ownerId = owner?.id ?? "";
-
   // ---------------------------------------------------------------- 2. retire goal markets
   const goals = await database.select({ id: markets.id, question: markets.question, status: markets.status, rulingVersion: markets.rulingVersion })
     .from(markets)
@@ -111,7 +123,7 @@ export async function runEventPivot(database: Database, options: GoLiveOptions) 
     log(`   ${goal.status}, ${holders.length} holder${holders.length === 1 ? "" : "s"}: ${goal.question}`);
     if (!apply) continue;
     await applyOwnerCommand(database, ownerId, {
-      marketId: goal.id, requestId: randomUUID(), action: "cancel", reason: RETIRE_REASON, expectedVersion: goal.rulingVersion,
+      marketId: goal.id, requestId: randomUUID(), action: "cancel", reason: `${RETIRE_REASON}${authority}`, expectedVersion: goal.rulingVersion,
     }, () => now);
     voided += 1;
     log("   Voided; held cost refunded.");
@@ -129,7 +141,7 @@ export async function runEventPivot(database: Database, options: GoLiveOptions) 
     log(`   ${input.question}`);
     log(`     opens at ${input.openingProbabilityBp / 100}%, trading until ${input.tradingCutoffAt?.toISOString()}, results due ${input.resultsDueAt?.toISOString()}`);
     if (!apply) continue;
-    const market = await publishMarket(database, ownerId, input, now);
+    const market = await publishMarket(database, ownerId, { ...input, note: `Sample market for the 2026-10-08 pivot.${authority}` }, now);
     published.push(market.id);
     log(`     Published: /markets/${market.id}`);
   }

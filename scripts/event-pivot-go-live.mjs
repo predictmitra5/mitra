@@ -4,7 +4,8 @@
 //   node --env-file=.env.local scripts/event-pivot-go-live.mjs           read-only report of what would happen
 //   node --env-file=.env.local scripts/event-pivot-go-live.mjs --apply   do it
 //
-// With more than one owner account, add --owner=<handle> to say which one acts.
+// With more than one owner account, name the accounts the steps are recorded
+// under: --owner=<handle>[,<handle>]. The first acts; every record names them all.
 //
 // The steps are in src/modules/events/go-live.ts, tested against an in-memory
 // copy of the live state: record migration 0012, apply 0013, void and refund
@@ -51,7 +52,7 @@ try {
     migrations: readMigrationFiles({ migrationsFolder: "./drizzle" }),
     withdrawalMillis: journal.entries.find((entry) => entry.tag === "0012_account_withdrawal").when,
     migrate: () => migrate(db, { migrationsFolder: "./drizzle" }),
-    ownerHandle: process.argv.find((arg) => arg.startsWith("--owner="))?.slice("--owner=".length),
+    ownerHandles: process.argv.find((arg) => arg.startsWith("--owner="))?.slice("--owner=".length).split(",").map((handle) => handle.trim().replace(/^@/, "")).filter(Boolean),
     log: (line) => console.log(line),
   });
   if (process.argv.includes("--apply")) {

@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { readMigrationFiles } from "drizzle-orm/migrator";
@@ -25,13 +25,13 @@ const now = new Date("2026-10-08T22:00:00Z");
 const journal = JSON.parse(readFileSync("./drizzle/meta/_journal.json", "utf8"));
 const withdrawalMillis: number = journal.entries.find((entry: { tag: string }) => entry.tag === "0012_account_withdrawal").when;
 const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });
-const ids = { owner: randomUUID(), subject: randomUUID(), alice: randomUUID(), bob: randomUUID(), market: randomUUID() };
+const ids = { owner: randomUUID(), second: randomUUID(), subject: randomUUID(), alice: randomUUID(), bob: randomUUID(), market: randomUUID() };
 let folder: string;
 const log: string[] = [];
 
-async function run(apply: boolean, ownerHandle?: string) {
+async function run(apply: boolean, ownerHandles?: string[]) {
   return runEventPivot(db, {
-    apply, migrations, withdrawalMillis, now, ownerHandle, log: (line) => log.push(line),
+    apply, migrations, withdrawalMillis, now, ownerHandles, log: (line) => log.push(line),
     migrate: () => migrate(db, { migrationsFolder: "./drizzle" }),
   });
 }
@@ -46,7 +46,8 @@ beforeAll(async () => {
   // 0012 by hand, as it was applied on 2026-10-05, without a record.
   for (const statement of migrations.find((file) => file.folderMillis === withdrawalMillis)!.sql) await db.execute(sql.raw(statement));
 
-  for (const [id, handle, isOwner] of [[ids.owner, "owner", 1], [ids.subject, "sam", 0], [ids.alice, "alice", 0], [ids.bob, "bob", 0]] as const) {
+  // Two owner accounts, as on the live project.
+  for (const [id, handle, isOwner] of [[ids.owner, "owner", 1], [ids.second, "second_owner", 1], [ids.subject, "sam", 0], [ids.alice, "alice", 0], [ids.bob, "bob", 0]] as const) {
     await db.execute(sql`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at) values (${id}, ${handle}, ${handle}, ${isOwner}, ${now})`);
     await db.execute(sql`insert into wallets (user_id, balance_micro) values (${id}, ${isOwner ? 1_000_000_000 : 980_000_000})`);
     await db.execute(sql`insert into ledger_entries (user_id, kind, amount_micro) values (${id}, 'signup_grant', 1000000000)`);
@@ -74,13 +75,21 @@ describe("going live with event markets", () => {
     expect(log.join("\n")).toContain("0012 is in the database but not recorded");
     expect(log.join("\n")).toContain("Goal markets to void and refund: 1.");
     expect(log.join("\n")).toContain("Will Midway on High sell more than 1,000 qualifying drinks");
+    expect(log.join("\n")).toContain("--apply will need --owner=<handle>[,<handle>]");
     const recorded = await db.execute<{ n: number }>(sql`select count(*)::int as n from drizzle.__drizzle_migrations`);
     expect(recorded.rows[0].n).toBe(12);
     expect((await db.execute<{ name: string | null }>(sql`select to_regclass('venues')::text as name`)).rows[0].name).toBeNull();
   });
 
-  it("records 0012, applies 0013, voids and refunds the goal market, and publishes the samples", async () => {
-    const result = await run(true);
+  it("refuses to apply, before writing anything, without owners or with an account that is not one", async () => {
+    await expect(run(true)).rejects.toThrow("--owner=<handle>");
+    await expect(run(true, ["owner", "sam"])).rejects.toThrow("Not an active owner account: @sam.");
+    const recorded = await db.execute<{ n: number }>(sql`select count(*)::int as n from drizzle.__drizzle_migrations`);
+    expect(recorded.rows[0].n).toBe(12);
+  });
+
+  it("records 0012, applies 0013, voids and refunds the goal market, and publishes the samples, under both owners", async () => {
+    const result = await run(true, ["owner", "second_owner"]);
     expect(result.recordedWithdrawal).toBe(true);
     expect(result.voided).toBe(1);
     expect(result.published).toHaveLength(3);
@@ -89,7 +98,13 @@ describe("going live with event markets", () => {
     expect(recorded.rows[0].n).toBe(migrations.length);
 
     const [goal] = await db.select().from(schema.markets).where(eq(schema.markets.id, ids.market));
-    expect(goal).toMatchObject({ status: "cancelled", cancelReason: RETIRE_REASON });
+    expect(goal).toMatchObject({ status: "cancelled", cancelReason: `${RETIRE_REASON} Recorded on the go-ahead of @owner and @second_owner.` });
+    const audits = await db.select().from(schema.adminActions).where(inArray(schema.adminActions.kind, ["cancel", "approve"]));
+    expect(audits).toHaveLength(4);
+    for (const audit of audits) {
+      expect(audit.actorUserId).toBe(ids.owner);
+      expect(audit.reason).toContain("Recorded on the go-ahead of @owner and @second_owner.");
+    }
     for (const user of [ids.alice, ids.bob]) {
       const [wallet] = await db.select().from(schema.wallets).where(eq(schema.wallets.userId, user));
       expect(wallet.balanceMicro).toBe(1_000_000_000); // 980 left plus the 20 they paid.
@@ -100,16 +115,8 @@ describe("going live with event markets", () => {
   });
 
   it("does nothing the second time", async () => {
-    const result = await run(true);
+    const result = await run(true, ["owner", "second_owner"]);
     expect(result).toEqual({ recordedWithdrawal: false, voided: 0, published: [] });
     expect(await db.select().from(schema.markets)).toHaveLength(4);
-  });
-
-  it("never guesses which of two owners acts", async () => {
-    await db.execute(sql`insert into profiles (id, handle, display_name, is_owner, adult_confirmed_at) values (${randomUUID()}, 'second_owner', 'Second', 1, ${now})`);
-    await expect(run(true)).rejects.toThrow("--owner=<handle>");
-    await expect(run(false)).resolves.toMatchObject({ voided: 0 });
-    expect(log.join("\n")).toContain("@owner, @second_owner");
-    await expect(run(true, "owner")).resolves.toEqual({ recordedWithdrawal: false, voided: 0, published: [] });
   });
 });
