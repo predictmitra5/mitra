@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._ The pivot to event markets is built and verified locally; its live steps wait for the owner's go-ahead (Next actions, item 1).
+### 2026-10-08 - Event markets go live (Claude Code)
+
+The owner's go-ahead: "record it under both accounts. push" (DECISIONS.md, 2026-10-08). Plan:
+
+1. Merged GitHub's `main`, which had one new commit: the owner deleted README.md on GitHub on 2026-10-07. The deletion is kept; the go-live notes written into README.md move to this file and docs/DATA_MODEL.md.
+2. `src/modules/events/go-live.ts` and the script take several owner handles (`--owner=mitrapredict,ducky`): one audit record can name only one actor, so the first acts and every record's reason names both accounts. Tests first.
+3. Run the read-only report, then `--apply` against the live database: record 0012, apply 0013, void the Jane Street goal market with refunds, publish the three samples. Migrating before the push is safe because 0013 is additive.
+4. Push `main` (commits authored by predictmitra@gmail.com), wait for Vercel, and check the live feed, a sample, `/suggest`, `/review` redirects and the voided goal market's page.
+5. Update Current state, Session history and Next actions; clear this entry.
 
 ## Deferred, to come back to
 
