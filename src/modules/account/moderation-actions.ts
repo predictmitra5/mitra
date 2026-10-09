@@ -41,7 +41,7 @@ export async function unbanAction(_state: FormState, form: FormData): Promise<Fo
     if (!identity) return signedOut;
     await unbanPerson(getDb(), identity.id, text(form, "userId"));
     revalidatePath("/review/people");
-    return { success: "Ban lifted. Goals it cancelled stay cancelled." };
+    return { success: "Ban lifted. Anything it cancelled or turned down stays that way." };
   } catch (error) {
     if (error instanceof ModerationError) return { error: error.message };
     return { error: "The ban could not be lifted. Please try again." };

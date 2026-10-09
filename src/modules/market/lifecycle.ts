@@ -5,7 +5,7 @@ import { isUuid } from "./input";
 import { EMPTY_POSITION } from "./position";
 import { isInactive } from "@/modules/account/standing";
 
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory } = schema;
+const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory, venues, resolutionSources } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Market = typeof markets.$inferSelect;
 type Clock = () => Date;
@@ -17,6 +17,13 @@ export class LifecycleError extends Error {
   }
 }
 
+/**
+ * What a ruling rests on (2026-10-08): the owner checked the market's named
+ * source, or the source never reported by the results deadline, which the owner
+ * decided resolves No.
+ */
+export type RulingBasis = "checked_source" | "missing_data";
+
 export interface OwnerCommand {
   marketId: string;
   requestId: string;
@@ -24,7 +31,7 @@ export interface OwnerCommand {
   reason: string;
   expectedVersion: number;
   outcome?: "yes" | "no";
-  basis?: "reviewed_proof" | "missing_proof";
+  basis?: RulingBasis;
   publicOutcomeConfirmed?: boolean;
 }
 
@@ -38,14 +45,14 @@ function textReason(value: unknown) {
 function normalize(command: OwnerCommand) {
   if (!command || !isUuid(command.marketId) || !isUuid(command.requestId) ||
     !["close", "rule", "cancel"].includes(command.action) || !Number.isSafeInteger(command.expectedVersion) || command.expectedVersion < 0) {
-    throw new LifecycleError("INVALID_INPUT", "Reload this goal before trying again.");
+    throw new LifecycleError("INVALID_INPUT", "Reload this market before trying again.");
   }
   const reason = textReason(command.reason);
-  if (command.action === "rule" && (!["yes", "no"].includes(command.outcome ?? "") || !["reviewed_proof", "missing_proof"].includes(command.basis ?? ""))) {
-    throw new LifecycleError("INVALID_INPUT", "Choose an outcome and state whether you reviewed proof.");
+  if (command.action === "rule" && (!["yes", "no"].includes(command.outcome ?? "") || !["checked_source", "missing_data"].includes(command.basis ?? ""))) {
+    throw new LifecycleError("INVALID_INPUT", "Choose an outcome and say whether you checked the source.");
   }
-  if (command.action === "rule" && command.basis === "missing_proof" && command.outcome !== "no") {
-    throw new LifecycleError("MISSING_PROOF_NO", "A goal without proof must be ruled NO.");
+  if (command.action === "rule" && command.basis === "missing_data" && command.outcome !== "no") {
+    throw new LifecycleError("MISSING_DATA_NO", "A market whose source never reported must be ruled NO.");
   }
   if (command.action === "close" && command.publicOutcomeConfirmed !== true) {
     throw new LifecycleError("CONFIRM_PUBLIC", "Confirm that the outcome is already public before closing early.");
@@ -81,10 +88,20 @@ export async function requireLifecycleOwner<Q extends PgQueryResultHKT>(database
 }
 
 async function lockMarket<Q extends PgQueryResultHKT>(database: Database<Q>, marketId: string) {
-  if (!isUuid(marketId)) throw new LifecycleError("NOT_FOUND", "This goal is not available.");
+  if (!isUuid(marketId)) throw new LifecycleError("NOT_FOUND", "This market is not available.");
   const [market] = await database.select().from(markets).where(eq(markets.id, marketId)).for("update");
-  if (!market || !market.approvedAt) throw new LifecycleError("NOT_FOUND", "This goal is not available.");
+  if (!market || !market.approvedAt) throw new LifecycleError("NOT_FOUND", "This market is not available.");
   return market;
+}
+
+/**
+ * When the owner may record a ruling. An event market can be ruled from its
+ * source as soon as its window ends; ruling that the source never reported
+ * waits for the results deadline. A retired goal market keeps its proof period.
+ */
+export function rulingOpensAt(market: Pick<Market, "venueId" | "windowEndAt" | "evidenceDeadlineAt">, basis: RulingBasis): Date {
+  if (market.venueId && market.windowEndAt && basis === "checked_source") return market.windowEndAt;
+  return market.evidenceDeadlineAt;
 }
 
 function final(market: Market, now: Date) {
@@ -93,14 +110,14 @@ function final(market: Market, now: Date) {
 }
 
 function safeAmount(value: number) {
-  if (!Number.isSafeInteger(value) || value < 0) throw new LifecycleError("ACCOUNTING_ERROR", "Accounting needs review before this goal can be finalized.");
+  if (!Number.isSafeInteger(value) || value < 0) throw new LifecycleError("ACCOUNTING_ERROR", "Accounting needs review before this market can be finalized.");
   return value;
 }
 
 /** Caller holds the market lock. Wallets are locked by user id across all markets. */
 async function creditPositions<Q extends PgQueryResultHKT>(tx: Database<Q>, market: Market, kind: "settlement" | "cancellation_refund", now: Date) {
   const held = await tx.select().from(positions).where(eq(positions.marketId, market.id)).orderBy(asc(positions.userId));
-  if (kind === "settlement" && !market.ruledOutcome) throw new LifecycleError("INVALID_STATE", "This goal has no ruling to settle.");
+  if (kind === "settlement" && !market.ruledOutcome) throw new LifecycleError("INVALID_STATE", "This market has no ruling to settle.");
   let totalMicro = 0;
   const accountRows = held.length ? await tx.select().from(wallets).where(inArray(wallets.userId, held.map((p) => p.userId)))
     .orderBy(asc(wallets.userId)).for("update") : [];
@@ -159,7 +176,7 @@ export async function applyOwnerCommand<Q extends PgQueryResultHKT>(database: Da
       const previousRequest = (prior.details as { request?: unknown } | null)?.request;
       // JSONB key ordering is not significant. Compare normalized fields by name.
       if (!previousRequest || Object.entries(command).some(([key, value]) => (previousRequest as Record<string, unknown>)[key] !== value)) {
-        throw new LifecycleError("RETRY_MISMATCH", "This request was already used for a different update. Reload the goal.");
+        throw new LifecycleError("RETRY_MISMATCH", "This request was already used for a different update. Reload the market.");
       }
       return { marketId: command.marketId };
     }
@@ -171,19 +188,23 @@ export async function applyOwnerCommand<Q extends PgQueryResultHKT>(database: Da
     let kind: typeof adminActions.$inferInsert.kind;
     let totals: { participants: number; totalMicro: number } | undefined;
     if (command.action === "close") {
-      if (market.status !== "open" || market.deadlineAt <= now) throw new LifecycleError("CLOSED", "Trading is already closed. Reload the goal.");
+      if (market.status !== "open" || market.deadlineAt <= now) throw new LifecycleError("CLOSED", "Trading is already closed. Reload the market.");
       await tx.update(markets).set({ status: "closed", tradingClosedAt: now }).where(eq(markets.id, market.id));
       kind = "close_early";
     } else if (command.action === "cancel") {
-      if (!["open", "closed", "ruled"].includes(market.status)) throw new LifecycleError("INVALID_STATE", "This goal cannot be cancelled here.");
+      if (!["open", "closed", "ruled"].includes(market.status)) throw new LifecycleError("INVALID_STATE", "This market cannot be cancelled here.");
       totals = await creditPositions(tx, market, "cancellation_refund", now);
       await tx.update(markets).set({ status: "cancelled", cancelledAt: now, cancelReason: command.reason,
         tradingClosedAt: market.tradingClosedAt ?? (market.deadlineAt < now ? market.deadlineAt : now) }).where(eq(markets.id, market.id));
       kind = "cancel";
     } else {
-      if (market.evidenceDeadlineAt > now) throw new LifecycleError("PROOF_WINDOW", "Wait until the seven-day proof period ends before recording the ruling.");
+      if (rulingOpensAt(market, command.basis!) > now) {
+        throw new LifecycleError("RESULTS_PENDING", command.basis === "missing_data"
+          ? "Wait until the results deadline passes before ruling that the source never reported."
+          : "Wait until the event window ends before recording the ruling.");
+      }
       market = await closeAtDeadline(tx, market, now);
-      if (!["closed", "ruled"].includes(market.status)) throw new LifecycleError("INVALID_STATE", "Close trading before ruling on this goal.");
+      if (!["closed", "ruled"].includes(market.status)) throw new LifecycleError("INVALID_STATE", "Close trading before ruling on this market.");
       if (market.status === "ruled" && market.ruledOutcome === command.outcome && market.rulingReason === command.reason) {
         throw new LifecycleError("NO_CHANGE", "The outcome and explanation are unchanged.");
       }
@@ -218,7 +239,7 @@ export async function submitObjection<Q extends PgQueryResultHKT>(database: Data
     const market = await lockMarket(tx, input.marketId);
     const now = clock();
     if (market.status !== "ruled" || !market.contestEndsAt || market.contestEndsAt <= now) {
-      throw new LifecycleError("CONTEST_CLOSED", "This goal's objection window has ended or has not opened yet.");
+      throw new LifecycleError("CONTEST_CLOSED", "This market's objection window has ended or has not opened yet.");
     }
     if (market.rulingVersion !== input.rulingVersion) throw new LifecycleError("STALE_RULING", "The ruling changed. Read it again before submitting your objection.");
     await tx.insert(contests).values({ id: input.id, marketId: input.marketId, userId: authorId, reason, rulingVersion: market.rulingVersion, createdAt: now });
@@ -250,9 +271,14 @@ export async function advanceDueMarkets<Q extends PgQueryResultHKT>(database: Da
 export async function listLifecycleMarkets<Q extends PgQueryResultHKT>(database: Database<Q>, actorId: string) {
   await requireLifecycleOwner(database, actorId);
   await advanceDueMarkets(database);
-  const rows = await database.select({ market: markets, displayName: profiles.displayName, handle: profiles.handle }).from(markets)
-    .innerJoin(profiles, eq(profiles.id, markets.subjectUserId)).where(and(isNotNull(markets.approvedAt), inArray(markets.status, ["open", "closed", "ruled"])))
+  const rows = await database.select({ market: markets, venueName: venues.name, sourceName: resolutionSources.name, sourceUrl: resolutionSources.url })
+    .from(markets)
+    .leftJoin(venues, eq(venues.id, markets.venueId))
+    .leftJoin(resolutionSources, eq(resolutionSources.id, markets.resolutionSourceId))
+    .where(and(isNotNull(markets.approvedAt), inArray(markets.status, ["open", "closed", "ruled"])))
     .orderBy(asc(markets.deadlineAt));
   const now = new Date();
-  return rows.map((row) => ({ ...row, market: { ...row.market, rulingAvailable: row.market.evidenceDeadlineAt <= now } }));
+  return rows.map((row) => ({ ...row, market: { ...row.market,
+    rulingAvailable: rulingOpensAt(row.market, "checked_source") <= now,
+    missingDataAvailable: rulingOpensAt(row.market, "missing_data") <= now } }));
 }

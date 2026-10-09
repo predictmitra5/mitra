@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   CAPPED_SLOTS,
-  MAX_PER_SUBJECT_IN_TOP,
+  MAX_PER_GROUP_IN_TOP,
   NEWBORN_WINDOW_HOURS,
   URGENT_WITHIN_HOURS,
-  applySubjectCap,
+  applyGroupCap,
   interest,
   isClosingSoon,
   isJustAdded,
@@ -20,7 +20,7 @@ const hour = 3_600_000;
 function signals(overrides: Partial<MarketSignals> = {}): MarketSignals {
   return {
     id: "00000000-0000-4000-8000-000000000001",
-    subjectUserId: "aaaaaaaa-0000-4000-8000-000000000001",
+    groupKey: "aaaaaaaa-0000-4000-8000-000000000001",
     approvedAt: new Date(now.getTime() - 30 * 24 * hour),
     deadlineAt: new Date(now.getTime() + 30 * 24 * hour),
     clicks24h: 0,
@@ -68,7 +68,7 @@ describe("the newborn head start", () => {
     expect(isJustAdded(halfway, now)).toBe(true);
   });
 
-  it("lifts a brand-new goal with nothing happening above an older one with some activity", () => {
+  it("lifts a brand-new market with nothing happening above an older one with some activity", () => {
     const fresh = signals({ id: "fresh", approvedAt: now });
     const established = signals({ id: "old", clicks24h: 5, trades24h: 1 });
     const [first] = rankMarkets([established, fresh], now);
@@ -86,7 +86,7 @@ describe("closing soon", () => {
     expect(isClosingSoon(signals({ deadlineAt: now }), now)).toBe(false);
   });
 
-  it("raises a goal above an identical one with a distant deadline", () => {
+  it("raises a market above an identical one with a distant deadline", () => {
     const soon = signals({ id: "soon", deadlineAt: new Date(now.getTime() + (URGENT_WITHIN_HOURS - 1) * hour), clicks24h: 3 });
     const later = signals({ id: "later", clicks24h: 3 });
     expect(score(soon, now)).toBeGreaterThan(score(later, now));
@@ -95,7 +95,7 @@ describe("closing soon", () => {
 });
 
 describe("time decay", () => {
-  it("sinks an older goal below a newer one with the same activity", () => {
+  it("sinks an older market below a newer one with the same activity", () => {
     const older = signals({ id: "older", approvedAt: new Date(now.getTime() - 60 * 24 * hour), clicks24h: 4 });
     const newer = signals({ id: "newer", approvedAt: new Date(now.getTime() - 10 * 24 * hour), clicks24h: 4 });
     expect(score(newer, now)).toBeGreaterThan(score(older, now));
@@ -109,69 +109,69 @@ describe("time decay", () => {
     }
   });
 
-  it("gives a goal with no activity a positive but small score, never a negative one", () => {
+  it("gives a market with no activity a positive but small score, never a negative one", () => {
     expect(score(signals(), now)).toBe(0);
     expect(score(signals({ clicks24h: 1 }), now)).toBeGreaterThan(0);
   });
 });
 
-describe("the per-subject cap", () => {
-  function ranked(id: string, subjectUserId: string) {
-    return { ...signals({ id, subjectUserId }), score: 0, reason: "quiet" as const };
+describe("the per-venue cap", () => {
+  function ranked(id: string, groupKey: string) {
+    return { ...signals({ id, groupKey }), score: 0, reason: "quiet" as const };
   }
 
-  it("holds one person to two of the leading slots", () => {
-    const hog = Array.from({ length: 6 }, (_, i) => ranked(`hog-${i}`, "loud-person"));
-    const others = Array.from({ length: 12 }, (_, i) => ranked(`other-${i}`, `person-${i}`));
-    const result = applySubjectCap([...hog, ...others]);
+  it("holds one venue to two of the leading slots", () => {
+    const hog = Array.from({ length: 6 }, (_, i) => ranked(`hog-${i}`, "busy-venue"));
+    const others = Array.from({ length: 12 }, (_, i) => ranked(`other-${i}`, `venue-${i}`));
+    const result = applyGroupCap([...hog, ...others]);
 
     const top = result.slice(0, CAPPED_SLOTS);
-    const fromHog = top.filter((m) => m.subjectUserId === "loud-person");
-    expect(fromHog).toHaveLength(MAX_PER_SUBJECT_IN_TOP);
+    const fromHog = top.filter((m) => m.groupKey === "busy-venue");
+    expect(fromHog).toHaveLength(MAX_PER_GROUP_IN_TOP);
     expect(result).toHaveLength(hog.length + others.length);
   });
 
-  it("moves a displaced goal down instead of dropping it, keeping its relative order", () => {
+  it("moves a displaced market down instead of dropping it, keeping its relative order", () => {
     const input = [
       ranked("a1", "same"), ranked("a2", "same"), ranked("a3", "same"), ranked("a4", "same"),
       ranked("b1", "other"),
     ];
-    const result = applySubjectCap(input);
+    const result = applyGroupCap(input);
     expect(result.map((m) => m.id)).toEqual(["a1", "a2", "b1", "a3", "a4"]);
   });
 
   it("leaves a list alone when nobody exceeds the cap", () => {
-    const input = Array.from({ length: 12 }, (_, i) => ranked(`m-${i}`, `person-${i}`));
-    expect(applySubjectCap(input).map((m) => m.id)).toEqual(input.map((m) => m.id));
+    const input = Array.from({ length: 12 }, (_, i) => ranked(`m-${i}`, `venue-${i}`));
+    expect(applyGroupCap(input).map((m) => m.id)).toEqual(input.map((m) => m.id));
   });
 
   it("does not restrict places past the capped region", () => {
-    const filler = Array.from({ length: CAPPED_SLOTS }, (_, i) => ranked(`filler-${i}`, `person-${i}`));
-    const trailing = Array.from({ length: 5 }, (_, i) => ranked(`late-${i}`, "same-person"));
-    const result = applySubjectCap([...filler, ...trailing]);
+    const filler = Array.from({ length: CAPPED_SLOTS }, (_, i) => ranked(`filler-${i}`, `venue-${i}`));
+    const trailing = Array.from({ length: 5 }, (_, i) => ranked(`late-${i}`, "same-venue"));
+    const result = applyGroupCap([...filler, ...trailing]);
     expect(result.map((m) => m.id)).toEqual([...filler, ...trailing].map((m) => m.id));
   });
 
-  it("applies inside a full ranking, so one loud person cannot own the page", () => {
+  it("applies inside a full ranking, so one busy venue cannot own the page", () => {
     const loud = Array.from({ length: 5 }, (_, i) =>
-      signals({ id: `loud-${i}`, subjectUserId: "loud", clicks24h: 200, trades24h: 40, uniqueTraders24h: 10 }));
+      signals({ id: `loud-${i}`, groupKey: "loud", clicks24h: 200, trades24h: 40, uniqueTraders24h: 10 }));
     const quiet = Array.from({ length: 12 }, (_, i) =>
-      signals({ id: `quiet-${i}`, subjectUserId: `quiet-${i}`, clicks24h: 1 }));
+      signals({ id: `quiet-${i}`, groupKey: `quiet-${i}`, clicks24h: 1 }));
     const top = rankMarkets([...loud, ...quiet], now).slice(0, CAPPED_SLOTS);
-    expect(top.filter((m) => m.subjectUserId === "loud")).toHaveLength(MAX_PER_SUBJECT_IN_TOP);
-    // The loud goals are pushed down, never removed.
+    expect(top.filter((m) => m.groupKey === "loud")).toHaveLength(MAX_PER_GROUP_IN_TOP);
+    // The loud markets are pushed down, never removed.
     expect(rankMarkets([...loud, ...quiet], now)).toHaveLength(loud.length + quiet.length);
   });
 
-  it("fills the leading slots from the capped person when nobody else has goals", () => {
-    // With one subject and one other, the cap has nothing to promote. A short
-    // feed would be worse than a repetitive one, so the displaced goals return.
-    const many = Array.from({ length: 8 }, (_, i) => ranked(`mine-${i}`, "only-person"));
+  it("fills the leading slots from the capped venue when no other venue has markets", () => {
+    // With one venue and one other, the cap has nothing to promote. A short
+    // feed would be worse than a repetitive one, so the displaced markets return.
+    const many = Array.from({ length: 8 }, (_, i) => ranked(`mine-${i}`, "only-venue"));
     const one = ranked("theirs", "someone-else");
-    const result = applySubjectCap([...many, one]);
+    const result = applyGroupCap([...many, one]);
     expect(result).toHaveLength(9);
     expect(new Set(result.map((m) => m.id)).size).toBe(9);
-    // The cap still did its job where it could: the other person is lifted up.
+    // The cap still did its job where it could: the other venue is lifted up.
     expect(result.slice(0, 3).map((m) => m.id)).toEqual(["mine-0", "mine-1", "theirs"]);
   });
 });
@@ -186,7 +186,7 @@ describe("rankMarkets", () => {
     expect(rankMarkets([c, b, a], now).map((m) => m.id)).toEqual(order);
   });
 
-  it("labels every goal with a readable reason", () => {
+  it("labels every market with a readable reason", () => {
     const results = rankMarkets([
       signals({ id: "new", approvedAt: now }),
       signals({ id: "urgent", deadlineAt: new Date(now.getTime() + 12 * hour) }),
@@ -197,9 +197,9 @@ describe("rankMarkets", () => {
     expect(reasons).toEqual({ new: "just added", urgent: "closing soon", busy: "active", still: "quiet" });
   });
 
-  it("returns every goal it was given and invents none", () => {
+  it("returns every market it was given and invents none", () => {
     const input = Array.from({ length: 25 }, (_, i) =>
-      signals({ id: `m-${i}`, subjectUserId: `p-${i % 3}`, clicks24h: i }));
+      signals({ id: `m-${i}`, groupKey: `p-${i % 3}`, clicks24h: i }));
     const result = rankMarkets(input, now);
     expect(result).toHaveLength(input.length);
     expect(new Set(result.map((m) => m.id))).toEqual(new Set(input.map((m) => m.id)));

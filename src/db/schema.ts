@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   index,
   integer,
@@ -33,6 +34,13 @@ export const marketStatus = pgEnum("market_status", [
 ]);
 
 export const marketOutcome = pgEnum("market_outcome", ["yes", "no"]);
+/** Event-market categories, decided 2026-10-08. */
+export const marketCategory = pgEnum("market_category", ["nightlife", "food", "events", "entertainment", "campus"]);
+export const proposalStatus = pgEnum("proposal_status", [
+  "pending", // waiting for the owner; never published automatically
+  "approved", // published as a market
+  "rejected", // turned down, with a reason the proposer can read
+]);
 export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
 export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence"]);
 export const evidenceKind = pgEnum("evidence_kind", ["file", "link"]);
@@ -124,22 +132,99 @@ export const ledgerEntries = pgTable(
   ],
 );
 
+/*
+ * Event markets, decided 2026-10-08: markets are about what happens at places
+ * on a campus, not about people. A venue belongs to one campus (a key of the
+ * registry in src/config/campus.ts), an event is a time window at a venue, and
+ * a resolution source says where a market's number comes from and whether that
+ * feed actually works or is still a placeholder.
+ */
+export const venues = pgTable(
+  "venues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campus: text("campus").notNull(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    category: marketCategory("category").notNull(),
+    /** Where it is, in a few words: "North High Street". */
+    area: text("area"),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("venues_slug_key").on(table.slug),
+    index("venues_campus_idx").on(table.campus),
+  ],
+);
+
+export const events = pgTable(
+  "events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    venueId: uuid("venue_id")
+      .notNull()
+      .references(() => venues.id),
+    title: text("title").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    /** IANA zone the window is written in, such as America/New_York. */
+    timeZone: text("time_zone").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("events_venue_idx").on(table.venueId),
+    check("events_end_after_start", sql`${table.endsAt} > ${table.startsAt}`),
+  ],
+);
+
+export const resolutionSources = pgTable("resolution_sources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  /** How the number is obtained and counted, in plain words. */
+  method: text("method").notNull(),
+  url: text("url"),
+  /**
+   * False while no agreement or integration backs the source: the market says
+   * so on its page. Only the owner sets it true, once data really arrives.
+   */
+  operational: boolean("operational").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const markets = pgTable(
   "markets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    subjectUserId: uuid("subject_user_id")
-      .notNull()
-      .references(() => profiles.id),
+    // Goal markets only (before 2026-10-08). Event markets have no subject.
+    subjectUserId: uuid("subject_user_id").references(() => profiles.id),
     status: marketStatus("status").notNull().default("draft"),
 
     // Frozen once trading opens. A broken market is cancelled and republished, never edited.
     question: text("question").notNull(),
     resolutionCriteria: text("resolution_criteria").notNull(),
-    goalType: text("goal_type"), // gpa, club, internship, launch, gym, other
+    goalType: text("goal_type"), // goal markets only: gpa, club, internship, launch, gym, other
 
+    // Event markets (2026-10-08). The check below requires all of them together.
+    campus: text("campus"),
+    category: marketCategory("category"),
+    venueId: uuid("venue_id").references(() => venues.id),
+    eventId: uuid("event_id").references(() => events.id),
+    resolutionSourceId: uuid("resolution_source_id").references(() => resolutionSources.id),
+    /** The measured window, which can differ from the trading cutoff. */
+    windowStartAt: timestamp("window_start_at", { withTimezone: true }),
+    windowEndAt: timestamp("window_end_at", { withTimezone: true }),
+    timeZone: text("time_zone"),
+    yesCondition: text("yes_condition"),
+    noCondition: text("no_condition"),
+    /** Hypothetical demonstration market, labelled as such everywhere it appears. */
+    isSample: boolean("is_sample").notNull().default(false),
+
+    /** The trading cutoff. */
     deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
-    evidenceDeadlineAt: timestamp("evidence_deadline_at", { withTimezone: true }).notNull(), // deadline plus 7 days
+    // Goal markets: deadline plus 7 days for proof. Event markets: when the
+    // source's result is due; without one by then the market is ruled No.
+    evidenceDeadlineAt: timestamp("evidence_deadline_at", { withTimezone: true }).notNull(),
     tradingClosedAt: timestamp("trading_closed_at", { withTimezone: true }), // the deadline, or an early close
 
     // Market-maker state. Liquidity and share counts are micro-units; the opening
@@ -185,6 +270,52 @@ export const markets = pgTable(
       sql`${table.openingProbabilityBp} is null or ${table.openingProbabilityBp} between 1 and 9999`,
     ),
     check("markets_evidence_after_deadline", sql`${table.evidenceDeadlineAt} >= ${table.deadlineAt}`),
+    index("markets_venue_idx").on(table.venueId),
+    // A market is a legacy goal (a subject) or a fully specified event market.
+    check(
+      "markets_goal_or_event",
+      sql`${table.subjectUserId} is not null or (${table.venueId} is not null and ${table.campus} is not null
+        and ${table.category} is not null and ${table.resolutionSourceId} is not null
+        and ${table.windowStartAt} is not null and ${table.windowEndAt} is not null and ${table.windowEndAt} > ${table.windowStartAt}
+        and ${table.timeZone} is not null and ${table.yesCondition} is not null and ${table.noCondition} is not null
+        and ${table.evidenceDeadlineAt} >= ${table.windowEndAt})`,
+    ),
+  ],
+);
+
+/**
+ * A student's suggested market, decided 2026-10-08. It is never published by
+ * itself: the owner turns it into a market with exact terms and an opening
+ * price, or turns it down with a reason the proposer can read. Private to the
+ * proposer and the owner.
+ */
+export const marketProposals = pgTable(
+  "market_proposals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposerUserId: uuid("proposer_user_id")
+      .notNull()
+      .references(() => profiles.id),
+    campus: text("campus").notNull(),
+    question: text("question").notNull(),
+    category: marketCategory("category").notNull(),
+    /** As the proposer typed it; venueId is set only when they picked a known venue. */
+    venueName: text("venue_name").notNull(),
+    venueId: uuid("venue_id").references(() => venues.id),
+    windowStartAt: timestamp("window_start_at", { withTimezone: true }).notNull(),
+    windowEndAt: timestamp("window_end_at", { withTimezone: true }),
+    /** How the proposer thinks it could be checked. */
+    resolutionNote: text("resolution_note").notNull(),
+    status: proposalStatus("status").notNull().default("pending"),
+    reviewReason: text("review_reason"),
+    reviewedBy: uuid("reviewed_by").references(() => profiles.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    marketId: uuid("market_id").references(() => markets.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("market_proposals_status_idx").on(table.status, table.createdAt),
+    index("market_proposals_proposer_idx").on(table.proposerUserId, table.createdAt),
   ],
 );
 

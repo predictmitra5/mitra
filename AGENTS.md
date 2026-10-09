@@ -1,6 +1,6 @@
 
 
-This repository is Mitra, a play-money social prediction app about people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`.
+This repository is Mitra, a points-based campus prediction market about local venues and events (since the 2026-10-08 pivot; it began as a market on people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`).
 
 ## Before substantial work
 
@@ -20,6 +20,10 @@ Real credentials live only in `.env.local`, which Git ignores. `.env.example` li
 - The owner pastes values into `.env.local` themselves. Do not ask them to send a key to you, and do not type one for them.
 - If a key is ever exposed, rotate it in the provider's dashboard; editing history is not enough.
 
+## Type
+
+Set by the owner on 2026-10-06: Helvetica (`--font-sans` in `src/app/globals.css`) at two weights only, 400 and 700. Do not add other fonts or weights. Everything else about the look stays as it is; see docs/DESIGN.md, section 12.
+
 ## Commands
 
 - `npm run dev` starts the local app.
@@ -31,6 +35,7 @@ Real credentials live only in `.env.local`, which Git ignores. `.env.example` li
 
 - `src/app`: Next.js App Router pages.
 - `src/modules/market`: market engine (binary LMSR pricing and integer rounding). Keep market, information and discovery logic in separate modules.
+- `src/modules/events`: campus event markets: venues, events, resolution sources, students' suggestions, owner publishing, and the hypothetical Ohio State samples.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

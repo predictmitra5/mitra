@@ -11,7 +11,7 @@ import { planBuy, planSell } from "./trade";
 import { MICRO_PER_UNIT } from "./units";
 import { isInactive } from "@/modules/account/standing";
 
-const { markets, profiles, wallets, positions, trades, ledgerEntries, priceHistory, marketOutcomeDeciders } = schema;
+const { markets, profiles, wallets, positions, trades, ledgerEntries, priceHistory, marketOutcomeDeciders, venues, events, resolutionSources } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Market = typeof markets.$inferSelect;
 type Clock = () => Date;
@@ -64,43 +64,55 @@ function validateRequest(input: TradeRequest) {
 
 export function marketMaker(market: Market): MarketMakerState {
   if (!market.approvedAt || market.yesSharesMicro === null || market.noSharesMicro === null) {
-    throw new TradingError("NOT_FOUND", "This goal is not available.");
+    throw new TradingError("NOT_FOUND", "This market is not available.");
   }
   return { liquidity: market.liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: market.yesSharesMicro, noSharesMicro: market.noSharesMicro };
 }
 
-/** Explicit public projection: never pass an entire market, profile, or admin record to the browser. */
+/**
+ * Explicit public projection: never pass an entire market, profile, or admin
+ * record to the browser. Since 2026-10-08 markets are about venues and events;
+ * a retired goal market still opens at its address but shows no person.
+ */
 export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Database<Q>, id: string) {
   if (!isUuid(id)) return null;
   const [row] = await database.select({
     id: markets.id, question: markets.question, resolutionCriteria: markets.resolutionCriteria,
-    goalType: markets.goalType, status: markets.status, deadlineAt: markets.deadlineAt,
+    status: markets.status, deadlineAt: markets.deadlineAt,
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
     ruledAt: markets.ruledAt, contestEndsAt: markets.contestEndsAt, settledAt: markets.settledAt, cancelledAt: markets.cancelledAt,
     approvedAt: markets.approvedAt, openingProbabilityBp: markets.openingProbabilityBp,
-    displayName: profiles.displayName, handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt,
-    subjectWithdrawnAt: profiles.withdrawnAt, subjectBannedAt: profiles.bannedAt,
+    campus: markets.campus, category: markets.category, isSample: markets.isSample,
+    windowStartAt: markets.windowStartAt, windowEndAt: markets.windowEndAt, timeZone: markets.timeZone,
+    yesCondition: markets.yesCondition, noCondition: markets.noCondition,
+    venueName: venues.name, venueSlug: venues.slug, venueArea: venues.area,
+    eventTitle: events.title,
+    sourceName: resolutionSources.name, sourceMethod: resolutionSources.method, sourceUrl: resolutionSources.url,
+    sourceOperational: resolutionSources.operational,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
-  }).from(markets).innerJoin(profiles, eq(profiles.id, markets.subjectUserId))
+  }).from(markets)
+    .leftJoin(venues, eq(venues.id, markets.venueId))
+    .leftJoin(events, eq(events.id, markets.eventId))
+    .leftJoin(resolutionSources, eq(resolutionSources.id, markets.resolutionSourceId))
     .where(and(eq(markets.id, id), isNotNull(markets.approvedAt), inArray(markets.status, [...publicStatuses]))).limit(1);
   if (!row || row.yesSharesMicro === null || row.noSharesMicro === null) return null;
-  const { liquidityMicro, yesSharesMicro, noSharesMicro, subjectWithdrawnAt, subjectBannedAt, ...publicFields } = row;
+  const { liquidityMicro, yesSharesMicro, noSharesMicro, ...publicFields } = row;
   return { ...publicFields,
     // The market maker's liquidity is a published constant (b = 150), shown so the
     // trade panel can estimate price impact; the share counts stay private.
     liquidity: liquidityMicro / MICRO_PER_UNIT,
-    // The photo route refuses a banned or withdrawn person, so never link to it.
-    photoUpdatedAt: isInactive({ withdrawnAt: subjectWithdrawnAt, bannedAt: subjectBannedAt }) ? null : row.photoUpdatedAt,
     tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > Date.now(),
     contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt.getTime() > Date.now(),
     yesPrice: price(toLmsr({ liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro, noSharesMicro }), "YES") };
 }
 
+export type PublicMarket = NonNullable<Awaited<ReturnType<typeof readPublicMarket>>>;
+
 const rejectionMessages: Record<string, string> = {
-  SUBJECT_OF_MARKET: "You can follow your goal, but you cannot trade it.",
-  DECIDES_OUTCOME: "You cannot trade this goal because you help decide its outcome.",
-  OVER_MARKET_LIMIT: "This would exceed your 100-point held-cost limit for this goal. Reduce the amount.",
+  SUBJECT_OF_MARKET: "You can follow this market, but you cannot trade it.",
+  DECIDES_OUTCOME: "You cannot trade this market because you help decide its outcome.",
+  OVER_MARKET_LIMIT: "This would exceed your 100-point held-cost limit for this market. Reduce the amount.",
   INSUFFICIENT_BALANCE: "You do not have enough available points.",
   INSUFFICIENT_SHARES: "You cannot sell more shares than you hold.",
 };
@@ -144,16 +156,19 @@ async function lockAccount<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
 
 async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: string, input: TradeRequest, clock: Clock, traderIsOwner: boolean) {
   const [market] = await tx.select().from(markets).where(eq(markets.id, input.marketId)).for("update");
-  if (!market || !market.approvedAt) throw new TradingError("NOT_FOUND", "This goal is not available.");
-  const [subject] = await tx.select().from(profiles).where(eq(profiles.id, market.subjectUserId)).for("share");
-  if (!subject || isInactive(subject)) throw new TradingError("CLOSED", "This goal is no longer open for trading.");
+  if (!market || !market.approvedAt) throw new TradingError("NOT_FOUND", "This market is not available.");
+  // A retired goal market whose person left or was banned is being cancelled.
+  if (market.subjectUserId) {
+    const [subject] = await tx.select().from(profiles).where(eq(profiles.id, market.subjectUserId)).for("share");
+    if (!subject || isInactive(subject)) throw new TradingError("CLOSED", "This market is no longer open for trading.");
+  }
   const [wallet] = await tx.select().from(wallets).where(eq(wallets.userId, userId)).for("update");
   if (!wallet) throw new TradingError("PROFILE_REQUIRED", "Your account needs review before you can trade.");
-  // Read the clock after waiting for locks. A request queued before the deadline
+  // Read the clock after waiting for locks. A request queued before the cutoff
   // is not entitled to execute after it. No scheduler is needed to enforce this.
   const now = clock();
   if (!Number.isFinite(now.getTime()) || market.status !== "open" || market.tradingClosedAt || market.deadlineAt <= now) {
-    throw new TradingError("CLOSED", "Trading has closed for this goal.");
+    throw new TradingError("CLOSED", "Trading has closed for this market.");
   }
   const deciders = await tx.select({ userId: marketOutcomeDeciders.userId }).from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, input.marketId));
   const outcomeDeciderUserIds = deciders.map((p) => p.userId);

@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "id": "7411efc6-2b26-4d58-b655-86f1280124f3",
+=======
+  "id": "21067968-5a5b-443e-9e9a-5b95ad15d82f",
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   "prevId": "381e16a2-7746-4c52-bb5d-d69036495f80",
   "version": "7",
   "dialect": "postgresql",
@@ -227,6 +231,101 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
+=======
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "venue_id": {
+          "name": "venue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "events_venue_idx": {
+          "name": "events_venue_idx",
+          "columns": [
+            {
+              "expression": "venue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "events_venue_id_venues_id_fk": {
+          "name": "events_venue_id_venues_id_fk",
+          "tableFrom": "events",
+          "tableTo": "venues",
+          "columnsFrom": [
+            "venue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "events_end_after_start": {
+          "name": "events_end_after_start",
+          "value": "\"events\".\"ends_at\" > \"events\".\"starts_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.evidence": {
       "name": "evidence",
       "schema": "",
@@ -412,6 +511,7 @@
       },
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.feed_event_buckets": {
       "name": "feed_event_buckets",
       "schema": "",
@@ -495,6 +595,8 @@
       },
       "isRLSEnabled": false
     },
+=======
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.feed_events": {
       "name": "feed_events",
       "schema": "",
@@ -785,6 +887,219 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
+=======
+    "public.market_proposals": {
+      "name": "market_proposals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "proposer_user_id": {
+          "name": "proposer_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "campus": {
+          "name": "campus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question": {
+          "name": "question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "market_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_name": {
+          "name": "venue_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_id": {
+          "name": "venue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_start_at": {
+          "name": "window_start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_end_at": {
+          "name": "window_end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution_note": {
+          "name": "resolution_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "proposal_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "review_reason": {
+          "name": "review_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "market_id": {
+          "name": "market_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "market_proposals_status_idx": {
+          "name": "market_proposals_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "market_proposals_proposer_idx": {
+          "name": "market_proposals_proposer_idx",
+          "columns": [
+            {
+              "expression": "proposer_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "market_proposals_proposer_user_id_profiles_id_fk": {
+          "name": "market_proposals_proposer_user_id_profiles_id_fk",
+          "tableFrom": "market_proposals",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "proposer_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "market_proposals_venue_id_venues_id_fk": {
+          "name": "market_proposals_venue_id_venues_id_fk",
+          "tableFrom": "market_proposals",
+          "tableTo": "venues",
+          "columnsFrom": [
+            "venue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "market_proposals_reviewed_by_profiles_id_fk": {
+          "name": "market_proposals_reviewed_by_profiles_id_fk",
+          "tableFrom": "market_proposals",
+          "tableTo": "profiles",
+          "columnsFrom": [
+            "reviewed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "market_proposals_market_id_markets_id_fk": {
+          "name": "market_proposals_market_id_markets_id_fk",
+          "tableFrom": "market_proposals",
+          "tableTo": "markets",
+          "columnsFrom": [
+            "market_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.markets": {
       "name": "markets",
       "schema": "",
@@ -800,7 +1115,11 @@
           "name": "subject_user_id",
           "type": "uuid",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": true
+=======
+          "notNull": false
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         },
         "status": {
           "name": "status",
@@ -828,6 +1147,77 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
+=======
+        "campus": {
+          "name": "campus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "market_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "venue_id": {
+          "name": "venue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolution_source_id": {
+          "name": "resolution_source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_start_at": {
+          "name": "window_start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_end_at": {
+          "name": "window_end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yes_condition": {
+          "name": "yes_condition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "no_condition": {
+          "name": "no_condition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_sample": {
+          "name": "is_sample",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         "deadline_at": {
           "name": "deadline_at",
           "type": "timestamp with time zone",
@@ -997,6 +1387,24 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+<<<<<<< HEAD
+=======
+        },
+        "markets_venue_idx": {
+          "name": "markets_venue_idx",
+          "columns": [
+            {
+              "expression": "venue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         }
       },
       "foreignKeys": {
@@ -1013,6 +1421,48 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
+=======
+        "markets_venue_id_venues_id_fk": {
+          "name": "markets_venue_id_venues_id_fk",
+          "tableFrom": "markets",
+          "tableTo": "venues",
+          "columnsFrom": [
+            "venue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_event_id_events_id_fk": {
+          "name": "markets_event_id_events_id_fk",
+          "tableFrom": "markets",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "markets_resolution_source_id_resolution_sources_id_fk": {
+          "name": "markets_resolution_source_id_resolution_sources_id_fk",
+          "tableFrom": "markets",
+          "tableTo": "resolution_sources",
+          "columnsFrom": [
+            "resolution_source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         "markets_approved_by_profiles_id_fk": {
           "name": "markets_approved_by_profiles_id_fk",
           "tableFrom": "markets",
@@ -1046,6 +1496,13 @@
         "markets_evidence_after_deadline": {
           "name": "markets_evidence_after_deadline",
           "value": "\"markets\".\"evidence_deadline_at\" >= \"markets\".\"deadline_at\""
+<<<<<<< HEAD
+=======
+        },
+        "markets_goal_or_event": {
+          "name": "markets_goal_or_event",
+          "value": "\"markets\".\"subject_user_id\" is not null or (\"markets\".\"venue_id\" is not null and \"markets\".\"campus\" is not null\n        and \"markets\".\"category\" is not null and \"markets\".\"resolution_source_id\" is not null\n        and \"markets\".\"window_start_at\" is not null and \"markets\".\"window_end_at\" is not null and \"markets\".\"window_end_at\" > \"markets\".\"window_start_at\"\n        and \"markets\".\"time_zone\" is not null and \"markets\".\"yes_condition\" is not null and \"markets\".\"no_condition\" is not null\n        and \"markets\".\"evidence_deadline_at\" >= \"markets\".\"window_end_at\")"
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         }
       },
       "isRLSEnabled": false
@@ -1348,6 +1805,61 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
+=======
+    "public.resolution_sources": {
+      "name": "resolution_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "operational": {
+          "name": "operational",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.trades": {
       "name": "trades",
       "schema": "",
@@ -1516,14 +2028,20 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< HEAD
     "public.upload_intents": {
       "name": "upload_intents",
+=======
+    "public.venues": {
+      "name": "venues",
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+<<<<<<< HEAD
           "notNull": true
         },
         "user_id": {
@@ -1541,15 +2059,55 @@
         "kind": {
           "name": "kind",
           "type": "upload_intent_kind",
+=======
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campus": {
+          "name": "campus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "market_category",
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "object_path": {
           "name": "object_path",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+=======
+        "area": {
+          "name": "area",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         },
         "created_at": {
           "name": "created_at",
@@ -1557,6 +2115,7 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+<<<<<<< HEAD
         },
         "expires_at": {
           "name": "expires_at",
@@ -1583,6 +2142,16 @@
             },
             {
               "expression": "object_path",
+=======
+        }
+      },
+      "indexes": {
+        "venues_slug_key": {
+          "name": "venues_slug_key",
+          "columns": [
+            {
+              "expression": "slug",
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1593,6 +2162,7 @@
           "method": "btree",
           "with": {}
         },
+<<<<<<< HEAD
         "upload_intents_user_expiry_idx": {
           "name": "upload_intents_user_expiry_idx",
           "columns": [
@@ -1619,6 +2189,13 @@
           "columns": [
             {
               "expression": "expires_at",
+=======
+        "venues_campus_idx": {
+          "name": "venues_campus_idx",
+          "columns": [
+            {
+              "expression": "campus",
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1630,6 +2207,7 @@
           "with": {}
         }
       },
+<<<<<<< HEAD
       "foreignKeys": {
         "upload_intents_user_id_profiles_id_fk": {
           "name": "upload_intents_user_id_profiles_id_fk",
@@ -1658,6 +2236,9 @@
           "onUpdate": "no action"
         }
       },
+=======
+      "foreignKeys": {},
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1767,6 +2348,20 @@
         "cancellation_refund"
       ]
     },
+<<<<<<< HEAD
+=======
+    "public.market_category": {
+      "name": "market_category",
+      "schema": "public",
+      "values": [
+        "nightlife",
+        "food",
+        "events",
+        "entertainment",
+        "campus"
+      ]
+    },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.market_outcome": {
       "name": "market_outcome",
       "schema": "public",
@@ -1788,6 +2383,18 @@
         "cancelled"
       ]
     },
+<<<<<<< HEAD
+=======
+    "public.proposal_status": {
+      "name": "proposal_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.trade_action": {
       "name": "trade_action",
       "schema": "public",
@@ -1803,6 +2410,7 @@
         "yes",
         "no"
       ]
+<<<<<<< HEAD
     },
     "public.upload_intent_kind": {
       "name": "upload_intent_kind",
@@ -1811,6 +2419,8 @@
         "photo",
         "evidence"
       ]
+=======
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     }
   },
   "schemas": {},

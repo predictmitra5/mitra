@@ -1,5 +1,7 @@
 # Safety and integrity
 
+> **2026-10-08, event markets.** Markets no longer name people. New risks: someone buying at a venue, or getting others to, to move a market; venue staff trading on what they see; sample markets on real businesses being read as real data; and a bar's drink count being traded by members who are 18 to 20. Mitigations built: every market's rules ask people not to buy at the venue to move it and not to trade a venue where they work; samples say they are hypothetical and unverified everywhere they appear; the 100-point per-market limit; owner review of every suggestion; recorded outcome deciders cannot trade. Not built: any check of who works where, or an age gate on particular markets. The owner decided the Midway on High drink sample stays for the 18+ audience ("its 18+", DECISIONS.md, 2026-10-08).
+
 Status: source requirements and pending policies; not a completed moderation policy or legal assessment.
 
 ## Source boundaries

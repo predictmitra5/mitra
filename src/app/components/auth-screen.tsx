@@ -23,7 +23,7 @@ export function AuthScreen({ mode, notice, school = null }: { mode: AuthMode; no
       : notice === "account-deleted" ? "Your Mitra account was deleted." : undefined;
   const success = notice === "account-deleted";
   return (
-    <StepFrame back={<BackLink href={mode === "sign-in" ? "/" : "/sign-in"} label={mode === "sign-in" ? "Back to goals" : "Back to log in"} />}>
+    <StepFrame back={<BackLink href={mode === "sign-in" ? "/" : "/sign-in"} label={mode === "sign-in" ? "Back to markets" : "Back to log in"} />}>
       <div className="step-form">
         <h1>{title}</h1>
         <p className="step-sub">{description}</p>

@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Avatar } from "@/app/components/market/goal-card";
+import { Avatar } from "@/app/components/market/market-card";
 import { usePhotoUpload } from "@/app/account/use-photo-upload";
 
 /*
  * Onboarding: the profile photo (decided 2026-10-05). It can be skipped here;
- * posting a goal still needs one (decided 2026-09-24).
+ * since goal markets ended on 2026-10-08 nothing requires one.
  */
 export function PhotoStep({ name, photo }: { name: string; photo: string | null }) {
   const router = useRouter();
@@ -22,7 +22,7 @@ export function PhotoStep({ name, photo }: { name: string; photo: string | null 
     <form className="step-form" aria-busy={uploading}
       action={(form) => upload(form.get("photo"), () => router.push("/welcome?step=topics"))}>
       <h1>Add a profile photo</h1>
-      <p className="step-sub">It shows next to your name and your goals. You’ll need one before you post a goal.</p>
+      <p className="step-sub">It shows on your account. You can add or change it any time.</p>
       <label className="photo-drop">
         {preview
           // A local preview of the file just chosen; it never leaves the browser until saved.

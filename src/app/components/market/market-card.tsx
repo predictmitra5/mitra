@@ -1,34 +1,58 @@
 import Link from "next/link";
-import { cardTitle, categoryLabel, changeLabel, initials, percent, timeLeft } from "@/modules/discovery/present";
+import { categoryLabel, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
+import { statusLine } from "@/modules/events/status";
 
 /*
- * Goal cards in the Kalshi direction, decided 2026-09-24 (DECISIONS.md and
- * docs/DESIGN.md section 9). A framed card: the person's photo as a small
- * square, the category and name, the question, the chance large on the right,
- * today's change and time left, and Yes and No with their prices. Flat: no
- * thumbnails, gradients or stickers.
+ * Market cards in the Kalshi direction (2026-09-24), moved from people's goals
+ * to campus events on 2026-10-08 (DECISIONS.md): the venue's mark as a small
+ * square, the category and venue, the question, the chance large on the right,
+ * today's change, points traded and the closing time, and Yes and No with
+ * their prices. A sample market says so beside its venue. Flat: no thumbnails,
+ * gradients or stickers.
  */
 
 export type CardData = {
   id: string;
   question: string;
-  goalType: string | null;
-  displayName: string;
-  handle: string;
-  /** Their profile photo's URL, or null to fall back to initials. */
-  photo: string | null;
+  category: string | null;
+  venueName: string | null;
+  venueSlug: string | null;
+  eventTitle: string | null;
+  isSample: boolean;
   yesPrice: number;
   tradingOpen: boolean;
+  status: string;
+  ruledOutcome: "yes" | "no" | null;
   /** ISO strings: this crosses from server to client components. */
   deadlineAt: string;
+  windowStartAt: string | null;
+  timeZone: string | null;
   approvedAt: string;
   volumeMicro: number;
   change24hBp: number;
   reason: "just added" | "closing soon" | "active" | "quiet";
 };
 
+/** "Closes Oct 16, 9:00 PM" in the market's own zone. */
+export function closesAt(card: Pick<CardData, "deadlineAt" | "timeZone">): string {
+  const text = new Intl.DateTimeFormat("en-US", {
+    timeZone: card.timeZone ?? "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+  }).format(new Date(card.deadlineAt));
+  return `Closes ${text}`;
+}
+
+/** The small "Sample" label on hypothetical demonstration markets. */
+export function SampleTag() {
+  return <span className="sample-tag" title="A hypothetical demonstration market. Not verified by the venue.">Sample</span>;
+}
+
+/** The venue's mark: its initials in a small square, beside its markets. */
+export function VenueMark({ name, size }: { name: string | null; size?: number }) {
+  return <Avatar name={name ?? "Mitra"} size={size} shape="square" />;
+}
+
 /**
- * A person's photo: a small square beside goals, a circle for the viewer.
+ * A photo or initials: a small square beside a venue's markets, a circle for the viewer.
  * Without a size, the stylesheet sets it, so it can change with the screen.
  */
 export function Avatar({ name, photo = null, size, shape = "round" }: {
@@ -69,7 +93,7 @@ export function Gain({ micro }: { micro: number }) {
   );
 }
 
-/** Yes and No with their prices, in words; each opens the goal with that side chosen. */
+/** Yes and No with their prices, in words; each opens the market with that side chosen. */
 export function PriceButtons({ id, yesPrice, size = "card" }: { id: string; yesPrice: number; size?: "card" | "large" }) {
   const yes = percent(yesPrice);
   return (
@@ -85,15 +109,19 @@ export function PriceButtons({ id, yesPrice, size = "card" }: { id: string; yesP
 }
 
 /** `flash` marks a live price move, so the number pulses once in its direction. */
-export function GoalCard({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
+export function MarketCard({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   const href = `/markets/${card.id}`;
   return (
     <article className="card">
       <div className="card-top">
-        <Avatar name={card.displayName} photo={card.photo} size={40} shape="square" />
+        <VenueMark name={card.venueName} size={40} />
         <div className="card-head">
-          <span className="card-kicker">{categoryLabel(card.goalType)} &middot; {card.displayName}</span>
-          <Link className="card-title" href={href} prefetch={false}>{cardTitle(card.goalType, card.question)}</Link>
+          <span className="card-kicker">
+            {categoryLabel(card.category)}
+            {card.venueName && <> &middot; {card.venueSlug ? <Link href={`/venues/${card.venueSlug}`} prefetch={false}>{card.venueName}</Link> : card.venueName}</>}
+            {card.isSample && <> <SampleTag /></>}
+          </span>
+          <Link className="card-title" href={href} prefetch={false}>{card.question}</Link>
         </div>
         <div className="card-chance">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
@@ -103,22 +131,28 @@ export function GoalCard({ card, now, flash = null }: { card: CardData; now: Dat
       <p className="card-meta">
         <Change bp={card.change24hBp} when="today" />
         <span aria-hidden="true">today</span>
-        <span className="card-left">{card.tradingOpen ? timeLeft(new Date(card.deadlineAt), now) : "Trading closed"}</span>
+        <span aria-hidden="true">&middot;</span>
+        <span>{volumeLabel(card.volumeMicro)}</span>
       </p>
-      <PriceButtons id={card.id} yesPrice={card.yesPrice} />
+      <p className="card-when">
+        {card.tradingOpen
+          ? <><span>{closesAt(card)}</span><span className="card-left">{timeLeft(new Date(card.deadlineAt), now)}</span></>
+          : <span className="card-status">{statusLine(card)}</span>}
+      </p>
+      {card.tradingOpen && <PriceButtons id={card.id} yesPrice={card.yesPrice} />}
     </article>
   );
 }
 
-/** One row of the Closing soon list beside the featured goal. */
+/** One row of the Closing soon list beside the featured market. */
 export function ClosingRow({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   return (
     <li>
       <Link className="closing-row" href={`/markets/${card.id}`} prefetch={false}>
-        <Avatar name={card.displayName} photo={card.photo} size={32} shape="square" />
+        <VenueMark name={card.venueName} size={32} />
         <span className="closing-text">
-          <span className="closing-title">{cardTitle(card.goalType, card.question)}</span>
-          <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}</span>
+          <span className="closing-title">{card.question}</span>
+          <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}{card.isSample && <> <SampleTag /></>}</span>
         </span>
         <span className="closing-value">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>

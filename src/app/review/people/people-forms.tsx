@@ -11,7 +11,7 @@ function Result({ state }: { state: FormState }) {
   return null;
 }
 
-export function BanForm({ userId, name, liveGoals }: { userId: string; name: string; liveGoals: number }) {
+export function BanForm({ userId, name, waiting }: { userId: string; name: string; waiting: number }) {
   const [state, action, pending] = useActionState(banAction, {} as FormState);
   return <details className="person-action">
     <summary>Ban {name}</summary>
@@ -25,8 +25,8 @@ export function BanForm({ userId, name, liveGoals }: { userId: string; name: str
         <input type="checkbox" name="confirm" value="yes" required />
         <span>
           They will be signed out and unable to sign in, bet or post.
-          {liveGoals > 0 ? ` Their goals that still need proof will be cancelled and everyone refunded.` : ""}
-          {" "}Goals already ruled finish normally.
+          {waiting > 0 ? ` Their ${waiting === 1 ? "suggestion" : "suggestions"} waiting for review will be turned down.` : ""}
+          {" "}Their positions settle normally.
         </span>
       </label>
       <Result state={state} />
@@ -52,7 +52,7 @@ export function FinishBanForm({ userId, reason, pending: remaining }: { userId: 
     <input type="hidden" name="reason" value={reason} />
     <input type="hidden" name="confirm" value="yes" />
     <button className="secondary-button" type="submit" disabled={pending}>
-      {pending ? "Cancelling…" : `Finish cancelling ${remaining} goal${remaining === 1 ? "" : "s"}`}
+      {pending ? "Cancelling…" : `Finish cancelling ${remaining} earlier market${remaining === 1 ? "" : "s"}`}
     </button>
     <Result state={state} />
   </form>;

@@ -1,5 +1,7 @@
 # Discovery algorithm
 
+> **2026-10-08:** the ranking is unchanged except that its cap on the leading slots counts venues instead of people (`groupKey` in `src/modules/discovery/ranking.ts`; at most two of the first ten per venue). The feed shows the viewer's campus, and visitors see Ohio State.
+
 Status: objective direction confirmed; no formula, features, weights or implementation approved.
 
 ## Confirmed objective - 2026-09-15

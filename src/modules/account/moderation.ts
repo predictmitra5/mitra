@@ -4,24 +4,24 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
-import { rejectDraft } from "@/modules/goals/service";
+import { rejectProposal } from "@/modules/events/service";
 import { isInactive } from "./standing";
 
 /*
  * The owner's people tools, decided 2026-09-24 (DECISIONS.md).
  *
- * A ban locks the person out of everything. Goals about them that still need
- * their proof are cancelled with refunds, because they can no longer send it;
- * their drafts are rejected. A goal already ruled no longer needs their proof,
- * so it finishes and settles normally, as do their bets on other people's goals.
+ * A ban locks the person out of everything, and their market suggestions that
+ * are still waiting are turned down (2026-10-08). Their positions in event
+ * markets finish and settle normally.
  *
- * Cancelling reuses the owner's own cancel command, so refunds go through the
- * same locked, retry-safe path as any other cancellation. Each goal is its own
- * transaction: if one fails, the ban still stands and running the ban again
- * finishes the rest.
+ * Goal markets about people were retired on 2026-10-08. If a ban ever reaches
+ * one still waiting on its subject's proof, it is cancelled with refunds through
+ * the owner's own cancel command, the same locked, retry-safe path as any other
+ * cancellation. Each step is its own transaction: if one fails, the ban still
+ * stands and running the ban again finishes the rest.
  */
 
-const { profiles, markets, adminActions } = schema;
+const { profiles, markets, adminActions, marketProposals } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -36,15 +36,15 @@ export class ModerationError extends Error {
 
 /** Shown to traders as the cancellation reason on each refunded goal. */
 export const BAN_CANCEL_REASON = "The person behind this goal was removed from Mitra, so it cannot be decided. Everyone has been refunded.";
-/** Shown to the banned person on their rejected drafts. */
+/** Shown to the banned person on their turned-down suggestions. */
 export const BAN_REJECT_REASON = "Removed because this account was banned.";
 
 export interface BanResult {
-  /** Goals cancelled with refunds by this run. */
+  /** Retired goal markets cancelled with refunds by this run. */
   cancelled: number;
-  /** Drafts rejected by this run. */
+  /** Suggestions turned down by this run. */
   rejected: number;
-  /** Goals that still need cancelling because one step failed; run the ban again. */
+  /** Steps that still need doing because one failed; run the ban again. */
   remaining: number;
 }
 
@@ -63,7 +63,7 @@ function cleanReason(value: unknown): string {
   return reason;
 }
 
-/** Goals about this person that still need their proof: open, or closed and not yet ruled. */
+/** Retired goal markets about this person still waiting on their proof: open, or closed and not yet ruled. */
 async function goalsToCancel<Q extends PgQueryResultHKT>(database: Database<Q>, subjectUserId: string) {
   return database.select({ id: markets.id, version: markets.rulingVersion }).from(markets)
     .where(and(eq(markets.subjectUserId, subjectUserId), inArray(markets.status, ["open", "closed"]), isNull(markets.ruledOutcome)));
@@ -98,11 +98,11 @@ export async function banPerson<Q extends PgQueryResultHKT>(
 
   const result: BanResult = { cancelled: 0, rejected: 0, remaining: 0 };
 
-  const drafts = await database.select({ id: markets.id }).from(markets)
-    .where(and(eq(markets.subjectUserId, targetId), eq(markets.status, "draft")));
-  for (const draft of drafts) {
+  const waiting = await database.select({ id: marketProposals.id }).from(marketProposals)
+    .where(and(eq(marketProposals.proposerUserId, targetId), eq(marketProposals.status, "pending")));
+  for (const proposal of waiting) {
     try {
-      await rejectDraft(database, ownerId, draft.id, BAN_REJECT_REASON, clock());
+      await rejectProposal(database, ownerId, proposal.id, BAN_REJECT_REASON, clock());
       result.rejected += 1;
     } catch {
       result.remaining += 1;
@@ -122,7 +122,7 @@ export async function banPerson<Q extends PgQueryResultHKT>(
   return result;
 }
 
-/** Lifts a ban. Goals cancelled by it stay cancelled; refunds are final. */
+/** Lifts a ban. Anything cancelled or turned down by it stays that way; refunds are final. */
 export async function unbanPerson<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   ownerId: string,
@@ -160,9 +160,9 @@ export interface Person {
   bannedAt: Date | null;
   banReason: string | null;
   withdrawn: boolean;
-  /** Goals about them that are live or waiting: draft, open, closed or ruled. */
-  activeGoals: number;
-  /** Goals that a ban, or a finished ban, still has to cancel. */
+  /** Their market suggestions waiting for review. */
+  pendingSuggestions: number;
+  /** Retired goal markets that a ban still has to cancel. */
   pendingCancellations: number;
 }
 
@@ -170,16 +170,16 @@ export interface Person {
 export async function listPeople<Q extends PgQueryResultHKT>(database: Database<Q>, ownerId: string): Promise<Person[]> {
   await requireOwner(database, ownerId);
   const rows = await database.select().from(profiles).orderBy(sql`${profiles.createdAt} desc`, asc(profiles.handle)).limit(1000);
-  const active = await database.select({ subject: markets.subjectUserId, total: count() }).from(markets)
-    .where(inArray(markets.status, ["draft", "open", "closed", "ruled"])).groupBy(markets.subjectUserId);
+  const suggestions = await database.select({ proposer: marketProposals.proposerUserId, total: count() }).from(marketProposals)
+    .where(eq(marketProposals.status, "pending")).groupBy(marketProposals.proposerUserId);
   const pending = await database.select({ subject: markets.subjectUserId, total: count() }).from(markets)
     .where(and(inArray(markets.status, ["open", "closed"]), isNull(markets.ruledOutcome))).groupBy(markets.subjectUserId);
-  const activeBy = new Map(active.map((row) => [row.subject, row.total]));
+  const suggestionsBy = new Map(suggestions.map((row) => [row.proposer, row.total]));
   const pendingBy = new Map(pending.map((row) => [row.subject, row.total]));
   return rows.map((row) => ({
     id: row.id, displayName: row.displayName, handle: row.handle, joinedAt: row.createdAt, isOwner: row.isOwner === 1,
     photoUpdatedAt: row.photoUpdatedAt, bannedAt: row.bannedAt, banReason: row.banReason, withdrawn: !!row.withdrawnAt,
-    activeGoals: activeBy.get(row.id) ?? 0,
+    pendingSuggestions: suggestionsBy.get(row.id) ?? 0,
     pendingCancellations: row.bannedAt ? (pendingBy.get(row.id) ?? 0) : 0,
   }));
 }

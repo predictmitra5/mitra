@@ -12,6 +12,8 @@ export const CAMPUSES = {
     emailDomain: "osu.edu",
     emailExample: "name.123@osu.edu",
     emailHint: "BuckeyeMail addresses work too. We use your @osu.edu address.",
+    /** Event windows on this campus are written in this zone (2026-10-08). */
+    timeZone: "America/New_York",
     independenceStatement:
       "Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by The Ohio State University.",
   },
@@ -25,6 +27,7 @@ export const CAMPUSES = {
     emailDomain: "illinois.edu",
     emailExample: "netid@illinois.edu",
     emailHint: "Use the @illinois.edu address tied to your NetID.",
+    timeZone: "America/Chicago",
     independenceStatement:
       "Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by the University of Illinois Urbana-Champaign.",
   },

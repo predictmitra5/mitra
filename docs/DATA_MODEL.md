@@ -1,6 +1,8 @@
 # Data model
 
-Status: twelve tables and thirteen migrations are implemented and applied; see Implemented schema below. The candidate inventory that follows is kept for entities not yet modelled.
+> **2026-10-08, migration 0013:** four new tables (`venues`, `events`, `resolution_sources`, `market_proposals`) and new `markets` columns (campus, category, venue, event, source, window start and end, time zone, Yes and No conditions, `is_sample`); `markets.subject_user_id` is nullable, and a check requires each market to be a legacy goal or a fully specified event market. See Event markets below.
+
+Status: sixteen tables and fourteen migrations in the repository. All fourteen are applied and recorded on the live project since 2026-10-08; see Event markets at the end. The candidate inventory that follows is kept for entities not yet modelled.
 
 Source: PDF sections 5.2, 7.3, 16, 20-22, pages 5, 7, 11-14.
 
@@ -108,4 +110,25 @@ One standing check, `isInactive` in `src/modules/account/standing.ts`, treats wi
 
 Photos are stored only as the 512-pixel WebP the app re-encoded, so no uploaded metadata survives. The bucket's privacy and its WebP-only limit were probed on 2026-09-24: a WebP stored, a JPEG was refused, the server key could read the object, the browser key could not, and the public URL returned 400.
 
+<<<<<<< HEAD
 Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing. Feed and market-page GETs by signed-out visitors also do not write measurement. Signed-in feed exposure and open counters are bounded per market/hour and old buckets are deleted by maintenance.
+=======
+Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing: polling cannot add `feed_events` rows. A test and a live check (205 events before and after two polls) confirm it.
+
+## Event markets (2026-10-08, migration 0013)
+
+| Table | What it holds | Notes |
+| --- | --- | --- |
+| `venues` | A place on a campus: campus key, unique slug, name, category, area, one line about it | Created by the owner when publishing; the same name on the same campus is reused |
+| `events` | A time window at a venue: title, start, end, IANA time zone | One per published market; checked end > start |
+| `resolution_sources` | Where a market's number comes from: name, how it counts, link, `operational` | `operational` false means a placeholder with no agreement or integration; the market page says so |
+| `market_proposals` | A student's suggestion: proposer, campus, question, category, venue name (and venue when it matched a known one), window, how it could be checked, `pending`/`approved`/`rejected`, the owner's reason, the market it became | Private to the proposer and the owner; at most 10 pending per person; unpublished ones are deleted with the account |
+
+`markets` gains `campus`, `category` (`market_category`: nightlife, food, events, entertainment, campus), `venue_id`, `event_id`, `resolution_source_id`, `window_start_at`, `window_end_at`, `time_zone`, `yes_condition`, `no_condition` and `is_sample`. `subject_user_id` became nullable. The check `markets_goal_or_event` requires either a subject (a goal market from before the pivot) or every event field, with the window ending after it starts and results due no earlier than the window's end. For an event market `deadline_at` is the trading cutoff and `evidence_deadline_at` is when the source's result is due.
+
+Status words: the engine keeps `open`, `closed`, `ruled`, `settled` and `cancelled`; pages show them as the brief's open, closed, resolved (ruled, then settled) and void (`src/modules/events/status.ts`). A suggestion waiting for review is the brief's pending.
+
+Publishing writes the venue (if new), the event, the source (if new), the market at the owner's opening price, its first price point and an `approve` row in `admin_actions` in one transaction; publishing a suggestion marks it approved in the same transaction. Turning a suggestion down writes a `reject` row with no market. Sample markets may carry demonstration price points dated before they opened.
+
+Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 without a record in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` recorded it and applied 0013 on 2026-10-08, so a plain `drizzle-kit migrate` works again.
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481

@@ -531,6 +531,7 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 
 **Deletion:** the account page exposes one permanent-delete operation with typed `DELETE` confirmation. The owner account cannot self-delete until ownership is transferred. Draft, open and closed goals owned by the person are cancelled and every participant is refunded at held cost. Ruled and settled goals stay final. Private evidence originals, profile photos and temporary photo uploads are removed; evidence statements, links, captions and review notes are cleared into a dated tombstone; the profile is anonymized; and the Supabase Auth identity is deleted. Trades, ledger entries, wallets, rulings and audit records remain as anonymized accounting history. This implements the proof and photo deletion decisions from 2026-09-19 and 2026-09-24.
 
+<<<<<<< HEAD
 ## 2026-10-07 - Bound feed measurement, expire upload grants, and isolate the adjudicator
 
 **Security remediation within recorded product decisions:** preserve the no-viewer-identity choice in D08/D09, but stop signed-out page reads from writing analytics. Signed-in feed exposures and goal opens use anonymous market/hour counters only: at most 500 exposures and 3 opens per market per hour, with only the latest 24 hours used for ranking and new counters pruned after 24 hours. This is a technical guardrail, not a new attribution or personalization policy; legacy `feed_events` rows are retained but are no longer used for ranking.
@@ -538,3 +539,39 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 Every direct-upload URL now has a server-side per-user intent, expires after 48 hours, and is limited to two pending photos or five pending evidence uploads per user; pending evidence is also bounded to ten per market including completed evidence. An authenticated daily maintenance route removes only expired, unreferenced objects through Supabase Storage and then removes their intents. It never deletes completed evidence. Vercel requires `CRON_SECRET` to be configured for this route; missing configuration fails closed.
 
 The outcome-controlling owner cannot buy or sell any market, including when replaying a trade confirmation. Existing owner positions are not liquidated by this security change; no owner positions were modified as part of the code patch.
+=======
+## 2026-10-06 - One consistent UI system
+
+**User instruction:** the owner shared a post, "5 things that actually made my vibe coded projects not look like vibe coded projects" (pick one font and one accent colour; give the AI your existing component before asking for a new one; real empty states that say what to do next; decide mobile early; one animation used consistently), and asked "can u make this".
+
+**Decision:** Mitra follows those five rules, and they bind every agent (AGENTS.md, UI rules; docs/DESIGN.md section 13). Applied without changing the owner's earlier choices: Helvetica at weights 400 and 700 only; baby blue as the one accent, with green/red, danger/success and the school's name colour as the only other colours; one button system; a shared empty state everywhere a list can be empty; mobile first, checked at 375, 768 and 1440 pixels; one entrance animation (a short fade) plus the shared hover and press feedback.
+
+**Reversed the same day, except the fonts.** After seeing it, the owner: "go back to the old app. i just sent that to mak ti not liek vibecoded. i liekd the how the makets and evyerhitgn looked. just he fonts and shit bro. chang eevyerhting back but hte fonts and shiet". The button system, empty states, tablet layout, fade-in, colour tokens and the AGENTS.md and DESIGN.md rules were undone; what stays is Helvetica at weights 400 and 700 only. The look is the 2026-10-05 one (DESIGN.md section 12).
+
+## 2026-10-08 - Pivot: campus event markets instead of people's goals
+
+**User instruction** (the owner, sharing `Mitra_Event_Market_Pivot_Coding_Agent_Prompt.pdf` from their OneDrive and an image of a card reading "mitra." / "Trade on what happens here." / "Ohio State" / "Your campus. Your market."): "need to change the site to this now".
+
+The brief (one page) asks to refactor the existing app, not start a new one: the organizing unit changes from people and their goals to verifiable local events and business metrics, launching at Ohio State with room for more campuses. It lists a campus home feed (question, venue, category, chance, activity, closing time), a market page (question, event and venue, exact Yes/No rules, trading cutoff, verification source, price history, trade ticket), discovery by category (Nightlife, Food, Events, Entertainment, Campus), venue, status and closing date with a venue page, a portfolio linked to event markets, and a student "suggest a market" flow that waits for review and never publishes itself. It asks for three hypothetical OSU sample markets (Midway on High drinks on a Friday night, Buckeye Donuts donuts overnight, a Gateway Film Center screening's paid admissions), visibly marked as sample data, never presenting invented sales, attendance, partners or volume as real. Entities: campus, venue, event, market, proposal, resolution source, and statuses draft / pending / open / closed / resolved / void, each market with precise outcome conditions, time window and time zone, cutoff and data source. Keep accounts, profiles, the logo, colours, authentication and the portfolio; remove predicting individuals; points only; avoid anything that encourages altering a venue's sales or attendance to win. It says to make reasonable assumptions and to separate placeholders from working integrations.
+
+Answers to four questions asked before building:
+
+- **The live goal market** (one open, two people holding positions): "Cancel + refund". It is voided through the existing cancellation, which refunds held cost; its link keeps working and shows it as void.
+- **Sample markets on the live site:** "Live + tradeable". Labelled as samples that are hypothetical and not verified by the venue. When real markets replace them they are voided and refunded.
+- **When a market's data never arrives** (for example, the venue never shares its count): "Resolves No", the same rule goal markets had. The owner still settles every market by hand from its named source.
+- **Deploying:** "Show me first". Build and verify locally, then wait for the owner's go-ahead before pushing, touching the live database, seeding samples or cancelling the old market.
+
+**Decision:**
+
+- Markets are about events at venues, grouped by campus. Goal markets, templates, proof uploads by a goal's subject and person-based cards are removed from the product. Accounts, profile photos, the 1,000-point grant, the 100-point per-market limit, selling, the market maker (b = 150), owner approval of every market with an opening price, rulings with a 24-hour objection window, payouts and refunds stay.
+- Students suggest markets; a suggestion is pending until the owner publishes it as a market (with exact terms and an opening price) or turns it down with a reason the student can read.
+- Every published event market names its resolution source, which says whether it is a working data feed or a placeholder that no agreement or integration yet backs.
+
+**Assumptions made under the brief's "make reasonable assumptions"** (the owner can change any of them): trading cuts off when the event window starts unless the owner sets another time; results are due three days after the window ends, after which a market with no data is ruled No; the feed shows the viewer's campus, and visitors see Ohio State; venue staff and owners are asked not to trade their venue's markets, and nobody may buy at a venue to move a market, as published rules rather than an enforced check; the brief's internal statuses map onto the existing ones (pending = a suggestion under review, resolved = ruled and then settled, void = cancelled).
+
+**Go-ahead, the same day:** after reviewing the local build and its screenshots, the owner, asked which of the two owner accounts (@ducky, @mitrapredict) the voided goal market and the samples should be recorded under: "record it under both accounts. push". An audit record names one acting account, so @mitrapredict acts and every record's reason names both accounts.
+
+**The Midway on High sample stays.** Asked whether a market on a bar's drink count suits members who must be 18 or older but may be under 21: "its 18+". The sample stays live as published; Mitra's audience remains 18+ by self-confirmation, with no 21+ gate on any market.
+
+**The opening card is removed (2026-10-08, after go-live).** Sharing a screenshot of the live home page's "mitra." card: "remove this as well". The card goes; the motto stays in the top bar and footer, and the price ticker stays.
+>>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481

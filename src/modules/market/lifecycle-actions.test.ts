@@ -7,11 +7,11 @@ vi.mock("./lifecycle", async (original) => ({ ...await original<object>(), apply
 import { manageMarket, objectToRuling } from "./lifecycle-actions";
 import { LifecycleError, type OwnerCommand } from "./lifecycle";
 
-const command: OwnerCommand = { marketId: "goal-id", requestId: "request-id", action: "rule", outcome: "yes", basis: "reviewed_proof", expectedVersion: 0, reason: "The terms are met." };
-const objection = { id: "submission-id", marketId: "goal-id", rulingVersion: 1, reason: "Please review the date." };
+const command: OwnerCommand = { marketId: "market-id", requestId: "request-id", action: "rule", outcome: "yes", basis: "checked_source", expectedVersion: 0, reason: "The terms are met." };
+const objection = { id: "submission-id", marketId: "market-id", rulingVersion: 1, reason: "Please review the date." };
 beforeEach(() => {
   vi.resetAllMocks(); mocks.identity.mockResolvedValue({ id: "verified-user" }); mocks.db.mockReturnValue("server-database");
-  mocks.manage.mockResolvedValue({ marketId: "goal-id" }); mocks.object.mockResolvedValue({ marketId: "goal-id" });
+  mocks.manage.mockResolvedValue({ marketId: "market-id" }); mocks.object.mockResolvedValue({ marketId: "market-id" });
 });
 
 describe("lifecycle action boundary", () => {
@@ -27,7 +27,7 @@ describe("lifecycle action boundary", () => {
     expect(mocks.manage).toHaveBeenCalledExactlyOnceWith("server-database", "verified-user", command);
     expect(mocks.object).toHaveBeenCalledExactlyOnceWith("server-database", "verified-user", objection);
     expect(mocks.identity).toHaveBeenCalledTimes(2);
-    expect(mocks.refresh).toHaveBeenCalledWith("/markets/goal-id");
+    expect(mocks.refresh).toHaveBeenCalledWith("/markets/market-id");
     expect(mocks.refresh).toHaveBeenCalledWith("/review/markets");
     expect(mocks.refresh).toHaveBeenCalledWith("/account");
     expect(mocks.refresh).toHaveBeenCalledWith("/positions");

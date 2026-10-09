@@ -9,7 +9,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
-import { approveDraft, createGoalDraft } from "@/modules/goals/service";
+import { openEventMarket } from "@/test/markets";
 import { executeTrade, previewTrade, readPublicMarket } from "./service";
 import { advanceDueMarkets, advanceMarket, applyOwnerCommand, CONTEST_WINDOW_MS, readObjections, submitObjection, type OwnerCommand } from "./lifecycle";
 import { withFixturePhoto } from "@/test/photo-fixture";
@@ -20,7 +20,7 @@ const hosted = process.env.MITRA_HOSTED_TEST === "1";
 const name = `mitra_lifecycle_test_${randomUUID().replaceAll("-", "")}`;
 let memory: PGlite | undefined, remote: ReturnType<typeof postgres> | undefined;
 let database: PgDatabase<PgQueryResultHKT, typeof schema>;
-let owner: string, subject: string, alice: string, bob: string, marketId: string, proofAt: Date;
+let owner: string, carol: string, alice: string, bob: string, marketId: string, rulingAt: Date, resultsDue: Date;
 
 beforeAll(async () => {
   if (hosted) {
@@ -38,9 +38,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await database.execute(sql.raw(`TRUNCATE TABLE "${hosted ? name : "public"}"."profiles" CASCADE`));
-  owner = await account("owner"); subject = await account("subject"); alice = await account("alice"); bob = await account("bob");
+  owner = await account("owner"); carol = await account("carol"); alice = await account("alice"); bob = await account("bob");
   await database.update(profiles).set({ isOwner: 1 }).where(eq(profiles.id, owner));
-  marketId = await open(); proofAt = (await market()).evidenceDeadlineAt;
+  marketId = await open(); rulingAt = (await market()).windowEndAt!; resultsDue = (await market()).evidenceDeadlineAt;
 }, 30_000);
 
 afterAll(async () => {
@@ -54,16 +54,17 @@ afterAll(async () => {
 async function account(handle: string) {
   const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); await withFixturePhoto(database, id); return id;
 }
+/** Trading cuts off at 9 PM Eastern on October 1; the window ends at 2 AM; results are due three days later. */
 async function open() {
-  const draft = await createGoalDraft(database, subject, { type: "club", club: "Chess Club", deadline: "2026-10-01" }, start);
-  await approveDraft(database, owner, draft.id, 5000, "Clear terms", start); return draft.id;
+  const cutoff = new Date("2026-10-02T01:00:00Z");
+  return (await openEventMarket(database, owner, start, { cutoff, windowEnd: new Date("2026-10-02T06:00:00Z") })).id;
 }
 async function market(id = marketId) { return (await database.select().from(markets).where(eq(markets.id, id)))[0]; }
 function command(extra: Partial<OwnerCommand> = {}): OwnerCommand {
-  return { marketId, requestId: randomUUID(), expectedVersion: 0, action: "rule", outcome: "yes", basis: "reviewed_proof", reason: "Admission offer was verified against the goal terms.", ...extra };
+  return { marketId, requestId: randomUUID(), expectedVersion: 0, action: "rule", outcome: "yes", basis: "checked_source", reason: "The register count showed 612 drinks in the window.", ...extra };
 }
 const at = (date: Date) => () => date;
-async function rule(extra: Partial<OwnerCommand> = {}, when = proofAt) { return applyOwnerCommand(database, owner, command(extra), at(when)); }
+async function rule(extra: Partial<OwnerCommand> = {}, when = rulingAt) { return applyOwnerCommand(database, owner, command(extra), at(when)); }
 async function trade(userId = alice, side: "YES" | "NO" = "YES", action: "buy" | "sell" = "buy", amountMicro = 10_000_000, id = marketId) {
   return executeTrade(database, userId, await previewTrade(database, userId, { marketId: id, side, action, amountMicro }, at(start)), at(start));
 }
@@ -78,20 +79,20 @@ async function snapshot() { return {
   audits: await database.select().from(adminActions), history: await database.select().from(priceHistory),
 }; }
 function objection(extra: Partial<{ id: string; marketId: string; rulingVersion: number; reason: string }> = {}) {
-  return { id: randomUUID(), marketId, rulingVersion: 1, reason: "Please check the offer date against the deadline.", ...extra };
+  return { id: randomUUID(), marketId, rulingVersion: 1, reason: "Please check whether comped drinks were counted.", ...extra };
 }
 
 describe("market lifecycle", () => {
   it("closes exactly at the deadline once and attributes it to the system", async () => {
-    const goal = await market();
-    await advanceMarket(database, marketId, at(new Date(goal.deadlineAt.getTime() - 1)));
+    const opened = await market();
+    await advanceMarket(database, marketId, at(new Date(opened.deadlineAt.getTime() - 1)));
     expect((await market()).status).toBe("open");
-    await advanceMarket(database, marketId, at(goal.deadlineAt));
-    await advanceMarket(database, marketId, at(proofAt));
-    expect((await market()).tradingClosedAt).toEqual(goal.deadlineAt);
+    await advanceMarket(database, marketId, at(opened.deadlineAt));
+    await advanceMarket(database, marketId, at(resultsDue));
+    expect((await market()).tradingClosedAt).toEqual(opened.deadlineAt);
     const audit = await database.select().from(adminActions).where(eq(adminActions.kind, "close_deadline"));
     expect(audit).toHaveLength(1); expect(audit[0].actorUserId).toBeNull();
-    expect((await market()).status).toBe("closed"); // No unverified automatic missing-proof ruling.
+    expect((await market()).status).toBe("closed"); // No automatic missing-data ruling.
   });
   it("requires an active owner and explicit public-outcome confirmation to close early", async () => {
     const close = command({ action: "close", publicOutcomeConfirmed: true });
@@ -105,27 +106,28 @@ describe("market lifecycle", () => {
     await database.update(profiles).set({ withdrawnAt: start }).where(eq(profiles.id, owner));
     await expectError(rule(), "PROFILE_REQUIRED");
   });
-  it("rules after the full proof period, with an exact 24-hour window and a public explanation", async () => {
-    await expectError(rule({}, new Date(proofAt.getTime() - 1)), "PROOF_WINDOW");
-    const input = command(); await applyOwnerCommand(database, owner, input, at(proofAt));
-    const goal = await market();
-    expect(goal.status).toBe("ruled"); expect(goal.rulingVersion).toBe(1);
-    expect(goal.contestEndsAt?.getTime()).toBe(proofAt.getTime() + CONTEST_WINDOW_MS);
+  it("rules from the source once the window ends, with an exact 24-hour window and a public explanation", async () => {
+    await expectError(rule({}, new Date(rulingAt.getTime() - 1)), "RESULTS_PENDING");
+    const input = command(); await applyOwnerCommand(database, owner, input, at(rulingAt));
+    const opened = await market();
+    expect(opened.status).toBe("ruled"); expect(opened.rulingVersion).toBe(1);
+    expect(opened.contestEndsAt?.getTime()).toBe(rulingAt.getTime() + CONTEST_WINDOW_MS);
     expect((await readPublicMarket(database, marketId))?.rulingReason).toBe(input.reason);
-    await applyOwnerCommand(database, owner, input, at(new Date(proofAt.getTime() + 60000)));
-    expect((await market()).contestEndsAt).toEqual(goal.contestEndsAt);
+    await applyOwnerCommand(database, owner, input, at(new Date(rulingAt.getTime() + 60000)));
+    expect((await market()).contestEndsAt).toEqual(opened.contestEndsAt);
   });
-  it("missing proof can only produce NO and still gets a contest window", async () => {
-    await expectError(rule({ basis: "missing_proof" }), "MISSING_PROOF_NO");
-    await rule({ basis: "missing_proof", outcome: "no", reason: "No proof arrived before the proof deadline." });
+  it("a source that never reported can only produce NO, only after the results deadline, and still gets a contest window", async () => {
+    await expectError(rule({ basis: "missing_data" }, resultsDue), "MISSING_DATA_NO");
+    await expectError(rule({ basis: "missing_data", outcome: "no" }, new Date(resultsDue.getTime() - 1)), "RESULTS_PENDING");
+    await rule({ basis: "missing_data", outcome: "no", reason: "The venue never sent its count." }, resultsDue);
     expect((await market()).ruledOutcome).toBe("no"); expect((await market()).status).toBe("ruled");
   });
   it("restarts the full window on revision and rejects stale forms and no-op edits", async () => {
-    const first = command(); await applyOwnerCommand(database, owner, first, at(proofAt));
-    const revisedAt = new Date(proofAt.getTime() + 60_000);
+    const first = command(); await applyOwnerCommand(database, owner, first, at(rulingAt));
+    const revisedAt = new Date(rulingAt.getTime() + 60_000);
     await expectError(rule({ expectedVersion: 0, outcome: "no" }, revisedAt), "STALE_RULING");
     await expectError(rule({ expectedVersion: 1 }, revisedAt), "NO_CHANGE");
-    const revision = command({ expectedVersion: 1, outcome: "no", reason: "The offer arrived after the deadline." });
+    const revision = command({ expectedVersion: 1, outcome: "no", reason: "The corrected count was 488 drinks." });
     await applyOwnerCommand(database, owner, revision, at(revisedAt));
     expect((await market()).contestEndsAt?.getTime()).toBe(revisedAt.getTime() + CONTEST_WINDOW_MS);
     expect((await market()).rulingVersion).toBe(2);
@@ -135,24 +137,24 @@ describe("market lifecycle", () => {
     expect(await database.select().from(adminActions).where(eq(adminActions.kind, "change_ruling"))).toHaveLength(1);
   });
   it("rejects changed commands under a used retry key", async () => {
-    const input = command(); await applyOwnerCommand(database, owner, input, at(proofAt));
-    await expectError(applyOwnerCommand(database, owner, { ...input, outcome: "no" }, at(proofAt)), "RETRY_MISMATCH");
-    await expectError(applyOwnerCommand(database, owner, { ...input, marketId: await open() }, at(proofAt)), "RETRY_MISMATCH");
+    const input = command(); await applyOwnerCommand(database, owner, input, at(rulingAt));
+    await expectError(applyOwnerCommand(database, owner, { ...input, outcome: "no" }, at(rulingAt)), "RETRY_MISMATCH");
+    await expectError(applyOwnerCommand(database, owner, { ...input, marketId: await open() }, at(rulingAt)), "RETRY_MISMATCH");
   });
-  it("accepts objections from subjects and nontraders, deduplicates retries, and limits text visibility", async () => {
-    await rule(); const a = objection(), b = objection({ reason: "Private note from the subject." });
-    await submitObjection(database, alice, a, at(proofAt));
-    await submitObjection(database, subject, b, at(proofAt));
-    await submitObjection(database, alice, a, at(proofAt));
+  it("accepts objections from traders and nontraders, deduplicates retries, and limits text visibility", async () => {
+    await rule(); const a = objection(), b = objection({ reason: "Private note from someone who never traded." });
+    await submitObjection(database, alice, a, at(rulingAt));
+    await submitObjection(database, carol, b, at(rulingAt));
+    await submitObjection(database, alice, a, at(rulingAt));
     expect(await database.select().from(contests)).toHaveLength(2);
     expect((await readObjections(database, alice, marketId)).map((r) => r.reason)).toEqual([a.reason]);
     expect(await readObjections(database, bob, marketId)).toHaveLength(0);
     expect(await readObjections(database, owner, marketId)).toHaveLength(2);
     expect(JSON.stringify(await readPublicMarket(database, marketId))).not.toContain(b.reason);
-    await expectError(submitObjection(database, bob, a, at(proofAt)), "RETRY_MISMATCH");
+    await expectError(submitObjection(database, bob, a, at(rulingAt)), "RETRY_MISMATCH");
     await expectError(readObjections(database, randomUUID(), marketId), "PROFILE_REQUIRED");
     await database.update(profiles).set({ adultConfirmedAt: null }).where(eq(profiles.id, bob));
-    await expectError(submitObjection(database, bob, objection(), at(proofAt)), "PROFILE_REQUIRED");
+    await expectError(submitObjection(database, bob, objection(), at(rulingAt)), "PROFILE_REQUIRED");
   });
   it("forbids objections before ruling and at the exact cutoff without blocking safe receipt retries", async () => {
     const input = objection();
@@ -191,7 +193,7 @@ describe("market lifecycle", () => {
     const yes = await trade(); await trade(alice, "NO"); await trade(bob, "NO");
     await trade(alice, "YES", "sell", Math.floor(yes.sharesMicro / 2));
     const held = await database.select().from(positions);
-    const input = command({ action: "cancel", reason: "The goal wording is ambiguous." });
+    const input = command({ action: "cancel", reason: "The market wording is ambiguous." });
     await applyOwnerCommand(database, owner, input, at(start)); await applyOwnerCommand(database, owner, input, at(start));
     const refunds = await database.select().from(ledgerEntries).where(eq(ledgerEntries.kind, "cancellation_refund"));
     expect(refunds).toHaveLength(2);
@@ -249,7 +251,7 @@ describe.runIf(hosted)("lifecycle races on hosted connections", () => {
     const [wallet] = await database.select().from(wallets).where(eq(wallets.userId, alice));
     expect(wallet.balanceMicro).toBe(1_000_000_000); await reconcile();
   });
-  it("settles two goals sharing wallets without lost credits or deadlocks", async () => {
+  it("settles two markets sharing wallets without lost credits or deadlocks", async () => {
     const second = await open();
     await trade(alice); await trade(bob, "NO"); await trade(alice, "YES", "buy", 10_000_000, second); await trade(bob, "NO", "buy", 10_000_000, second);
     await rule(); await rule({ marketId: second }); const ends = (await market()).contestEndsAt!;
@@ -259,16 +261,16 @@ describe.runIf(hosted)("lifecycle races on hosted connections", () => {
   it("allows only one ruling revision from the same version", async () => {
     await rule();
     const results = await Promise.allSettled([
-      rule({ expectedVersion: 1, outcome: "no", reason: "New review found the offer date was late." }),
-      rule({ expectedVersion: 1, outcome: "no", reason: "The club confirmed the date was after the deadline." }),
+      rule({ expectedVersion: 1, outcome: "no", reason: "A recount found 488 drinks." }),
+      rule({ expectedVersion: 1, outcome: "no", reason: "The venue corrected its count to 497." }),
     ]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect((results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason.code).toBe("STALE_RULING");
     expect((await market()).rulingVersion).toBe(2);
   });
   it("deduplicates concurrent objections and owner requests", async () => {
-    const input = command(); await Promise.all([applyOwnerCommand(database, owner, input, at(proofAt)), applyOwnerCommand(database, owner, input, at(proofAt))]);
-    const appeal = objection(); await Promise.all([submitObjection(database, alice, appeal, at(proofAt)), submitObjection(database, alice, appeal, at(proofAt))]);
+    const input = command(); await Promise.all([applyOwnerCommand(database, owner, input, at(rulingAt)), applyOwnerCommand(database, owner, input, at(rulingAt))]);
+    const appeal = objection(); await Promise.all([submitObjection(database, alice, appeal, at(rulingAt)), submitObjection(database, alice, appeal, at(rulingAt))]);
     expect(await database.select().from(contests)).toHaveLength(1);
     expect(await database.select().from(adminActions).where(eq(adminActions.kind, "rule"))).toHaveLength(1);
   });
