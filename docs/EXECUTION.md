@@ -24,9 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-08 - Record the Midway sample decision (Claude Code)
-
-The owner, asked whether the Midway on High drink-count sample suits an 18+ (not 21+) audience: "its 18+". Record it in DECISIONS.md and close the open question in SAFETY_AND_INTEGRITY.md and Next actions. Documentation only.
+_None._
 
 ## Deferred, to come back to
 
@@ -167,7 +165,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 Refreshed 2026-10-08 for the pivot to event markets.
 
 1. **Done 2026-10-08:** the pivot is live (Session history). To void and refund the samples when real markets replace them, use Void this market at `/review/markets`.
-2. **Decide what the samples become.** They name real businesses and their sources are placeholders. The owner should decide whether the Midway on High drink count suits an 18+ (not 21+) audience, and when to replace the samples with markets whose sources actually report.
+2. **Decide when to replace the samples.** They name real businesses and their sources are placeholders; the owner decides when markets whose sources actually report replace them. The Midway on High sample stays: the owner confirmed the audience is 18+ (DECISIONS.md, 2026-10-08).
 3. **Walk the whole flow with real accounts.** The owner and one friend: suggest a market, publish it at `/review`, trade it from both accounts, rule it from its source at `/review/markets`, and let the payout run. Every piece is tested and every page has been looked at with fictional data, but no real account has done this end to end. Needs no decisions, only the owner and a second person.
 4. **Complete the hosted account walkthrough.** The private Vercel deployment is live and its home/sign-in pages and access protection are verified. Check Supabase's Site URL and callback/recovery redirect URLs, then perform the real-account flow in item 3. SMTP and email recovery still need setup. README.md lists the addresses and configuration. Due closes and payouts still run when a relevant page is opened; a scheduled job (Vercel Cron) is a later choice.
 5. **Before anyone outside the owner's circle joins:** restore email confirmation (needs an SMTP sender; see Deferred and README). The database password that appeared in command output on 2026-09-15 was reset on 2026-09-24.
