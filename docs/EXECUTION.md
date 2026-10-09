@@ -24,7 +24,12 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+### 2026-10-09 - Resolve committed merge conflicts
+
+- **Plan:** inspect each conflict hunk against both merge parents and the current event-market product decisions; keep or combine only code consistent with the active product, and remove all conflict markers from application code, tests, docs and Drizzle metadata. Preserve both independently required changes where possible, while ensuring migration metadata remains valid and migration history is not rewritten.
+- **Why:** the Oct 8 merge commit contains unresolved Git markers, causing Next.js typecheck/build failure and invalid Drizzle JSON. Vercel cannot deploy this source as committed.
+- **Verification:** search the repository for all markers; run JSON parsing on Drizzle metadata, typecheck, tests, lint and production build. No deploy, push, database migration, or production data changes are included.
+- **Basis:** the recorded Oct 8 event-market pivot, active runtime code in `src/modules/events`, and Vercel’s Git-based production deployment; resolve branch conflicts against their parent versions, not by blindly accepting one side.
 
 ## Deferred, to come back to
 
