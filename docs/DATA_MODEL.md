@@ -1,5 +1,7 @@
 # Data model
 
+> **2026-10-09, migration 0014:** `markets.short_question` (nullable text), the card's few words; display only, beside the frozen question. Cards, lists, the ticker's hover text and positions read it; the market page shows the full question.
+>
 > **2026-10-08, migration 0013:** four new tables (`venues`, `events`, `resolution_sources`, `market_proposals`) and new `markets` columns (campus, category, venue, event, source, window start and end, time zone, Yes and No conditions, `is_sample`); `markets.subject_user_id` is nullable, and a check requires each market to be a legacy goal or a fully specified event market. See Event markets below.
 
 Status: sixteen tables and fourteen migrations in the repository. All fourteen are applied and recorded on the live project since 2026-10-08; see Event markets at the end. The candidate inventory that follows is kept for entities not yet modelled.

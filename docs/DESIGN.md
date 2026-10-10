@@ -253,7 +253,7 @@ Decided by the owner after reviewing a canvas of the screens (https://claude.ai/
 ### Look
 
 - **Themes.** Black by default, white when the person picks it with the moon/sun button in the top bar. The choice is a cookie (`mitra_theme`), so the server sets `html[data-theme]` and the first paint is right; both icons and labels are in the button and CSS shows the pair for the theme.
-- **Type.** Helvetica throughout (`--font-sans`: Helvetica Neue, then TeX Gyre Heros, then Arial). Apple devices use their own Helvetica Neue and download nothing; Windows and Android download TeX Gyre Heros (regular and bold, about 135 KB each), a freely licensed Helvetica match self-hosted from `public/fonts/tex-gyre-heros` (GUST e-foundry, LPPL 1.3c, unmodified, licence alongside). Plain "Helvetica" is not in the list because Windows maps that name to Arial, which would stop the browser before the look-alike. Two weights only, 400 and 700 (2026-10-06), because the look-alike has no others. Tabular numbers everywhere.
+- **Type.** Replaced on 2026-10-09 by Geist (section 14). Until then: Helvetica throughout (`--font-sans`: Helvetica Neue, then TeX Gyre Heros, then Arial). Apple devices use their own Helvetica Neue and download nothing; Windows and Android download TeX Gyre Heros (regular and bold, about 135 KB each), a freely licensed Helvetica match self-hosted from `public/fonts/tex-gyre-heros` (GUST e-foundry, LPPL 1.3c, unmodified, licence alongside). Plain "Helvetica" is not in the list because Windows maps that name to Arial, which would stop the browser before the look-alike. Two weights only, 400 and 700 (2026-10-06), because the look-alike has no others. Tabular numbers everywhere.
 - **Colour.** Baby blue `#89cff0` for main actions with dark ink `#04212f`; green Yes and red No, brighter on black (`#3fd38a`, `#ff5c63`) and darker on white (`#0e8546`, `#c8323a`) so text on their tints passes contrast. Black: page `#0b0c0e`, cards `#141619`, borders `#262a30`/`#3a3f47`. White: page `#f5f6f8` so white cards stand out, borders `#e2e5e9`/`#c9ced5`.
 - **Controls.** Pill buttons. The selected tab or chart range is a solid pill in the text colour. Yes/No buttons are tinted at rest and fill solid on hover.
 - **Hover and press.** About 160 ms: main buttons brighten with a soft baby blue ring, outline buttons and tabs fill lightly, goal cards lift 2 px with a shadow, list rows highlight, everything presses to 97%. Hover rules apply only where there is a mouse; reduced motion keeps the colour changes and drops the movement.
@@ -278,7 +278,7 @@ Yes and No are two step lines, green and red, with a dot at each end, dotted gri
 
 ## 13. Campus event markets (2026-10-08)
 
-The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of section 12 stays: tokens, Helvetica at 400 and 700, pills, the chart, the trade panel. What changed is what a market is about, so every place that showed a person now shows a venue.
+The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of section 12 stays: tokens, Helvetica at 400 and 700 (Geist since section 14), pills, the chart, the trade panel. What changed is what a market is about, so every place that showed a person now shows a venue.
 
 - **Motto:** the top bar and the footer say "Trade on what happens here." The opening card built from the owner's image ("mitra.", the motto, the campus and "Your campus. Your market." as pills) was removed the same day at the owner's request; the feed opens with the ticker and tabs as before.
 - **Tabs and filters:** All, Nightlife, Food, Events, Entertainment, Campus and the disabled Coming soon label, then three pill selects beside the grid's heading: venue, status (Open by default; Closed, Resolved, Void, Any status) and closing date (within a day, this week, this month). All of them live in the address (`?cat=`, `?venue=`, `?status=`, `?closes=`, `?q=`) and change it without a request, like the tabs before them. An empty result says so and offers Suggest a market.
@@ -289,3 +289,33 @@ The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of sectio
 - **Suggest a market** and the owner's publish form reuse the existing form fields, with selects styled as fields and two-up rows that stack on a phone.
 - **Positions:** each holding shows category · venue above its question; `/positions` adds a Trade history list.
 - The owner's phone top bar drops the points figure when the Review link is present, so it fits at 375 pixels (it overflowed before this change).
+
+## 14. XO Market and Kalshi type, smooth loading, short titles (2026-10-09)
+
+The owner, with screenshots of the live feed beside XO Market's and Kalshi's: the fonts looked thin and oddly placed, the sites felt less smooth, and each market had too many words (DECISIONS.md, 2026-10-09). Drawn on a canvas first (https://claude.ai/artifact/RhETGs9cAoH5mMZDk4eNXm: the feed on a desktop and a phone, the market page after a click), then built. Tokens, colours, the logo, the chart and the trade panel of sections 12 and 13 stay.
+
+### Type
+
+- **Geist** for everything, loaded by `next/font/google` in `src/app/layout.tsx`: downloaded at build time and served from the site itself (no visitor's browser asks Google), with a fallback sized to match so text never jumps when the font arrives. `--font-sans` in `globals.css` names it. TeX Gyre Heros and `public/fonts` are gone.
+- **Three weights.** 400 for reading, 500 for labels, tabs and navigation, 600 for titles, numbers, buttons and bold text (`b, strong` are 600, never the browser's 700).
+- **Hierarchy, as in the references:** category · venue above a title in small capitals with wide spacing (11.5 px, 600, 0.07em); card titles 16.5 px; the featured title 30 px; the featured chance 52 px and a market page's 56 px; the market page's question 34 px over at most 30 characters a line; large type is tightened (−0.025 to −0.04em).
+
+### Layout
+
+- **Top bar** 64 px; Log in is a filled dark pill like XO Market's, Sign up stays baby blue.
+- **Tabs** are plain text (500) with a 2 px underline under the one picked, as on both references, instead of solid pills. When another is picked, the underline slides there (`CategoryTabs` in `src/app/(feed)/feed-view.tsx`, Web Animations, 280 ms).
+- **Featured market** in two columns, as XO Market's hero: on the left the venue mark, category · venue, Moving most today and Sample tags, the short title, the event, the chance, Yes and No, and points traded with the closing time; on the right the Yes/No chart. One column on a phone.
+- **Closing soon** beside it at 380 px, rows in 500.
+- **Cards:** the venue mark, category · venue and the Sample tag on one line, then the short title beside the chance, today's change and points traded, Yes and No, and the closing time with time left. The whole card opens the market (the title's link is stretched over it); the venue link and the Yes/No buttons stay separate links on top. Radius 16 px.
+
+### Short titles
+
+A market can carry a short title (`markets.short_question`), e.g. "Will Midway on High sell more than 1,000 drinks?". Cards, the featured market, Closing soon, the ticker's hover text, the trade panel's heading, positions and trade history show it (`cardTitle` in `src/modules/discovery/present.ts`); the market page shows the full question as its heading, and a card's hover text shows the full question. The owner's publish form has a Short title field (10 to 70 characters, optional). Search matches both.
+
+### Motion
+
+- **Loading screens** (`src/app/(feed)/loading.tsx`, `src/app/markets/[id]/loading.tsx`, pieces in `src/app/components/loading-shell.tsx`): the real logo and soft shimmering blocks in the page's shape, faded in after 120 ms so a quick load never flashes them. Card and Closing soon links prefetch only up to the market page's loading screen, which runs none of the page and records no click (checked: 15 prefetches, no clicks recorded; one tap, one click), so a tapped card answers at once. The feed sits in the `(feed)` route group so its loading screen never shows for other pages.
+- **Entrances:** the featured market, Closing soon, cards (45 ms apart, at most 8 steps), and the market page's sections and trade panel rise 8 px and fade in over 420 ms. Fill mode is `backwards`, so hover lifts still work afterwards.
+- **Chart:** both lines draw in from the left over 900 ms (a clip reveal), then the dots at today's price appear.
+- **Reduced motion:** none of the above moves for people who ask their device to reduce motion; colour changes stay.
+

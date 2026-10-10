@@ -22,7 +22,7 @@ Real credentials live only in `.env.local`, which Git ignores. `.env.example` li
 
 ## Type
 
-Set by the owner on 2026-10-06: Helvetica (`--font-sans` in `src/app/globals.css`) at two weights only, 400 and 700. Do not add other fonts or weights. Everything else about the look stays as it is; see docs/DESIGN.md, section 12.
+Set by the owner on 2026-10-09, following XO Market and Kalshi (replacing the 2026-10-06 Helvetica rule): Geist, loaded by `next/font` in `src/app/layout.tsx` and named by `--font-sans` in `src/app/globals.css`, at three weights only: 400 for reading, 500 for labels and navigation, 600 for titles, numbers, buttons and bold text. Do not add other fonts or weights. Category and venue labels above titles are small capitals with wide spacing; large type is tightened. The look and motion are in docs/DESIGN.md, sections 12 to 14.
 
 ## Commands
 
