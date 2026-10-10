@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+**2026-10-10 - Midway on High as the home page's featured market (Claude Code).** The owner: "change the event displayed on the homepage to thte midway one". Today the featured market is the one moving most in 24 hours (DECISIONS.md, 2026-09-24); all three samples moved 1.0 and Brutus leads the rank order, so it shows. Plan: a pinned featured market in `src/config/featured.ts` set to the Midway sample (`6ad9a213-…`); `readFeed` features it while it is open in the viewer's campus, otherwise picks as before, so the pin ends by itself when Midway closes on Oct 16. A constant rather than a database flag, so no migration or live-database step is needed; changing the pick is a one-line change. Tests, then the local preview, then push on the owner's word.
 
 ## Deferred, to come back to
 
