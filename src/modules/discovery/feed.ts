@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
+import { PINNED_FEATURED_MARKET_ID } from "@/config/featured";
 import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
@@ -57,7 +58,9 @@ export type PricePoint = { at: Date; yesBp: number };
 /**
  * The featured market carries its history, so the feed can draw its chart.
  * `moving` says it was chosen as the market moving most today; when nothing
- * moved, the leading traded market stands in and is not called a mover.
+ * moved, the leading traded market stands in and is not called a mover. A
+ * market the owner pinned (src/config/featured.ts) comes first while it is open,
+ * and is called a mover only if it also moved most.
  */
 export type FeaturedMarket = FeedCard & { series: PricePoint[]; moving: boolean };
 
@@ -66,7 +69,7 @@ export type Feed = {
   cards: FeedCard[];
   /** Recently closed, resolved and void markets, latest cutoff first, for the status filter. */
   past: FeedCard[];
-  /** One market with its chart: the one moving most today. */
+  /** One market with its chart: the owner's pin while it is open, else the one moving most today. */
   featured: FeaturedMarket | null;
   /** Open markets whose trading cutoff is nearest, for the desktop side list. */
   closingSoon: FeedCard[];
@@ -197,6 +200,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
   scope: FeedScope = { campus: "osu" },
+  pinnedId: string | null = PINNED_FEATURED_MARKET_ID,
 ): Promise<Feed> {
   const cards = await readRankedCards(database, now, scope);
   const past = await readPastCards(database, now, scope);
@@ -208,7 +212,9 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   const mover = [...open]
     .filter((card) => card.change24hBp !== 0)
     .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))[0];
-  const pick = mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
+  // The owner's pin (2026-10-10) wins while it is open in this feed.
+  const pinned = pinnedId ? open.find((card) => card.id === pinnedId) : undefined;
+  const pick = pinned ?? mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
   let featured: FeaturedMarket | null = null;
   if (pick) {
     const history = (await readSeries(database, [pick.id])).get(pick.id) ?? [];

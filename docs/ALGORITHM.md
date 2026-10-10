@@ -51,6 +51,6 @@ Every open, approved goal gets a score, highest first:
 - **Decay**: the total divided by `(hours since approval + 2)^1.5`, so goals sink unless people keep trading them.
 - **Diversity**: no person holds more than 2 of the top 10 slots, best effort when there are too few people.
 
-Everyone sees the same order; nothing is personalized, and `feed_events` carries no viewer identity. The featured goal (since 2026-09-24) is the open goal whose price moved most in the last 24 hours, either way, ties in rank order; when nothing moved, the leading traded goal. Tabs and search only filter the ranked list in the browser and never reorder it.
+Everyone sees the same order; nothing is personalized, and `feed_events` carries no viewer identity. The featured goal (since 2026-09-24) is the open goal whose price moved most in the last 24 hours, either way, ties in rank order; when nothing moved, the leading traded goal. Since 2026-10-10 a market the owner pins (`src/config/featured.ts`, now the Midway on High sample) takes the featured slot while it is open; ranking is unchanged. Tabs and search only filter the ranked list in the browser and never reorder it.
 
 Since 2026-09-24: banned and withdrawn people's goals are excluded. There is **no boost for having a profile photo**: the owner asked about one, and accepted the recommendation that it is unnecessary once a photo is required to post a goal. Live price polling records no events, so it cannot move the ranking.

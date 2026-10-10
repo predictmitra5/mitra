@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-**2026-10-10 - Midway on High as the home page's featured market (Claude Code).** The owner: "change the event displayed on the homepage to thte midway one". Today the featured market is the one moving most in 24 hours (DECISIONS.md, 2026-09-24); all three samples moved 1.0 and Brutus leads the rank order, so it shows. Plan: a pinned featured market in `src/config/featured.ts` set to the Midway sample (`6ad9a213-…`); `readFeed` features it while it is open in the viewer's campus, otherwise picks as before, so the pin ends by itself when Midway closes on Oct 16. A constant rather than a database flag, so no migration or live-database step is needed; changing the pick is a one-line change. Tests, then the local preview, then push on the owner's word.
+_None._
 
 ## Deferred, to come back to
 
@@ -204,6 +204,10 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-10 - Midway on High pinned as the featured market (Claude Code)
+
+The owner asked for the Midway sample at the top of the home page. All three samples had moved 1.0 in a day and Brutus led the rank order, so it was featured. Added `src/config/featured.ts` (the Midway sample's id) and a `pinnedId` argument to `readFeed`, defaulting to it: the pin is featured while open in the feed being read, the grid's order is untouched, and the most-moving rule returns when it closes or the pin is null. Recorded in DECISIONS.md and ALGORITHM.md. A new feed test covers the pin winning over a bigger mover, an unchanged grid, another campus, and the pin ending once the market is void. 393 tests, typecheck, lint and the production build pass. Plan committed first (3622770). Not pushed yet: waiting for the owner.
 
 ### 2026-10-09 - Live: type, motion, short titles, Brutus sample (Claude Code)
 

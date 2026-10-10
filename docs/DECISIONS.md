@@ -582,3 +582,9 @@ Answers to four questions asked before building:
 **Not live yet:** the live steps (migration 0014, the two short titles, voiding the screening, publishing the Brutus sample) run with `scripts/sample-refresh-go-live.mjs --apply` on the owner's go-ahead, before the code is pushed, because the new code reads the new column.
 
 **Going live (the same day).** The owner: "push". GitHub's main then held Siyansh's 2026-10-08 merge of a 2026-10-07 security remediation, which had left conflict markers in source files and never built. Asked how to handle it: "Undo their merge, push mine". Main's files went back to the last good version in a new commit, with nothing deleted from history; the remediation waits on its own branch to be merged into the event-market app properly. The owner pushed without changing Brutus, the 30% opening or the window, so those went live as built.
+
+## 2026-10-10 - The Midway on High sample is the home page's featured market
+
+**User instruction** (the owner): "change the event displayed on the homepage to thte midway one".
+
+**Decision:** the owner can pin one market to the featured slot at the top of the home page. While the pinned market is open in the feed being shown, it is featured, with its chart and Yes/No, whatever moved most; the grid's ranking, Closing soon and the ticker are unchanged. Once it closes, or when nothing is pinned, the featured market is again the one moving most today (2026-09-24). The pin is the Midway on High sample, so it ends by itself when Midway's trading closes on October 16 at 9 PM. It is kept in `src/config/featured.ts`, so changing it means asking for a one-line change and a deploy; an owner button can come later if pins change often.

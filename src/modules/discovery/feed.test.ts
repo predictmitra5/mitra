@@ -313,6 +313,23 @@ describe("the featured market and the closing soon list", () => {
     expect(feed.featured?.moving).toBe(false);
   });
 
+  it("features the owner's pinned market while it is open, whatever moved, and only then", async () => {
+    const pinned = await openMarket("Midway on High");
+    const big = await openMarket("Big Move Bar");
+    await trade(alice, big, 40_000_000);
+
+    const feed = await readFeed(db, now, { campus: "osu" }, pinned);
+    expect(feed.featured?.id).toBe(pinned);
+    expect(feed.featured?.moving).toBe(false);
+    // The grid keeps its ranking; only the featured slot changes.
+    expect(feed.cards.map((card) => card.id)).toEqual((await readFeed(db, now, { campus: "osu" }, null)).cards.map((card) => card.id));
+    // Without a pin, or with one that is not open in this feed, the mover is back.
+    expect((await readFeed(db, now, { campus: "osu" }, null)).featured?.id).toBe(big);
+    expect((await readFeed(db, now, { campus: "uiuc" }, pinned)).featured).toBeNull();
+    await applyOwnerCommand(db, owner, { marketId: pinned, requestId: randomUUID(), action: "cancel", reason: "Retired.", expectedVersion: 0 }, clock);
+    expect((await readFeed(db, now, { campus: "osu" }, pinned)).featured?.id).toBe(big);
+  });
+
   it("lists markets closing soonest first, five at most", async () => {
     const later = await openMarket("Later Bar", "2026-12-01");
     const sooner = await openMarket("Sooner Bar", "2026-10-01");
