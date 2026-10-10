@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+**2026-10-09 - Going live with the type, motion, short titles and Brutus sample (Claude Code).** The owner: "push". Before pushing, `origin/main` turned out to hold three newer commits by Siyansh (3fcf03a, 5f4e27a, a9ef7cd: Codex's 2026-10-07 security remediation, written against the goal-market code, merged on 2026-10-08 with conflict markers left in source files, so it never built and production kept serving 5a8d8b4). Asked, the owner chose "Undo their merge, push mine": 2980f73 restores main's files to 5a8d8b4 without rewriting history, today's commits follow, and the security work goes to its own branch, `security-remediation-2026-10-07`, to be merged properly later. Then, in this order: `scripts/sample-refresh-go-live.mjs --owner=mitrapredict,ducky` read-only, then `--apply` (migration 0014, the two short titles, void Gateway Film Center, publish the Brutus sample), then push `main`, then check the live site. Relies on DECISIONS.md 2026-10-09 and the owner's go-ahead; the three open points (Brutus for "Big Red", 30%, 8 AM to midnight) go live as built, since the owner said push without changing them.
 
 ## Deferred, to come back to
 
