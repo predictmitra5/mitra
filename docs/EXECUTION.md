@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None._
+**2026-10-09 - Kalshi/XO-style type, smooth loading, short card titles, a new third sample (Claude Code).** The owner, with screenshots of the live feed, XO Market and Kalshi: "use claude design, the fonts look to ass and hthign and weirdlypalced. follow the two screenshots. fix the fonts and animations wehn the site loads and stuff ... these apps are very smooth ... there is too many words per event ... say will Midway on high sell morre than XYZ drinks, and then when they click on the card it shows the full line of whatevr u originally wrote. and remove the dumbass will gateway film center. maybe do Will Big Red come to smith steeb hall". Plan:
+
+1. A Claude Design canvas of the new feed, card and market page first, then the same in code.
+2. Type: Inter (variable, self-hosted by `next/font` at build, so no font jump on load) at 400, 500, 600 and 700 instead of Helvetica/TeX Gyre Heros, with the hierarchy and placement of the two references (semibold titles and numbers, small uppercase category labels, tighter large type). This replaces the 2026-10-06 two-weight Helvetica rule on the owner's instruction; AGENTS.md and DESIGN.md are updated to match.
+3. Motion on load: content fades up in a short stagger, the chart line draws in, the selected tab's pill slides between tabs, skeleton screens while the feed and a market page load, and nothing moves for people who ask their device to reduce motion.
+4. Short titles: a nullable `markets.short_question` (migration 0014), a Short title field on the owner's publish form, used on cards, the featured market, Closing soon, the ticker and positions; the market page keeps the full question. The full question, rules and conditions stay frozen.
+5. Samples: Gateway Film Center is replaced by "Will Brutus visit Smith-Steeb Hall?" (the owner wrote "Big Red"; Ohio State's mascot is Brutus Buckeye, to be confirmed), hypothetical and labelled like the others. A go-live script reports first and, only on the owner's go-ahead, applies 0014, sets the two remaining samples' short titles, voids Gateway with refunds and publishes the new sample.
+
+Relies on DECISIONS.md 2026-10-05 (the owner owns the look and asked to be told when another font would be better) and 2026-10-08 (samples are voided and refunded when retired; show the owner before pushing). Nothing is pushed and the live database is not touched until the owner says so.
 
 ## Deferred, to come back to
 
