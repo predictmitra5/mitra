@@ -55,7 +55,7 @@ export async function publishMarketAction(_state: FormState, form: FormData): Pr
     const sourceId = text(form, "sourceId");
     const market = await publishMarket(getDb(), identity.id, {
       proposalId: text(form, "proposalId") || null,
-      campus, question: text(form, "question"), category: text(form, "category"),
+      campus, question: text(form, "question"), shortQuestion: text(form, "shortQuestion"), category: text(form, "category"),
       venue: venueId ? { id: venueId } : { name: text(form, "venueName"), area: text(form, "venueArea"), description: text(form, "venueDescription") },
       eventTitle: text(form, "eventTitle"), timeZone: zone,
       windowStartAt: when("windowStart"), windowEndAt: when("windowEnd"), tradingCutoffAt: when("cutoff"), resultsDueAt: when("resultsDue"),

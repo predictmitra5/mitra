@@ -77,7 +77,7 @@ export function marketMaker(market: Market): MarketMakerState {
 export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Database<Q>, id: string) {
   if (!isUuid(id)) return null;
   const [row] = await database.select({
-    id: markets.id, question: markets.question, resolutionCriteria: markets.resolutionCriteria,
+    id: markets.id, question: markets.question, shortQuestion: markets.shortQuestion, resolutionCriteria: markets.resolutionCriteria,
     status: markets.status, deadlineAt: markets.deadlineAt,
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,

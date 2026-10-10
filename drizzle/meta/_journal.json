@@ -99,6 +99,13 @@
       "when": 1791505907812,
       "tag": "0013_event_markets",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791593346278,
+      "tag": "0014_short_titles",
+      "breakpoints": true
     }
   ]
 }

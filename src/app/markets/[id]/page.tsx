@@ -10,7 +10,7 @@ import { readPriceSeries, readQuotes, readTicker, recordClick } from "@/modules/
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { valueHolding } from "@/modules/account/positions";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import { categoryLabel, closesInWords, pointsText, tickerLabel } from "@/modules/discovery/present";
+import { cardTitle, categoryLabel, closesInWords, pointsText } from "@/modules/discovery/present";
 import { statusLine } from "@/modules/events/status";
 import { formatMoment, formatWindow } from "@/modules/events/time";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
@@ -140,7 +140,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     <Ticker cards={ticker} />
     <main className="goal">
       <div className="goal-main">
-        <div className="goal-intro">
+        <div className="goal-intro rise">
           <nav className="breadcrumb" aria-label="Breadcrumb">
             <Link href="/" prefetch={false}>Markets</Link>
             {market.category && <><span aria-hidden="true">/</span><Link prefetch={false} href={`/?cat=${market.category}`}>{category}</Link></>}
@@ -173,7 +173,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
           )}
         </div>
 
-        <section className="goal-chart" aria-label="Chance of Yes">
+        <section className="goal-chart rise" aria-label="Chance of Yes">
           <LiveChart id={market.id} points={series} />
           <LiveStats id={market.id} yesPrice={market.yesPrice} volumeMicro={volumeMicro} closes={formatMoment(market.deadlineAt, zone)} />
         </section>
@@ -192,7 +192,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         {market.status === "cancelled" && <section className="goal-notice"><h2>Void. Held costs refunded.</h2><p className="goal-text">Every participant received the cost of the shares they still held. This is a refund, not a Yes or No payout.</p></section>}
         {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}
 
-        <section className="goal-section" aria-labelledby="rules-title">
+        <section className="goal-section rise" aria-labelledby="rules-title">
           <h2 id="rules-title">Rules</h2>
           {market.yesCondition && market.noCondition && (
             <div className="outcomes">
@@ -213,7 +213,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         </section>
 
         {market.sourceName && (
-          <section className="goal-section" aria-labelledby="source-title">
+          <section className="goal-section rise" aria-labelledby="source-title">
             <div className="goal-section-head">
               <h2 id="source-title">Verification source</h2>
               <span className={`source-state${market.sourceOperational ? " source-live" : ""}`}>{market.sourceOperational ? "Connected" : "Placeholder · not connected"}</span>
@@ -227,7 +227,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
 
       <TradeDock
         marketId={market.id}
-        title={tickerLabel(market.question, market.venueName)}
+        title={cardTitle(market)}
         name={market.venueName ?? "Mitra"}
         photo={null}
         yesPrice={market.yesPrice}

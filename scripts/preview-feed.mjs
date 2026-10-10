@@ -172,6 +172,8 @@ try {
     const cutoffAt = now + cutoffDays * DAY;
     const windowEnd = cutoffAt + 4 * HOUR;
     const question = build(clock(cutoffAt));
+    // The card's short title (2026-10-09): the question without its day.
+    const shortQuestion = question.replace(` on ${clock(cutoffAt)}`, "");
     const openNo = noSharesFor(openP);
     const source = randomUUID();
     const event = randomUUID();
@@ -180,11 +182,11 @@ try {
     await client`insert into events (id, venue_id, title, starts_at, ends_at, time_zone)
       values (${event}, ${venueIds[venue]}, ${clock(cutoffAt)}, ${new Date(cutoffAt)}, ${new Date(windowEnd)}, 'America/New_York')`;
 
-    await client`insert into markets (id, status, question, resolution_criteria, campus, category, venue_id, event_id,
+    await client`insert into markets (id, status, question, short_question, resolution_criteria, campus, category, venue_id, event_id,
       resolution_source_id, window_start_at, window_end_at, time_zone, yes_condition, no_condition, is_sample,
       deadline_at, evidence_deadline_at, trading_closed_at, cancelled_at, cancel_reason, liquidity_micro, opening_probability_bp,
       initial_yes_shares_micro, initial_no_shares_micro, yes_shares_micro, no_shares_micro, approved_at, approved_by)
-      values (${id}, ${status}, ${question}, 'Fictional data for layout only.', 'osu', ${category}, ${venueIds[venue]}, ${event},
+      values (${id}, ${status}, ${question}, ${shortQuestion}, 'Fictional data for layout only.', 'osu', ${category}, ${venueIds[venue]}, ${event},
       ${source}, ${new Date(cutoffAt)}, ${new Date(windowEnd)}, 'America/New_York',
       'The venue count is above the number in the question.', 'The count is at or below it, or none arrives by the results deadline.', ${sample},
       ${new Date(cutoffAt)}, ${new Date(windowEnd + 3 * DAY)}, ${status === "open" ? null : new Date(cutoffAt)},

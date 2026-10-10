@@ -24,6 +24,15 @@ export function tickerLabel(question: string, venueName: string | null): string 
   return clip((venueName ?? question).trim() || "Market", TICKER_MAX);
 }
 
+/**
+ * What a card, a list row or the ticker's hover shows (2026-10-09): the market's
+ * short title when it has one, else the full question. The market page always
+ * shows the full question.
+ */
+export function cardTitle(market: { question: string; shortQuestion?: string | null }): string {
+  return market.shortQuestion?.trim() || market.question;
+}
+
 /** One or two letters for an avatar, from a display name. */
 export function initials(displayName: string): string {
   const words = displayName.trim().split(/\s+/).filter(Boolean);

@@ -110,7 +110,7 @@ describe("going live with event markets", () => {
       expect(wallet.balanceMicro).toBe(1_000_000_000); // 980 left plus the 20 they paid.
     }
     const feed = await readFeed(db, now, { campus: "osu" });
-    expect(feed.cards.map((card) => card.venueSlug).sort()).toEqual(["buckeye-donuts", "gateway-film-center", "midway-on-high"]);
+    expect(feed.cards.map((card) => card.venueSlug).sort()).toEqual(["buckeye-donuts", "midway-on-high", "smith-steeb-hall"]);
     expect(feed.cards.every((card) => card.isSample && card.tradingOpen)).toBe(true);
   });
 

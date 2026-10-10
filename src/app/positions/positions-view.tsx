@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { valueHolding, type HeldMarket, type PositionsPage, type TradeRecord } from "@/modules/account/positions";
-import { categoryLabel, percent, pointsText } from "@/modules/discovery/present";
+import { cardTitle, categoryLabel, percent, pointsText } from "@/modules/discovery/present";
 import { Gain, SampleTag, VenueMark } from "@/app/components/market/market-card";
 
 const date = (value: Date) => new Intl.DateTimeFormat("en-US", {
@@ -39,7 +39,7 @@ export function PositionRows({ markets }: { markets: HeldMarket[] }) {
                 <span className="holding-kicker">
                   {categoryLabel(market.category)}{market.venueName ? ` · ${market.venueName}` : ""}{market.isSample && <> <SampleTag /></>}
                 </span>
-                <span className="holding-title">{market.question}</span>
+                <span className="holding-title">{cardTitle(market)}</span>
                 {(value?.sides ?? sidesWithoutPrice(market)).map((side) => (
                   <span key={side.side} className="holding-sub">
                     <span className={`side-${side.side}`}>{side.side === "yes" ? "Yes" : "No"}</span>
@@ -83,7 +83,7 @@ export function TradeHistory({ trades }: { trades: TradeRecord[] }) {
         <li key={trade.id}>
           <Link href={`/markets/${trade.marketId}`} prefetch={false}>
             <span className="trade-history-text">
-              <span className="holding-title">{trade.question}</span>
+              <span className="holding-title">{cardTitle(trade)}</span>
               <span className="holding-sub">
                 {trade.action === "buy" ? "Bought" : "Sold"} {pointsText(trade.sharesMicro)}{" "}
                 <span className={`side-${trade.side}`}>{trade.side === "yes" ? "Yes" : "No"}</span> shares

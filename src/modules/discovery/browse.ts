@@ -92,6 +92,7 @@ export function isNarrowed(filters: BrowseFilters): boolean {
 
 export type Browsable = {
   question: string;
+  shortQuestion?: string | null;
   category: string | null;
   venueName: string | null;
   venueSlug: string | null;
@@ -114,7 +115,7 @@ export function queryWords(query: string): string[] {
 export function matchesSearch(card: Browsable, query: string): boolean {
   const words = queryWords(query);
   if (words.length === 0) return true;
-  const haystack = fold([card.question, card.venueName ?? "", card.eventTitle ?? "", categoryLabel(card.category)].join(" "));
+  const haystack = fold([card.question, card.shortQuestion ?? "", card.venueName ?? "", card.eventTitle ?? "", categoryLabel(card.category)].join(" "));
   return words.every((word) => haystack.includes(word));
 }
 

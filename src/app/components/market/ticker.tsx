@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { percent, tickerLabel } from "@/modules/discovery/present";
+import { cardTitle, percent, tickerLabel } from "@/modules/discovery/present";
 import { Change, type CardData } from "./market-card";
 import { useLiveQuotes, withQuote } from "./live-quotes";
 
@@ -25,7 +25,7 @@ export function Ticker({ cards }: { cards: CardData[] }) {
           const card = withQuote(item, live);
           return (
             <li key={card.id}>
-              <Link className="ticker-item" href={`/markets/${card.id}`} prefetch={false} title={card.question}>
+              <Link className="ticker-item" href={`/markets/${card.id}`} prefetch={false} title={cardTitle(card)}>
                 <span className="ticker-name">{tickerLabel(card.question, card.venueName)}</span>
                 <span className="ticker-odds">{percent(card.yesPrice)}%</span>
                 <Change bp={card.change24hBp} when="today" />

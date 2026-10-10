@@ -13,7 +13,7 @@ import { PositionsView } from "./positions-view";
 import { PositionsError, type PositionsPage } from "@/modules/account/positions";
 
 const fixture: PositionsPage = { total: 1, page: 1, pages: 1, totals: { valueMicro: 12_345_678, costMicro: 4_567_891, gainMicro: 7_777_787 }, markets: [{
-  marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", category: "nightlife", venueName: "Midway on High", isSample: true, yesPrice: 0.62,
+  marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", shortQuestion: null, category: "nightlife", venueName: "Midway on High", isSample: true, yesPrice: 0.62,
   status: "open", deadlineAt: new Date("2026-10-01T03:59:00Z"), evidenceDeadlineAt: new Date("2026-10-08T03:59:00Z"),
   contestEndsAt: null, ruledOutcome: null, tradingOpen: true, contestOpen: false,
   yesSharesMicro: 1_000_000, noSharesMicro: 12_345_678, yesCostBasisMicro: 400_000, noCostBasisMicro: 4_567_890,
@@ -77,7 +77,7 @@ describe("positions page authorization and presentation", () => {
   });
   it("lists recent trades, each linked to its market", () => {
     const html = renderToStaticMarkup(React.createElement(PositionsView, { data: fixture, trades: [{
-      id: "trade-id", marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", venueName: "Midway on High",
+      id: "trade-id", marketId: "fixture-id", question: "Will Midway on High sell more than 1,000 drinks on Friday?", shortQuestion: null, venueName: "Midway on High",
       action: "buy", side: "no", sharesMicro: 12_345_678, amountMicro: 4_567_890, yesPriceAfterBp: 6200, createdAt: new Date("2026-09-30T16:00:00Z"),
     }] }));
     expect(html).toContain("Trade history");

@@ -20,6 +20,8 @@ export class PositionsError extends Error {
 export interface HeldMarket {
   marketId: string;
   question: string;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
   category: string | null;
   /** The venue, for an event market; null on a retired goal market. */
   venueName: string | null;
@@ -159,7 +161,7 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       // final remaining page instead of a misleading empty portfolio.
       const page = Math.min(requestedPage, pages);
       const rows = await tx.select({
-        marketId: markets.id, question: markets.question, category: markets.category, venueName: venues.name, isSample: markets.isSample,
+        marketId: markets.id, question: markets.question, shortQuestion: markets.shortQuestion, category: markets.category, venueName: venues.name, isSample: markets.isSample,
         liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
@@ -199,6 +201,7 @@ export interface TradeRecord {
   id: string;
   marketId: string;
   question: string;
+  shortQuestion: string | null;
   venueName: string | null;
   action: "buy" | "sell";
   side: "yes" | "no";
@@ -222,7 +225,7 @@ export async function readTradeHistory<Q extends PgQueryResultHKT>(
 ): Promise<TradeRecord[]> {
   if (!isUuid(userId)) return [];
   return database.select({
-    id: trades.id, marketId: trades.marketId, question: markets.question, venueName: venues.name,
+    id: trades.id, marketId: trades.marketId, question: markets.question, shortQuestion: markets.shortQuestion, venueName: venues.name,
     action: trades.action, side: trades.side, sharesMicro: trades.sharesMicro, amountMicro: trades.amountMicro,
     yesPriceAfterBp: trades.yesPriceAfterBp, createdAt: trades.createdAt,
   }).from(trades).innerJoin(markets, eq(markets.id, trades.marketId)).leftJoin(venues, eq(venues.id, markets.venueId))

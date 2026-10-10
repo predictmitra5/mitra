@@ -21,6 +21,8 @@ type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
 export type FeedCard = {
   id: string;
   question: string;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
   category: string | null;
   venueName: string | null;
   venueSlug: string | null;
@@ -93,6 +95,7 @@ const cardColumns = {
   deadlineAt: markets.deadlineAt,
   tradingClosedAt: markets.tradingClosedAt,
   question: markets.question,
+  shortQuestion: markets.shortQuestion,
   category: markets.category,
   status: markets.status,
   ruledOutcome: markets.ruledOutcome,
@@ -114,6 +117,7 @@ type CardRow = {
   deadlineAt: Date;
   tradingClosedAt: Date | null;
   question: string;
+  shortQuestion: string | null;
   category: string | null;
   status: MarketStatus;
   ruledOutcome: "yes" | "no" | null;
@@ -146,6 +150,7 @@ function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
   return {
     id: row.id,
     question: row.question,
+    shortQuestion: row.shortQuestion,
     category: row.category,
     venueName: row.venueName,
     venueSlug: row.venueSlug,

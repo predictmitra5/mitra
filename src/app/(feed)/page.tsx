@@ -3,10 +3,10 @@ import { DEFAULT_CAMPUS_KEY, type CampusKey } from "@/config/campus";
 import { currentIdentity } from "@/modules/auth/server";
 import { EMPTY_FEED, readFeed, recordExposures, type Feed } from "@/modules/discovery/feed";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import { toCardData } from "./components/market/card-data";
-import { MarketFooter, MarketHeader } from "./components/market/market-header";
+import { toCardData } from "@/app/components/market/card-data";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { FeedView, type FeaturedData } from "./feed-view";
-import { SignupPrompt } from "./components/signup-prompt";
+import { SignupPrompt } from "@/app/components/signup-prompt";
 
 /*
  * The home route is the campus feed for everyone (browsing without an account

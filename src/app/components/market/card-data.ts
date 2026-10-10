@@ -6,6 +6,7 @@ export function toCardData(card: FeedCard): CardData {
   return {
     id: card.id,
     question: card.question,
+    shortQuestion: card.shortQuestion,
     category: card.category,
     venueName: card.venueName,
     venueSlug: card.venueSlug,

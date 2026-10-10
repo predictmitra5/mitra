@@ -1,16 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   browse, CLOSING_FILTERS, DEFAULT_FILTERS, FEED_TABS, filtersToSearch, isNarrowed, readFilters, STATUS_FILTERS, tabLabel, type BrowseFilters,
 } from "@/modules/discovery/browse";
-import { categoryLabel, percent, volumeLabel } from "@/modules/discovery/present";
-import { Change, ClosingRow, MarketCard, PriceButtons, SampleTag, VenueMark, closesAt, type CardData } from "./components/market/market-card";
-import { PriceChart, type ChartPoint } from "./components/market/price-chart";
-import { Ticker } from "./components/market/ticker";
-import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components/market/live-quotes";
+import { cardTitle, categoryLabel, percent, volumeLabel } from "@/modules/discovery/present";
+import { Change, ClosingRow, MarketCard, PriceButtons, SampleTag, VenueMark, closesAt, type CardData } from "@/app/components/market/market-card";
+import { PriceChart, type ChartPoint } from "@/app/components/market/price-chart";
+import { Ticker } from "@/app/components/market/ticker";
+import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "@/app/components/market/live-quotes";
 
 /*
  * The home feed in the Kalshi direction (2026-09-24), for campus event markets
@@ -23,6 +23,11 @@ import { flashFor, useLiveQuotes, withQuote, type LiveQuote } from "./components
  * the address without reloading, so they record no extra views. The ranking
  * order stays as the server sent it, so cards never jump under a finger.
  * Visitors without an account see it too; the page adds the sign-up pop-up.
+ *
+ * Since 2026-10-09 (DESIGN.md section 14), after XO Market and Kalshi: the
+ * featured market in two columns (its short title, chance and Yes/No beside the
+ * chart), text tabs whose underline slides to the one picked, and everything
+ * rising into place on load.
  */
 
 export type FeaturedData = CardData & { series: ChartPoint[]; moving: boolean };
@@ -33,18 +38,22 @@ function Featured({ market, live }: { market: FeaturedData; live: ReadonlyMap<st
   const card = withQuote(market, live);
   const flash = flashFor(market.yesPrice, quote);
   return (
-    <article className="featured" aria-labelledby="featured-title">
-      <div className="featured-top">
-        <VenueMark name={market.venueName} />
-        <div className="featured-head">
-          <span className="kicker">
-            {market.moving ? "Moving most today · " : ""}{categoryLabel(market.category)}
-            {market.venueName ? ` · ${market.venueName}` : ""}{market.isSample && <> <SampleTag /></>}
-          </span>
-          <Link id="featured-title" className="featured-title" href={href} prefetch={false}>{market.question}</Link>
+    <article className="featured rise" aria-labelledby="featured-title">
+      <div className="featured-info">
+        <div className="featured-top">
+          <VenueMark name={market.venueName} />
+          <div className="featured-head">
+            <span className="featured-kicker">{categoryLabel(market.category)}{market.venueName ? ` · ${market.venueName}` : ""}</span>
+            {(market.moving || market.isSample) && (
+              <span className="featured-tags">
+                {market.moving && <span className="moving-tag">Moving most today</span>}
+                {market.isSample && <SampleTag />}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="featured-stats">
+        <Link id="featured-title" className="featured-title" href={href} title={market.shortQuestion ? market.question : undefined}>{cardTitle(market)}</Link>
+        {market.eventTitle && <p className="featured-event">{market.eventTitle}</p>}
         <p className="featured-odds">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>
             {percent(card.yesPrice)}%
@@ -52,10 +61,10 @@ function Featured({ market, live }: { market: FeaturedData; live: ReadonlyMap<st
           <span className="featured-chance">chance</span>
           <span className="featured-change"><Change bp={card.change24hBp} when="today" /> <span aria-hidden="true">today</span></span>
         </p>
+        <PriceButtons id={market.id} yesPrice={card.yesPrice} size="large" />
         <p className="featured-meta">{volumeLabel(card.volumeMicro)} &middot; {closesAt(market)}</p>
       </div>
       <PriceChart key={market.id} variant="card" points={withLivePoint(market.series, quote)} initialRange={market.moving ? "1D" : "ALL"} />
-      <PriceButtons id={market.id} yesPrice={card.yesPrice} size="large" />
     </article>
   );
 }
@@ -77,6 +86,51 @@ function feedHref(filters: BrowseFilters): string {
 /** Changes the address without a request; Next.js reads it back through useSearchParams. */
 function replaceFilters(next: BrowseFilters) {
   window.history.replaceState(null, "", feedHref(next));
+}
+
+/**
+ * The category tabs: plain text, with an underline under the one picked that
+ * slides across when another is picked (as on Kalshi and XO Market). The line
+ * is drawn under the current tab by CSS, so the first paint is right; on a
+ * change it is animated from where the old one was. Nothing moves for people
+ * who ask their device to reduce motion.
+ */
+function CategoryTabs({ filters, onPick }: { filters: BrowseFilters; onPick: (tab: BrowseFilters["tab"], event: React.MouseEvent) => void }) {
+  const list = useRef<HTMLUListElement>(null);
+  const last = useRef<DOMRect | null>(null);
+  useLayoutEffect(() => {
+    const line = list.current?.querySelector<HTMLElement>("[aria-current=page] .tab-line");
+    if (!line) return;
+    const now = line.getBoundingClientRect();
+    const was = last.current;
+    last.current = now;
+    if (!was || was.width === 0 || !line.animate) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    line.animate(
+      [{ transform: `translateX(${was.left - now.left}px) scaleX(${was.width / now.width})` }, { transform: "none" }],
+      { duration: 280, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }, [filters.tab]);
+  return (
+    <nav className="tabs" aria-label="Categories">
+      <ul ref={list}>
+        {FEED_TABS.map((entry) => {
+          const current = filters.tab === entry.key;
+          return (
+            <li key={entry.key}>
+              <Link href={feedHref({ ...filters, tab: entry.key })}
+                prefetch={false} scroll={false} aria-current={current ? "page" : undefined}
+                onClick={(event) => onPick(entry.key, event)}>
+                {entry.label}
+                {current && <span className="tab-line" aria-hidden="true" />}
+              </Link>
+            </li>
+          );
+        })}
+        <li><span className="tab-coming-soon" aria-disabled="true">Coming soon</span></li>
+      </ul>
+    </nav>
+  );
 }
 
 function FilterBar({ filters, venues }: { filters: BrowseFilters; venues: { slug: string; name: string }[] }) {
@@ -158,20 +212,7 @@ export function FeedView({
   return (
     <>
       <Ticker cards={cards} />
-      <nav className="tabs" aria-label="Categories">
-        <ul>
-          {FEED_TABS.map((entry) => (
-            <li key={entry.key}>
-              <Link href={feedHref({ ...filters, tab: entry.key })}
-                prefetch={false} scroll={false} aria-current={filters.tab === entry.key ? "page" : undefined}
-                onClick={(event) => pickTab(entry.key, event)}>
-                {entry.label}
-              </Link>
-            </li>
-          ))}
-          <li><span className="tab-coming-soon" aria-disabled="true">Coming soon</span></li>
-        </ul>
-      </nav>
+      <CategoryTabs filters={filters} onPick={pickTab} />
 
       <main className="feed">
         <h1 className="sr-only">Mitra markets</h1>
@@ -195,7 +236,7 @@ export function FeedView({
               <div className="feed-top">
                 <Featured market={featured} live={live} />
                 {closingSoon.length > 0 && (
-                  <section className="closing" aria-labelledby="closing-title">
+                  <section className="closing rise" aria-labelledby="closing-title">
                     <h2 id="closing-title">Closing soon</h2>
                     <ul>
                       {closingSoon.map((card) => (
@@ -221,7 +262,7 @@ export function FeedView({
                 </div>
               ) : (
                 <div className="grid">
-                  {shown.map((card) => <MarketCard key={card.id} card={card} now={now} flash={flashes.get(card.id)} />)}
+                  {shown.map((card, index) => <MarketCard key={card.id} card={card} now={now} flash={flashes.get(card.id)} index={index} />)}
                 </div>
               )}
             </section>

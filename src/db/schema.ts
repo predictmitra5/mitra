@@ -201,6 +201,12 @@ export const markets = pgTable(
 
     // Frozen once trading opens. A broken market is cancelled and republished, never edited.
     question: text("question").notNull(),
+    /**
+     * The card's few words (2026-10-09): "Will Midway on High sell more than
+     * 1,000 drinks?" on the feed, the full question once someone opens it.
+     * Display only: the question, rules and conditions are what trade.
+     */
+    shortQuestion: text("short_question"),
     resolutionCriteria: text("resolution_criteria").notNull(),
     goalType: text("goal_type"), // goal markets only: gpa, club, internship, launch, gym, other
 

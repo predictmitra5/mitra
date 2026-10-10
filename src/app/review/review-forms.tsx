@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { publishMarketAction, rejectProposalAction } from "@/modules/events/actions";
 import { CATEGORIES } from "@/modules/events/categories";
 import type { FormState } from "@/modules/auth/policy";
+import { SHORT_QUESTION_MAX } from "@/modules/events/limits";
 
 export type PublishDefaults = {
   proposalId: string | null;
@@ -55,6 +56,11 @@ export function PublishForm({ defaults, venues, sources, campuses }: {
       <div className="field">
         <label htmlFor={`question-${id}`}>Question (frozen once trading opens)</label>
         <input id={`question-${id}`} name="question" required minLength={10} maxLength={200} defaultValue={defaults.question} />
+      </div>
+      <div className="field">
+        <label htmlFor={`short-${id}`}>Short title for cards</label>
+        <input id={`short-${id}`} name="shortQuestion" minLength={10} maxLength={SHORT_QUESTION_MAX} aria-describedby={`short-hint-${id}`} />
+        <p className="field-hint" id={`short-hint-${id}`}>A few words for the feed, e.g. “Will Midway on High sell more than 1,000 drinks?”. The full question shows once someone opens the market. Leave it empty to show the full question everywhere.</p>
       </div>
 
       <fieldset className="publish-group">

@@ -93,7 +93,7 @@ export function TradeDock({
     <>
       <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this market">
         <button type="button" className="dock-backdrop" tabIndex={-1} aria-hidden="true" onClick={() => setOpen(false)} />
-        <div className="dock-sheet" ref={sheet} tabIndex={-1}
+        <div className="dock-sheet rise" ref={sheet} tabIndex={-1}
           role={modal ? "dialog" : undefined} aria-modal={modal ? true : undefined} aria-labelledby={`trade-title-${marketId}`}>
           <span className="dock-grip" aria-hidden="true" />
           <div className="trade-head">

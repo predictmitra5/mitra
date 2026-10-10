@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { categoryLabel, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
+import { cardTitle, categoryLabel, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
 import { statusLine } from "@/modules/events/status";
 
 /*
@@ -9,11 +9,18 @@ import { statusLine } from "@/modules/events/status";
  * today's change, points traded and the closing time, and Yes and No with
  * their prices. A sample market says so beside its venue. Flat: no thumbnails,
  * gradients or stickers.
+ *
+ * Since 2026-10-09 (DESIGN.md section 14), after XO Market and Kalshi: the card
+ * shows the market's short title, the category and venue sit above it in small
+ * capitals, and the whole card opens the market (the title's link is stretched
+ * over it; the venue link and the Yes/No buttons stay clickable on top).
  */
 
 export type CardData = {
   id: string;
   question: string;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
   category: string | null;
   venueName: string | null;
   venueSlug: string | null;
@@ -108,21 +115,28 @@ export function PriceButtons({ id, yesPrice, size = "card" }: { id: string; yesP
   );
 }
 
-/** `flash` marks a live price move, so the number pulses once in its direction. */
-export function MarketCard({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
+/**
+ * `flash` marks a live price move, so the number pulses once in its direction.
+ * `index` staggers the card's entrance on load (the Motion block in globals.css).
+ *
+ * The title link is prefetched up to the market page's loading screen only
+ * (markets/[id]/loading.tsx), which runs none of the page and records no click,
+ * so the skeleton appears the moment the card is tapped.
+ */
+export function MarketCard({ card, now, flash = null, index = 0 }: { card: CardData; now: Date; flash?: "up" | "down" | null; index?: number }) {
   const href = `/markets/${card.id}`;
   return (
-    <article className="card">
+    <article className="card rise" style={{ "--rise-i": Math.min(index, 8) } as React.CSSProperties}>
       <div className="card-top">
-        <VenueMark name={card.venueName} size={40} />
-        <div className="card-head">
-          <span className="card-kicker">
-            {categoryLabel(card.category)}
-            {card.venueName && <> &middot; {card.venueSlug ? <Link href={`/venues/${card.venueSlug}`} prefetch={false}>{card.venueName}</Link> : card.venueName}</>}
-            {card.isSample && <> <SampleTag /></>}
-          </span>
-          <Link className="card-title" href={href} prefetch={false}>{card.question}</Link>
-        </div>
+        <VenueMark name={card.venueName} size={32} />
+        <span className="card-kicker">
+          {categoryLabel(card.category)}
+          {card.venueName && <> &middot; {card.venueSlug ? <Link href={`/venues/${card.venueSlug}`} prefetch={false}>{card.venueName}</Link> : card.venueName}</>}
+        </span>
+        {card.isSample && <SampleTag />}
+      </div>
+      <div className="card-main">
+        <Link className="card-title" href={href} title={card.shortQuestion ? card.question : undefined}>{cardTitle(card)}</Link>
         <div className="card-chance">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
           <span>chance</span>
@@ -134,12 +148,12 @@ export function MarketCard({ card, now, flash = null }: { card: CardData; now: D
         <span aria-hidden="true">&middot;</span>
         <span>{volumeLabel(card.volumeMicro)}</span>
       </p>
+      {card.tradingOpen && <PriceButtons id={card.id} yesPrice={card.yesPrice} />}
       <p className="card-when">
         {card.tradingOpen
           ? <><span>{closesAt(card)}</span><span className="card-left">{timeLeft(new Date(card.deadlineAt), now)}</span></>
           : <span className="card-status">{statusLine(card)}</span>}
       </p>
-      {card.tradingOpen && <PriceButtons id={card.id} yesPrice={card.yesPrice} />}
     </article>
   );
 }
@@ -148,10 +162,10 @@ export function MarketCard({ card, now, flash = null }: { card: CardData; now: D
 export function ClosingRow({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   return (
     <li>
-      <Link className="closing-row" href={`/markets/${card.id}`} prefetch={false}>
-        <VenueMark name={card.venueName} size={32} />
+      <Link className="closing-row" href={`/markets/${card.id}`}>
+        <VenueMark name={card.venueName} size={34} />
         <span className="closing-text">
-          <span className="closing-title">{card.question}</span>
+          <span className="closing-title">{cardTitle(card)}</span>
           <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}{card.isSample && <> <SampleTag /></>}</span>
         </span>
         <span className="closing-value">

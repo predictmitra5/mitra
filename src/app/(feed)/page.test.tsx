@@ -20,7 +20,7 @@ vi.mock("@/config/campus-server", () => ({ selectedCampus: async () => ({ key: "
 
 import Home from "./page";
 import { FeedView } from "./feed-view";
-import { SignupPrompt } from "./components/signup-prompt";
+import { SignupPrompt } from "@/app/components/signup-prompt";
 
 beforeEach(() => {
   vi.resetAllMocks();

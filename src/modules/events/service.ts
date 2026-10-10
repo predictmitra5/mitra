@@ -8,6 +8,7 @@ import { stateAtProbability } from "@/modules/market/lmsr";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isInactive } from "@/modules/account/standing";
 import { isCategory, type Category } from "./categories";
+import { SHORT_QUESTION_MAX } from "./limits";
 
 /*
  * Event markets, decided 2026-10-08 (DECISIONS.md): students suggest, the owner
@@ -222,6 +223,11 @@ export interface PublishInput {
   proposalId?: string | null;
   campus: CampusKey;
   question: string;
+  /**
+   * The card's few words (2026-10-09), e.g. "Will Midway on High sell more than
+   * 1,000 drinks?". Optional: without it, cards show the full question.
+   */
+  shortQuestion?: string | null;
   category: string;
   venue: VenueChoice;
   eventTitle: string;
@@ -252,6 +258,8 @@ function validatePublish(input: PublishInput, now: Date) {
   if (!isCampusKey(input.campus)) throw new EventError("INVALID_INPUT", "Choose a campus.");
   if (!isCategory(input.category)) throw new EventError("INVALID_INPUT", "Choose a category.");
   const question = cleanText(input.question, 10, 200, "The question");
+  const shortQuestion = typeof input.shortQuestion === "string" && input.shortQuestion.trim()
+    ? cleanText(input.shortQuestion, 10, SHORT_QUESTION_MAX, "The short title") : null;
   const eventTitle = cleanText(input.eventTitle, 2, 120, "The event name");
   const windowStartAt = validDate(input.windowStartAt, "when the window starts");
   const windowEndAt = validDate(input.windowEndAt, "when the window ends");
@@ -286,7 +294,7 @@ function validatePublish(input: PublishInput, now: Date) {
     previous = point.at.getTime();
   }
   return {
-    proposalId: input.proposalId ?? null, campus: input.campus, category: input.category as Category, question, eventTitle,
+    proposalId: input.proposalId ?? null, campus: input.campus, category: input.category as Category, question, shortQuestion, eventTitle,
     windowStartAt, windowEndAt, tradingCutoffAt, resultsDueAt, timeZone: input.timeZone,
     yesCondition: cleanText(input.yesCondition, 10, 500, "The Yes condition", { multiline: true }),
     noCondition: cleanText(input.noCondition, 10, 500, "The No condition", { multiline: true }),
@@ -351,7 +359,7 @@ export async function publishMarket<Q extends PgQueryResultHKT>(
     const initialYesSharesMicro = Math.round(lmsr.yesShares * MICRO_PER_UNIT);
     const initialNoSharesMicro = Math.round(lmsr.noShares * MICRO_PER_UNIT);
     const [market] = await tx.insert(markets).values({
-      subjectUserId: null, status: "open", question: clean.question, resolutionCriteria: clean.rules,
+      subjectUserId: null, status: "open", question: clean.question, shortQuestion: clean.shortQuestion, resolutionCriteria: clean.rules,
       campus: clean.campus, category: clean.category, venueId: venue.id, eventId: event.id, resolutionSourceId: source.id,
       windowStartAt: clean.windowStartAt, windowEndAt: clean.windowEndAt, timeZone: clean.timeZone,
       yesCondition: clean.yesCondition, noCondition: clean.noCondition, isSample: clean.isSample,
@@ -372,7 +380,7 @@ export async function publishMarket<Q extends PgQueryResultHKT>(
     await tx.insert(adminActions).values({
       marketId: market.id, actorUserId: ownerId, kind: "approve", reason: clean.note,
       details: {
-        question: clean.question, rules: clean.rules, yesCondition: clean.yesCondition, noCondition: clean.noCondition,
+        question: clean.question, shortQuestion: clean.shortQuestion, rules: clean.rules, yesCondition: clean.yesCondition, noCondition: clean.noCondition,
         venue: venue.name, category: clean.category, campus: clean.campus, event: clean.eventTitle,
         windowStartAt: clean.windowStartAt.toISOString(), windowEndAt: clean.windowEndAt.toISOString(), timeZone: clean.timeZone,
         tradingCutoffAt: clean.tradingCutoffAt.toISOString(), resultsDueAt: clean.resultsDueAt.toISOString(),
