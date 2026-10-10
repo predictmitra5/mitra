@@ -7,17 +7,9 @@ import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
-<<<<<<< HEAD
-const { markets, profiles, trades, feedEventBuckets, priceHistory } = schema;
-=======
 const { markets, venues, events, trades, feedEvents, priceHistory } = schema;
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
-
-export const FEED_EVENT_RETENTION_HOURS = 24;
-const MAX_CLICKS_PER_MARKET_HOUR = 3;
-const MAX_EXPOSURES_PER_MARKET_HOUR = 500;
 
 /**
  * The public feed, decided 2026-09-19 and moved to event markets on
@@ -253,12 +245,12 @@ async function readRankedCards<Q extends PgQueryResultHKT>(
 
   const clickCounts = database
     .select({
-      marketId: feedEventBuckets.marketId,
-      clicks: sql<number>`sum(${feedEventBuckets.eventCount})::int`.as("clicks"),
+      marketId: feedEvents.marketId,
+      clicks: sql<number>`count(*)::int`.as("clicks"),
     })
-    .from(feedEventBuckets)
-    .where(and(eq(feedEventBuckets.kind, "click"), gte(feedEventBuckets.bucketAt, since)))
-    .groupBy(feedEventBuckets.marketId)
+    .from(feedEvents)
+    .where(and(eq(feedEvents.kind, "click"), gte(feedEvents.createdAt, since)))
+    .groupBy(feedEvents.marketId)
     .as("click_counts");
 
   const tradeCounts = database
@@ -455,20 +447,12 @@ export async function readPriceSeries<Q extends PgQueryResultHKT>(
 export async function recordExposures<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketIds: readonly string[],
-  now: Date = new Date(),
 ): Promise<void> {
   if (marketIds.length === 0) return;
   try {
-    const hour = Math.floor(now.getTime() / 3_600_000) * 3_600_000;
-    const counts = new Map<string, number>();
-    for (const id of marketIds) if (isUuid(id)) counts.set(id, (counts.get(id) ?? 0) + 1);
-    if (!counts.size) return;
-    await database.insert(feedEventBuckets).values([...counts].map(([marketId, eventCount]) => ({
-      marketId, kind: "exposure" as const, bucketAt: new Date(hour), eventCount,
-    }))).onConflictDoUpdate({
-      target: [feedEventBuckets.marketId, feedEventBuckets.kind, feedEventBuckets.bucketAt],
-      set: { eventCount: sql`least(${feedEventBuckets.eventCount} + excluded.event_count, ${MAX_EXPOSURES_PER_MARKET_HOUR})` },
-    });
+    await database
+      .insert(feedEvents)
+      .values(marketIds.map((marketId) => ({ marketId, kind: "exposure" as const })));
   } catch {
     // Deliberately ignored; see above.
   }
@@ -478,33 +462,15 @@ export async function recordExposures<Q extends PgQueryResultHKT>(
 export async function recordClick<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketId: string,
-  now: Date = new Date(),
 ): Promise<void> {
-  if (!isUuid(marketId)) return;
   try {
-    const hour = Math.floor(now.getTime() / 3_600_000) * 3_600_000;
-    await database.insert(feedEventBuckets).values({
-      marketId, kind: "click", bucketAt: new Date(hour), eventCount: 1,
-    }).onConflictDoUpdate({
-      target: [feedEventBuckets.marketId, feedEventBuckets.kind, feedEventBuckets.bucketAt],
-      set: { eventCount: sql`least(${feedEventBuckets.eventCount} + 1, ${MAX_CLICKS_PER_MARKET_HOUR})` },
-    });
+    await database.insert(feedEvents).values({ marketId, kind: "click" });
   } catch {
     // Deliberately ignored; see above.
   }
 }
 
-<<<<<<< HEAD
-/** Old aggregate buckets are no longer part of ranking and can be discarded. */
-export async function pruneFeedEventBuckets<Q extends PgQueryResultHKT>(database: Database<Q>, now: Date = new Date()) {
-  const cutoff = new Date(now.getTime() - FEED_EVENT_RETENTION_HOURS * 3_600_000);
-  await database.delete(feedEventBuckets).where(lte(feedEventBuckets.bucketAt, cutoff));
-}
-
-/** Counts for a set of goals, for checking that measurement actually records. */
-=======
 /** Counts for a set of markets, for checking that measurement actually records. */
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
 export async function readEventCounts<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketIds: readonly string[],
@@ -513,13 +479,13 @@ export async function readEventCounts<Q extends PgQueryResultHKT>(
   if (marketIds.length === 0) return counts;
   const rows = await database
     .select({
-      marketId: feedEventBuckets.marketId,
-      kind: feedEventBuckets.kind,
-      total: sql<number>`sum(${feedEventBuckets.eventCount})::int`,
+      marketId: feedEvents.marketId,
+      kind: feedEvents.kind,
+      total: sql<number>`count(*)::int`,
     })
-    .from(feedEventBuckets)
-    .where(inArray(feedEventBuckets.marketId, [...marketIds]))
-    .groupBy(feedEventBuckets.marketId, feedEventBuckets.kind);
+    .from(feedEvents)
+    .where(inArray(feedEvents.marketId, [...marketIds]))
+    .groupBy(feedEvents.marketId, feedEvents.kind);
 
   for (const row of rows) {
     const entry = counts.get(row.marketId) ?? { exposures: 0, clicks: 0 };

@@ -57,8 +57,7 @@ describe("private positions", () => {
     for (const privateValue of [owner, subject, trader, other, "Private approval note", "adultConfirmedAt", "rulingReason", "userId"]) {
       expect(visible).not.toContain(privateValue);
     }
-    await expect(trade(owner)).rejects.toMatchObject({ code: "DECIDES_OUTCOME" });
-    expect((await readPositions(db, owner, 1, clock)).total).toBe(0);
+    await trade(owner); expect((await readPositions(db, owner, 1, clock)).total).toBe(1);
   });
   it("shows both sides once per market and exact held costs after a partial sale", async () => {
     const bought = await trade(); await trade(trader, "NO");

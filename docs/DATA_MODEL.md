@@ -72,7 +72,7 @@ The positions projection (`src/modules/account/positions.ts`) reads the caller's
 
 Row-level security is enabled on all ten tables with no policies, so the browser-exposed publishable key reads nothing through the Supabase REST API. This was verified with a temporary row: the browser key returned an empty list while the server key returned the row. All database access goes through server code in `src/db/client.ts`.
 
-Migration `0006_feed_events.sql`, applied 2026-09-19, added `feed_events` for the public feed without viewer identity. It is retained as historical data and is no longer written or queried. Migration `0013_security_bounds_upload_telemetry.sql` adds `feed_event_buckets`, anonymous market/hour counters capped by application code and pruned after 24 hours, plus `upload_intents`, which tracks direct-upload paths and expiration. Both tables have row-level security enabled with no policies. Browser access remains denied; all writes and cleanup run server-side.
+Migration `0006_feed_events.sql`, applied 2026-09-19, adds `feed_events` for the public feed: a market id, whether the goal was shown in the feed or opened, and a timestamp. It carries no viewer id, session id or address by deliberate choice, so a row cannot be tied to a person. The cost is that counts cannot be deduplicated and repeated refreshing inflates them; the ranking treats them as rough interest rather than reach. Adding any identifying column requires the discovery privacy decision (D08, D09) first. Row-level security is enabled with no policies, as on every other table, making eleven tables in total.
 
 The feed reads only `status = 'open'` markets that have an approval time and market-maker shares, joins the subject's public display name and handle, and returns an explicit projection: question, goal type, deadline, prices and the placement reason. Since the 2026-09-22 redesign it also returns total points traded, the 24-hour price change, and for the featured goals a thinned price history from `price_history`. Volume is a community aggregate; trader counts are deliberately not returned, because in a small group they can identify someone. It carries no subject user id, liquidity, score, owner note or accounting value. Ranking itself is a pure function in `src/modules/discovery/ranking.ts` with no database access.
 
@@ -110,9 +110,6 @@ One standing check, `isInactive` in `src/modules/account/standing.ts`, treats wi
 
 Photos are stored only as the 512-pixel WebP the app re-encoded, so no uploaded metadata survives. The bucket's privacy and its WebP-only limit were probed on 2026-09-24: a WebP stored, a JPEG was refused, the server key could read the object, the browser key could not, and the public URL returned 400.
 
-<<<<<<< HEAD
-Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing. Feed and market-page GETs by signed-out visitors also do not write measurement. Signed-in feed exposure and open counters are bounded per market/hour and old buckets are deleted by maintenance.
-=======
 Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing: polling cannot add `feed_events` rows. A test and a live check (205 events before and after two polls) confirm it.
 
 ## Event markets (2026-10-08, migration 0013)
@@ -131,4 +128,3 @@ Status words: the engine keeps `open`, `closed`, `ruled`, `settled` and `cancell
 Publishing writes the venue (if new), the event, the source (if new), the market at the owner's opening price, its first price point and an `approve` row in `admin_actions` in one transaction; publishing a suggestion marks it approved in the same transaction. Turning a suggestion down writes a `reject` row with no market. Sample markets may carry demonstration price points dated before they opened.
 
 Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 without a record in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` recorded it and applied 0013 on 2026-10-08, so a plain `drizzle-kit migrate` works again.
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481

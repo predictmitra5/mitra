@@ -213,15 +213,6 @@ describe("transactional trading", () => {
     await error(executeTrade(database, trader, quote, clock), "DECIDES_OUTCOME");
     await error(preview(trader, { action: "sell", amountMicro: 1_000_000 }), "DECIDES_OUTCOME");
   });
-  it("blocks the outcome-controlling owner on preview, execution and the trading view", async () => {
-    expect((await readTrader(database, owner, marketId))?.blocked).toContain("decide its outcome");
-    await error(preview(owner), "DECIDES_OUTCOME");
-    await error(preview(owner, { action: "sell" }), "DECIDES_OUTCOME");
-
-    // A valid preview from another member cannot be replayed as the owner's trade.
-    const otherMemberPreview = await preview(trader);
-    await error(executeTrade(database, owner, otherMemberPreview, clock), "DECIDES_OUTCOME");
-  });
   it("blocks incomplete, missing, and withdrawn accounts", async () => {
     const quote = await preview();
     await error(preview(randomUUID()), "PROFILE_REQUIRED");

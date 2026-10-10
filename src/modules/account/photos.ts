@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import sharp from "sharp";
@@ -8,7 +8,6 @@ import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { findAiLabels } from "./photo-check";
 import { isInactive } from "./standing";
-import { releaseUploadIntent, reserveUploadIntent } from "@/modules/uploads/intents";
 
 /*
  * Profile photos, decided 2026-09-24 (DECISIONS.md): required to post a goal,
@@ -23,7 +22,7 @@ import { releaseUploadIntent, reserveUploadIntent } from "@/modules/uploads/inte
  * the app's own route, which refuses banned and withdrawn accounts.
  */
 
-const { profiles, adminActions, uploadIntents } = schema;
+const { profiles, adminActions } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export const PHOTO_BUCKET = "profile-photos";
@@ -39,7 +38,7 @@ export const MIN_PHOTO_SIDE = 200;
 export const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export class PhotoError extends Error {
-  constructor(public readonly code: "INVALID_FILE" | "AI_LABELLED" | "PROFILE_REQUIRED" | "NOT_ALLOWED" | "UPLOAD_LIMIT" | "UNAVAILABLE", message: string) {
+  constructor(public readonly code: "INVALID_FILE" | "AI_LABELLED" | "PROFILE_REQUIRED" | "NOT_ALLOWED" | "UNAVAILABLE", message: string) {
     super(message);
     this.name = "PhotoError";
   }
@@ -110,7 +109,6 @@ export async function beginPhotoUpload<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   userId: string,
   file: { contentType: unknown; bytes: unknown },
-  now: Date = new Date(),
 ): Promise<{ uploadId: string; url: string }> {
   if (!isUuid(userId)) throw new PhotoError("PROFILE_REQUIRED", "Finish setting up your profile first.");
   const [profile] = await database.select().from(profiles).where(eq(profiles.id, userId)).limit(1);
@@ -124,18 +122,9 @@ export async function beginPhotoUpload<Q extends PgQueryResultHKT>(
     throw new PhotoError("INVALID_FILE", "Photos can be up to 8 MB.");
   }
   const uploadId = randomUUID();
-  const path = stagingPath(userId, uploadId);
-  if (!await reserveUploadIntent(database, { id: uploadId, userId, kind: "photo", objectPath: path }, now)) {
-    throw new PhotoError("UPLOAD_LIMIT", "Finish or wait for an earlier photo upload before starting another.");
-  }
-  try {
-    const { data, error } = await storage().storage.from(PHOTO_UPLOAD_BUCKET).createSignedUploadUrl(path, { upsert: false });
-    if (error || !data) throw new Error("signed upload unavailable");
-    return { uploadId, url: data.signedUrl };
-  } catch {
-    await releaseUploadIntent(database, { id: uploadId, userId, kind: "photo" });
-    throw new PhotoError("UNAVAILABLE", "Your photo could not be uploaded. Please try again.");
-  }
+  const { data, error } = await storage().storage.from(PHOTO_UPLOAD_BUCKET).createSignedUploadUrl(stagingPath(userId, uploadId), { upsert: false });
+  if (error || !data) throw new PhotoError("UNAVAILABLE", "Your photo could not be uploaded. Please try again.");
+  return { uploadId, url: data.signedUrl };
 }
 
 /**
@@ -151,11 +140,6 @@ export async function completePhotoUpload<Q extends PgQueryResultHKT>(
 ): Promise<Date> {
   if (!isUuid(userId) || !isUuid(upload.uploadId)) throw new PhotoError("INVALID_FILE", "That file could not be read as a photo.");
   const path = stagingPath(userId, upload.uploadId);
-  const [intent] = await database.select().from(uploadIntents).where(and(
-    eq(uploadIntents.id, upload.uploadId), eq(uploadIntents.userId, userId), eq(uploadIntents.kind, "photo"),
-    eq(uploadIntents.objectPath, path), gt(uploadIntents.expiresAt, now), isNull(uploadIntents.cleaningAt),
-  )).limit(1);
-  if (!intent) throw new PhotoError("NOT_ALLOWED", "That photo upload expired. Please start again.");
   const bucket = storage().storage.from(PHOTO_UPLOAD_BUCKET);
   try {
     const { data, error } = await bucket.download(path);
@@ -168,7 +152,6 @@ export async function completePhotoUpload<Q extends PgQueryResultHKT>(
     } catch {
       // A leftover staging object is private and unreferenced.
     }
-    await releaseUploadIntent(database, { id: upload.uploadId, userId, kind: "photo" }).catch(() => {});
   }
 }
 

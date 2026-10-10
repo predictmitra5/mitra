@@ -88,6 +88,9 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
   try { market = await loadMarket(id); }
   catch { return <Unavailable />; }
   if (!market) notFound();
+  // Feed measurement. recordClick swallows its own failures, and is called here
+  // rather than in the cached loader so generateMetadata does not double-count.
+  await recordClick(getDb(), id);
   let identity = null;
   let trader = null;
   let objections: Awaited<ReturnType<typeof readObjections>> = [];
@@ -100,28 +103,6 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     }
   } catch { accountUnavailable = true; }
 
-<<<<<<< HEAD
-  // Signed-out reads remain available but cannot write click telemetry. This
-  // is outside the cached loader so metadata generation never double-counts.
-  if (identity) await recordClick(getDb(), id);
-
-  // Proof. listPublished is public by decision; the other two are only ever
-  // read for the person they belong to, and never reveal who the subject is.
-  let publishedProof: Awaited<ReturnType<typeof listPublished>> = [];
-  let myProof: Awaited<ReturnType<typeof listForSubject>> = [];
-  let maySendProof = false;
-  try {
-    publishedProof = await listPublished(getDb(), id);
-    if (identity) {
-      maySendProof = await canSubmit(getDb(), identity.id, id);
-      if (maySendProof) myProof = await listForSubject(getDb(), identity.id, id);
-    }
-  } catch {
-    // Proof is additive to this page; never let it take the goal down with it.
-  }
-
-=======
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   // Price history, volume and the ticker: public, and additive, so a failure
   // leaves the chart empty and the prices above it still correct.
   let series: { at: string; yesBp: number }[] = [];

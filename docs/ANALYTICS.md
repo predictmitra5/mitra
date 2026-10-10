@@ -1,6 +1,6 @@
 # Analytics and experiments
 
-Status: bounded anonymous feed-interest counters are implemented; broader analytics events, attribution, experimentation and optimization remain undecided.
+Status: event candidates and measurement questions; no analytics provider, schema or retention chosen.
 
 Confirmed objective on 2026-09-15: maximize trades, with education/informed trading also important. Define completed trade count versus traded points/participation and an appropriate measure of information use before implementing optimization. No weights or success thresholds are approved.
 
@@ -21,10 +21,6 @@ PDF sections 16-17, pages 11-12: instrumentation must precede sophisticated rank
 | Market operations | market_created, market_resolved | Approved lifecycle and outcome version |
 
 Do not collect all candidate events automatically. Agree the minimum set tied to actual MVP features, the retention policy, and the purpose of each field.
-
-## Implemented feed-interest guardrail (2026-10-07)
-
-To prevent signed-out GET requests and refresh loops from creating unbounded durable event rows, signed-out feed and market-page reads do not write measurement. Signed-in exposures and opens are accumulated without viewer, session or address identifiers into market/hour counters, capped at 500 exposures and 3 opens per market per hour. Ranking uses only counters from the last 24 hours, and a daily maintenance task prunes older counters. These are rough interest signals, not reach, unique people, or approved experiment outcomes. The legacy `feed_events` table is retained as historical data and is not read by the current ranking path.
 
 ## Important measurement distinctions
 

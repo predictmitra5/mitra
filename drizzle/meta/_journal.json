@@ -96,13 +96,8 @@
     {
       "idx": 13,
       "version": "7",
-<<<<<<< HEAD
-      "when": 1791402448084,
-      "tag": "0013_security_bounds_upload_telemetry",
-=======
       "when": 1791505907812,
       "tag": "0013_event_markets",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
       "breakpoints": true
     }
   ]

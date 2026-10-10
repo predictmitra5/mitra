@@ -531,15 +531,6 @@ Five questions cover launch cohort, proposal/approval permissions, primary feed 
 
 **Deletion:** the account page exposes one permanent-delete operation with typed `DELETE` confirmation. The owner account cannot self-delete until ownership is transferred. Draft, open and closed goals owned by the person are cancelled and every participant is refunded at held cost. Ruled and settled goals stay final. Private evidence originals, profile photos and temporary photo uploads are removed; evidence statements, links, captions and review notes are cleared into a dated tombstone; the profile is anonymized; and the Supabase Auth identity is deleted. Trades, ledger entries, wallets, rulings and audit records remain as anonymized accounting history. This implements the proof and photo deletion decisions from 2026-09-19 and 2026-09-24.
 
-<<<<<<< HEAD
-## 2026-10-07 - Bound feed measurement, expire upload grants, and isolate the adjudicator
-
-**Security remediation within recorded product decisions:** preserve the no-viewer-identity choice in D08/D09, but stop signed-out page reads from writing analytics. Signed-in feed exposures and goal opens use anonymous market/hour counters only: at most 500 exposures and 3 opens per market per hour, with only the latest 24 hours used for ranking and new counters pruned after 24 hours. This is a technical guardrail, not a new attribution or personalization policy; legacy `feed_events` rows are retained but are no longer used for ranking.
-
-Every direct-upload URL now has a server-side per-user intent, expires after 48 hours, and is limited to two pending photos or five pending evidence uploads per user; pending evidence is also bounded to ten per market including completed evidence. An authenticated daily maintenance route removes only expired, unreferenced objects through Supabase Storage and then removes their intents. It never deletes completed evidence. Vercel requires `CRON_SECRET` to be configured for this route; missing configuration fails closed.
-
-The outcome-controlling owner cannot buy or sell any market, including when replaying a trade confirmation. Existing owner positions are not liquidated by this security change; no owner positions were modified as part of the code patch.
-=======
 ## 2026-10-06 - One consistent UI system
 
 **User instruction:** the owner shared a post, "5 things that actually made my vibe coded projects not look like vibe coded projects" (pick one font and one accent colour; give the AI your existing component before asking for a new one; real empty states that say what to do next; decide mobile early; one animation used consistently), and asked "can u make this".
@@ -574,4 +565,3 @@ Answers to four questions asked before building:
 **The Midway on High sample stays.** Asked whether a market on a bar's drink count suits members who must be 18 or older but may be under 21: "its 18+". The sample stays live as published; Mitra's audience remains 18+ by self-confirmation, with no 21+ gate on any market.
 
 **The opening card is removed (2026-10-08, after go-live).** Sharing a screenshot of the live home page's "mitra." card: "remove this as well". The card goes; the motto stays in the top bar and footer, and the price ticker stays.
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481

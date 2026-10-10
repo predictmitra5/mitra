@@ -73,7 +73,6 @@ describe("account withdrawal", () => {
 
     expect(storage.remove).toHaveBeenCalledWith(subject, {
       photoPath: `${subject}/photo.webp`, evidencePaths: [`${marketId}/proof/original.pdf`],
-      uploadPaths: [],
     });
     expect((await db.select().from(markets).where(eq(markets.id, marketId)))[0]).toMatchObject({ status: "cancelled" });
     expect((await db.select().from(wallets).where(eq(wallets.userId, trader)))[0].balanceMicro).toBe(before);

@@ -4,11 +4,7 @@ import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { EMPTY_POSITION } from "@/modules/market/position";
 
-<<<<<<< HEAD
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, uploadIntents } = schema;
-=======
 const { profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, marketProposals } = schema;
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -24,7 +20,6 @@ export class WithdrawalError extends Error {
 export type WithdrawalObjects = {
   photoPath: string | null;
   evidencePaths: string[];
-  uploadPaths: { kind: "photo" | "evidence"; path: string }[];
 };
 
 /** External object deletion is injected so the database behavior can be tested independently. */
@@ -129,13 +124,7 @@ async function objectsFor<Q extends PgQueryResultHKT>(database: Database<Q>, use
   const [profile] = await database.select({ photoPath: profiles.photoPath }).from(profiles).where(eq(profiles.id, userId));
   const files = await database.select({ path: evidence.originalPath }).from(evidence)
     .where(and(eq(evidence.submittedBy, userId), isNotNull(evidence.originalPath)));
-  const pending = await database.select({ kind: uploadIntents.kind, path: uploadIntents.objectPath }).from(uploadIntents)
-    .where(eq(uploadIntents.userId, userId));
-  return {
-    photoPath: profile?.photoPath ?? null,
-    evidencePaths: files.flatMap((row) => row.path ? [row.path] : []),
-    uploadPaths: pending,
-  };
+  return { photoPath: profile?.photoPath ?? null, evidencePaths: files.flatMap((row) => row.path ? [row.path] : []) };
 }
 
 async function finishWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, now: Date) {
@@ -154,15 +143,11 @@ async function finishWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q
       reviewNote: null,
       removedAt: now,
     }).where(eq(evidence.submittedBy, userId));
-<<<<<<< HEAD
-    await db.delete(uploadIntents).where(eq(uploadIntents.userId, userId));
-=======
     // Suggestions are private to their author and the owner (2026-10-08). Ones
     // never published go; a published one is the public market's history and
     // stays, pointing at the anonymized profile.
     await db.delete(marketProposals)
       .where(and(eq(marketProposals.proposerUserId, userId), inArray(marketProposals.status, ["pending", "rejected"])));
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     await db.update(profiles).set({
       handle: `deleted_${userId.replaceAll("-", "").slice(0, 12)}`,
       displayName: "Deleted member",

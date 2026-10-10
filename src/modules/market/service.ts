@@ -127,10 +127,7 @@ export async function readTrader<Q extends PgQueryResultHKT>(database: Database<
   const deciders = await database.select({ userId: marketOutcomeDeciders.userId }).from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, marketId));
   const [held] = await database.select().from(positions).where(and(eq(positions.userId, userId), eq(positions.marketId, marketId)));
   const position = held ?? EMPTY_POSITION;
-  const outcomeDeciderUserIds = deciders.map((p) => p.userId);
-  // The active owner can rule every goal, whether or not they approved it.
-  if (profile.isOwner === 1) outcomeDeciderUserIds.push(userId);
-  const blocked = tradeBlockReason(userId, { subjectUserId: market.subjectUserId, outcomeDeciderUserIds });
+  const blocked = tradeBlockReason(userId, { subjectUserId: market.subjectUserId, outcomeDeciderUserIds: deciders.map((p) => p.userId) });
   return { balanceMicro: wallet.balanceMicro, position: {
     yesSharesMicro: position.yesSharesMicro, noSharesMicro: position.noSharesMicro,
     yesCostBasisMicro: position.yesCostBasisMicro, noCostBasisMicro: position.noCostBasisMicro,
@@ -151,10 +148,9 @@ async function lockAccount<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
   if (!profile || isInactive(profile) || !profile.adultConfirmedAt) {
     throw new TradingError("PROFILE_REQUIRED", "Complete your active profile and 18+ confirmation before trading.");
   }
-  return profile;
 }
 
-async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: string, input: TradeRequest, clock: Clock, traderIsOwner: boolean) {
+async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: string, input: TradeRequest, clock: Clock) {
   const [market] = await tx.select().from(markets).where(eq(markets.id, input.marketId)).for("update");
   if (!market || !market.approvedAt) throw new TradingError("NOT_FOUND", "This market is not available.");
   // A retired goal market whose person left or was banned is being cancelled.
@@ -171,8 +167,6 @@ async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
     throw new TradingError("CLOSED", "Trading has closed for this market.");
   }
   const deciders = await tx.select({ userId: marketOutcomeDeciders.userId }).from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, input.marketId));
-  const outcomeDeciderUserIds = deciders.map((p) => p.userId);
-  if (traderIsOwner && !outcomeDeciderUserIds.includes(userId)) outcomeDeciderUserIds.push(userId);
   const [position] = await tx.select({
     yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
     yesCostBasisMicro: positions.yesCostBasisMicro, noCostBasisMicro: positions.noCostBasisMicro,
@@ -180,7 +174,7 @@ async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
   return { market, now, context: {
     traderUserId: userId, side: input.side, balanceMicro: wallet.balanceMicro,
     position: position ?? EMPTY_POSITION, marketMaker: marketMaker(market),
-    participants: { subjectUserId: market.subjectUserId, outcomeDeciderUserIds },
+    participants: { subjectUserId: market.subjectUserId, outcomeDeciderUserIds: deciders.map((p) => p.userId) },
   } };
 }
 
@@ -207,8 +201,8 @@ function calculate(input: TradeRequest, context: Awaited<ReturnType<typeof loadC
 export async function previewTrade<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, input: TradeRequest, clock: Clock = () => new Date()): Promise<TradePreview> {
   validateRequest(input);
   return transaction(database, async (tx) => {
-    const profile = await lockAccount(tx, userId);
-    const { context } = await loadContext(tx, userId, input, clock, profile.isOwner === 1);
+    await lockAccount(tx, userId);
+    const { context } = await loadContext(tx, userId, input, clock);
     const plan = calculate(input, context);
     return { ...input, requestId: crypto.randomUUID(),
       expectedYesSharesMicro: context.marketMaker.yesSharesMicro, expectedNoSharesMicro: context.marketMaker.noSharesMicro,
@@ -227,7 +221,7 @@ export async function executeTrade<Q extends PgQueryResultHKT>(database: Databas
     throw new TradingError("INVALID_INPUT", "Preview this trade again before confirming.");
   }
   return transaction(database, async (tx) => {
-    const profile = await lockAccount(tx, userId);
+    await lockAccount(tx, userId);
     const key = `${userId.toLowerCase()}:${input.requestId.toLowerCase()}`;
     // This transaction-scoped lock serializes a retry even if it changes the
     // market id. Hash collisions only serialize unrelated requests, never merge them.
@@ -240,7 +234,7 @@ export async function executeTrade<Q extends PgQueryResultHKT>(database: Databas
       }
       return receipt(prior);
     }
-    const { context, market, now } = await loadContext(tx, userId, input, clock, profile.isOwner === 1);
+    const { context, market, now } = await loadContext(tx, userId, input, clock);
     if (context.marketMaker.yesSharesMicro !== input.expectedYesSharesMicro || context.marketMaker.noSharesMicro !== input.expectedNoSharesMicro) {
       throw new TradingError("PRICE_CHANGED", "The price changed. Preview the trade again before confirming.");
     }

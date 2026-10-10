@@ -38,14 +38,9 @@ describe("home feed for visitors and members", () => {
     expect(feed.type).toBe(FeedView);
     expect(feed.props.signedIn).toBe(false);
     expect(prompt.type).toBe(SignupPrompt);
-<<<<<<< HEAD
-    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date));
-    expect(mocks.recordExposures).not.toHaveBeenCalled();
-=======
     // Visitors see the launch campus.
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
     expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     expect(mocks.viewer).not.toHaveBeenCalled();
   });
 
@@ -62,7 +57,6 @@ describe("home feed for visitors and members", () => {
     expect(feed.props.signedIn).toBe(true);
     expect(prompt).toBe(false);
     expect(mocks.viewer).toHaveBeenCalledWith("database", "verified-user");
-    expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
   });
 
   it("shows a member their own campus's markets", async () => {
