@@ -35,12 +35,6 @@ function at(date: { year: number; month: number; day: number }, offsetDays: numb
 
 const monthDay = (instant: Date) => new Intl.DateTimeFormat("en-US", { timeZone: ZONE, month: "short", day: "numeric" }).format(instant);
 
-/** Demonstration prices over the days before opening, ending next to the opening price. */
-function history(now: Date, path: number[]): { at: Date; yesBp: number }[] {
-  return path.map((percent, index) => ({ at: new Date(now.getTime() - (path.length - index) * DAY + 6 * HOUR), yesBp: percent * 100 }))
-    .filter((point) => point.at.getTime() < now.getTime());
-}
-
 const SAMPLE_NOTE = "Sample market: a hypothetical demonstration. Mitra has no partnership with this venue and receives no data from it. "
   + "Sample markets are voided and everyone is refunded when they are retired.";
 const FAIR_PLAY = "Don’t buy, or ask anyone to buy, at the venue to move this market. If you work at or own the venue, don’t trade it.";
@@ -82,8 +76,6 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
         + `${FAIR_PLAY} ${SAMPLE_NOTE}`,
       source: { name: "Midway on High point-of-sale report (placeholder)", operational: false,
         method: "A count of qualifying drink items for the window from the venue’s point-of-sale system, shared by the venue. No agreement exists yet: this is a placeholder." },
-      openingProbabilityBp: 4200,
-      sampleHistory: history(now, [50, 47, 45, 44, 41, 43]),
     },
     {
       slug: "buckeye-donuts",
@@ -98,8 +90,6 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
         + `${FAIR_PLAY} ${SAMPLE_NOTE}`,
       source: { name: "Buckeye Donuts point-of-sale report (placeholder)", operational: false,
         method: "Donut units sold during the window from the shop’s point-of-sale system, shared by the shop. No agreement exists yet: this is a placeholder." },
-      openingProbabilityBp: 5800,
-      sampleHistory: history(now, [50, 52, 55, 54, 57, 59]),
     },
     {
       slug: "gateway-film-center",
@@ -115,8 +105,6 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
         + `complimentary tickets, passes and refunds don’t count. ${FAIR_PLAY} ${SAMPLE_NOTE}`,
       source: { name: "Gateway Film Center ticketing report (placeholder)", operational: false,
         method: "Paid admissions for the screening from the cinema’s ticketing system, shared by the cinema. No agreement exists yet: this is a placeholder." },
-      openingProbabilityBp: 3500,
-      sampleHistory: history(now, [50, 46, 41, 38, 37, 34]),
     },
   ];
 }

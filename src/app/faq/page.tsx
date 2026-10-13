@@ -31,7 +31,7 @@ export default function FaqPage() {
     },
     {
       question: "How does a market get made?",
-      answer: "Anyone with an account can suggest one. Suggestions are private to you and the Mitra owner. The owner either turns it down with a reason you can read, or publishes it with exact Yes and No conditions, an event window, a trading cutoff, a results deadline, a named source, and opening odds. Wording is frozen once trading opens.",
+      answer: "Anyone with an account can suggest one. Suggestions are private to you and the Mitra owner. The owner either turns it down with a reason you can read, or publishes it with exact Yes and No conditions, an event window, a trading cutoff, a results deadline, and a named source. New markets start at 50/50, and wording is frozen once trading opens.",
     },
     {
       question: "How is the outcome decided?",

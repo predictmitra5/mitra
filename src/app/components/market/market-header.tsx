@@ -5,6 +5,7 @@ import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
 import { Avatar } from "./market-card";
 import { PublicCampusPicker } from "./public-campus-picker";
+import { OwnerCampusPicker } from "./owner-campus-picker";
 import { SearchBox } from "./search-box";
 
 /**
@@ -38,12 +39,13 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
         <Link className="brand-home" href="/" prefetch={false} aria-label="Mitra home">
           <span className="brand-lockup">
             <Logo className="brand-logo" title="Mitra" />
-            {viewer && <>
+            {viewer && viewer.ownerQueue == null && <>
               <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
               <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
             </>}
           </span>
         </Link>
+        {!neutral && viewer?.ownerQueue != null && <OwnerCampusPicker campus={campus} />}
         {!neutral && !viewer && campus && <PublicCampusPicker campus={campus} query={query} />}
         {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
       </div>

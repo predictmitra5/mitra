@@ -65,7 +65,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       : blocked ? <section className="account-empty"><h1>Your account is temporarily unavailable.</h1><p>Please contact the app owner before continuing.</p></section>
       : !account ? null
       : <>
-        {notice === "suggestion-sent" && <p className="form-success" role="status">Suggestion sent. It goes live only if the owner publishes it with exact rules and opening odds.</p>}
+        {notice === "suggestion-sent" && <p className="form-success" role="status">Suggestion sent. It goes live only if the owner publishes it with exact rules; new markets start at 50/50.</p>}
         {notice === "account-exists" && <p className="form-success" role="status">This account already exists, so we signed you in.</p>}
 
         <div className="me">

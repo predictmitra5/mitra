@@ -246,14 +246,12 @@ describe("market information on each card", () => {
     expect(card.change24hBp).toBe(1000);
   });
 
-  it("measures a sample market's change against its demonstration history", async () => {
-    const id = await openMarket("Sample Bar", "2026-10-01", {
-      isSample: true, openingBp: 4200,
-      sampleHistory: [{ at: new Date(now.getTime() - 72 * 3_600_000), yesBp: 5000 }, { at: new Date(now.getTime() - 30 * 3_600_000), yesBp: 4100 }],
-    });
+  it("shows a new sample market at 50/50 before anyone trades", async () => {
+    const id = await openMarket("Sample Bar", "2026-10-01", { isSample: true });
     const [card] = (await readFeed(db, now)).cards;
     expect(card.id).toBe(id);
-    expect(card.change24hBp).toBe(100);
+    expect(card.yesPrice).toBe(0.5);
+    expect(card.change24hBp).toBe(0);
   });
 
   it("falls back to the opening price for a market younger than a day", async () => {

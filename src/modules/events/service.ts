@@ -13,7 +13,7 @@ import { isCategory, type Category } from "./categories";
  * Event markets, decided 2026-10-08 (DECISIONS.md): students suggest, the owner
  * publishes. A suggestion is private to its author and the owner and is never
  * published by itself. Publishing writes the venue, the event, the source, the
- * market at the owner's opening price, its first price point and the owner's
+ * market at neutral 50/50 odds, its first price point and the owner's
  * decision in one transaction.
  */
 
@@ -31,9 +31,8 @@ export class EventError extends Error {
   }
 }
 
-/** Opening prices are whole percentages from 1% to 99%, stored as basis points. */
-export const MIN_OPENING_BP = 100;
-export const MAX_OPENING_BP = 9900;
+/** Every newly published market starts at neutral 50/50 odds. */
+export const OPENING_PROBABILITY_BP = 5000;
 /** One person's suggestions waiting at once: enough to be useful, too few to flood the queue. */
 export const MAX_PENDING_PROPOSALS = 10;
 const MAX_AHEAD_MS = 366 * 24 * 3_600_000;
@@ -236,14 +235,8 @@ export interface PublishInput {
   /** The full rules, frozen once trading opens. */
   rules: string;
   source: SourceChoice;
-  openingProbabilityBp: number;
   isSample: boolean;
   note?: string | null;
-  /**
-   * Sample markets only: demonstration price points before opening, oldest
-   * first. The market page labels a sample's chart as demonstration data.
-   */
-  sampleHistory?: { at: Date; yesBp: number }[];
 }
 
 type CleanPublish = ReturnType<typeof validatePublish>;
@@ -265,9 +258,6 @@ function validatePublish(input: PublishInput, now: Date) {
   if (resultsDueAt.getTime() - windowEndAt.getTime() > 30 * 24 * 3_600_000) throw new EventError("INVALID_INPUT", "Results must be due within 30 days of the window.");
   if (windowStartAt.getTime() > now.getTime() + MAX_AHEAD_MS) throw new EventError("INVALID_INPUT", "That’s more than a year away. Check the date.");
   try { new Intl.DateTimeFormat("en-US", { timeZone: input.timeZone }); } catch { throw new EventError("INVALID_INPUT", "Unknown time zone."); }
-  if (!Number.isInteger(input.openingProbabilityBp) || input.openingProbabilityBp < MIN_OPENING_BP || input.openingProbabilityBp > MAX_OPENING_BP) {
-    throw new EventError("INVALID_INPUT", "Set opening odds between 1% and 99%.");
-  }
   const venue: VenueChoice = "id" in input.venue
     ? { id: input.venue.id }
     : { name: cleanText(input.venue.name, 2, 80, "The venue name"), area: optionalText(input.venue.area, 80, "The area"),
@@ -276,23 +266,14 @@ function validatePublish(input: PublishInput, now: Date) {
     ? { id: input.source.id }
     : { name: cleanText(input.source.name, 3, 120, "The source name"), method: cleanText(input.source.method, 10, 600, "How the source counts", { multiline: true }),
       url: optionalUrl(input.source.url), operational: input.source.operational === true };
-  const history = input.isSample ? (input.sampleHistory ?? []) : [];
-  if (!input.isSample && input.sampleHistory?.length) throw new EventError("INVALID_INPUT", "Only sample markets carry demonstration prices.");
-  let previous = -Infinity;
-  for (const point of history) {
-    validDate(point.at, "a demonstration price time");
-    if (point.at.getTime() >= now.getTime() || point.at.getTime() <= previous) throw new EventError("INVALID_INPUT", "Demonstration prices must be in the past, oldest first.");
-    if (!Number.isInteger(point.yesBp) || point.yesBp < MIN_OPENING_BP || point.yesBp > MAX_OPENING_BP) throw new EventError("INVALID_INPUT", "Demonstration prices must be between 1% and 99%.");
-    previous = point.at.getTime();
-  }
   return {
     proposalId: input.proposalId ?? null, campus: input.campus, category: input.category as Category, question, eventTitle,
     windowStartAt, windowEndAt, tradingCutoffAt, resultsDueAt, timeZone: input.timeZone,
     yesCondition: cleanText(input.yesCondition, 10, 500, "The Yes condition", { multiline: true }),
     noCondition: cleanText(input.noCondition, 10, 500, "The No condition", { multiline: true }),
     rules: cleanText(input.rules, 20, 2000, "The rules", { multiline: true }),
-    venue, source, openingProbabilityBp: input.openingProbabilityBp, isSample: input.isSample === true,
-    note: optionalText(input.note, 500, "The note"), history,
+    venue, source, openingProbabilityBp: OPENING_PROBABILITY_BP, isSample: input.isSample === true,
+    note: optionalText(input.note, 500, "The note"),
   };
 }
 
@@ -332,7 +313,7 @@ async function resolveSource<Q extends PgQueryResultHKT>(tx: Database<Q>, input:
   return created;
 }
 
-/** Owner only: open an event market at the owner's price, from a suggestion or from scratch. */
+/** Owner only: open an event market at neutral 50/50 odds, from a suggestion or from scratch. */
 export async function publishMarket<Q extends PgQueryResultHKT>(
   database: Database<Q>, ownerId: string, input: PublishInput, now: Date = new Date(),
 ) {
@@ -361,9 +342,6 @@ export async function publishMarket<Q extends PgQueryResultHKT>(
       approvedAt: now, approvedBy: ownerId, createdAt: now,
     }).returning();
 
-    if (clean.history.length) {
-      await tx.insert(priceHistory).values(clean.history.map((point) => ({ marketId: market.id, yesPriceBp: point.yesBp, recordedAt: point.at })));
-    }
     await tx.insert(priceHistory).values({ marketId: market.id, yesPriceBp: clean.openingProbabilityBp, recordedAt: now });
     if (proposal) {
       await tx.update(marketProposals).set({ status: "approved", marketId: market.id, reviewedBy: ownerId, reviewedAt: now, reviewReason: clean.note })

@@ -53,7 +53,7 @@ export default async function ReviewPage({ searchParams }: PageProps<"/review">)
     <div className="owner-links"><Link className="secondary-button" href="/review/markets">Outcomes and objections ↗︎</Link><Link className="secondary-button" href="/review/people">People: photos and bans ↗︎</Link></div>
     <section className="account-welcome">
       <h1>{proposals.length === 0 ? "No suggestions waiting." : `${proposals.length} suggestion${proposals.length === 1 ? "" : "s"} waiting.`}</h1>
-      <p>Publish only what a named source can settle exactly: a count, a window, a time zone, a cutoff. Set the opening odds to your honest guess. Nothing a student suggests goes live until you publish it.</p>
+      <p>Publish only what a named source can settle exactly: a count, a window, a time zone, a cutoff. Every new market starts at 50/50; odds move only through trading. Nothing a student suggests goes live until you publish it.</p>
     </section>
     {message && <p className="form-success" role="status">{message}</p>}
 

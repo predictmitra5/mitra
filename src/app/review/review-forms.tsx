@@ -25,7 +25,7 @@ type Option = { id: string; name: string };
 /**
  * The owner's form for opening an event market (2026-10-08): exact terms, the
  * window, cutoff and results deadline, the source and whether it really
- * reports, and the opening odds. Prefilled from a suggestion when there is one.
+ * reports, and neutral 50/50 opening odds. Prefilled from a suggestion when there is one.
  */
 export function PublishForm({ defaults, venues, sources, campuses }: {
   defaults: PublishDefaults; venues: Option[]; sources: (Option & { operational: boolean })[];
@@ -120,10 +120,8 @@ export function PublishForm({ defaults, venues, sources, campuses }: {
         </>}
       </fieldset>
 
-      <div className="field-pair">
-        <div className="field"><label htmlFor={`open-${id}`}>Opening odds of Yes (%)</label><input id={`open-${id}`} name="openingPercent" type="number" min={1} max={99} step={1} placeholder="40" required /></div>
-        <div className="field"><label htmlFor={`note-${id}`}>Note for your records (optional)</label><input id={`note-${id}`} name="note" maxLength={500} /></div>
-      </div>
+      <p className="field-hint">New markets always open at 50/50. Odds move only as people trade.</p>
+      <div className="field"><label htmlFor={`note-${id}`}>Note for your records (optional)</label><input id={`note-${id}`} name="note" maxLength={500} /></div>
       <label className="checkbox-row"><input type="checkbox" name="isSample" />Sample market: a hypothetical demonstration, labelled as such everywhere.</label>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       <button className="primary-button" type="submit" disabled={pending}>{pending ? "Publishing…" : "Publish and open trading"}</button>

@@ -139,7 +139,7 @@ export async function runEventPivot(database: Database, options: GoLiveOptions) 
       : [];
     if (live.length) { log(`   ${slug}: a sample is already live; skipped.`); continue; }
     log(`   ${input.question}`);
-    log(`     opens at ${input.openingProbabilityBp / 100}%, trading until ${input.tradingCutoffAt?.toISOString()}, results due ${input.resultsDueAt?.toISOString()}`);
+    log(`     opens at 50/50, trading until ${input.tradingCutoffAt?.toISOString()}, results due ${input.resultsDueAt?.toISOString()}`);
     if (!apply) continue;
     const market = await publishMarket(database, ownerId, { ...input, note: `Sample market for the 2026-10-08 pivot.${authority}` }, now);
     published.push(market.id);

@@ -126,7 +126,7 @@ describe("claimRefill", () => {
   });
 
   it("counts only cash, so points held in an open prediction do not block a refill", async () => {
-    const market = await openEventMarket(database, owner, now, { openingBp: 3000 });
+    const market = await openEventMarket(database, owner, now);
     const preview = await previewTrade(database, trader, { marketId: market.id, action: "buy", side: "YES", amountMicro: 60_000_000 }, clock);
     await executeTrade(database, trader, preview, clock);
 

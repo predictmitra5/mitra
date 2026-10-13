@@ -49,8 +49,6 @@ export async function publishMarketAction(_state: FormState, form: FormData): Pr
     if (!isCampusKey(campus)) return { error: "Choose a campus." };
     const zone = CAMPUSES[campus].timeZone;
     const when = (name: string) => parseLocalDateTime(text(form, name), zone);
-    const percent = Number(text(form, "openingPercent"));
-    if (!Number.isInteger(percent) || percent < 1 || percent > 99) return { error: "Set opening odds as a whole number from 1 to 99." };
     const venueId = text(form, "venueId");
     const sourceId = text(form, "sourceId");
     const market = await publishMarket(getDb(), identity.id, {
@@ -64,7 +62,7 @@ export async function publishMarketAction(_state: FormState, form: FormData): Pr
         name: text(form, "sourceName"), method: text(form, "sourceMethod"), url: text(form, "sourceUrl"),
         operational: text(form, "sourceOperational") === "on",
       },
-      openingProbabilityBp: percent * 100, isSample: text(form, "isSample") === "on", note: text(form, "note"),
+      isSample: text(form, "isSample") === "on", note: text(form, "note"),
     });
     marketId = market.id;
   } catch (error) {

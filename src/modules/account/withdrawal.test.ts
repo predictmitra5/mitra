@@ -107,7 +107,7 @@ describe("account withdrawal", () => {
       tradingCutoffAt: new Date("2026-10-10T02:00:00Z"), resultsDueAt: new Date("2026-10-13T08:00:00Z"),
       yesCondition: "More than 1,200 donuts sold in the window.", noCondition: "1,200 or fewer, or no count by the deadline.",
       rules: "Each donut counts once; a dozen counts as 12.", source: { name: "Shop count", method: "The shop's register count.", operational: false },
-      openingProbabilityBp: 5500, isSample: false,
+      isSample: false,
     }, now);
     const event = await openEventMarket(db, owner, now, { venueName: "Test Tavern" });
     await buy(event.id);

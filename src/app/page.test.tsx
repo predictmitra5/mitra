@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({
@@ -18,7 +17,7 @@ vi.mock("@/modules/discovery/feed", async (original) => ({
   recordExposures: mocks.recordExposures,
 }));
 vi.mock("@/modules/account/viewer", () => ({ readViewerOrNull: mocks.viewer }));
-vi.mock("@/config/campus-server", () => ({ selectedCampus: async () => ({ key: "osu" }) }));
+vi.mock("@/config/campus-server", () => ({ selectedCampus: async () => ({ key: "osu" }), rememberCampus: vi.fn() }));
 
 import Home from "./page";
 import { FeedView } from "./feed-view";
@@ -62,8 +61,8 @@ describe("home feed for visitors and members", () => {
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
   });
 
-  it("puts the signed-out campus dropdown beside the logo and links directly to each feed", () => {
-    const markup = renderToStaticMarkup(createElement(MarketHeader, { viewer: null, campus: "uiuc", query: "donuts" }));
+  it("puts the signed-out campus dropdown beside the logo and links directly to each feed", async () => {
+    const markup = renderToStaticMarkup(await MarketHeader({ viewer: null, campus: "uiuc", query: "donuts" }));
     const brandHomeStart = markup.indexOf('class="brand-home"');
     const brandHomeEnd = markup.indexOf("</a>", brandHomeStart);
     const campusMenuStart = markup.indexOf('<details class="public-campus-menu"');
@@ -102,5 +101,28 @@ describe("home feed for visitors and members", () => {
     mocks.identity.mockResolvedValue({ id: "verified-user", email: "member@osu.edu", campus: "osu" });
     await Home({ searchParams: Promise.resolve({ campus: "uiuc" }), params: Promise.resolve({}) });
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
+  });
+
+  it("lets an owner browse the other campus without changing their verified identity", async () => {
+    mocks.identity.mockResolvedValue({ id: "verified-owner", email: "owner@osu.edu", campus: "osu" });
+    mocks.viewer.mockResolvedValue({ displayName: "Owner", photo: null, balanceMicro: 0, ownerQueue: 0 });
+    const view = await Home({ searchParams: Promise.resolve({ campus: "uiuc" }), params: Promise.resolve({}) });
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
+    expect(view.props.children[0].props.campus).toBe("uiuc");
+    expect(view.props.children[0].props.viewer.ownerQueue).toBe(0);
+  });
+
+  it("renders the campus switcher for owners but not ordinary signed-in members", async () => {
+    const owner = renderToStaticMarkup(await MarketHeader({
+      viewer: { displayName: "Owner", photo: null, balanceMicro: 0, ownerQueue: 0 },
+      campus: "osu",
+    }));
+    const member = renderToStaticMarkup(await MarketHeader({
+      viewer: { displayName: "Member", photo: null, balanceMicro: 0, ownerQueue: null },
+      campus: "osu",
+    }));
+    expect(owner).toContain("Switch campus storefront; currently Ohio State");
+    expect(owner).toContain('name="campus" value="uiuc"');
+    expect(member).not.toContain("owner-campus-menu");
   });
 });

@@ -28,9 +28,7 @@ export type EventMarketOptions = {
   cutoff?: Date;
   windowEnd?: Date;
   resultsDue?: Date;
-  openingBp?: number;
   isSample?: boolean;
-  sampleHistory?: { at: Date; yesBp: number }[];
   proposalId?: string;
 };
 
@@ -52,9 +50,7 @@ export async function openEventMarket(database: Database, ownerId: string, now: 
     noCondition: "The count shows 500 or fewer, or no count arrives by the results deadline.",
     rules: "Voided and refunded items don't count. Times are Eastern.",
     source: { name: "Test Tavern register count", method: "A count of drink items from the venue's register.", operational: false },
-    openingProbabilityBp: options.openingBp ?? 5000,
     isSample: options.isSample ?? false,
-    sampleHistory: options.sampleHistory,
   }, now);
 }
 

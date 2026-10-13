@@ -52,7 +52,7 @@ const terms = (over: Partial<PublishInput> = {}): PublishInput => ({
   noCondition: "The count shows 1,500 or fewer, or no count arrives by the results deadline.",
   rules: "Each donut counts once; a dozen counts as 12. Refunds don't count.",
   source: { name: "Buckeye Donuts point-of-sale report", method: "Donut units from the shop's register.", operational: false },
-  openingProbabilityBp: 4500, isSample: false, ...over,
+  isSample: false, ...over,
 });
 
 async function expectCode(promise: Promise<unknown>, code: string) {
@@ -112,18 +112,25 @@ describe("suggesting a market", () => {
 });
 
 describe("publishing a market", () => {
-  it("opens an event market at the owner's price with its venue, event, source and first price point", async () => {
+  it("opens every event market at 50/50 with its venue, event, source and first price point", async () => {
     const market = await publishMarket(db, owner, terms(), now);
-    expect(market).toMatchObject({ status: "open", subjectUserId: null, campus: "osu", category: "food", openingProbabilityBp: 4500, isSample: false });
+    expect(market).toMatchObject({ status: "open", subjectUserId: null, campus: "osu", category: "food", openingProbabilityBp: 5000, isSample: false });
     expect(market.deadlineAt).toEqual(new Date("2026-10-17T02:00:00Z"));
     expect(market.evidenceDeadlineAt).toEqual(new Date("2026-10-20T08:00:00Z"));
     const published = await readPublicMarket(db, market.id);
     expect(published).toMatchObject({ venueName: "Buckeye Donuts", venueSlug: "buckeye-donuts", eventTitle: "Friday overnight", sourceOperational: false });
-    expect(published?.yesPrice).toBeCloseTo(0.45, 6);
+    expect(published?.yesPrice).toBeCloseTo(0.5, 6);
     expect(await db.select().from(priceHistory).where(eq(priceHistory.marketId, market.id))).toHaveLength(1);
     const [audit] = await db.select().from(adminActions).where(eq(adminActions.marketId, market.id));
     expect(audit).toMatchObject({ kind: "approve", actorUserId: owner });
     expect(audit.details).toMatchObject({ venue: "Buckeye Donuts", sourceOperational: false, isSample: false, proposalId: null });
+  });
+
+  it("ignores a forged opening-odds field", async () => {
+    const forged = { ...terms(), openingProbabilityBp: 2000 } as PublishInput;
+    const market = await publishMarket(db, owner, forged, now);
+    expect(market.openingProbabilityBp).toBe(5000);
+    expect((await readPublicMarket(db, market.id))?.yesPrice).toBeCloseTo(0.5, 6);
   });
 
   it("publishes a suggestion, marking it approved and linked, exactly once", async () => {
@@ -152,14 +159,11 @@ describe("publishing a market", () => {
       { tradingCutoffAt: new Date("2026-10-01T00:00:00Z") },
       { tradingCutoffAt: new Date("2026-10-18T00:00:00Z") },
       { resultsDueAt: new Date("2026-10-17T07:00:00Z") },
-      { openingProbabilityBp: 0 },
-      { openingProbabilityBp: 10_000 },
       { yesCondition: "Yes" },
       { rules: "Too short" },
       { windowStartAt: null },
       { timeZone: "Mars/Olympus" },
       { source: { name: "Feed", method: "A count.", url: "javascript:alert(1)", operational: true } },
-      { sampleHistory: [{ at: new Date("2026-10-07T00:00:00Z"), yesBp: 5000 }] },
     ];
     for (const over of bad) await expectCode(publishMarket(db, owner, terms(over), now), "INVALID_INPUT");
     await expectCode(publishMarket(db, student, terms(), now), "NOT_OWNER");
@@ -191,9 +195,9 @@ describe("the three Ohio State samples", () => {
       expect(published?.sourceName).toContain("placeholder");
       expect(published?.resolutionCriteria).toContain("hypothetical");
       expect(published?.resolutionCriteria).toContain("Don’t buy");
-      // The demonstration history ends next to the opening price, and the chart includes it.
+      // New markets have only one price point before any trades: neutral 50/50.
       const series = await readPriceSeries(db, market.id, { at: now, yesBp: market.openingProbabilityBp! });
-      expect(series.length).toBeGreaterThan(5);
+      expect(series.every((point) => point.yesBp === 5000)).toBe(true);
       expect(series.every((point) => point.at <= now)).toBe(true);
     }
     expect((await listVenues(db, "osu")).map((venue) => venue.name)).toEqual(["Buckeye Donuts", "Gateway Film Center", "Midway on High"]);

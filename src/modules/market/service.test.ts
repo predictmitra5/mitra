@@ -72,7 +72,7 @@ async function account(handle: string) {
   return id;
 }
 async function openMarket() {
-  return (await openEventMarket(database, owner, now, { openingBp: 3000, cutoff: new Date("2027-03-01T05:00:00Z") })).id;
+  return (await openEventMarket(database, owner, now, { cutoff: new Date("2027-03-01T05:00:00Z") })).id;
 }
 /** A goal market about `subject` from before the 2026-10-08 pivot. */
 async function goalMarket(status: "draft" | "open" = "open") {
@@ -107,7 +107,7 @@ async function reconcile() {
 describe("public market and private trader views", () => {
   it("exposes only published public terms, and hides drafts, rejections and never-approved cancellations", async () => {
     const publicMarket = await readPublicMarket(database, marketId);
-    expect(publicMarket?.yesPrice).toBeCloseTo(0.3, 7);
+    expect(publicMarket?.yesPrice).toBeCloseTo(0.5, 7);
     expect(publicMarket?.venueName).toBe("Test Tavern");
     expect(publicMarket?.sourceOperational).toBe(false);
     expect(publicMarket?.yesCondition).toContain("more than 500");

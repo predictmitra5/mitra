@@ -1,5 +1,6 @@
 import { getDb } from "@/db/client";
 import { DEFAULT_CAMPUS_KEY, isCampusKey, type CampusKey } from "@/config/campus";
+import { selectedCampus } from "@/config/campus-server";
 import { currentIdentity } from "@/modules/auth/server";
 import { EMPTY_FEED, readFeed, recordExposures, type Feed } from "@/modules/discovery/feed";
 import { readViewerOrNull } from "@/modules/account/viewer";
@@ -11,9 +12,10 @@ import { SignupPrompt } from "./components/signup-prompt";
 /*
  * The home route is the campus feed for everyone (browsing without an account
  * returned on 2026-10-05; event markets since 2026-10-08). A member sees their
- * own campus; a visitor sees Ohio State, the launch campus. Visitors also get
- * the sign-up pop-up. Only verified members contribute bounded, anonymous
- * exposure aggregates; viewer identity is never stored.
+ * own campus; owners may switch storefronts, and a visitor sees Ohio State,
+ * the launch campus. Visitors also get the sign-up pop-up. Only verified
+ * members contribute bounded, anonymous exposure aggregates; viewer identity
+ * is never stored.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
@@ -29,7 +31,20 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   }
   const params = await searchParams;
   const requestedCampus = isCampusKey(params.campus) ? params.campus : DEFAULT_CAMPUS_KEY;
-  const campus: CampusKey = identity?.campus ?? requestedCampus;
+  let viewer = null;
+  if (identity) {
+    try {
+      viewer = await readViewerOrNull(getDb(), identity.id);
+    } catch {
+      // Auth may remain available while the application database is not.
+    }
+  }
+  const ownerCampus = viewer?.ownerQueue != null ? await selectedCampus() : null;
+  const campus: CampusKey = identity
+    ? viewer?.ownerQueue != null
+      ? (isCampusKey(params.campus) ? params.campus : ownerCampus?.key ?? identity.campus)
+      : identity.campus
+    : requestedCampus;
 
   const now = new Date();
   let feed: Feed = EMPTY_FEED;
@@ -45,7 +60,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     unavailable = true;
   }
 
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
   const { q } = params;
 
   const featured: FeaturedData | null = feed.featured && {
