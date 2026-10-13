@@ -64,7 +64,8 @@ export async function sendSignupCode(_state: FormState, form: FormData): Promise
     const client = await createAuthClient();
     const { error } = await client.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true, emailRedirectTo: `${appOrigin()}/auth/callback` },
+      // Email-template presentation only; campus authorization uses verified email.
+      options: { shouldCreateUser: true, emailRedirectTo: `${appOrigin()}/auth/callback`, data: { campus } },
     });
     if (error) {
       const limited = error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "email_rate_limit_exceeded";

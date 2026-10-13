@@ -164,7 +164,7 @@ describe("auth server actions", () => {
     expect(result).toHaveProperty("verification", { email: user.email, campus: "osu" });
     expect(mocks.auth.signInWithOtp).toHaveBeenCalledExactlyOnceWith({
       email: user.email,
-      options: { shouldCreateUser: true, emailRedirectTo: "https://goals.example.test/auth/callback" },
+      options: { shouldCreateUser: true, emailRedirectTo: "https://goals.example.test/auth/callback", data: { campus: "osu" } },
     });
     expect(mocks.rememberCampus).toHaveBeenCalledWith("osu");
     expect(mocks.redirect).not.toHaveBeenCalled();
@@ -180,7 +180,10 @@ describe("auth server actions", () => {
   it("supports UIUC sign-up only when the selected campus matches the email", async () => {
     const result = await sendSignupCode({}, form({ campus: "uiuc", email: "NETID@ILLINOIS.EDU" }));
     expect(result.verification).toEqual({ email: "netid@illinois.edu", campus: "uiuc" });
-    expect(mocks.auth.signInWithOtp).toHaveBeenCalledWith(expect.objectContaining({ email: "netid@illinois.edu" }));
+    expect(mocks.auth.signInWithOtp).toHaveBeenCalledWith({
+      email: "netid@illinois.edu",
+      options: { shouldCreateUser: true, emailRedirectTo: "https://goals.example.test/auth/callback", data: { campus: "uiuc" } },
+    });
     expect(await sendSignupCode({}, form({ campus: "osu", email: "netid@illinois.edu" }))).toHaveProperty("error");
   });
 
