@@ -24,7 +24,16 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-10-12 - Repair production availability, complete authorized reset, QR/shop/navigation polish (Codex)
+
+- Diagnose the live “markets unavailable” and “account unavailable” states against the actual app queries, deployed schema, and available Supabase logs; fix the root cause without silently opening cancelled markets or changing market terms/statuses.
+- Apply only reviewed, additive production migrations needed by the current app, after checking each migration against current production schema and documenting the exact change. Do not deploy or push without working Vercel scope.
+- Complete the previously authorized one-time data reset only if a recoverable scoped export and supported Auth/Storage APIs are available: preserve the two owner accounts and five market definitions/terms/statuses, clear account/trade/position ledger data, restore opening market state/history, and remove non-owner accounts and associated private objects. Never emulate Auth/Storage deletion by deleting provider metadata directly with SQL.
+- Implement a private single-use QR image for owner-configured campus award campaigns; keep claimant coordinates transient and avoid embedding bearer claim tokens in third-party QR services.
+- Replace visible “Silver”/“Gold” currency labels with “Coins” (cosmetic balance/shop amount) and “Trade Coins” (market trading/bonus awards); make one badge family the secondary item with selectable Coin levels primary. Preserve the pre-payment bonus disclosure and fail-closed checkout placeholder.
+- Simplify the shared navigation. Record product-copy direction and the operational QR caveat in DECISIONS.md and close out EXECUTION.md with actual verification/results.
+
+**Authority:** existing reset scope in DECISIONS.md, 2026-10-12 currency/QR decisions, plus the owner's current request for QR images, Coin/Trade Coin labels, one badge family with tiered amounts, menu cleanup, and repair of live availability. Vercel deployment/push is not included unless explicitly authorized and the connected scope permits it.
 
 ## Deferred, to come back to
 
