@@ -38,8 +38,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   try {
     const db = getDb();
     await advanceDueMarkets(db, identity.id);
-    const rows = await db.select({ profile: schema.profiles, wallet: schema.wallets })
+    const rows = await db.select({ profile: schema.profiles, wallet: schema.wallets, silverWallet: schema.silverWallets })
       .from(schema.profiles).leftJoin(schema.wallets, eq(schema.wallets.userId, schema.profiles.id))
+      .leftJoin(schema.silverWallets, eq(schema.silverWallets.userId, schema.profiles.id))
       .where(eq(schema.profiles.id, identity.id)).limit(1);
     account = rows[0];
     if (account?.profile.adultConfirmedAt && !account.profile.withdrawnAt) {
@@ -72,10 +73,11 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <div><h1>{account.profile.displayName}</h1><p className="muted">@{account.profile.handle} &middot; {CAMPUSES[identity.campus].communityName}</p></div>
         </div>
 
-        <section className="points" aria-label="Points">
-          <p className="points-available"><span className="muted">Available</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)} <span>pts</span></strong></p>
+        <section className="points" aria-label="Balances">
+          <p className="points-available"><span className="muted">Gold Trade Coins</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)}</strong></p>
           <dl className="points-facts">
-            <div><dt>In positions</dt><dd>{pointsText(holdings?.totals.valueMicro ?? 0)} pts {holdings && holdings.total > 0 && <Gain micro={holdings.totals.gainMicro} />}</dd></div>
+            <div><dt>Silver Coins</dt><dd>{account.silverWallet?.balance?.toLocaleString() ?? "0"}</dd></div>
+            <div><dt>In positions</dt><dd>{pointsText(holdings?.totals.valueMicro ?? 0)} Gold {holdings && holdings.total > 0 && <Gain micro={holdings.totals.gainMicro} />}</dd></div>
           </dl>
         </section>
 
@@ -106,7 +108,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
         {account.profile.isOwner === 1 && <section className="owner-tools" aria-labelledby="owner-title">
           <h2 id="owner-title">Owner tools</h2>
-          <ul><li><Link href="/review">Review suggestions and publish markets</Link></li><li><Link href="/review/markets">Manage outcomes and objections</Link></li><li><Link href="/review/people">People: photos and bans</Link></li></ul>
+          <ul><li><Link href="/review">Review suggestions and publish markets</Link></li><li><Link href="/review/markets">Manage outcomes and objections</Link></li><li><Link href="/review/campaigns">Create and manage campus QR campaigns</Link></li><li><Link href="/review/people">People: photos and bans</Link></li></ul>
         </section>}
 
         <nav className="account-links" aria-label="Account">

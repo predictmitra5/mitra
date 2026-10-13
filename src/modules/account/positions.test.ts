@@ -13,7 +13,7 @@ import { applyOwnerCommand } from "@/modules/market/lifecycle";
 import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
-import { withFixturePhoto } from "@/test/photo-fixture";
+import { withFixtureGold, withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, markets, positions, wallets, ledgerEntries } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -34,7 +34,7 @@ beforeEach(async () => {
 afterAll(async () => { await memory.close(); });
 
 async function account(handle: string) {
-  const id = randomUUID(); await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now); await withFixturePhoto(db, id); return id;
+  const id = randomUUID(); await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now); await withFixtureGold(db, id); await withFixturePhoto(db, id); return id;
 }
 async function open(cutoffDate = "2026-10-01") {
   const cutoff = new Date(`${cutoffDate}T21:00:00-04:00`);

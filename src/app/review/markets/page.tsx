@@ -12,9 +12,8 @@ export const metadata = { title: "Manage outcomes", robots: { index: false } };
 const FALLBACK_ZONE = "America/New_York";
 
 /**
- * Every live market for the owner (2026-10-08): close trading early, rule from
- * the market's named source once its window ends, or rule No when the source
- * never reported by the results deadline, then the 24-hour objection window.
+ * Every live market for the owner: close trading early, rule from the market's
+ * named source once its window ends, or void/refund if the source never reports.
  */
 export default async function ManageMarketsPage() {
   const identity = await currentIdentity();
@@ -32,7 +31,7 @@ export default async function ManageMarketsPage() {
   })));
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review suggestions</Link></div>
-    <section className="account-welcome"><h1>Settle every market.</h1><p>Close trading, read each market’s source once its window ends, and explain the outcome. With no result by the results deadline, the market is ruled No. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
+    <section className="account-welcome"><h1>Settle every market.</h1><p>Close trading, read each market’s source once its window ends, and explain the outcome. Missing source data is not a No: if the source has not reported by the results deadline, void the market and refund held costs. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
     {!items.length && <section className="account-card"><h2>No live markets to manage.</h2><Link href="/review">Publish one</Link></section>}
     {items.map(({ market, venueName, sourceName, sourceUrl, objections }) => {
       const zone = market.timeZone ?? FALLBACK_ZONE;
@@ -54,7 +53,7 @@ export default async function ManageMarketsPage() {
         {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && formatMoment(market.contestEndsAt, zone)}</p></section>}
         {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
         <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}
-          canRule={market.rulingAvailable} canRuleMissing={market.missingDataAvailable} isRevision={market.status === "ruled"}
+          canRule={market.rulingAvailable} isRevision={market.status === "ruled"}
           resultsDue={formatMoment(market.evidenceDeadlineAt, zone)} />
       </article>;
     })}

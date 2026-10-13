@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { manageMarket } from "@/modules/market/lifecycle-actions";
 import type { OwnerCommand } from "@/modules/market/lifecycle";
 
-export function OwnerControls({ marketId, version, canClose, canRule, canRuleMissing, isRevision, resultsDue }: {
-  marketId: string; version: number; canClose: boolean; canRule: boolean; canRuleMissing: boolean; isRevision: boolean; resultsDue: string;
+export function OwnerControls({ marketId, version, canClose, canRule, isRevision, resultsDue }: {
+  marketId: string; version: number; canClose: boolean; canRule: boolean; isRevision: boolean; resultsDue: string;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -66,14 +66,13 @@ export function OwnerControls({ marketId, version, canClose, canRule, canRuleMis
         <fieldset className="type-picker"><legend>Outcome</legend>{["yes", "no"].map((outcome) => <label className="type-option" key={outcome}><input type="radio" name="outcome" value={outcome} required /><span>{outcome.toUpperCase()}</span></label>)}</fieldset>
         <fieldset className="proof-options"><legend>Basis for the ruling</legend>
           <label className="checkbox-row"><input type="radio" name="basis" value="checked_source" required />I checked the market’s source against its frozen terms.</label>
-          <label className="checkbox-row"><input type="radio" name="basis" value="missing_data" required disabled={!canRuleMissing} />The source never reported by the results deadline ({resultsDue}). The outcome must be NO.</label>
         </fieldset>
         <label className="field">Public explanation<textarea name="reason" required minLength={3} maxLength={2000} rows={4} /><span className="field-hint">Give the number the source reported and how it compares with the terms. This text appears on the public market page.</span></label>
         <button className="secondary-button">Review ruling</button>
       </form></details> : <p className="field-hint">Ruling opens when the event window ends.</p>}
       <details><summary>Void this market</summary><form action={prepare} className="auth-form">
         <input type="hidden" name="action" value="cancel" />
-        <p className="field-hint">For a broken or retired sample market: refund held costs and end trading. A source that never reported is a NO ruling, not a reason to refund.</p>
+        <p className="field-hint">Void and refund if the market is broken or the source has not reported by the results deadline ({resultsDue}). Missing data is not evidence of No.</p>
         <label className="field">Reason for voiding (kept in the record)<textarea name="reason" required minLength={3} maxLength={2000} rows={3} /></label>
         <button className="secondary-button">Review voiding</button>
       </form></details>

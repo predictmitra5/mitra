@@ -12,7 +12,7 @@ import { provisionAccount } from "@/modules/account/provision";
 import { openEventMarket } from "@/test/markets";
 import { executeTrade, previewTrade, readPublicMarket } from "./service";
 import { advanceDueMarkets, advanceMarket, applyOwnerCommand, CONTEST_WINDOW_MS, readObjections, submitObjection, type OwnerCommand } from "./lifecycle";
-import { withFixturePhoto } from "@/test/photo-fixture";
+import { withFixtureGold, withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, wallets, markets, positions, trades, ledgerEntries, adminActions, contests, priceHistory } = schema;
 const start = new Date("2026-09-18T12:00:00Z");
@@ -52,7 +52,7 @@ afterAll(async () => {
 }, 30_000);
 
 async function account(handle: string) {
-  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); await withFixturePhoto(database, id); return id;
+  const id = randomUUID(); await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, start); await withFixtureGold(database, id); await withFixturePhoto(database, id); return id;
 }
 /** Trading cuts off at 9 PM Eastern on October 1; the window ends at 2 AM; results are due three days later. */
 async function open() {
@@ -116,11 +116,17 @@ describe("market lifecycle", () => {
     await applyOwnerCommand(database, owner, input, at(new Date(rulingAt.getTime() + 60000)));
     expect((await market()).contestEndsAt).toEqual(opened.contestEndsAt);
   });
-  it("a source that never reported can only produce NO, only after the results deadline, and still gets a contest window", async () => {
-    await expectError(rule({ basis: "missing_data" }, resultsDue), "MISSING_DATA_NO");
-    await expectError(rule({ basis: "missing_data", outcome: "no" }, new Date(resultsDue.getTime() - 1)), "RESULTS_PENDING");
-    await rule({ basis: "missing_data", outcome: "no", reason: "The venue never sent its count." }, resultsDue);
-    expect((await market()).ruledOutcome).toBe("no"); expect((await market()).status).toBe("ruled");
+  it("never treats missing source data as NO; voids and refunds at the results deadline", async () => {
+    await trade(); await trade(bob, "NO");
+    const missingDataRuling = { ...command(), outcome: "no", basis: "missing_data" } as unknown as OwnerCommand;
+    await expectError(applyOwnerCommand(database, owner, missingDataRuling, at(resultsDue)), "INVALID_INPUT");
+    const [aliceBefore] = await database.select().from(wallets).where(eq(wallets.userId, alice));
+    await applyOwnerCommand(database, owner, command({ action: "cancel", reason: "The source did not report by the published results deadline." }), at(resultsDue));
+    expect((await market()).status).toBe("cancelled");
+    const [aliceAfter] = await database.select().from(wallets).where(eq(wallets.userId, alice));
+    expect(aliceAfter.balanceMicro).toBeGreaterThan(aliceBefore.balanceMicro);
+    expect(await database.select().from(ledgerEntries).where(eq(ledgerEntries.kind, "cancellation_refund"))).toHaveLength(2);
+    await reconcile();
   });
   it("restarts the full window on revision and rejects stale forms and no-op edits", async () => {
     const first = command(); await applyOwnerCommand(database, owner, first, at(rulingAt));

@@ -1,0 +1,2 @@
+ALTER TYPE "public"."admin_action_kind" ADD VALUE 'create_qr_campaign';--> statement-breakpoint
+ALTER TABLE "silver_ledger_entries" ADD CONSTRAINT "silver_ledger_entries_purchase_id_purchase_orders_id_fk" FOREIGN KEY ("purchase_id") REFERENCES "public"."purchase_orders"("id") ON DELETE no action ON UPDATE no action;

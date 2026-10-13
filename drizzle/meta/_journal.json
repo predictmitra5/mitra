@@ -96,13 +96,29 @@
     {
       "idx": 13,
       "version": "7",
-<<<<<<< HEAD
-      "when": 1791402448084,
-      "tag": "0013_security_bounds_upload_telemetry",
-=======
       "when": 1791505907812,
       "tag": "0013_event_markets",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791586696888,
+      "tag": "0014_security_bounds_upload_telemetry",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791860066462,
+      "tag": "0015_currency_badges_qr_campaigns",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791860174222,
+      "tag": "0016_qr_campaign_audit_kind",
       "breakpoints": true
     }
   ]

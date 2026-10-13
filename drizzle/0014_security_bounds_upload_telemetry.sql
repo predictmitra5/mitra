@@ -27,6 +27,6 @@ CREATE UNIQUE INDEX "upload_intents_kind_path_uq" ON "upload_intents" USING btre
 CREATE INDEX "upload_intents_user_expiry_idx" ON "upload_intents" USING btree ("user_id","expires_at");--> statement-breakpoint
 CREATE INDEX "upload_intents_expiry_idx" ON "upload_intents" USING btree ("expires_at");
 --> statement-breakpoint
--- The browser publishable key must not read or write server-owned counters or grants.
+-- These server-owned counters and upload grants are never accessible with the browser key.
 ALTER TABLE "feed_event_buckets" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "upload_intents" ENABLE ROW LEVEL SECURITY;

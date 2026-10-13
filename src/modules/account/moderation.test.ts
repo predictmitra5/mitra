@@ -6,6 +6,7 @@ import { readMigrationFiles } from "drizzle-orm/migrator";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "./provision";
+import { withFixtureGold } from "@/test/photo-fixture";
 import { BAN_CANCEL_REASON, BAN_REJECT_REASON, banPerson, listPeople, unbanPerson } from "./moderation";
 import { isBanned } from "./standing";
 import { ownerQueue, ownerQueueOrNull } from "./owner-queue";
@@ -34,6 +35,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, new Date("2026-09-01T12:00:00Z"));
+  await withFixtureGold(db, id);
   return id;
 }
 /** A goal market about `who` from before the 2026-10-08 pivot. */

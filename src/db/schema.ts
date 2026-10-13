@@ -59,6 +59,8 @@ export const ledgerKind = pgEnum("ledger_kind", [
   "trade_sell",
   "settlement",
   "cancellation_refund",
+  "purchase_bonus",
+  "qr_award",
 ]);
 
 export const adminActionKind = pgEnum("admin_action_kind", [
@@ -75,6 +77,7 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "unban",
   "remove_photo",
   "withdraw_account",
+  "create_qr_campaign",
 ]);
 
 export const profiles = pgTable(
@@ -563,3 +566,106 @@ export const evidence = pgTable(
     ),
   ],
 );
+
+/** Silver Coin balance is separate from the market-trading Gold wallet. */
+export const silverWallets = pgTable("silver_wallets", {
+  userId: uuid("user_id").primaryKey().references(() => profiles.id),
+  balance: bigint("balance", { mode: "number" }).notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const silverLedgerEntries = pgTable("silver_ledger_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  kind: text("kind").notNull(),
+  amount: bigint("amount", { mode: "number" }).notNull(),
+  purchaseId: uuid("purchase_id").references(() => purchaseOrders.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("silver_ledger_user_created_idx").on(table.userId, table.createdAt),
+  check("silver_ledger_kind_check", sql`${table.kind} in ('purchase', 'spend', 'adjustment')`),
+  check("silver_ledger_nonzero_check", sql`${table.amount} <> 0`),
+]);
+
+/** Cosmetic badges bundled with an explicitly priced Silver Coin offer. */
+export const badgeProducts = pgTable("badge_products", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  active: boolean("active").notNull().default(true),
+});
+
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  badgeId: text("badge_id").notNull().references(() => badgeProducts.id),
+  silverAmount: integer("silver_amount").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  goldBonusMicro: bigint("gold_bonus_micro", { mode: "number" }).notNull(),
+  status: text("status").notNull().default("pending"),
+  provider: text("provider"),
+  providerPaymentId: text("provider_payment_id"),
+  idempotencyKey: text("idempotency_key").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("purchase_orders_user_idem_uq").on(table.userId, table.idempotencyKey),
+  uniqueIndex("purchase_orders_provider_payment_uq").on(table.provider, table.providerPaymentId),
+  index("purchase_orders_user_created_idx").on(table.userId, table.createdAt),
+  check("purchase_orders_silver_amount_check", sql`${table.silverAmount} between 100 and 1000 and ${table.silverAmount} % 100 = 0`),
+  check("purchase_orders_price_check", sql`${table.priceCents} = ${table.silverAmount}`),
+  check("purchase_orders_gold_bonus_check", sql`${table.goldBonusMicro} = ${table.silverAmount} * 1000000`),
+  check("purchase_orders_status_check", sql`${table.status} in ('pending', 'paid', 'failed')`),
+]);
+
+export const userBadges = pgTable("user_badges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  badgeId: text("badge_id").notNull().references(() => badgeProducts.id),
+  purchaseId: uuid("purchase_id").notNull().references(() => purchaseOrders.id),
+  awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("user_badges_purchase_uq").on(table.purchaseId),
+  index("user_badges_user_idx").on(table.userId, table.awardedAt),
+]);
+
+/** Owner-configured QR promotion; only its reference location is stored. */
+export const campusQrCampaigns = pgTable("campus_qr_campaigns", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  campus: text("campus").notNull(),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  latitude: text("latitude").notNull(),
+  longitude: text("longitude").notNull(),
+  radiusMeters: integer("radius_meters").notNull(),
+  rewardMicro: bigint("reward_micro", { mode: "number" }).notNull(),
+  maxClaims: integer("max_claims"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  active: boolean("active").notNull().default(true),
+  createdBy: uuid("created_by").notNull().references(() => profiles.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("campus_qr_campaigns_token_hash_uq").on(table.tokenHash),
+  index("campus_qr_campaigns_campus_idx").on(table.campus, table.active),
+  check("campus_qr_campaigns_campus_check", sql`${table.campus} in ('osu', 'uiuc')`),
+  check("campus_qr_campaigns_radius_check", sql`${table.radiusMeters} between 10 and 2000`),
+  check("campus_qr_campaigns_reward_check", sql`${table.rewardMicro} > 0`),
+  check("campus_qr_campaigns_limit_check", sql`${table.maxClaims} is null or ${table.maxClaims} > 0`),
+  check("campus_qr_campaigns_window_check", sql`${table.endsAt} > ${table.startsAt}`),
+  check("campus_qr_campaigns_latitude_check", sql`${table.latitude}::numeric between -90 and 90`),
+  check("campus_qr_campaigns_longitude_check", sql`${table.longitude}::numeric between -180 and 180`),
+]);
+
+/** No claimant coordinates or raw QR token are retained in this table. */
+export const campusQrClaims = pgTable("campus_qr_claims", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  campaignId: uuid("campaign_id").notNull().references(() => campusQrCampaigns.id),
+  userId: uuid("user_id").notNull().references(() => profiles.id),
+  rewardMicro: bigint("reward_micro", { mode: "number" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("campus_qr_claims_campaign_user_uq").on(table.campaignId, table.userId),
+  index("campus_qr_claims_campaign_idx").on(table.campaignId, table.createdAt),
+  check("campus_qr_claims_reward_check", sql`${table.rewardMicro} > 0`),
+]);

@@ -9,6 +9,7 @@ import { publishMarket, submitProposal } from "@/modules/events/service";
 import { executeTrade, previewTrade } from "@/modules/market/service";
 import { insertGoalMarket, openEventMarket } from "@/test/markets";
 import { provisionAccount } from "./provision";
+import { withFixtureGold } from "@/test/photo-fixture";
 import { WithdrawalError, withdrawAccount, type WithdrawalStorage } from "./withdrawal";
 
 const { profiles, markets, wallets, positions, evidence, adminActions, marketProposals } = schema;
@@ -31,6 +32,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, new Date("2026-09-01T12:00:00Z"));
+  await withFixtureGold(db, id);
   await db.update(profiles).set({ photoPath: `${id}/photo.webp`, photoUpdatedAt: now }).where(eq(profiles.id, id));
   return id;
 }

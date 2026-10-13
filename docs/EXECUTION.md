@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-10-08
+Last updated: 2026-10-12
 
 ## Read this first
 
@@ -24,14 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-12 - Separate Silver/Gold balances, badge offers, QR campaigns, and campus browsing
-
-- **Plan:** implement the owner's confirmed product: paid badge offers priced at $1 per 100 Silver Coins (100–1,000), with an equal Gold Trade Coin bonus after verified payment; disclose badge, Silver, Gold bonus, price and intended uses before payment. Add independent Silver accounting, badge catalog/ownership, an idempotent payment-provider placeholder that fails closed until configured, and no cash/prize redemption. Existing account points are not converted; new accounts start at zero Gold until a verified award.
-- **Plan:** build owner-configured, single-use QR campaigns that request location at claim time, compare it server-side to campaign coordinates/radius and discard claimant coordinates without persistence or logging. Persist only campaign reference location and auditable claim/reward records. Add owner-only management and a signed-out OSU/UIUC campus picker; unauthenticated visitors may browse, never trade, and signed-in members stay on verified campus.
-- **Plan:** perform the explicitly requested production reset only after read-only dependency checks and preserving a scoped export: retain both owner accounts and all five market definitions/terms/statuses; delete all other accounts and their personal/dependent data; erase all ledger/trade/position history; reset each retained market's shares and current prices to its original opening values and replace price history with a single opening point. Verify counts and retained owner identities afterwards. Do not alter market wording or publish, deploy, or connect a payment processor.
-- **Why:** the owner has requested these changes and selected “Keep market terms; reset trades and prices.” The production cleanup is a distinct, destructive step and must be tightly scoped and verified. A provider placeholder does not accept money or fulfill purchases. QR campaign coordinates belong to the campaign; claimants' precise coordinates are transient only.
-- **Basis:** current instructions in this conversation; existing market/account/ledger contracts; Supabase security guidance (RLS on exposed tables, no client service-role access, per-action owner authorization); Next.js current App Router action guidance.
-- **Verification:** cover balance separation, offer disclosure, verified/idempotent award, owner authorization, QR expiry/reuse/geofence behavior, coordinate non-retention, and fail-closed payment. Run tests, typecheck, lint, conflict-marker scan, advisors for new database objects, and Webpack build. No push or deployment.
+None.
 
 ## Deferred, to come back to
 
@@ -43,6 +36,9 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 | Name from the university directory | The owner asked on 2026-10-05 for the name step to be filled in from the OSU email. A request to OSU's directory was blocked by the development tools' safety check, and the lookup would send each student's address to a university service | The owner's explicit go-ahead for that data flow, then a check that OSU's and Illinois's directories allow it; until then the name box starts empty |
 
 ## Current state
+
+- **Latest local implementation, 2026-10-12 (not deployed):** new accounts start with zero Gold Trade Coins. Silver is separated from Gold; the shop previews badges, Silver amount, equal Gold bonus, price and intended uses, but checkout is disabled and no currency is awarded because no payment provider is connected. Owners can configure QR award campaigns; claim location is checked server-side and claimant coordinates are not stored. Signed-out visitors can switch the public browse view between OSU and UIUC; trading remains sign-in gated. Local migrations are present through 0016; migrations 0014–0016 have not been deployed. Tests (399 passed, 17 skipped), typecheck, lint and Webpack production build pass. Conflict-marker scan and `git diff --check` were clean. No production reset was run, and no deployment or push occurred.
+- **Production reset is still pending:** the owner authorized retaining the two owner accounts and all five market definitions/terms/statuses, while deleting other accounts and dependent data, clearing ledgers/trades/positions, and restoring market prices/shares to their opening state. This has **not** been executed. No scoped export has yet been created, and the connected Supabase interface available here lacks an Auth-user deletion and Storage-object deletion API; direct SQL alone cannot safely complete that scope. In addition, deploying the new code/migrations is a prerequisite so the old signup grant cannot be recreated. Do not claim production data was reset.
 
 - Stage, 2026-10-08: **Mitra is now a campus event market** (DECISIONS.md, 2026-10-08): markets are about venues and events, students suggest them, the owner publishes them with exact terms and a named source, and three hypothetical Ohio State samples are labelled as such. **Live since 2026-10-08** on the owner's go-ahead: source `927dfb4` pushed to `main` and served at https://mitra-gamma-ten.vercel.app; migration 0013 applied; the one goal market (Jane Street) voided with both holders refunded; the three samples open until Oct 16 and 17. The owner deleted README.md on GitHub on 2026-10-07; that deletion is kept, so references to README.md in these docs point at a file that no longer exists.
 - Before the pivot: the core goal-to-payout flow was built. Since 2026-10-05 (Claude Code, deployed) visitors browse the feed and goal pages without an account and get a Kalshi-style sign-up pop-up after 30 seconds; sign-up and onboarding are one screen per step (school, email, code, password; name and @username, 18+, photo, topics, how it works); the look is the owner's logo, Helvetica, black or white by choice, baby blue buttons and a two-line Yes/No chart, with the school's name in its colour once signed in. Production was deployment `9hvfo1zfZW8ZeJPMBN3CsLV9T14o` from source `be01b32` until 2026-10-08, at https://mitra-gamma-ten.vercel.app, in the Vercel team `mitra25`. Vercel Authentication is off, so it is public. The GitHub repository moved to https://github.com/predictmitra5/mitra (pushes to the old address are forwarded). The `mitra25` team is on Hobby and deploys only commits whose author email is its owner's, `predictmitra@gmail.com`; commits under another address show as Blocked. Nobody has yet completed a real OSU/UIUC code-delivery sign-up or the full goal-to-payout flow with live accounts.
@@ -210,6 +206,14 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-12 - Currency split, disabled shop, campus QR awards, public campus browsing (Codex)
+
+Implemented separate Silver wallets/ledger, badge product/ownership records and purchase-order schema; the catalog discloses each badge, Silver quantity, proposed equal Gold bonus, price and intended uses before payment. Checkout intentionally fails closed and the UI is disabled until a payment provider and verified fulfillment webhook exist. Signup no longer grants 1,000 points; new Gold balances are zero. Owner-managed QR campaigns issue configured Gold awards only after authenticated server-side campus, location, time-window and cap checks. Claimant coordinates are only passed transiently for radius validation and are not recorded. Signed-out visitors can select OSU/UIUC to browse without trading; signed-in users remain on their verified campus. FAQ and Privacy remain generic.
+
+User confirmed the destructive reset scope: keep all five market definitions/terms/statuses; clear trade/position and account ledger history; restore shares/prices to opening state; retain only the two owners. **Not run:** no scoped export was produced and the available Supabase tools do not provide the Auth and Storage deletion APIs needed to finish the complete account purge safely. The code/migrations must be deployed first so production signup no longer recreates the old balance. No deploy or push was performed.
+
+Validation: 399 tests passed, 17 skipped; typecheck, lint and Webpack production build passed. Conflict-marker scan and `git diff --check` were clean. Payment provider, production migration, production data reset, physical QR-image generator and live campus-location testing remain unimplemented/unverified. Browser GPS is user-controlled and is not tamper-proof proof of presence.
 
 ### 2026-10-12 - Resolve merge conflicts; missing-data refund policy; sweepstakes/QR legal gate (Codex)
 

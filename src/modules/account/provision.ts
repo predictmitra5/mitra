@@ -1,9 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { ECONOMY } from "@/modules/market/economy";
 
 const { profiles, wallets, ledgerEntries } = schema;
+const NEW_ACCOUNT_GOLD_BALANCE_MICRO = 0;
 
 export type AccountErrorCode =
   | "INVALID_IDENTITY"
@@ -118,17 +118,10 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
         if (created) {
           await tx.insert(wallets).values({
             userId,
-            balanceMicro: ECONOMY.startingBalanceMicro,
+            balanceMicro: NEW_ACCOUNT_GOLD_BALANCE_MICRO,
             updatedAt: now,
           });
-          await tx.insert(ledgerEntries).values({
-            userId,
-            kind: "signup_grant",
-            amountMicro: ECONOMY.startingBalanceMicro,
-            memo: "One-time signup grant",
-            createdAt: now,
-          });
-          return { profile: created, balanceMicro: ECONOMY.startingBalanceMicro, created: true };
+          return { profile: created, balanceMicro: NEW_ACCOUNT_GOLD_BALANCE_MICRO, created: true };
         }
 
         // A concurrent creator won. A separate READ COMMITTED statement sees
@@ -161,8 +154,7 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
 
       if (
         !wallet || !Number.isSafeInteger(wallet.balanceMicro) || wallet.balanceMicro < 0 ||
-        grants.length !== 1 || !Number.isSafeInteger(grants[0].amountMicro) || grants[0].amountMicro <= 0 ||
-        grants[0].marketId !== null || grants[0].tradeId !== null ||
+        grants.length > 1 || grants.some((grant) => !Number.isSafeInteger(grant.amountMicro) || grant.amountMicro <= 0 || grant.marketId !== null || grant.tradeId !== null) ||
         !Number.isSafeInteger(ledgerTotal) || ledgerTotal !== wallet.balanceMicro
       ) throw inconsistentAccount();
 

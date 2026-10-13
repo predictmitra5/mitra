@@ -1,6 +1,6 @@
 # Markets
 
-Status (event markets since 2026-10-08, see the last section): goal drafting, owner approval, the private signed-in feed and market pages, transactional buy/sell execution, the private positions page, close, ruling/revision, private objections, final payouts, cancellation refunds, proof submission with owner-published statements, and account withdrawal are built. Deployed background scheduling remains to be implemented. User refills were disabled and removed from the product on 2026-10-05.
+Status (event markets since 2026-10-08; latest currency and campus changes 2026-10-12): campus event markets, transactional buy/sell execution, rulings, payouts/refunds and account withdrawal are built. Gold Trade Coins are nonredeemable trading collateral; new accounts start at zero. Silver Coins and cosmetic badge offers are separate from trading. Checkout is disabled until a payment provider is connected. Owner-configured QR campaigns may award Gold after server-side location validation; claimant coordinates are not persisted. Signed-out visitors may switch between OSU and UIUC to browse, but cannot trade. Deployed background scheduling and payment processing remain unimplemented.
 
 ## Confirmed direction - 2026-09-15
 
@@ -36,13 +36,14 @@ Implementation: binary LMSR. Worst-case play-money subsidy is b ln 2 for a marke
 
 Decided 2026-09-15 and explicitly "subject to change". Values live in `src/modules/market/economy.ts`.
 
-- Starting balance: 1,000 points.
-- Current points supply: a profile receives one 1,000-point signup grant. There is no user top-up or automatic/periodic reset. This supersedes the September refill decision. The historical refill engine and ledger kind remain for audit/history but are unreachable from the product.
-- Per-market maximum: 100 points per person, counting the cost basis of shares currently held on both sides. Selling releases cost basis at average cost and frees allowance.
+- Starting Gold balance: zero; signup no longer creates a grant. The legacy refill engine remains for historical/test compatibility but is not reachable as a product action.
+- Gold awards: an eligible QR campaign claim may award the configured amount after server-side campus and radius checks. Campaigns have time windows, one claim per account, and an optional campaign-wide cap. No purchase or redemption flow is active.
+- Silver Coins: a separate balance and ledger, never trade collateral. Badge offers disclose the badge, Silver amount, proposed equal Gold bonus, price, and intended uses before payment. The 100–1,000 Silver offer schedule is disabled and does not currently issue currency.
+- Per-market maximum: 100 Gold per person, counting the cost basis of shares currently held on both sides. Selling releases cost basis at average cost and frees allowance.
 - Selling: allowed back to the market maker while trading is open.
 - Liquidity parameter b: 150 for new markets, so a 100-point bet moves a 50% market to 74%. The user asked for Kalshi's behavior and accepted this option; Kalshi's order book has no equivalent parameter.
 - Opening price: the owner sets each market's opening probability when approving it.
-- Unit: a winning share is worth 1 point (brief section 5), displayed Kalshi-style as 100¢, so a price of 62¢ means 0.62 points per share.
+- Unit: a winning share is worth 1 Gold Trade Coin, displayed Kalshi-style as 100¢, so a price of 62¢ means 0.62 Gold per share.
 
 Still open: fees (none proposed), minimum trade size, rounding presentation, and any future prize/cash concept. Do not equate an available quote with reliable crowd consensus, and do not represent a future prize or cash concept as available now.
 
@@ -156,8 +157,8 @@ Decided by the owner's pivot brief and answers (DECISIONS.md, 2026-10-08). Goal 
 - **Who makes them:** any member can suggest one (question, category, venue, when, how it could be checked). The owner publishes it, writing the exact terms and setting the opening odds, or turns it down with a reason. Nothing a student suggests is published by itself. The owner can also publish from scratch.
 - **Trading:** unchanged: the market maker (b = 150), the 1,000-point grant, the 100-point held-cost limit per market, selling while open. Recorded outcome deciders cannot trade. Event markets have no subject, so nobody is barred as one. Rules ask people not to buy at the venue to move a market and not to trade a venue where they work; nothing enforces that automatically.
 - **Cutoff:** usually when the window starts (the owner can set any time up to the window's end). Trading stops at the cutoff even without a page visit.
-- **Settlement:** after the window ends the owner checks the source and rules, with a public explanation and a 24-hour objection window before payout. If the source has not reported by the results deadline (usually three days after the window), the market resolves No; the owner records that ruling, which the app allows only after the deadline. A broken market (for example an event that never happens) is voided with held-cost refunds.
-- **Sources:** each says whether it is connected or a placeholder. Every source today is a placeholder: no venue shares data with Mitra yet.
+- **Settlement:** after the window ends the owner checks the named source and rules, with a public explanation and a 24-hour objection window before payout. If the source has not reported by the published results deadline (usually three days after the window), the owner voids the market and participants receive their held-cost refunds. Missing data is not a Yes or No outcome. A broken market (for example an event that never happens) is handled the same way.
+- **Sources:** each says whether it is connected or a placeholder. Every source today is a placeholder: no venue shares data with Mitra yet. A market that cannot be resolved from its named source by the stated deadline is voided/refunded; do not infer an outcome from silence.
 - **Samples:** three hypothetical Ohio State markets (Midway on High drinks, Buckeye Donuts donuts, a Gateway Film Center screening), labelled Sample everywhere, with demonstration price history before they open. They are live and tradeable with real points and are voided with refunds when real markets replace them (the owner's answers of 2026-10-08). Fixtures: `src/modules/events/samples.ts`.
 - **Campuses:** venues and markets carry a campus; the feed shows the viewer's campus, and visitors see Ohio State.
 - **The goal market that was live** (Jane Street) was voided on 2026-10-08 with both holders refunded at held cost, and the three samples were published, by `scripts/event-pivot-go-live.mjs`, recorded under both owner accounts.

@@ -19,10 +19,10 @@ export class LifecycleError extends Error {
 
 /**
  * What a ruling rests on (2026-10-08): the owner checked the market's named
- * source, or the source never reported by the results deadline, which the owner
- * decided resolves No.
+ * named source. Missing or unavailable source data is not an outcome; the owner
+ * must void the market and refund held cost instead.
  */
-export type RulingBasis = "checked_source" | "missing_data";
+export type RulingBasis = "checked_source";
 
 export interface OwnerCommand {
   marketId: string;
@@ -48,11 +48,8 @@ function normalize(command: OwnerCommand) {
     throw new LifecycleError("INVALID_INPUT", "Reload this market before trying again.");
   }
   const reason = textReason(command.reason);
-  if (command.action === "rule" && (!["yes", "no"].includes(command.outcome ?? "") || !["checked_source", "missing_data"].includes(command.basis ?? ""))) {
+  if (command.action === "rule" && (!["yes", "no"].includes(command.outcome ?? "") || command.basis !== "checked_source")) {
     throw new LifecycleError("INVALID_INPUT", "Choose an outcome and say whether you checked the source.");
-  }
-  if (command.action === "rule" && command.basis === "missing_data" && command.outcome !== "no") {
-    throw new LifecycleError("MISSING_DATA_NO", "A market whose source never reported must be ruled NO.");
   }
   if (command.action === "close" && command.publicOutcomeConfirmed !== true) {
     throw new LifecycleError("CONFIRM_PUBLIC", "Confirm that the outcome is already public before closing early.");
@@ -95,12 +92,12 @@ async function lockMarket<Q extends PgQueryResultHKT>(database: Database<Q>, mar
 }
 
 /**
- * When the owner may record a ruling. An event market can be ruled from its
- * source as soon as its window ends; ruling that the source never reported
- * waits for the results deadline. A retired goal market keeps its proof period.
+ * When the owner may record a ruling. Event markets can be ruled from their
+ * named source once the event window ends. Source failure is handled by voiding,
+ * not by inventing an outcome. A retired goal market keeps its proof period.
  */
-export function rulingOpensAt(market: Pick<Market, "venueId" | "windowEndAt" | "evidenceDeadlineAt">, basis: RulingBasis): Date {
-  if (market.venueId && market.windowEndAt && basis === "checked_source") return market.windowEndAt;
+export function rulingOpensAt(market: Pick<Market, "venueId" | "windowEndAt" | "evidenceDeadlineAt">): Date {
+  if (market.venueId && market.windowEndAt) return market.windowEndAt;
   return market.evidenceDeadlineAt;
 }
 
@@ -198,10 +195,8 @@ export async function applyOwnerCommand<Q extends PgQueryResultHKT>(database: Da
         tradingClosedAt: market.tradingClosedAt ?? (market.deadlineAt < now ? market.deadlineAt : now) }).where(eq(markets.id, market.id));
       kind = "cancel";
     } else {
-      if (rulingOpensAt(market, command.basis!) > now) {
-        throw new LifecycleError("RESULTS_PENDING", command.basis === "missing_data"
-          ? "Wait until the results deadline passes before ruling that the source never reported."
-          : "Wait until the event window ends before recording the ruling.");
+      if (rulingOpensAt(market) > now) {
+        throw new LifecycleError("RESULTS_PENDING", "Wait until the event window ends before recording the ruling.");
       }
       market = await closeAtDeadline(tx, market, now);
       if (!["closed", "ruled"].includes(market.status)) throw new LifecycleError("INVALID_STATE", "Close trading before ruling on this market.");
@@ -279,6 +274,5 @@ export async function listLifecycleMarkets<Q extends PgQueryResultHKT>(database:
     .orderBy(asc(markets.deadlineAt));
   const now = new Date();
   return rows.map((row) => ({ ...row, market: { ...row.market,
-    rulingAvailable: rulingOpensAt(row.market, "checked_source") <= now,
-    missingDataAvailable: rulingOpensAt(row.market, "missing_data") <= now } }));
+    rulingAvailable: rulingOpensAt(row.market) <= now } }));
 }

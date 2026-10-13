@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPUSES } from "@/config/campus";
+import { CAMPUSES, type CampusKey } from "@/config/campus";
 import type { Viewer } from "@/modules/account/viewer";
 import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
@@ -19,11 +19,13 @@ import { SearchBox } from "./search-box";
  * On a phone the bar keeps the logo, points and photo; the search drops to its
  * own row on the feed (`search="feed"`) and is left out elsewhere.
  */
-export function MarketHeader({ viewer, active, query = "", search = "desktop", brandMode = "campus", entryAction }: {
+export function MarketHeader({ viewer, active, query = "", campus, search = "desktop", brandMode = "campus", entryAction }: {
   viewer: Viewer | null;
   active?: "markets" | "positions";
   /** The search already in the address, on the feed. */
   query?: string;
+  /** Selected public feed campus; only passed on the signed-out home page. */
+  campus?: CampusKey;
   search?: "desktop" | "feed";
   brandMode?: "campus" | "neutral";
   entryAction?: "sign-in" | "sign-up";
@@ -48,21 +50,34 @@ export function MarketHeader({ viewer, active, query = "", search = "desktop", b
         {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
       </nav>}
       <div className="topbar-actions">
+        {!neutral && !viewer && campus && <form className="public-campus-picker" action="/" method="get">
+          {query && <input type="hidden" name="q" value={query} />}
+          <label className="sr-only" htmlFor="public-campus">Browse campus</label>
+          <select id="public-campus" name="campus" value={campus}>
+            <option value="osu">Ohio State</option>
+            <option value="uiuc">Illinois</option>
+          </select>
+          <button type="submit">View</button>
+        </form>}
         <ThemeToggle />
         {viewer?.ownerQueue != null && (
-          <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
-            Review
-            {viewer.ownerQueue > 0 && <span className="owner-badge" aria-hidden="true">{viewer.ownerQueue}</span>}
-          </Link>
+          <>
+            <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
+              Review
+              {viewer.ownerQueue > 0 && <span className="owner-badge" aria-hidden="true">{viewer.ownerQueue}</span>}
+            </Link>
+            <Link className="owner-link owner-campaigns" href="/review/campaigns">Campaigns</Link>
+          </>
         )}
         {viewer ? (
           <>
             {points !== null && (
-              <Link className="topbar-points" href="/account" aria-label={`${pointsShort(points)} points available`}>
-                <strong>{pointsShort(points)}</strong> <span>pts</span>
+              <Link className="topbar-points" href="/account" aria-label={`${pointsShort(points)} Gold Trade Coins available`}>
+                <strong>{pointsShort(points)}</strong> <span>Gold</span>
               </Link>
             )}
             <Link className="btn btn-primary topbar-post" href="/suggest">Suggest a market</Link>
+            <Link className="topbar-shop" href="/shop">Shop</Link>
             <Link className="topbar-me" href="/account" aria-label="Your account">
               <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
             </Link>
@@ -92,7 +107,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
   if (brandMode === "neutral") {
     return (
       <footer className="market-footer market-footer-entry">
-        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Points only.</span></div>
+        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Gold Trade Coins.</span></div>
         <nav className="footer-links" aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link></nav>
         <p className="footer-disclaimer">Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
       </footer>
@@ -102,7 +117,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
     <footer className="market-footer">
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Trade on what happens here. Start with 1,000 points.</span>
+        <span>Trade on what happens here.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/faq">FAQ</Link>

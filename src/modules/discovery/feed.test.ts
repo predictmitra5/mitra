@@ -7,16 +7,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { executeTrade, previewTrade } from "@/modules/market/service";
-<<<<<<< HEAD
-import { pruneFeedEventBuckets, readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
-import { CAPPED_SLOTS, MAX_PER_SUBJECT_IN_TOP } from "./ranking";
-import { withFixturePhoto } from "@/test/photo-fixture";
-=======
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
 import { insertGoalMarket, openEventMarket } from "@/test/markets";
-import { readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
+import { pruneFeedEventBuckets, readFeed, readPriceSeries, readQuotes, readTicker, recordClick, recordExposures, readEventCounts, thinSeries } from "./feed";
 import { CAPPED_SLOTS, MAX_PER_GROUP_IN_TOP } from "./ranking";
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+import { withFixtureGold } from "@/test/photo-fixture";
 
 const { profiles, markets, feedEventBuckets, priceHistory } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -42,6 +37,7 @@ afterAll(async () => { await memory.close(); });
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(db, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixtureGold(db, id);
   return id;
 }
 
@@ -199,9 +195,8 @@ describe("feed measurement", () => {
     expect((await readEventCounts(db, [missing])).size).toBe(0);
   });
 
-<<<<<<< HEAD
-  it("aggregates events without viewer identity and caps ranking signals", async () => {
-    const id = await openGoal(alice);
+  it("aggregates market activity without viewer identity and caps ranking signals", async () => {
+    const id = await openMarket();
     for (let i = 0; i < 10; i++) await recordClick(db, id, now);
     await recordClick(db, id, new Date(now.getTime() + 3_600_000));
     const rows = await db.select().from(feedEventBuckets);
@@ -211,17 +206,10 @@ describe("feed measurement", () => {
   });
 
   it("expires measurement buckets outside the ranking window", async () => {
-    const id = await openGoal(alice);
+    const id = await openMarket();
     await recordClick(db, id, now);
     await pruneFeedEventBuckets(db, new Date(now.getTime() + 26 * 3_600_000));
     expect(await db.select().from(feedEventBuckets)).toHaveLength(0);
-=======
-  it("stores no viewer identity at all, by design", async () => {
-    const id = await openMarket();
-    await recordClick(db, id);
-    const [row] = await db.select().from(feedEvents);
-    expect(Object.keys(row).sort()).toEqual(["createdAt", "id", "kind", "marketId"]);
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   });
 });
 

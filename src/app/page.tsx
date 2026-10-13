@@ -1,5 +1,5 @@
 import { getDb } from "@/db/client";
-import { DEFAULT_CAMPUS_KEY, type CampusKey } from "@/config/campus";
+import { DEFAULT_CAMPUS_KEY, isCampusKey, type CampusKey } from "@/config/campus";
 import { currentIdentity } from "@/modules/auth/server";
 import { EMPTY_FEED, readFeed, recordExposures, type Feed } from "@/modules/discovery/feed";
 import { readViewerOrNull } from "@/modules/account/viewer";
@@ -9,15 +9,11 @@ import { FeedView, type FeaturedData } from "./feed-view";
 import { SignupPrompt } from "./components/signup-prompt";
 
 /*
-<<<<<<< HEAD
- * Visitors can browse the ranked feed, but only verified members contribute
- * anonymous, bounded exposure aggregates. Viewer identity is never stored.
-=======
  * The home route is the campus feed for everyone (browsing without an account
  * returned on 2026-10-05; event markets since 2026-10-08). A member sees their
  * own campus; a visitor sees Ohio State, the launch campus. Visitors also get
- * the sign-up pop-up; exposures are recorded without any viewer identity.
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+ * the sign-up pop-up. Only verified members contribute bounded, anonymous
+ * exposure aggregates; viewer identity is never stored.
  */
 
 // Ranking changes with every trade and click, and the header depends on the
@@ -31,7 +27,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   } catch {
     // If Auth is unavailable, show the feed as a visitor would see it.
   }
-  const campus: CampusKey = identity?.campus ?? DEFAULT_CAMPUS_KEY;
+  const params = await searchParams;
+  const requestedCampus = isCampusKey(params.campus) ? params.campus : DEFAULT_CAMPUS_KEY;
+  const campus: CampusKey = identity?.campus ?? requestedCampus;
 
   const now = new Date();
   let feed: Feed = EMPTY_FEED;
@@ -39,22 +37,16 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   try {
     const database = getDb();
-<<<<<<< HEAD
-    feed = await readFeed(database, now);
+    feed = await readFeed(database, now, { campus });
     // Signed-out browsing stays read-only. Measurement is anonymous and bounded.
     if (identity) await recordExposures(database, feed.cards.map((card) => card.id));
-=======
-    feed = await readFeed(database, now, { campus });
-    // Measurement, not display: a failure inside here is already swallowed.
-    await recordExposures(database, feed.cards.map((card) => card.id));
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   } catch {
     // Never leak a database or provider error to a visitor.
     unavailable = true;
   }
 
   const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
-  const { q } = await searchParams;
+  const { q } = params;
 
   const featured: FeaturedData | null = feed.featured && {
     ...toCardData(feed.featured),
@@ -64,7 +56,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="market-shell">
-      <MarketHeader viewer={viewer} active="markets" search="feed" query={typeof q === "string" ? q.slice(0, 80) : ""} />
+      <MarketHeader viewer={viewer} active="markets" search="feed" campus={campus} query={typeof q === "string" ? q.slice(0, 80) : ""} />
       <FeedView
         cards={feed.cards.map(toCardData)}
         past={feed.past.map(toCardData)}

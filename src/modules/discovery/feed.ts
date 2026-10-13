@@ -7,11 +7,7 @@ import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
-<<<<<<< HEAD
-const { markets, profiles, trades, feedEventBuckets, priceHistory } = schema;
-=======
-const { markets, venues, events, trades, feedEvents, priceHistory } = schema;
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+const { markets, venues, events, trades, feedEventBuckets, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
 
@@ -494,17 +490,13 @@ export async function recordClick<Q extends PgQueryResultHKT>(
   }
 }
 
-<<<<<<< HEAD
 /** Old aggregate buckets are no longer part of ranking and can be discarded. */
 export async function pruneFeedEventBuckets<Q extends PgQueryResultHKT>(database: Database<Q>, now: Date = new Date()) {
   const cutoff = new Date(now.getTime() - FEED_EVENT_RETENTION_HOURS * 3_600_000);
   await database.delete(feedEventBuckets).where(lte(feedEventBuckets.bucketAt, cutoff));
 }
 
-/** Counts for a set of goals, for checking that measurement actually records. */
-=======
 /** Counts for a set of markets, for checking that measurement actually records. */
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
 export async function readEventCounts<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   marketIds: readonly string[],

@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 8, 2026" title="Markets are public. Your account is not." intro="This is a plain-language summary of what the current pilot collects, what anyone visiting Mitra can see, and what stays private.">
+    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 12, 2026" title="Markets are public. Your account is not." intro="This is a plain-language summary of what Mitra collects, what anyone visiting can see, and what stays private.">
       <div className="info-grid">
         <section className="info-card">
           <span className="info-number">01</span>
           <h2>What anyone can see</h2>
-          <p>Anyone who visits Mitra, with or without an account, can see published markets: their venues, terms, sources, prices, aggregate point volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
+          <p>Anyone who visits Mitra, with or without an account, can choose a campus and see its published markets: venues, terms, sources, prices, aggregate Gold Trade Coin volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
@@ -33,11 +33,16 @@ export default function PrivacyPage() {
         </section>
         <section className="info-card">
           <span className="info-number">05</span>
+          <h2>Campus campaign location checks</h2>
+          <p>If you choose to claim an available QR campaign, your browser asks permission to send your current location to Mitra so the server can compare it with the campaign’s owner-set area. Mitra does not store the claimant’s coordinates; it stores the campaign’s reference location and whether a claim was awarded. You can decline location access, but the claim will not be completed.</p>
+        </section>
+        <section className="info-card">
+          <span className="info-number">06</span>
           <h2>Storage and access</h2>
           <p>Authentication, database records, and private file storage are provided through Supabase. Application hosting is provided through Vercel. Access is limited by the app’s account and owner controls, but no online service can promise absolute security.</p>
         </section>
         <section className="info-card">
-          <span className="info-number">06</span>
+          <span className="info-number">07</span>
           <h2>Leaving the pilot</h2>
           <p>You can permanently delete your account from the account page. Mitra removes your login, profile details, photo, any earlier proof files, and suggestions that were never published. Settled trades and ledger entries remain as anonymized accounting records.</p>
         </section>

@@ -88,13 +88,13 @@ export function PublishForm({ defaults, venues, sources, campuses }: {
           <div className="field"><label htmlFor={`cutoff-${id}`}>Trading cutoff</label><input id={`cutoff-${id}`} name="cutoff" type="datetime-local" required defaultValue={defaults.cutoff} /></div>
           <div className="field"><label htmlFor={`due-${id}`}>Results due</label><input id={`due-${id}`} name="resultsDue" type="datetime-local" required defaultValue={defaults.resultsDue} /></div>
         </div>
-        <p className="field-hint">Times are the chosen campus’s local time (Eastern for Ohio State). The cutoff is usually when the window starts; results are usually due three days after it ends. With no result by then, the market is ruled No.</p>
+        <p className="field-hint">Times are the chosen campus’s local time (Eastern for Ohio State). The cutoff is usually when the window starts; results are usually due three days after it ends. If the source does not report by then, the market should be voided and held costs refunded.</p>
       </fieldset>
 
       <fieldset className="publish-group">
         <legend>Exact terms</legend>
         <div className="field"><label htmlFor={`yes-${id}`}>Resolves Yes if</label><textarea id={`yes-${id}`} name="yesCondition" required minLength={10} maxLength={500} rows={2} /></div>
-        <div className="field"><label htmlFor={`no-${id}`}>Resolves No if</label><textarea id={`no-${id}`} name="noCondition" required minLength={10} maxLength={500} rows={2} defaultValue="" placeholder="…or no result arrives by the results deadline." /></div>
+        <div className="field"><label htmlFor={`no-${id}`}>Resolves No if</label><textarea id={`no-${id}`} name="noCondition" required minLength={10} maxLength={500} rows={2} defaultValue="" placeholder="State the measurable condition that establishes No." /></div>
         <div className="field">
           <label htmlFor={`rules-${id}`}>Full rules</label>
           <textarea id={`rules-${id}`} name="rules" required minLength={20} maxLength={2000} rows={4}

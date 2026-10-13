@@ -11,19 +11,19 @@ export default function FaqPage() {
   const questions = [
     {
       question: "What is Mitra?",
-      answer: "A campus prediction market for things that happen around you: a venue’s busy night, a screening’s turnout, an event’s attendance. You use Yes or No points to forecast whether each one happens. Anyone can browse; trading and suggesting markets need a verified Ohio State or Illinois email.",
+      answer: "A campus prediction market for things that happen around you: a venue’s busy night, a screening’s turnout, an event’s attendance. You use Gold Trade Coins to forecast whether each one happens. Visitors can choose Ohio State or Illinois to browse; trading and suggesting markets need a verified university email.",
     },
     {
       question: "Is Mitra affiliated with a university or the venues?",
       answer: "No. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university. Unless a market says its source is connected, Mitra has no partnership with the venue it is about.",
     },
     {
-      question: "How do points work?",
-      answer: "Every account starts with 1,000 points, and you can put at most 100 points into any one market. Points are not currently cash or prizes.",
+      question: "How do Gold Trade Coins work?",
+      answer: "Gold Trade Coins are Mitra’s market-trading balance. New accounts start at zero. Eligible campus QR campaigns may award coins after an account verifies its location. At most 100 Gold Trade Coins can be committed to any one market. Gold Trade Coins are not currently redeemable for cash or prizes, and purchases are not available while payment processing is being set up.",
     },
     {
       question: "What are sample markets?",
-      answer: "Markets marked Sample are hypothetical demonstrations. Their sources are placeholders and their early price history is demonstration data. You can trade them with real points; when they are retired they are voided and everyone is refunded what they paid.",
+      answer: "Markets marked Sample are hypothetical demonstrations. Their sources are placeholders and their early price history is demonstration data. You can trade them with Gold Trade Coins; when they are retired they are voided and everyone is refunded their held cost.",
     },
     {
       question: "How does a market get made?",
@@ -35,7 +35,7 @@ export default function FaqPage() {
     },
     {
       question: "What if the result never comes in?",
-      answer: "If the source has not reported by the results deadline, the market resolves No. A market that turns out to be broken, for example an event that never happens, is voided and everyone is refunded.",
+      answer: "Missing data is not a No. If the source has not reported by the published results deadline, the owner can void the market and refund each participant’s held cost. A market that turns out to be broken is handled the same way.",
     },
     {
       question: "Are there things I shouldn’t do?",

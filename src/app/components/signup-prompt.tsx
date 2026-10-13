@@ -73,14 +73,14 @@ export function SignupPrompt() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
         <h2 id="signup-prompt-title">Create your account</h2>
-        <p className="signup-prompt-sub">Trade on what happens around campus with 1,000 free points. Sign up in a minute.</p>
+        <p className="signup-prompt-sub">Join your campus community and follow what happens around you.</p>
         {Object.values(CAMPUSES).map((campus) => (
           <Link key={campus.key} className={`school-button school-${campus.key}`} href={`/sign-up?school=${campus.key}`} prefetch={false}>
             <span className="school-dot" aria-hidden="true" />Continue with {campus.communityName} email
           </Link>
         ))}
         <p className="signup-prompt-login">Already have an account? <Link href="/sign-in" prefetch={false}>Log in</Link></p>
-        <p className="signup-prompt-fine">Start with 1,000 points. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
+        <p className="signup-prompt-fine">See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
       </div>
     </dialog>
   );

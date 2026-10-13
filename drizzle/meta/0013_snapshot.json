@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "id": "7411efc6-2b26-4d58-b655-86f1280124f3",
-=======
   "id": "21067968-5a5b-443e-9e9a-5b95ad15d82f",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   "prevId": "381e16a2-7746-4c52-bb5d-d69036495f80",
   "version": "7",
   "dialect": "postgresql",
@@ -231,8 +227,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-=======
     "public.events": {
       "name": "events",
       "schema": "",
@@ -325,7 +319,6 @@
       },
       "isRLSEnabled": false
     },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.evidence": {
       "name": "evidence",
       "schema": "",
@@ -511,92 +504,6 @@
       },
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-    "public.feed_event_buckets": {
-      "name": "feed_event_buckets",
-      "schema": "",
-      "columns": {
-        "market_id": {
-          "name": "market_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "feed_event_kind",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "bucket_at": {
-          "name": "bucket_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "event_count": {
-          "name": "event_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {
-        "feed_event_buckets_time_idx": {
-          "name": "feed_event_buckets_time_idx",
-          "columns": [
-            {
-              "expression": "bucket_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "feed_event_buckets_market_id_markets_id_fk": {
-          "name": "feed_event_buckets_market_id_markets_id_fk",
-          "tableFrom": "feed_event_buckets",
-          "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "feed_event_buckets_pk": {
-          "name": "feed_event_buckets_pk",
-          "columns": [
-            "market_id",
-            "kind",
-            "bucket_at"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "feed_event_buckets_count_nonnegative": {
-          "name": "feed_event_buckets_count_nonnegative",
-          "value": "\"feed_event_buckets\".\"event_count\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-=======
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.feed_events": {
       "name": "feed_events",
       "schema": "",
@@ -887,8 +794,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-=======
     "public.market_proposals": {
       "name": "market_proposals",
       "schema": "",
@@ -1099,7 +1004,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.markets": {
       "name": "markets",
       "schema": "",
@@ -1115,11 +1019,7 @@
           "name": "subject_user_id",
           "type": "uuid",
           "primaryKey": false,
-<<<<<<< HEAD
-          "notNull": true
-=======
           "notNull": false
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         },
         "status": {
           "name": "status",
@@ -1147,8 +1047,6 @@
           "primaryKey": false,
           "notNull": false
         },
-<<<<<<< HEAD
-=======
         "campus": {
           "name": "campus",
           "type": "text",
@@ -1217,7 +1115,6 @@
           "notNull": true,
           "default": false
         },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         "deadline_at": {
           "name": "deadline_at",
           "type": "timestamp with time zone",
@@ -1387,8 +1284,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-<<<<<<< HEAD
-=======
         },
         "markets_venue_idx": {
           "name": "markets_venue_idx",
@@ -1404,7 +1299,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         }
       },
       "foreignKeys": {
@@ -1421,8 +1315,6 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-<<<<<<< HEAD
-=======
         "markets_venue_id_venues_id_fk": {
           "name": "markets_venue_id_venues_id_fk",
           "tableFrom": "markets",
@@ -1462,7 +1354,6 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         "markets_approved_by_profiles_id_fk": {
           "name": "markets_approved_by_profiles_id_fk",
           "tableFrom": "markets",
@@ -1496,13 +1387,10 @@
         "markets_evidence_after_deadline": {
           "name": "markets_evidence_after_deadline",
           "value": "\"markets\".\"evidence_deadline_at\" >= \"markets\".\"deadline_at\""
-<<<<<<< HEAD
-=======
         },
         "markets_goal_or_event": {
           "name": "markets_goal_or_event",
           "value": "\"markets\".\"subject_user_id\" is not null or (\"markets\".\"venue_id\" is not null and \"markets\".\"campus\" is not null\n        and \"markets\".\"category\" is not null and \"markets\".\"resolution_source_id\" is not null\n        and \"markets\".\"window_start_at\" is not null and \"markets\".\"window_end_at\" is not null and \"markets\".\"window_end_at\" > \"markets\".\"window_start_at\"\n        and \"markets\".\"time_zone\" is not null and \"markets\".\"yes_condition\" is not null and \"markets\".\"no_condition\" is not null\n        and \"markets\".\"evidence_deadline_at\" >= \"markets\".\"window_end_at\")"
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         }
       },
       "isRLSEnabled": false
@@ -1805,8 +1693,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-=======
     "public.resolution_sources": {
       "name": "resolution_sources",
       "schema": "",
@@ -1859,7 +1745,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.trades": {
       "name": "trades",
       "schema": "",
@@ -2028,38 +1913,14 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-    "public.upload_intents": {
-      "name": "upload_intents",
-=======
     "public.venues": {
       "name": "venues",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
-<<<<<<< HEAD
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "market_id": {
-          "name": "market_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "upload_intent_kind",
-=======
           "notNull": true,
           "default": "gen_random_uuid()"
         },
@@ -2084,18 +1945,10 @@
         "category": {
           "name": "category",
           "type": "market_category",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
-<<<<<<< HEAD
-        "object_path": {
-          "name": "object_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-=======
         "area": {
           "name": "area",
           "type": "text",
@@ -2107,7 +1960,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
         },
         "created_at": {
           "name": "created_at",
@@ -2115,34 +1967,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-<<<<<<< HEAD
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cleaning_at": {
-          "name": "cleaning_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "upload_intents_kind_path_uq": {
-          "name": "upload_intents_kind_path_uq",
-          "columns": [
-            {
-              "expression": "kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "object_path",
-=======
         }
       },
       "indexes": {
@@ -2151,7 +1975,6 @@
           "columns": [
             {
               "expression": "slug",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2162,40 +1985,11 @@
           "method": "btree",
           "with": {}
         },
-<<<<<<< HEAD
-        "upload_intents_user_expiry_idx": {
-          "name": "upload_intents_user_expiry_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "upload_intents_expiry_idx": {
-          "name": "upload_intents_expiry_idx",
-          "columns": [
-            {
-              "expression": "expires_at",
-=======
         "venues_campus_idx": {
           "name": "venues_campus_idx",
           "columns": [
             {
               "expression": "campus",
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2207,38 +2001,7 @@
           "with": {}
         }
       },
-<<<<<<< HEAD
-      "foreignKeys": {
-        "upload_intents_user_id_profiles_id_fk": {
-          "name": "upload_intents_user_id_profiles_id_fk",
-          "tableFrom": "upload_intents",
-          "tableTo": "profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "upload_intents_market_id_markets_id_fk": {
-          "name": "upload_intents_market_id_markets_id_fk",
-          "tableFrom": "upload_intents",
-          "tableTo": "markets",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-=======
       "foreignKeys": {},
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2348,8 +2111,6 @@
         "cancellation_refund"
       ]
     },
-<<<<<<< HEAD
-=======
     "public.market_category": {
       "name": "market_category",
       "schema": "public",
@@ -2361,7 +2122,6 @@
         "campus"
       ]
     },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.market_outcome": {
       "name": "market_outcome",
       "schema": "public",
@@ -2383,8 +2143,6 @@
         "cancelled"
       ]
     },
-<<<<<<< HEAD
-=======
     "public.proposal_status": {
       "name": "proposal_status",
       "schema": "public",
@@ -2394,7 +2152,6 @@
         "rejected"
       ]
     },
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     "public.trade_action": {
       "name": "trade_action",
       "schema": "public",
@@ -2410,17 +2167,6 @@
         "yes",
         "no"
       ]
-<<<<<<< HEAD
-    },
-    "public.upload_intent_kind": {
-      "name": "upload_intent_kind",
-      "schema": "public",
-      "values": [
-        "photo",
-        "evidence"
-      ]
-=======
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
     }
   },
   "schemas": {},

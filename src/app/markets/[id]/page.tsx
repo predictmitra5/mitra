@@ -69,7 +69,7 @@ function Position({ held, yesPrice, className }: { held: Held; yesPrice: number;
         {value.sides.map((side) => (
           <li key={side.side}>
             <span className="muted">{pointsText(side.sharesMicro)} {side.side === "yes" ? "Yes" : "No"} shares</span>
-            <span>{pointsText(side.valueMicro)} pts <Gain micro={side.gainMicro} /></span>
+            <span>{pointsText(side.valueMicro)} Gold <Gain micro={side.gainMicro} /></span>
           </li>
         ))}
       </ul>
@@ -100,28 +100,9 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     }
   } catch { accountUnavailable = true; }
 
-<<<<<<< HEAD
   // Signed-out reads remain available but cannot write click telemetry. This
   // is outside the cached loader so metadata generation never double-counts.
   if (identity) await recordClick(getDb(), id);
-
-  // Proof. listPublished is public by decision; the other two are only ever
-  // read for the person they belong to, and never reveal who the subject is.
-  let publishedProof: Awaited<ReturnType<typeof listPublished>> = [];
-  let myProof: Awaited<ReturnType<typeof listForSubject>> = [];
-  let maySendProof = false;
-  try {
-    publishedProof = await listPublished(getDb(), id);
-    if (identity) {
-      maySendProof = await canSubmit(getDb(), identity.id, id);
-      if (maySendProof) myProof = await listForSubject(getDb(), identity.id, id);
-    }
-  } catch {
-    // Proof is additive to this page; never let it take the goal down with it.
-  }
-
-=======
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
   // Price history, volume and the ticker: public, and additive, so a failure
   // leaves the chart empty and the prices above it still correct.
   let series: { at: string; yesBp: number }[] = [];
@@ -225,7 +206,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
             <div><dt>Trading cutoff</dt><dd>{formatMoment(market.deadlineAt, zone)}</dd></div>
             <div><dt>Results due</dt><dd>{formatMoment(market.evidenceDeadlineAt, zone)}</dd></div>
             {opened && <div><dt>Opened</dt><dd>{opened}, set by the owner</dd></div>}
-            <div><dt>If no result arrives</dt><dd>Resolves No</dd></div>
+            <div><dt>If no result arrives</dt><dd>Void and held costs refunded</dd></div>
             <div><dt>If voided</dt><dd>Shares refunded at what you paid</dd></div>
           </dl>
           <p className="muted goal-small">Trading ends at the cutoff, or earlier if the owner closes it. The owner settles the market from the source below once the window ends. Each ruling has a 24-hour window for objections before payout.</p>

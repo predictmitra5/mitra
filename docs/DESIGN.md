@@ -1,5 +1,13 @@
 # Market UI design
 
+## Current product overlays (2026-10-12)
+
+- Signed-out visitors may choose OSU or UIUC from the home-page selector to browse that campus. This is presentation-only; signed-in campus identity always comes from the verified account, and signed-out visitors cannot trade.
+- Account and market surfaces label the trading balance **Gold Trade Coins**; new accounts start at zero. Silver Coins are displayed separately and are not trade collateral.
+- `/shop` previews badge + Silver + Gold bonus + total price and uses disclosure. The purchase control is disabled until a payment provider is connected; there is no active checkout or currency issuance.
+- Owners configure QR campaigns at `/review/campaigns`. A claimant explicitly requests device location and the server checks the campaign radius. Claimant coordinates are discarded and not logged or persisted.
+- FAQ and Privacy remain generic Mitra pages. Currency labels and QR mechanics do not imply regulatory approval or legal compliance.
+
 How Mitra's market surfaces are laid out, and why. Redesigned 2026-09-22 from three references the owner supplied: Kalshi's home page, GoFundMe's fundraiser grid and YouTube's home feed.
 
 The owner's brief: Kalshi's price and information layout and its rundown of events; the thumbnail quality and title structure of YouTube and GoFundMe, compressed to a Kalshi-sized card; a price graph if it earns its place.
@@ -283,7 +291,7 @@ The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of sectio
 - **Motto:** the top bar and the footer say "Trade on what happens here." The opening card built from the owner's image ("mitra.", the motto, the campus and "Your campus. Your market." as pills) was removed the same day at the owner's request; the feed opens with the ticker and tabs as before.
 - **Tabs and filters:** All, Nightlife, Food, Events, Entertainment, Campus and the disabled Coming soon label, then three pill selects beside the grid's heading: venue, status (Open by default; Closed, Resolved, Void, Any status) and closing date (within a day, this week, this month). All of them live in the address (`?cat=`, `?venue=`, `?status=`, `?closes=`, `?q=`) and change it without a request, like the tabs before them. An empty result says so and offers Suggest a market.
 - **Cards:** the venue's initials in the photo square, category · venue (a link to the venue page) and a Sample tag where it applies, the question, the chance, today's change and points traded, then the closing time and time left; a market no longer open shows where it stands (Trading closed · awaiting result, Resolved: Yes, Void · refunded) instead of the Yes and No buttons.
-- **Market page:** venue and event above the question; a Sample note under it for samples; the chart and trade panel as before; Rules opens with two tinted boxes, Resolves Yes if (green) and Resolves No if (red), then the full rules and the facts (event window, trading cutoff, results due, opened at, if no result arrives: No, if voided: refunded); then Verification source with a Connected or "Placeholder · not connected" badge, how it counts and its link. The proof list is gone.
+- **Market page:** venue and event above the question; a Sample note under it for samples; the chart and trade panel as before; Rules opens with two tinted boxes, Resolves Yes if (green) and Resolves No if (red), then the full rules and the facts (event window, trading cutoff, results due, opened at, if no result arrives: void/refund, if voided: refunded); then Verification source with a Connected or "Placeholder · not connected" badge, how it counts and its link. The proof list is gone.
 - **Venue page** (`/venues/<slug>`): the venue's mark, name, category and area, one line about it, then its open markets and its closed, resolved and void ones.
 - **Sample label:** a small outlined tag in the accent wash wherever a sample appears (cards, the featured market, Closing soon, positions, the venue page), and a fuller note on its own page saying it is hypothetical, that Mitra has no partnership with the venue and that its early price history is demonstration data.
 - **Suggest a market** and the owner's publish form reuse the existing form fields, with selects styled as fields and two-up rows that stack on a phone.

@@ -144,10 +144,10 @@ export function TradePanel({
           <h3>Review your {preview.action === "buy" ? "buy" : "sale"}</h3>
           <dl className="trade-lines">
             <div><dt>{words(preview.side)} shares</dt><dd>{formatMicro(preview.sharesMicro)}</dd></div>
-            <div><dt>You {preview.action === "buy" ? "pay" : "receive"}</dt><dd>{formatMicro(preview.totalMicro)} pts</dd></div>
+            <div><dt>You {preview.action === "buy" ? "pay" : "receive"}</dt><dd>{formatMicro(preview.totalMicro)} Gold</dd></div>
             <div><dt>Average per share</dt><dd>{(preview.totalMicro / preview.sharesMicro * 100).toFixed(2)}¢</dd></div>
             <div><dt>{words(preview.side)} price after</dt><dd>{(preview.priceAfter * 100).toFixed(2)}¢</dd></div>
-            <div><dt>Available after</dt><dd>{formatMicro(preview.balanceAfterMicro)} pts</dd></div>
+            <div><dt>Available after</dt><dd>{formatMicro(preview.balanceAfterMicro)} Gold</dd></div>
           </dl>
           <p className="trade-note">{preview.action === "buy"
             ? `If ${words(preview.side)} wins, these shares pay ${formatMicro(preview.sharesMicro)} points. If it loses, they pay 0.`
@@ -169,10 +169,10 @@ export function TradePanel({
     { label: "Average price", value: sell ? cents(sell.averagePrice) : cents(sidePrice) },
     { label: "Shares", value: amountMicro ? one(amountMicro / 1_000_000) : "—" },
   ];
-  const payoff = mode === "buy" ? (buy ? `${one(buy.toWin)} pts` : "—") : (sell ? `${one(sell.proceeds)} pts` : "—");
+  const payoff = mode === "buy" ? (buy ? `${one(buy.toWin)} Gold` : "—") : (sell ? `${one(sell.proceeds)} Gold` : "—");
   const amountLabel = mode === "buy" ? "Amount" : "Shares to sell";
   const available = mode === "buy"
-    ? (balanceMicro === null ? null : `${formatMicro(Math.floor(balanceMicro / 10_000) * 10_000)} pts available`)
+    ? (balanceMicro === null ? null : `${formatMicro(Math.floor(balanceMicro / 10_000) * 10_000)} Gold available`)
     : (canTrade ? `${one(held / 1_000_000)} ${words(side)} shares held` : null);
 
   return (
@@ -201,7 +201,7 @@ export function TradePanel({
             <input id={`amount-${marketId}`} name="amount" inputMode="decimal" autoComplete="off" value={amount} maxLength={30}
               onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))} aria-describedby={`amount-help-${marketId}`}
               aria-invalid={over || (amount !== "" && amountMicro === null)} />
-            <span>{mode === "buy" ? "pts" : "shares"}</span>
+            <span>{mode === "buy" ? "Gold" : "shares"}</span>
           </div>
           <div className="quick">
             {QUICK.map((points) => <button key={points} type="button" onClick={() => add(points)}>+{points}</button>)}
@@ -220,7 +220,7 @@ export function TradePanel({
         {access.kind === "open" ? (
           <button type="submit" className="btn btn-primary trade-cta" disabled={pending || !amountMicro || over}>
             {pending ? "Getting your quote…" : mode === "buy"
-              ? `Buy ${words(side)}${amountMicro ? ` for ${formatMicro(amountMicro)} pts` : ""}`
+              ? `Buy ${words(side)}${amountMicro ? ` for ${formatMicro(amountMicro)} Gold` : ""}`
               : `Sell ${words(side)}${amountMicro ? ` · ${formatMicro(amountMicro)} shares` : ""}`}
           </button>
         ) : access.kind === "signed-out" ? (
@@ -230,7 +230,7 @@ export function TradePanel({
         )}
       </form>
       <p className="trade-note">
-        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 pts per market.
+        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 Gold Trade Coins per market.
         {access.kind === "signed-out" && " Trading needs a verified university email and is for ages 18 and up."}
       </p>
     </div>

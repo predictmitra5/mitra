@@ -1,7 +1,7 @@
 import { MICRO_PER_UNIT } from "./units";
 
 /**
- * Points economy decided by the owner on 2026-09-15. The owner called these
+ * Market economy decided by the owner. The owner called these
  * values "subject to change", so code reads them from here instead of repeating
  * the numbers. See docs/MARKETS.md.
  */
@@ -10,13 +10,15 @@ export interface EconomySettings {
   refillsPerMonth: number;
   /** IANA time zone whose calendar months limit refills. */
   refillTimeZone: string;
-  /** Maximum cost basis one person may hold in a single market. */
+  /** Maximum Gold Trade Coin cost basis one person may hold in a single market. */
   perMarketLimitMicro: number;
-  /** LMSR liquidity parameter b, in points, for new markets. */
+  /** LMSR liquidity parameter b, in Gold Trade Coins, for new markets. */
   defaultLiquidity: number;
 }
 
 export const ECONOMY: EconomySettings = {
+  // Legacy refill target retained only by the unreachable historical refill
+  // engine; new accounts no longer receive this balance.
   startingBalanceMicro: 1_000 * MICRO_PER_UNIT,
   refillsPerMonth: 2,
   refillTimeZone: "America/New_York",

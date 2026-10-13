@@ -11,7 +11,7 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { insertGoalMarket, openEventMarket } from "@/test/markets";
 import { executeTrade, previewTrade, readPublicMarket, readTrader, type TradePreview, type TradeRequest } from "./service";
-import { withFixturePhoto } from "@/test/photo-fixture";
+import { withFixtureGold, withFixturePhoto } from "@/test/photo-fixture";
 
 const { profiles, markets, wallets, ledgerEntries, positions, trades, priceHistory, marketOutcomeDeciders } = schema;
 const hosted = process.env.MITRA_HOSTED_TEST === "1";
@@ -67,6 +67,7 @@ afterAll(async () => {
 async function account(handle: string) {
   const id = randomUUID();
   await provisionAccount(database, id, { displayName: handle, handle, adultConfirmed: true }, now);
+  await withFixtureGold(database, id);
   await withFixturePhoto(database, id);
   return id;
 }

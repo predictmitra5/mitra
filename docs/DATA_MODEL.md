@@ -2,7 +2,7 @@
 
 > **2026-10-08, migration 0013:** four new tables (`venues`, `events`, `resolution_sources`, `market_proposals`) and new `markets` columns (campus, category, venue, event, source, window start and end, time zone, Yes and No conditions, `is_sample`); `markets.subject_user_id` is nullable, and a check requires each market to be a legacy goal or a fully specified event market. See Event markets below.
 
-Status: sixteen tables and fourteen migrations in the repository. All fourteen are applied and recorded on the live project since 2026-10-08; see Event markets at the end. The candidate inventory that follows is kept for entities not yet modelled.
+Status: the current working tree adds separate Silver accounting, badge products/purchases, campus QR campaigns and claim records in migrations 0015–0016. These migrations are local and have not been applied to production. Migration 0014 is the independent security/upload history; production migration state must be rechecked before rollout. The candidate inventory that follows is retained for entities not yet modelled.
 
 Source: PDF sections 5.2, 7.3, 16, 20-22, pages 5, 7, 11-14.
 
@@ -53,6 +53,11 @@ Defined in `src/db/schema.ts`, applied to Supabase through `drizzle/0000_initial
 | `price_history` | Price points for charts and audit |
 | `admin_actions` | Every owner decision with its reason and the context visible at the time |
 | `contests` | Objections raised during the 24-hour window after a ruling |
+| `silver_wallets`, `silver_ledger_entries` | Separate Silver Coin balance and immutable accounting, not trade collateral |
+| `badge_products`, `user_badges`, `purchase_orders` | Cosmetic catalog, ownership, and future payment-order records; payment fulfillment is not enabled |
+| `campus_qr_campaigns`, `campus_qr_claims` | Owner-configured campus/location/award settings and auditable claims; claimant coordinates are never stored |
+
+Migration 0015 creates the Silver, badge, purchase and QR tables with RLS enabled and no browser policies. Migration 0016 adds the campaign audit kind and purchase-ledger relationship. New account provisioning starts Gold at zero with no signup ledger grant. The offer catalog and disabled checkout are placeholders until a payment provider and verified webhook are implemented. QR claims store campaign/account/reward facts but receive claimant latitude/longitude only transiently for server-side radius validation.
 
 Migration `0004_trade_request_amount.sql`, applied 2026-09-18, adds nullable `trades.request_amount_micro`: the original buy spend cap or sell share quantity. New trades always fill it. This distinguishes a genuine retry from reuse of a request id with changed instructions; nullable values are reserved for legacy rows and never treated as a matching retry.
 
@@ -72,7 +77,7 @@ The positions projection (`src/modules/account/positions.ts`) reads the caller's
 
 Row-level security is enabled on all ten tables with no policies, so the browser-exposed publishable key reads nothing through the Supabase REST API. This was verified with a temporary row: the browser key returned an empty list while the server key returned the row. All database access goes through server code in `src/db/client.ts`.
 
-Migration `0006_feed_events.sql`, applied 2026-09-19, added `feed_events` for the public feed without viewer identity. It is retained as historical data and is no longer written or queried. Migration `0013_security_bounds_upload_telemetry.sql` adds `feed_event_buckets`, anonymous market/hour counters capped by application code and pruned after 24 hours, plus `upload_intents`, which tracks direct-upload paths and expiration. Both tables have row-level security enabled with no policies. Browser access remains denied; all writes and cleanup run server-side.
+Migration `0006_feed_events.sql`, applied 2026-09-19, added `feed_events` for the public feed without viewer identity. It is retained as historical data and is no longer written or queried. Migration `0014_security_bounds_upload_telemetry.sql` adds `feed_event_buckets`, anonymous market/hour counters capped by application code and pruned after 24 hours, plus `upload_intents`, which tracks direct-upload paths and expiration. Both tables have row-level security enabled with no policies. Browser access remains denied; all writes and cleanup run server-side.
 
 The feed reads only `status = 'open'` markets that have an approval time and market-maker shares, joins the subject's public display name and handle, and returns an explicit projection: question, goal type, deadline, prices and the placement reason. Since the 2026-09-22 redesign it also returns total points traded, the 24-hour price change, and for the featured goals a thinned price history from `price_history`. Volume is a community aggregate; trader counts are deliberately not returned, because in a small group they can identify someone. It carries no subject user id, liquidity, score, owner note or accounting value. Ranking itself is a pure function in `src/modules/discovery/ranking.ts` with no database access.
 
@@ -110,10 +115,7 @@ One standing check, `isInactive` in `src/modules/account/standing.ts`, treats wi
 
 Photos are stored only as the 512-pixel WebP the app re-encoded, so no uploaded metadata survives. The bucket's privacy and its WebP-only limit were probed on 2026-09-24: a WebP stored, a JPEG was refused, the server key could read the object, the browser key could not, and the public URL returned 400.
 
-<<<<<<< HEAD
-Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing. Feed and market-page GETs by signed-out visitors also do not write measurement. Signed-in feed exposure and open counters are bounded per market/hour and old buckets are deleted by maintenance.
-=======
-Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing: polling cannot add `feed_events` rows. A test and a live check (205 events before and after two polls) confirm it.
+Live prices come from `readQuotes`, which reads market state, volume and the 24-hour reference price, and writes nothing. Signed-out feed and market-page GETs do not write measurement; signed-in feed exposure and market-open counters use anonymous bounded market/hour buckets, with older buckets deleted by maintenance. Legacy `feed_events` rows are retained but not used for ranking. A test and a live check (205 legacy events before and after two polls) confirm price polling does not add rows.
 
 ## Event markets (2026-10-08, migration 0013)
 
@@ -130,5 +132,4 @@ Status words: the engine keeps `open`, `closed`, `ruled`, `settled` and `cancell
 
 Publishing writes the venue (if new), the event, the source (if new), the market at the owner's opening price, its first price point and an `approve` row in `admin_actions` in one transaction; publishing a suggestion marks it approved in the same transaction. Turning a suggestion down writes a `reject` row with no market. Sample markets may carry demonstration price points dated before they opened.
 
-Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 without a record in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` recorded it and applied 0013 on 2026-10-08, so a plain `drizzle-kit migrate` works again.
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+Migration 0013 is additive: the app deployed before it keeps working while it is applied. On the live project, 0012 was applied by hand on 2026-10-05 without a record in `drizzle.__drizzle_migrations`; `scripts/event-pivot-go-live.mjs` recorded it and applied 0013 on 2026-10-08, so a plain `drizzle-kit migrate` works again. The independent security migration is numbered 0014 so the event migration already applied in production is not renamed or replayed.

@@ -76,7 +76,7 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
       question: `Will Midway on High sell more than 1,000 qualifying drinks between 9 PM and 2 AM on Friday, ${friLabel}?`,
       windowStartAt: midwayStart, windowEndAt: midwayEnd, tradingCutoffAt: midwayStart, resultsDueAt: new Date(midwayEnd.getTime() + 3 * DAY),
       yesCondition: "Midway on High’s point-of-sale report shows more than 1,000 qualifying drinks sold between 9:00 PM Friday and 2:00 AM Saturday, Eastern time.",
-      noCondition: "The report shows 1,000 or fewer qualifying drinks, or no report arrives by the results deadline.",
+      noCondition: "The report shows 1,000 or fewer qualifying drinks during the stated window.",
       rules: "A qualifying drink is any drink item, with or without alcohol, rung up and paid for on Midway on High’s point-of-sale system during the window. "
         + "Voided, refunded and complimentary items don’t count, and a pitcher or bucket counts as one item. "
         + `${FAIR_PLAY} ${SAMPLE_NOTE}`,
@@ -93,7 +93,7 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
       question: `Will Buckeye Donuts sell more than 1,200 donuts between 10 PM Friday, ${friLabel} and 4 AM Saturday?`,
       windowStartAt: donutStart, windowEndAt: donutEnd, tradingCutoffAt: donutStart, resultsDueAt: new Date(donutEnd.getTime() + 3 * DAY),
       yesCondition: "Buckeye Donuts’ point-of-sale report shows more than 1,200 donuts sold between 10:00 PM Friday and 4:00 AM Saturday, Eastern time.",
-      noCondition: "The report shows 1,200 or fewer donuts, or no report arrives by the results deadline.",
+      noCondition: "The report shows 1,200 or fewer donuts during the stated window.",
       rules: "Every individual donut counts once: a dozen counts as 12. Donut holes, drinks and other items don’t count. Refunded items don’t count. "
         + `${FAIR_PLAY} ${SAMPLE_NOTE}`,
       source: { name: "Buckeye Donuts point-of-sale report (placeholder)", operational: false,
@@ -109,7 +109,7 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
       question: `Will Gateway Film Center’s 7:00 PM screening on Saturday, ${satLabel} sell more than 120 paid admissions?`,
       windowStartAt: filmStart, windowEndAt: filmEnd, tradingCutoffAt: filmStart, resultsDueAt: new Date(filmEnd.getTime() + 3 * DAY),
       yesCondition: "Gateway Film Center’s ticketing report shows more than 120 paid admissions for its 7:00 PM screening that Saturday.",
-      noCondition: "The report shows 120 or fewer paid admissions, or no report arrives by the results deadline.",
+      noCondition: "The report shows 120 or fewer paid admissions for the stated screening.",
       rules: "The screening is the first one listed on Gateway Film Center’s published schedule with a 7:00 PM Eastern start that Saturday. "
         + "If no screening starts at 7:00 PM, the market is void and everyone is refunded. Paid admissions are tickets sold for that screening; "
         + `complimentary tickets, passes and refunds don’t count. ${FAIR_PLAY} ${SAMPLE_NOTE}`,

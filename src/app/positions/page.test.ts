@@ -58,8 +58,8 @@ describe("positions page authorization and presentation", () => {
     expect(html).toContain('side-yes">Yes</span> · 1.0 shares · paid 40¢');
     expect(html).toContain('side-no">No</span> · 12.3 shares · paid 37¢');
     // 1 Yes share at 62¢ plus 12.345678 No shares at 38¢ = 5.311 points, against 4.968 paid.
-    expect(html).toContain("5.3 pts"); expect(html).toContain("+0.3");
-    expect(html).toContain("12.3 pts"); expect(html).toContain("+7.8");
+    expect(html).toContain("5.3 Gold"); expect(html).toContain("+0.3");
+    expect(html).toContain("12.3 Gold"); expect(html).toContain("+7.8");
     expect(html).toContain("not what selling them would return");
   });
   it("says where a closed holding stands: results due, objections open, or payout pending", () => {
@@ -82,7 +82,7 @@ describe("positions page authorization and presentation", () => {
     }] }));
     expect(html).toContain("Trade history");
     expect(html).toContain("Bought 12.3");
-    expect(html).toContain("−4.6 pts");
+    expect(html).toContain("−4.6 Gold");
     expect(view(fixture)).not.toContain("Trade history");
   });
   it("keeps the public chance for screen readers, and says when it is the closing number", () => {

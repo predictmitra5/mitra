@@ -38,15 +38,21 @@ describe("home feed for visitors and members", () => {
     expect(feed.type).toBe(FeedView);
     expect(feed.props.signedIn).toBe(false);
     expect(prompt.type).toBe(SignupPrompt);
-<<<<<<< HEAD
-    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date));
-    expect(mocks.recordExposures).not.toHaveBeenCalled();
-=======
-    // Visitors see the launch campus.
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
-    expect(mocks.recordExposures).toHaveBeenCalledWith("database", []);
->>>>>>> 5a8d8b41a1ae1227860ffe31e2de98ed667be481
+    expect(mocks.recordExposures).not.toHaveBeenCalled();
     expect(mocks.viewer).not.toHaveBeenCalled();
+  });
+
+  it("lets signed-out visitors choose either public campus feed", async () => {
+    mocks.identity.mockResolvedValue(null);
+    await Home({ searchParams: Promise.resolve({ campus: "uiuc" }), params: Promise.resolve({}) });
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
+  });
+
+  it("ignores an invalid campus choice and keeps the default campus", async () => {
+    mocks.identity.mockResolvedValue(null);
+    await Home({ searchParams: Promise.resolve({ campus: "other" }), params: Promise.resolve({}) });
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
   });
 
   it("treats an unavailable sign-in service as a visitor rather than failing", async () => {
@@ -69,5 +75,11 @@ describe("home feed for visitors and members", () => {
     mocks.identity.mockResolvedValue({ id: "verified-user", email: "netid@illinois.edu", campus: "uiuc" });
     await Home({ searchParams: Promise.resolve({}), params: Promise.resolve({}) });
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
+  });
+
+  it("does not let a signed-in member switch away from their verified campus", async () => {
+    mocks.identity.mockResolvedValue({ id: "verified-user", email: "member@osu.edu", campus: "osu" });
+    await Home({ searchParams: Promise.resolve({ campus: "uiuc" }), params: Promise.resolve({}) });
+    expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
   });
 });
