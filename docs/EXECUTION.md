@@ -27,6 +27,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 ### 2026-10-13 - Move signed-out campus switcher beside the Mitra mark (Codex)
 
 - Put a compact campus dropdown in the signed-out brand lockup, occupying the same inline campus-identity spot shown after sign-in. Selecting Ohio State or Illinois should switch the public feed immediately and preserve the current search; signed-in campus identity remains verified and non-editable here.
+- Ensure the campus-specific footer disclosure follows the signed-out campus selected in the URL rather than a stale display cookie.
 - Remove the separate far-right selector and keep the header usable on mobile. Update the design/execution record and verify navigation and tests.
 
 **Authority:** the owner's request that visitors choose/toggle Ohio State and Illinois from the header, where campus identity appears after sign-in. This affects presentation/feed campus only; signed-out trading remains unavailable and signed-in identity remains server-derived.
