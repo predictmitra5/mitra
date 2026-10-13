@@ -24,6 +24,13 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
+### 2026-10-12 - Finish merge repair; change missing-data outcome; record sweepstakes-model benchmark
+
+- **Plan:** finish and verify the already-started merge-conflict repair. Change the event-market rule so a source that fails to provide results is never ruled No; after the published results deadline, require an owner void/cancellation with held-cost refunds instead. Update owner UI, lifecycle tests, market docs, and the product decision record. Add a clearly non-operative future-currency benchmark describing free Points today and the proposed separate Gold/play and redeemable sweepstakes balances, with an explicit legal-review gate; do not add purchase, award, conversion, redemption, wallet, or payment code.
+- **Why:** the owner rejected a missing-data No as unfair. The proposed dual-token sweepstakes flow involves redeemable prizes and potentially purchased play currency; labels and a free-entry route alone do not establish legality. Research and an attorney review must precede any value-bearing implementation.
+- **Basis:** the 2026-10-08 event-market rules and current held-cost cancellation/refund transaction; current CFTC event-contract and consumer-protection requirements; Ohio and Illinois gambling/sweepstakes laws; no speculative real-money schema (DATA_MODEL.md).
+- **Verification:** search for removed conflict markers; run tests, typecheck, lint, and `npm run build -- --webpack`. No production database, payment provider, deploy, or push changes.
+
 ### 2026-10-09 - Resolve committed merge conflicts
 
 - **Plan:** inspect each conflict hunk against both merge parents and the current event-market product decisions; keep or combine only code consistent with the active product, and remove all conflict markers from application code, tests, docs and Drizzle metadata. Preserve both independently required changes where possible, while ensuring migration metadata remains valid and migration history is not rewritten.
