@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None. The production data reset remains pending and is recorded under Current state._
+Implement the QR scan-to-claim journey and owner campaign management: make the claim page clearly show signed-in status and a polished location-check action; carry a validated same-origin campaign return path through sign-in for already-onboarded members; add owner-only campaign edit, pause/resume, replace-QR, and delete/archive actions. Preserve claimed award history: prevent edits after the first claim, invalidate old links when replacing a QR, and archive rather than erase campaigns with claims. Add narrowly scoped audit events/schema migration if needed; test auth return-path validation, owner authorization, lifecycle guards, and claimant-coordinate non-retention. This follows the 2026-10-12 approved QR campaign behavior and existing server-side owner/auth rules. The prior campus dropdown fix is now pushed at `78bf5e0`. The production account/data reset remains pending and is recorded under Current state.
 
 ## Deferred, to come back to
 
