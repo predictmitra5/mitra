@@ -33,28 +33,30 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
   const neutral = brandMode === "neutral";
   return (
     <header className={`topbar${search === "feed" && !neutral ? " topbar-with-search" : ""}${neutral ? " topbar-entry" : ""}`}>
-      <Link className="brand" href="/" prefetch={false}>
-        <span className="brand-lockup">
-          <Logo className="brand-logo" title="Mitra" />
-          {viewer && <>
-            <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
-            <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
-          </>}
-          {!viewer && campus && <details className="public-campus-menu" data-campus={campus}>
-            <summary aria-label={`Browse campus; currently ${CAMPUSES[campus].communityName}`}>
-              {CAMPUSES[campus].communityName}<span className="public-campus-chevron" aria-hidden="true" />
-            </summary>
-            <div className="public-campus-menu-links" aria-label="Choose a campus">
-              {(Object.keys(CAMPUSES) as CampusKey[]).map((key) => <Link
-                key={key}
-                href={campusBrowseHref(key, query)}
-                aria-current={campus === key ? "page" : undefined}
-              >{CAMPUSES[key].communityName}</Link>)}
-            </div>
-          </details>}
-        </span>
+      <div className="brand">
+        <Link className="brand-home" href="/" prefetch={false} aria-label="Mitra home">
+          <span className="brand-lockup">
+            <Logo className="brand-logo" title="Mitra" />
+            {viewer && <>
+              <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
+              <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
+            </>}
+          </span>
+        </Link>
+        {!neutral && !viewer && campus && <details className="public-campus-menu" data-campus={campus}>
+          <summary aria-label={`Browse campus; currently ${CAMPUSES[campus].communityName}`}>
+            {CAMPUSES[campus].communityName}<span className="public-campus-chevron" aria-hidden="true" />
+          </summary>
+          <div className="public-campus-menu-links" aria-label="Choose a campus">
+            {(Object.keys(CAMPUSES) as CampusKey[]).map((key) => <Link
+              key={key}
+              href={campusBrowseHref(key, query)}
+              aria-current={campus === key ? "page" : undefined}
+            >{CAMPUSES[key].communityName}</Link>)}
+          </div>
+        </details>}
         {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
-      </Link>
+      </div>
       {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
       {!neutral && <nav className="topbar-nav" aria-label="Main">
         <Link href="/" prefetch={false} aria-current={active === "markets" ? "page" : undefined}>Markets</Link>

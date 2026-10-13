@@ -64,6 +64,11 @@ describe("home feed for visitors and members", () => {
 
   it("puts the signed-out campus dropdown beside the logo and links directly to each feed", () => {
     const markup = renderToStaticMarkup(createElement(MarketHeader, { viewer: null, campus: "uiuc", query: "donuts" }));
+    const brandHomeStart = markup.indexOf('class="brand-home"');
+    const brandHomeEnd = markup.indexOf("</a>", brandHomeStart);
+    const campusMenuStart = markup.indexOf('<details class="public-campus-menu"');
+    expect(brandHomeStart).toBeGreaterThanOrEqual(0);
+    expect(brandHomeEnd).toBeLessThan(campusMenuStart);
     expect(markup.indexOf("public-campus-menu")).toBeLessThan(markup.indexOf("topbar-actions"));
     expect(markup).toContain('aria-label="Browse campus; currently Illinois"');
     expect(markup).toContain('href="/?campus=osu&amp;q=donuts"');

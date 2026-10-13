@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Fix the signed-out campus dropdown not opening: separate the campus `<details>` control from the logo's Next.js home link while preserving its current header position and campus-feed links; add a static-render regression assertion that it is outside the link; run relevant tests, typecheck, lint and build. This is a semantic HTML/navigation fix and relies on the recorded 2026-10-13 decision that signed-out visitors can choose OSU/UIUC feeds without trading. The production data reset remains pending and is recorded under Current state.
+_None. The production data reset remains pending and is recorded under Current state._
 
 ## Deferred, to come back to
 
@@ -37,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- **Latest local implementation, 2026-10-13 (not deployed):** the signed-out campus selector now sits beside the Mitra logo in the same slot as the signed-in campus label. It opens direct Ohio State/Illinois feed links, preserves search, and updates the footer disclosure with the chosen campus. Signed-in campus remains verified and fixed. The previous shop/QR/navigation/currency changes were pushed to `origin/main` as `1792f59`; this focused campus-selector change is local only and has not been pushed or deployment-verified.
+- **Latest local implementation, 2026-10-13 (not deployed):** the signed-out campus selector sits beside the Mitra logo in the same slot as the signed-in campus label, but is a sibling of (not nested inside) the logo's home link so its disclosure can open without triggering home navigation. It links directly to Ohio State/Illinois feeds, preserves search, and updates the footer disclosure with the chosen campus. Signed-in campus remains verified and fixed. The previous shop/QR/navigation/currency changes were pushed to `origin/main` as `1792f59`; the campus selector and this click fix remain local and have not been pushed or deployment-verified.
 - **Production availability repair, 2026-10-12:** the deployed app queried tables missing from the production schema (`feed_event_buckets` and `silver_wallets`), producing the market/account unavailable errors. Reviewed migrations 0014–0016 were applied to the production Supabase project. The live feed then rendered normally. Database check: 6 profiles (2 active owners), 6 wallets (all funded), 3 trades, 2 positions; 3 markets are open and 2 remain cancelled. No market terms/statuses were changed. The account page's missing-table cause is fixed, but a signed-in account walkthrough was not available here.
 - **Production reset is still pending:** the owner authorized retaining the two owner accounts and all five market definitions/terms/statuses, while deleting other accounts and dependent data, clearing ledgers/trades/positions, and restoring market prices/shares to their opening state. This has **not** been executed. No scoped export has yet been created, and the connected Supabase interface available here lacks an Auth-user deletion and Storage-object deletion API; direct SQL alone cannot safely complete that scope. The production counts above are unchanged by the additive migrations. Do not claim production data was reset.
 
@@ -207,6 +207,12 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-13 - Fix the signed-out campus dropdown click target (Codex)
+
+The user reported that clicking the signed-out campus dropdown did nothing. The `<details>` control was nested inside the logo's Next.js home link, so the click also activated navigation. Moved the dropdown to a sibling of the home link while retaining the visible order (logo, campus selector, motto); the signed-in school label remains part of the logo link. Added a static-render regression assertion that the campus dropdown appears after the home link closes, while preserving direct OSU/UIUC URLs and search.
+
+Validation: 400 tests passed, 17 skipped; typecheck, lint, Webpack production build and `git diff --check` passed. This is committed locally only; no push or deployment was requested or performed.
 
 ### 2026-10-13 - Put the signed-out campus dropdown beside the brand (Codex)
 
