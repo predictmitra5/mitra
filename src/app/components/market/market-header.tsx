@@ -4,6 +4,7 @@ import type { Viewer } from "@/modules/account/viewer";
 import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
 import { Avatar } from "./market-card";
+import { PublicCampusPicker } from "./public-campus-picker";
 import { SearchBox } from "./search-box";
 
 /**
@@ -27,7 +28,7 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
   campus?: CampusKey;
   search?: "desktop" | "feed";
   brandMode?: "campus" | "neutral";
-  entryAction?: "sign-in" | "sign-up";
+  entryAction?: "sign-in" | "sign-up" | "none";
 }) {
   const points = viewer?.balanceMicro ?? null;
   const neutral = brandMode === "neutral";
@@ -43,18 +44,7 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
             </>}
           </span>
         </Link>
-        {!neutral && !viewer && campus && <details className="public-campus-menu" data-campus={campus}>
-          <summary aria-label={`Browse campus; currently ${CAMPUSES[campus].communityName}`}>
-            {CAMPUSES[campus].communityName}<span className="public-campus-chevron" aria-hidden="true" />
-          </summary>
-          <div className="public-campus-menu-links" aria-label="Choose a campus">
-            {(Object.keys(CAMPUSES) as CampusKey[]).map((key) => <Link
-              key={key}
-              href={campusBrowseHref(key, query)}
-              aria-current={campus === key ? "page" : undefined}
-            >{CAMPUSES[key].communityName}</Link>)}
-          </div>
-        </details>}
+        {!neutral && !viewer && campus && <PublicCampusPicker campus={campus} query={query} />}
         {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
       </div>
       {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
@@ -95,9 +85,9 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
             </Link>
           </>
         ) : neutral ? (
-          <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
+          entryAction && entryAction !== "none" ? <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
             {entryAction === "sign-in" ? "Sign in" : "Create account"}
-          </Link>
+          </Link> : null
         ) : (
           <>
             <Link className="btn btn-quiet" href="/sign-in">Log in</Link>
@@ -107,12 +97,6 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
       </div>
     </header>
   );
-}
-
-function campusBrowseHref(campus: CampusKey, query: string): string {
-  const params = new URLSearchParams({ campus });
-  if (query) params.set("q", query);
-  return `/?${params.toString()}`;
 }
 
 /** Available points for the bar: whole points, or one decimal rounded down, never more than you have. */

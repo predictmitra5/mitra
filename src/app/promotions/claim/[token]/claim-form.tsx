@@ -24,9 +24,8 @@ export function ClaimForm({ token, signedIn }: { token: string; signedIn: boolea
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   };
   return <div className="claim-action">
-    <button className="btn btn-primary" type="button" onClick={claim} disabled={!signedIn || pending}>{pending ? "Verifying…" : "Verify location and claim"}</button>
-    {!signedIn && <p>Sign in with your verified university email to claim.</p>}
-    {message && <p role="status">{message}</p>}
-    <p className="field-hint">Your device sends location for this check only. Claimant coordinates are not retained.</p>
+    <button className="btn btn-primary" type="button" onClick={claim} disabled={!signedIn || pending}>{pending ? "Checking your location…" : "Verify location and claim"}</button>
+    {message && <p className={message.startsWith("Added ") ? "form-success" : "claim-message"} role="status">{message}</p>}
+    <p className="field-hint">Select the button to allow a one-time location check. Your coordinates are discarded after the check.</p>
   </div>;
 }

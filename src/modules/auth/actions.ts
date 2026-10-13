@@ -9,7 +9,7 @@ import { isBanned } from "@/modules/account/standing";
 import { hasCompletedProfile } from "@/modules/account/viewer";
 import { createAuthClient } from "./server";
 import { appOrigin } from "./config";
-import { eligibleIdentity, passwordError, type FormState } from "./policy";
+import { campaignReturnTo, eligibleIdentity, passwordError, type FormState } from "./policy";
 
 const unavailable = { error: "We couldn’t connect right now. Please try again shortly." };
 const emailMessage = "Use a supported university email: @osu.edu or @illinois.edu.";
@@ -18,6 +18,7 @@ const signupFailed = "We couldn’t create your account. Try again shortly, or s
 export async function signIn(_state: FormState, form: FormData): Promise<FormState> {
   const email = canonicalUniversityEmail(form.get("email"));
   const password = form.get("password");
+  const returnTo = campaignReturnTo(form.get("next"));
   if (!email) return { error: emailMessage };
   if (typeof password !== "string" || !password || password.length > 128) return { error: "Enter your password." };
   let finished = false;
@@ -44,7 +45,7 @@ export async function signIn(_state: FormState, form: FormData): Promise<FormSta
   } catch { return unavailable; }
   revalidatePath("/", "layout");
   // Members land on the feed; anyone who never finished onboarding picks it up again.
-  redirect(finished ? "/" : "/welcome");
+  redirect(finished ? returnTo ?? "/" : "/welcome");
 }
 
 /**

@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Implement the QR scan-to-claim journey and owner campaign management: make the claim page clearly show signed-in status and a polished location-check action; carry a validated same-origin campaign return path through sign-in for already-onboarded members; add owner-only campaign edit, pause/resume, replace-QR, and delete/archive actions. Preserve claimed award history: prevent edits after the first claim, invalidate old links when replacing a QR, and archive rather than erase campaigns with claims. Add narrowly scoped audit events/schema migration if needed; test auth return-path validation, owner authorization, lifecycle guards, and claimant-coordinate non-retention. This follows the 2026-10-12 approved QR campaign behavior and existing server-side owner/auth rules. The prior campus dropdown fix is now pushed at `78bf5e0`. The production account/data reset remains pending and is recorded under Current state.
+(none)
 
 ## Deferred, to come back to
 
@@ -37,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- **Latest local implementation, 2026-10-13 (not deployed):** the signed-out campus selector sits beside the Mitra logo in the same slot as the signed-in campus label, but is a sibling of (not nested inside) the logo's home link so its disclosure can open without triggering home navigation. It links directly to Ohio State/Illinois feeds, preserves search, and updates the footer disclosure with the chosen campus. Signed-in campus remains verified and fixed. The previous shop/QR/navigation/currency changes were pushed to `origin/main` as `1792f59`; the campus selector and this click fix remain local and have not been pushed or deployment-verified.
+- **Latest local implementation, 2026-10-13 (push pending):** the signed-out campus selector sits beside the Mitra logo, preserves search when switching Ohio State/Illinois feeds, and closes immediately after a school is selected; signed-in campus remains verified and fixed. QR claim pages now show campaign details and the signed-in account, request a one-time location check, and send signed-out members through sign-in back to that same private claim. Owners can edit unclaimed campaigns, pause/resume, rotate QR links, and delete unused campaigns or archive those with claims. Private token hashes are not sent to the browser; claimant coordinates are checked transiently and not stored. Additive migration 0017 was applied to the connected production Supabase project on 2026-10-13; no account, wallet, market, or campaign data was reset or deleted. The previous shop/QR/navigation/currency changes were pushed to `origin/main` as `1792f59`.
 - **Production availability repair, 2026-10-12:** the deployed app queried tables missing from the production schema (`feed_event_buckets` and `silver_wallets`), producing the market/account unavailable errors. Reviewed migrations 0014–0016 were applied to the production Supabase project. The live feed then rendered normally. Database check: 6 profiles (2 active owners), 6 wallets (all funded), 3 trades, 2 positions; 3 markets are open and 2 remain cancelled. No market terms/statuses were changed. The account page's missing-table cause is fixed, but a signed-in account walkthrough was not available here.
 - **Production reset is still pending:** the owner authorized retaining the two owner accounts and all five market definitions/terms/statuses, while deleting other accounts and dependent data, clearing ledgers/trades/positions, and restoring market prices/shares to their opening state. This has **not** been executed. No scoped export has yet been created, and the connected Supabase interface available here lacks an Auth-user deletion and Storage-object deletion API; direct SQL alone cannot safely complete that scope. The production counts above are unchanged by the additive migrations. Do not claim production data was reset.
 
@@ -212,7 +212,15 @@ Operational notes for whoever works on this next:
 
 The user reported that clicking the signed-out campus dropdown did nothing. The `<details>` control was nested inside the logo's Next.js home link, so the click also activated navigation. Moved the dropdown to a sibling of the home link while retaining the visible order (logo, campus selector, motto); the signed-in school label remains part of the logo link. Added a static-render regression assertion that the campus dropdown appears after the home link closes, while preserving direct OSU/UIUC URLs and search.
 
-Validation: 400 tests passed, 17 skipped; typecheck, lint, Webpack production build and `git diff --check` passed. This is committed locally only; no push or deployment was requested or performed.
+Validation: 400 tests passed, 17 skipped; typecheck, lint, Webpack production build and `git diff --check` passed. Pushed to `origin/main` as `78bf5e0`.
+
+### 2026-10-13 - Complete QR campaign claim and owner-management flows (Codex)
+
+The user asked for the campus QR scan screen to show whether a member is signed in, improve the claim experience, return signed-out members to the same claim after login, and provide CRUD controls for owner-managed campaigns. The signed-out campus selector should also close as soon as a school is chosen. Implemented a controlled picker, styled claim screen with verified account/campus state and one-time location-check messaging, and a validated same-origin return target through sign-in. Added owner-only campaign update, pause/resume, QR rotation, permanent deletion for unused campaigns and archive for campaigns with claims. Claim terms lock after the first award; archived claims remain connected. Campaign listing returns an explicit public-safe field set without the QR token hash.
+
+Applied additive migration 0017 to the connected Mitra production Supabase project: add the `manage_qr_campaign` audit enum and nullable `deleted_at` column. Verified the migration history and enum value. No account or market data was changed. Supabase's security advisor still reports existing RLS-without-policy notices and a public `SECURITY DEFINER` helper, plus disabled leaked-password protection; these are outside this QR implementation and remain open.
+
+Validation: 405 tests passed, 17 skipped; focused campaign/auth tests pass; typecheck, lint, Drizzle migration check, Webpack production build and `git diff --check` pass. Push/deployment status to be recorded after release.
 
 ### 2026-10-13 - Put the signed-out campus dropdown beside the brand (Codex)
 

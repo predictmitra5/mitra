@@ -120,6 +120,13 @@
       "when": 1791860174222,
       "tag": "0016_qr_campaign_audit_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791902519304,
+      "tag": "0017_qr_campaign_management",
+      "breakpoints": true
     }
   ]
 }

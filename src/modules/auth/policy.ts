@@ -2,6 +2,11 @@ import { universityEmail, type CampusKey } from "@/config/campus";
 
 export type AuthIdentity = { id: string; email: string; campus: CampusKey };
 
+/** Only accept the internal claim destination used by QR sign-in; never arbitrary return URLs. */
+export function campaignReturnTo(value: unknown): string | null {
+  return typeof value === "string" && /^\/promotions\/claim\/[A-Za-z0-9_-]{20,128}$/.test(value) ? value : null;
+}
+
 type AuthUser = {
   id: string;
   email?: string;

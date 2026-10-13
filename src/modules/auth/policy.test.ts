@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canonicalUniversityEmail } from "@/config/campus";
-import { eligibleIdentity, passwordError } from "./policy";
+import { campaignReturnTo, eligibleIdentity, passwordError } from "./policy";
 
 const verifiedUser = {
   id: "3a6f0546-6747-4b8f-b682-05ec32a12c09",
@@ -74,5 +74,14 @@ describe("password validation", () => {
     expect(passwordError(" a long password ")).toBeNull();
     expect(passwordError("x".repeat(12))).toBeNull();
     expect(passwordError("x".repeat(128))).toBeNull();
+  });
+});
+
+describe("QR return destination", () => {
+  it("accepts only a local campaign claim path", () => {
+    expect(campaignReturnTo(`/promotions/claim/${"a".repeat(43)}`)).toBe(`/promotions/claim/${"a".repeat(43)}`);
+    for (const value of ["/", "/account", "//evil.example/promotions/claim/abc", "https://evil.example", "/promotions/claim/a?next=/account", null]) {
+      expect(campaignReturnTo(value)).toBeNull();
+    }
   });
 });

@@ -14,7 +14,7 @@ const copy: Record<Exclude<AuthMode, "sign-up">, { title: string; description: s
   "reset-password": { title: "Choose a new password", description: "Then you’re back in." },
 };
 
-export function AuthScreen({ mode, notice, school = null }: { mode: AuthMode; notice?: string; school?: CampusKey | null }) {
+export function AuthScreen({ mode, notice, school = null, returnTo }: { mode: AuthMode; notice?: string; school?: CampusKey | null; returnTo?: string | null }) {
   if (mode === "sign-up") return <SignupFlow initialSchool={school} />;
   const { title, description } = copy[mode];
   const message = notice === "link-expired"
@@ -29,7 +29,7 @@ export function AuthScreen({ mode, notice, school = null }: { mode: AuthMode; no
         <p className="step-sub">{description}</p>
         {message && <p className={success ? "form-success" : "form-error"} role={success ? "status" : "alert"}>{message}</p>}
       </div>
-      <AuthForm mode={mode} />
+      <AuthForm mode={mode} returnTo={mode === "sign-in" ? returnTo : undefined} />
     </StepFrame>
   );
 }

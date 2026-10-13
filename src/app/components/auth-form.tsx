@@ -13,10 +13,11 @@ const actions = { "sign-in": signIn, "forgot-password": requestPasswordReset, "r
 const labels = { "sign-in": "Log in", "forgot-password": "Send reset link", "reset-password": "Save new password" };
 const busy = { "sign-in": "Logging in…", "forgot-password": "Sending…", "reset-password": "Saving…" };
 
-export function AuthForm({ mode }: { mode: FormMode }) {
+export function AuthForm({ mode, returnTo }: { mode: FormMode; returnTo?: string | null }) {
   const [state, action, pending] = useActionState(actions[mode], {} as FormState);
   return (
     <form action={action} className="step-form" aria-busy={pending}>
+      {mode === "sign-in" && returnTo && <input type="hidden" name="next" value={returnTo} />}
       {mode !== "reset-password" && (
         <div className="field">
           <label htmlFor="email">School email</label>

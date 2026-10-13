@@ -115,6 +115,13 @@ describe("auth server actions", () => {
     expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/");
   });
 
+  it("returns a signed-in member to a validated QR campaign after login", async () => {
+    mocks.hasProfile.mockResolvedValue(true);
+    const destination = "/promotions/claim/0123456789abcdefghijklmnopqrstuv";
+    await expect(signIn({}, form({ next: destination }))).rejects.toThrow(`NEXT_REDIRECT:${destination}`);
+    expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith(destination);
+  });
+
   it("refuses a banned account and signs its session back out", async () => {
     mocks.isBanned.mockResolvedValue(true);
     expect(await signIn({}, form())).toEqual({ error: "This account has been banned from Mitra." });

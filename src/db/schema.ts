@@ -78,6 +78,7 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "remove_photo",
   "withdraw_account",
   "create_qr_campaign",
+  "manage_qr_campaign",
 ]);
 
 export const profiles = pgTable(
@@ -643,6 +644,7 @@ export const campusQrCampaigns = pgTable("campus_qr_campaigns", {
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   active: boolean("active").notNull().default(true),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdBy: uuid("created_by").notNull().references(() => profiles.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
