@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-_None. The production data reset remains pending and is recorded under Current state._
+Fix the signed-out campus dropdown not opening: separate the campus `<details>` control from the logo's Next.js home link while preserving its current header position and campus-feed links; add a static-render regression assertion that it is outside the link; run relevant tests, typecheck, lint and build. This is a semantic HTML/navigation fix and relies on the recorded 2026-10-13 decision that signed-out visitors can choose OSU/UIUC feeds without trading. The production data reset remains pending and is recorded under Current state.
 
 ## Deferred, to come back to
 
