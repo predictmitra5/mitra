@@ -23,7 +23,7 @@ export default async function CampaignsPage() {
     <section className="account-card campaign-list"><h2>Existing campaigns</h2>
       {!campaigns.length && <p>No campaigns yet.</p>}
       {campaigns.map(({ campaign, claimCount }) => <article key={campaign.id}>
-        <div><strong>{campaign.name}</strong><span>{campaign.campus.toUpperCase()} · {campaign.rewardMicro / 1_000_000} Gold Trade Coins · {claimCount}{campaign.maxClaims == null ? "" : ` / ${campaign.maxClaims}`} claims</span><small>Radius {campaign.radiusMeters} m · ends {campaign.endsAt.toLocaleString()}</small></div>
+        <div><strong>{campaign.name}</strong><span>{campaign.campus.toUpperCase()} · {campaign.rewardMicro / 1_000_000} Trade Coins · {claimCount}{campaign.maxClaims == null ? "" : ` / ${campaign.maxClaims}`} claims</span><small>Radius {campaign.radiusMeters} m · ends {campaign.endsAt.toLocaleString()}</small></div>
         <span className={`status-pill ${campaign.active && campaign.endsAt > new Date() ? "status-open" : "status-cancelled"}`}>{campaign.active && campaign.endsAt > new Date() ? "Active" : "Ended"}</span>
       </article>)}
     </section>

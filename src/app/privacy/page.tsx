@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">01</span>
           <h2>What anyone can see</h2>
-          <p>Anyone who visits Mitra, with or without an account, can choose a campus and see its published markets: venues, terms, sources, prices, aggregate Gold Trade Coin volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
+          <p>Anyone who visits Mitra, with or without an account, can choose a campus and see its published markets: venues, terms, sources, prices, aggregate Trade Coin volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>

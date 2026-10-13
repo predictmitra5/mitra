@@ -297,3 +297,12 @@ The owner's pivot brief and image (DECISIONS.md, 2026-10-08). The look of sectio
 - **Suggest a market** and the owner's publish form reuse the existing form fields, with selects styled as fields and two-up rows that stack on a phone.
 - **Positions:** each holding shows category · venue above its question; `/positions` adds a Trade history list.
 - The owner's phone top bar drops the points figure when the Review link is present, so it fits at 375 pixels (it overflowed before this change).
+
+## 14. Coins, one badge family, owner QR images, and a quieter navigation (2026-10-12)
+
+The owner clarified the customer-facing vocabulary and hierarchy after reviewing the shop and campaign tools (DECISIONS.md, 2026-10-12).
+
+- **Currency labels:** the cosmetic balance is “Coins”; the balance used for markets is “Trade Coins.” Never use “Silver” or “Gold” in visible copy, labels, accessibility text, or page metadata. Internal database and code identifiers may retain those legacy terms until a separately planned schema rename.
+- **Shop hierarchy:** one Mitra badge is offered at multiple levels. The selectable Coin amount, matching Trade Coin bonus, and disclosed price are prominent; the badge identity and level are supporting detail. Show what each balance is for and keep the bonus disclosure before payment. Payment controls remain disabled until an actual provider and verified fulfillment exist.
+- **Campaign QR:** after creating a campaign, the owner sees its private claim URL as a locally rendered QR image and can download the SVG. The URL is a campaign claim link, limited to one claim per account and the configured campaign cap—not a globally single-use token. Do not send the URL to an external QR generator. GPS is a signal only; do not present it as spoof-proof proof of presence.
+- **Navigation:** keep the global bar focused on Markets, Positions, Shop and the account; owner management remains available through the owner tools inside the account. Preserve search, campus selection for signed-out visitors, theme toggle and existing core destinations.

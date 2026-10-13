@@ -69,7 +69,7 @@ function Position({ held, yesPrice, className }: { held: Held; yesPrice: number;
         {value.sides.map((side) => (
           <li key={side.side}>
             <span className="muted">{pointsText(side.sharesMicro)} {side.side === "yes" ? "Yes" : "No"} shares</span>
-            <span>{pointsText(side.valueMicro)} Gold <Gain micro={side.gainMicro} /></span>
+            <span>{pointsText(side.valueMicro)} Trade Coins <Gain micro={side.gainMicro} /></span>
           </li>
         ))}
       </ul>
@@ -168,7 +168,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
             <p className="sample-note">
               <strong>Sample market.</strong> A hypothetical demonstration. Mitra has no partnership with {market.venueName ?? "this venue"} and
               receives no data from it, and the price history before {market.approvedAt ? shortDate(market.approvedAt, zone) : "it opened"} is
-              demonstration data. Trades use real points; sample markets are voided and everyone is refunded when they are retired.
+              demonstration data. Trades use Trade Coins; sample markets are voided and everyone is refunded when they are retired.
             </p>
           )}
         </div>

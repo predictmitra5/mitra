@@ -49,7 +49,7 @@ export async function claimQrCampaignAction(token: string, latitude: number, lon
     if (!identity) return { error: "Sign in with your verified university email before claiming." };
     const result = await claimCampaign(getDb(), identity.id, identity.campus, token, { latitude, longitude });
     revalidatePath("/account");
-    return { success: `Added ${result.rewardCoins.toLocaleString()} Gold Trade Coins to your account.` };
+    return { success: `Added ${result.rewardCoins.toLocaleString()} Trade Coins to your account.` };
   } catch (error) {
     if (error instanceof CampaignError) return { error: error.message };
     return { error: "We couldn’t verify this claim. Your location was not saved; please try again." };

@@ -1,7 +1,5 @@
 export const BADGES = [
-  { id: "campus-original", name: "Campus Original", description: "A clean Mitra badge for your profile." },
-  { id: "market-scout", name: "Market Scout", description: "A badge for following campus events." },
-  { id: "first-call", name: "First Call", description: "A badge for making your first forecast." },
+  { id: "campus-original", name: "Campus Original", description: "One Mitra badge, with a level that grows with your Coin bundle." },
 ] as const;
 
 export type BadgeId = (typeof BADGES)[number]["id"];
@@ -10,13 +8,14 @@ export function offersForBadge(badgeId: string) {
   const badge = BADGES.find((item) => item.id === badgeId);
   if (!badge) return [];
   return Array.from({ length: 10 }, (_, index) => {
-    const silver = (index + 1) * 100;
+    const coins = (index + 1) * 100;
     return {
       badge,
-      silverCoins: silver,
-      priceCents: silver,
-      goldTradeCoins: silver,
-      uses: "Silver Coins are for eligible digital items; Gold Trade Coins are used to trade in markets.",
+      coins,
+      level: index + 1,
+      priceCents: coins,
+      tradeCoinBonus: coins,
+      uses: "Coins are for digital items; Trade Coins are used to trade in markets.",
     };
   });
 }

@@ -30,7 +30,7 @@ export function LiveStats({ id, yesPrice, volumeMicro, closes }: { id: string; y
   const volume = (quote ? quote.volumeMicro : volumeMicro) / 1_000_000;
   return (
     <p className="goal-stats">
-      <span>Volume <strong>{volume >= 1 ? `${whole.format(volume)} Gold` : volume > 0 ? "<1 Gold" : "0 Gold"}</strong></span>
+      <span>Volume <strong>{volume >= 1 ? `${whole.format(volume)} Trade Coins` : volume > 0 ? "<1 Trade Coin" : "0 Trade Coins"}</strong></span>
       <span>Closes <strong>{closes}</strong></span>
       <span className="goal-stats-no">No price <strong>{100 - yes}¢</strong></span>
     </p>

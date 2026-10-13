@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { beginPayment, offersForBadge } from "./catalog";
 
-describe("disclosed Silver Coin offers", () => {
-  it("prices 100–1,000 Silver at one cent per Silver and discloses equal Gold bonus", () => {
+describe("disclosed Coin offers", () => {
+  it("prices 100–1,000 Coins at one cent per Coin and discloses an equal Trade Coin bonus", () => {
     const offers = offersForBadge("campus-original");
     expect(offers).toHaveLength(10);
-    expect(offers[0]).toMatchObject({ silverCoins: 100, priceCents: 100, goldTradeCoins: 100 });
-    expect(offers[9]).toMatchObject({ silverCoins: 1000, priceCents: 1000, goldTradeCoins: 1000 });
+    expect(offers[0]).toMatchObject({ coins: 100, level: 1, priceCents: 100, tradeCoinBonus: 100 });
+    expect(offers[9]).toMatchObject({ coins: 1000, level: 10, priceCents: 1000, tradeCoinBonus: 1000 });
     expect(offers.every((offer) => offer.uses.includes("trade in markets"))).toBe(true);
   });
 

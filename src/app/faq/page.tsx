@@ -11,19 +11,23 @@ export default function FaqPage() {
   const questions = [
     {
       question: "What is Mitra?",
-      answer: "A campus prediction market for things that happen around you: a venue’s busy night, a screening’s turnout, an event’s attendance. You use Gold Trade Coins to forecast whether each one happens. Visitors can choose Ohio State or Illinois to browse; trading and suggesting markets need a verified university email.",
+      answer: "A campus prediction market for things that happen around you: a venue’s busy night, a screening’s turnout, an event’s attendance. You use Trade Coins to forecast whether each one happens. Visitors can choose Ohio State or Illinois to browse; trading and suggesting markets need a verified university email.",
     },
     {
       question: "Is Mitra affiliated with a university or the venues?",
       answer: "No. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university. Unless a market says its source is connected, Mitra has no partnership with the venue it is about.",
     },
     {
-      question: "How do Gold Trade Coins work?",
-      answer: "Gold Trade Coins are Mitra’s market-trading balance. New accounts start at zero. Eligible campus QR campaigns may award coins after an account verifies its location. At most 100 Gold Trade Coins can be committed to any one market. Gold Trade Coins are not currently redeemable for cash or prizes, and purchases are not available while payment processing is being set up.",
+      question: "How do Trade Coins work?",
+      answer: "Trade Coins are Mitra’s market-trading balance. New accounts start at zero. Eligible QR campaigns may award Trade Coins after a browser location check; device location can be inaccurate or spoofed and is not proof of presence. At most 100 Trade Coins can be committed to any one market. Trade Coins are not currently redeemable for cash or prizes, and purchases are not available while payment processing is being set up.",
+    },
+    {
+      question: "What are Coins?",
+      answer: "Coins are intended for digital items such as the Campus Original badge. The shop previews possible Coin bundles and their Trade Coin bonus, but checkout is disabled: no payment is taken and no Coins are issued.",
     },
     {
       question: "What are sample markets?",
-      answer: "Markets marked Sample are hypothetical demonstrations. Their sources are placeholders and their early price history is demonstration data. You can trade them with Gold Trade Coins; when they are retired they are voided and everyone is refunded their held cost.",
+      answer: "Markets marked Sample are hypothetical demonstrations. Their sources are placeholders and their early price history is demonstration data. You can trade them with Trade Coins; when they are retired they are voided and everyone is refunded their held cost.",
     },
     {
       question: "How does a market get made?",

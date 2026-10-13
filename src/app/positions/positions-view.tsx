@@ -53,7 +53,7 @@ export function PositionRows({ markets }: { markets: HeldMarket[] }) {
               </span>
               {value && (
                 <span className="holding-value">
-                  <strong>{pointsText(value.valueMicro)} Gold</strong>
+                  <strong>{pointsText(value.valueMicro)} Trade Coins</strong>
                   <Gain micro={value.gainMicro} />
                 </span>
               )}
@@ -90,7 +90,7 @@ export function TradeHistory({ trades }: { trades: TradeRecord[] }) {
                 {trade.venueName ? ` · ${trade.venueName}` : ""} · {date(trade.createdAt)} ET
               </span>
             </span>
-            <span className="trade-history-amount">{trade.action === "buy" ? "−" : "+"}{pointsText(trade.amountMicro)} Gold</span>
+            <span className="trade-history-amount">{trade.action === "buy" ? "−" : "+"}{pointsText(trade.amountMicro)} Trade Coins</span>
           </Link>
         </li>
       ))}
@@ -107,7 +107,7 @@ export function PositionsView({ data, trades = [] }: { data: PositionsPage; trad
         {data.total > 0 && (
           <p className="positions-total">
             <span className="muted">In positions</span>{" "}
-            <strong>{pointsText(data.totals.valueMicro)} Gold</strong> <Gain micro={data.totals.gainMicro} />
+            <strong>{pointsText(data.totals.valueMicro)} Trade Coins</strong> <Gain micro={data.totals.gainMicro} />
           </p>
         )}
       </div>

@@ -14,7 +14,7 @@ import { percent } from "@/modules/discovery/present";
  * The trade panel (decided 2026-09-24): Buy or Sell, Yes or No, an amount with
  * +10, +25 and Max, an estimate with "To win", and a brand button. The button
  * asks the server for the exact preview, which the trader then confirms, as
- * before; the estimate never charges anyone. Points only, up to 100 points
+ * before; the estimate never charges anyone. Trade Coins only, up to 100 per market
  * of held cost per market.
  */
 
@@ -144,15 +144,15 @@ export function TradePanel({
           <h3>Review your {preview.action === "buy" ? "buy" : "sale"}</h3>
           <dl className="trade-lines">
             <div><dt>{words(preview.side)} shares</dt><dd>{formatMicro(preview.sharesMicro)}</dd></div>
-            <div><dt>You {preview.action === "buy" ? "pay" : "receive"}</dt><dd>{formatMicro(preview.totalMicro)} Gold</dd></div>
+            <div><dt>You {preview.action === "buy" ? "pay" : "receive"}</dt><dd>{formatMicro(preview.totalMicro)} Trade Coins</dd></div>
             <div><dt>Average per share</dt><dd>{(preview.totalMicro / preview.sharesMicro * 100).toFixed(2)}¢</dd></div>
             <div><dt>{words(preview.side)} price after</dt><dd>{(preview.priceAfter * 100).toFixed(2)}¢</dd></div>
-            <div><dt>Available after</dt><dd>{formatMicro(preview.balanceAfterMicro)} Gold</dd></div>
+            <div><dt>Available after</dt><dd>{formatMicro(preview.balanceAfterMicro)} Trade Coins</dd></div>
           </dl>
           <p className="trade-note">{preview.action === "buy"
-            ? `If ${words(preview.side)} wins, these shares pay ${formatMicro(preview.sharesMicro)} points. If it loses, they pay 0.`
+            ? `If ${words(preview.side)} wins, these shares pay ${formatMicro(preview.sharesMicro)} Trade Coins. If it loses, they pay 0.`
             : "Selling returns these shares to the market maker. You give up their eventual payout."}</p>
-          {preview.action === "sell" && preview.totalMicro === 0 && <p className="trade-notice">This tiny sale rounds down to 0 points. Confirm only if you want to give up these shares for nothing.</p>}
+          {preview.action === "sell" && preview.totalMicro === 0 && <p className="trade-notice">This tiny sale rounds down to 0 Trade Coins. Confirm only if you want to give up these shares for nothing.</p>}
           <button type="button" className="btn btn-primary trade-cta" disabled={pending} onClick={confirm}>
             {pending ? "Confirming…" : uncertain ? "Retry the same confirmation" : `Confirm ${preview.action === "buy" ? "buy" : "sale"}`}
           </button>
@@ -169,15 +169,15 @@ export function TradePanel({
     { label: "Average price", value: sell ? cents(sell.averagePrice) : cents(sidePrice) },
     { label: "Shares", value: amountMicro ? one(amountMicro / 1_000_000) : "—" },
   ];
-  const payoff = mode === "buy" ? (buy ? `${one(buy.toWin)} Gold` : "—") : (sell ? `${one(sell.proceeds)} Gold` : "—");
+  const payoff = mode === "buy" ? (buy ? `${one(buy.toWin)} Trade Coins` : "—") : (sell ? `${one(sell.proceeds)} Trade Coins` : "—");
   const amountLabel = mode === "buy" ? "Amount" : "Shares to sell";
   const available = mode === "buy"
-    ? (balanceMicro === null ? null : `${formatMicro(Math.floor(balanceMicro / 10_000) * 10_000)} Gold available`)
+    ? (balanceMicro === null ? null : `${formatMicro(Math.floor(balanceMicro / 10_000) * 10_000)} Trade Coins available`)
     : (canTrade ? `${one(held / 1_000_000)} ${words(side)} shares held` : null);
 
   return (
     <div className="trade-body">
-      {receipt && <p className="form-success" role="status">{receipt.action === "buy" ? "Bought" : "Sold"} {formatMicro(receipt.sharesMicro)} {words(receipt.side)} shares for {formatMicro(receipt.totalMicro)} points.</p>}
+      {receipt && <p className="form-success" role="status">{receipt.action === "buy" ? "Bought" : "Sold"} {formatMicro(receipt.sharesMicro)} {words(receipt.side)} shares for {formatMicro(receipt.totalMicro)} Trade Coins.</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="trade-modes" role="group" aria-label="Order type">
         {(["buy", "sell"] as const).map((value) => (
@@ -201,7 +201,7 @@ export function TradePanel({
             <input id={`amount-${marketId}`} name="amount" inputMode="decimal" autoComplete="off" value={amount} maxLength={30}
               onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))} aria-describedby={`amount-help-${marketId}`}
               aria-invalid={over || (amount !== "" && amountMicro === null)} />
-            <span>{mode === "buy" ? "Gold" : "shares"}</span>
+            <span>{mode === "buy" ? "Trade Coins" : "shares"}</span>
           </div>
           <div className="quick">
             {QUICK.map((points) => <button key={points} type="button" onClick={() => add(points)}>+{points}</button>)}
@@ -209,8 +209,8 @@ export function TradePanel({
           </div>
           <p id={`amount-help-${marketId}`} className={over ? "trade-over" : "sr-only"}>
             {over
-              ? mode === "buy" ? `You can put in up to ${formatMicro(maxMicro ?? 0)} points here: your available points or what is left of your 100-point limit on this market, whichever is less.` : `You hold ${formatMicro(held)} ${words(side)} shares.`
-              : mode === "buy" ? "Points to spend." : "Shares to sell."}
+              ? mode === "buy" ? `You can put in up to ${formatMicro(maxMicro ?? 0)} Trade Coins here: your available balance or what is left of your 100-Trade-Coin limit on this market, whichever is less.` : `You hold ${formatMicro(held)} ${words(side)} shares.`
+              : mode === "buy" ? "Trade Coins to spend." : "Shares to sell."}
           </p>
         </div>
         <dl className="trade-estimate">
@@ -220,7 +220,7 @@ export function TradePanel({
         {access.kind === "open" ? (
           <button type="submit" className="btn btn-primary trade-cta" disabled={pending || !amountMicro || over}>
             {pending ? "Getting your quote…" : mode === "buy"
-              ? `Buy ${words(side)}${amountMicro ? ` for ${formatMicro(amountMicro)} Gold` : ""}`
+              ? `Buy ${words(side)}${amountMicro ? ` for ${formatMicro(amountMicro)} Trade Coins` : ""}`
               : `Sell ${words(side)}${amountMicro ? ` · ${formatMicro(amountMicro)} shares` : ""}`}
           </button>
         ) : access.kind === "signed-out" ? (
@@ -230,7 +230,7 @@ export function TradePanel({
         )}
       </form>
       <p className="trade-note">
-        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 Gold Trade Coins per market.
+        Estimate. Prices move as people trade; you see the exact total before you confirm. Up to 100 Trade Coins per market.
         {access.kind === "signed-out" && " Trading needs a verified university email and is for ages 18 and up."}
       </p>
     </div>

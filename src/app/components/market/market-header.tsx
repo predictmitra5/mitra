@@ -7,10 +7,9 @@ import { Avatar } from "./market-card";
 import { SearchBox } from "./search-box";
 
 /**
- * The top bar on every page: the Mitra logo (2026-10-05) with, once someone is
- * signed in, their school's name in its colour; search; Markets and Positions;
- * the viewer's available points; a baby blue "Suggest a market" (2026-10-08);
- * the black/white switch and their photo. Log in and Sign up when signed out.
+ * The top bar on every page: the Mitra logo and campus identity, search, core
+ * navigation, balance, theme choice and account. Owner tools are grouped so
+ * they do not compete with the main destinations.
  *
  * `viewer.ownerQueue` is set only for the owner: how many market suggestions
  * are waiting. That link stays visible on a phone, because nothing else tells
@@ -48,7 +47,22 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
       {!neutral && <nav className="topbar-nav" aria-label="Main">
         <Link href="/" prefetch={false} aria-current={active === "markets" ? "page" : undefined}>Markets</Link>
         {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
+        {viewer && <Link href="/shop">Shop</Link>}
+        {viewer && <Link href="/suggest">Suggest</Link>}
       </nav>}
+      {!neutral && <details className="topbar-mobile-menu">
+        <summary>Menu</summary>
+        <div className="topbar-mobile-links">
+          <Link href="/">Markets</Link>
+          {viewer && <Link href="/positions">Positions</Link>}
+          {viewer && <Link href="/shop">Shop</Link>}
+          {viewer && <Link href="/suggest">Suggest a market</Link>}
+          {viewer?.ownerQueue != null && <>
+            <Link href="/review">Review{viewer.ownerQueue > 0 ? ` · ${viewer.ownerQueue} waiting` : ""}</Link>
+            <Link href="/review/campaigns">Campaigns</Link>
+          </>}
+        </div>
+      </details>}
       <div className="topbar-actions">
         {!neutral && !viewer && campus && <form className="public-campus-picker" action="/" method="get">
           {query && <input type="hidden" name="q" value={query} />}
@@ -60,24 +74,17 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
           <button type="submit">View</button>
         </form>}
         <ThemeToggle />
-        {viewer?.ownerQueue != null && (
-          <>
-            <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
-              Review
-              {viewer.ownerQueue > 0 && <span className="owner-badge" aria-hidden="true">{viewer.ownerQueue}</span>}
-            </Link>
-            <Link className="owner-link owner-campaigns" href="/review/campaigns">Campaigns</Link>
-          </>
-        )}
+        {viewer?.ownerQueue != null && <details className="owner-menu">
+          <summary className="owner-link">Owner{viewer.ownerQueue > 0 && <span className="owner-badge" aria-label={`${viewer.ownerQueue} waiting`}>{viewer.ownerQueue}</span>}</summary>
+          <div className="owner-menu-links"><Link href="/review">Review suggestions</Link><Link href="/review/markets">Market outcomes</Link><Link href="/review/campaigns">QR campaigns</Link><Link href="/review/people">People</Link></div>
+        </details>}
         {viewer ? (
           <>
             {points !== null && (
-              <Link className="topbar-points" href="/account" aria-label={`${pointsShort(points)} Gold Trade Coins available`}>
-                <strong>{pointsShort(points)}</strong> <span>Gold</span>
+              <Link className="topbar-points" href="/account" aria-label={`${pointsShort(points)} Trade Coins available`}>
+                <strong>{pointsShort(points)}</strong> <span>Trade Coins</span>
               </Link>
             )}
-            <Link className="btn btn-primary topbar-post" href="/suggest">Suggest a market</Link>
-            <Link className="topbar-shop" href="/shop">Shop</Link>
             <Link className="topbar-me" href="/account" aria-label="Your account">
               <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
             </Link>
@@ -107,7 +114,7 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
   if (brandMode === "neutral") {
     return (
       <footer className="market-footer market-footer-entry">
-        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Gold Trade Coins.</span></div>
+        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Trade Coins.</span></div>
         <nav className="footer-links" aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link></nav>
         <p className="footer-disclaimer">Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
       </footer>

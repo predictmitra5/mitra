@@ -74,10 +74,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         </div>
 
         <section className="points" aria-label="Balances">
-          <p className="points-available"><span className="muted">Gold Trade Coins</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)}</strong></p>
+          <p className="points-available"><span className="muted">Trade Coins</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)}</strong></p>
           <dl className="points-facts">
-            <div><dt>Silver Coins</dt><dd>{account.silverWallet?.balance?.toLocaleString() ?? "0"}</dd></div>
-            <div><dt>In positions</dt><dd>{pointsText(holdings?.totals.valueMicro ?? 0)} Gold {holdings && holdings.total > 0 && <Gain micro={holdings.totals.gainMicro} />}</dd></div>
+            <div><dt>Coins</dt><dd>{account.silverWallet?.balance?.toLocaleString() ?? "0"}</dd></div>
+            <div><dt>In positions</dt><dd>{pointsText(holdings?.totals.valueMicro ?? 0)} Trade Coins {holdings && holdings.total > 0 && <Gain micro={holdings.totals.gainMicro} />}</dd></div>
           </dl>
         </section>
 

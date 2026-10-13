@@ -18,7 +18,7 @@ export default async function ClaimCampaignPage({ params }: PageProps<"/promotio
     <main className="account-main"><section className="account-card claim-card">
       <span className="eyebrow">{campusName.toUpperCase()} CAMPUS CAMPAIGN</span>
       <h1>{campaign.name}</h1>
-      <p>Claim {campaign.rewardMicro / 1_000_000} Gold Trade Coins. Mitra checks that your device is within the campaign’s {campaign.radiusMeters} metre area.</p>
+      <p>Claim {campaign.rewardMicro / 1_000_000} Trade Coins. Mitra checks whether your device location is within the campaign’s {campaign.radiusMeters} metre area.</p>
       {identity && identity.campus !== campaign.campus
         ? <p className="form-error">This campaign is for a different verified campus account.</p>
         : <ClaimForm token={token} signedIn={!!identity} />}

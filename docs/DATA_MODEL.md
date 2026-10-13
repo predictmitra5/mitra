@@ -2,7 +2,7 @@
 
 > **2026-10-08, migration 0013:** four new tables (`venues`, `events`, `resolution_sources`, `market_proposals`) and new `markets` columns (campus, category, venue, event, source, window start and end, time zone, Yes and No conditions, `is_sample`); `markets.subject_user_id` is nullable, and a check requires each market to be a legacy goal or a fully specified event market. See Event markets below.
 
-Status: the current working tree adds separate Silver accounting, badge products/purchases, campus QR campaigns and claim records in migrations 0015–0016. These migrations are local and have not been applied to production. Migration 0014 is the independent security/upload history; production migration state must be rechecked before rollout. The candidate inventory that follows is retained for entities not yet modelled.
+Status: migrations 0014–0016 were applied to production on 2026-10-12 after logs confirmed the running app queried missing tables. They add feed counters/upload intents, internal cosmetic Coin accounting/badge purchases, QR campaigns/claims, and the campaign audit kind. Visible labels are Coins and Trade Coins; internal Silver/Gold identifiers are legacy implementation details. Production table availability was rechecked after migration. The candidate inventory that follows is retained for entities not yet modelled.
 
 Source: PDF sections 5.2, 7.3, 16, 20-22, pages 5, 7, 11-14.
 
