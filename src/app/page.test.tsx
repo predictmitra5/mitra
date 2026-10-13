@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({
   identity: vi.fn(),
@@ -21,6 +23,7 @@ vi.mock("@/config/campus-server", () => ({ selectedCampus: async () => ({ key: "
 import Home from "./page";
 import { FeedView } from "./feed-view";
 import { SignupPrompt } from "./components/signup-prompt";
+import { MarketHeader } from "./components/market/market-header";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -43,16 +46,29 @@ describe("home feed for visitors and members", () => {
     expect(mocks.viewer).not.toHaveBeenCalled();
   });
 
-  it("lets signed-out visitors choose either public campus feed", async () => {
+  it("lets signed-out visitors choose either public campus feed and keeps the header and disclosure in sync", async () => {
     mocks.identity.mockResolvedValue(null);
-    await Home({ searchParams: Promise.resolve({ campus: "uiuc" }), params: Promise.resolve({}) });
+    const view = await Home({ searchParams: Promise.resolve({ campus: "uiuc", q: "donuts" }), params: Promise.resolve({}) });
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "uiuc" });
+    const [header, , footer] = view.props.children;
+    expect(header.props.campus).toBe("uiuc");
+    expect(header.props.query).toBe("donuts");
+    expect(footer.props.campus).toBe("uiuc");
   });
 
   it("ignores an invalid campus choice and keeps the default campus", async () => {
     mocks.identity.mockResolvedValue(null);
     await Home({ searchParams: Promise.resolve({ campus: "other" }), params: Promise.resolve({}) });
     expect(mocks.readFeed).toHaveBeenCalledWith("database", expect.any(Date), { campus: "osu" });
+  });
+
+  it("puts the signed-out campus dropdown beside the logo and links directly to each feed", () => {
+    const markup = renderToStaticMarkup(createElement(MarketHeader, { viewer: null, campus: "uiuc", query: "donuts" }));
+    expect(markup.indexOf("public-campus-menu")).toBeLessThan(markup.indexOf("topbar-actions"));
+    expect(markup).toContain('aria-label="Browse campus; currently Illinois"');
+    expect(markup).toContain('href="/?campus=osu&amp;q=donuts"');
+    expect(markup).toContain('href="/?campus=uiuc&amp;q=donuts"');
+    expect(markup).not.toContain("public-campus-picker");
   });
 
   it("treats an unavailable sign-in service as a visitor rather than failing", async () => {

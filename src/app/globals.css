@@ -417,10 +417,19 @@ html[data-theme="light"] .brand-logo { color: #3aa3d9; }
 .owner-menu-links, .topbar-mobile-links { position: absolute; z-index: 40; right: 0; top: calc(100% + 12px); display: grid; min-width: 190px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card); box-shadow: 0 12px 32px var(--scrim); }
 .owner-menu-links a, .topbar-mobile-links a { padding: 10px 12px; border-radius: 8px; color: var(--ink); font-size: 14px; white-space: nowrap; }
 .owner-menu-links a:hover, .topbar-mobile-links a:hover { background: var(--raised); }
-.public-campus-picker { display: flex; align-items: center; gap: 6px; }
-.public-campus-picker select, .public-campus-picker button { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; padding: 0 9px; }
-.public-campus-picker button { cursor: pointer; }
-.public-campus-picker button:hover { border-color: var(--accent); }
+.public-campus-menu { position: relative; display: inline-flex; align-items: center; color: var(--campus-menu-accent); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+.public-campus-menu[data-campus="osu"] { --campus-menu-accent: #ff6b86; }
+.public-campus-menu[data-campus="uiuc"] { --campus-menu-accent: #ff7a2e; }
+html[data-theme="light"] .public-campus-menu[data-campus="osu"] { --campus-menu-accent: #ba0c2f; }
+html[data-theme="light"] .public-campus-menu[data-campus="uiuc"] { --campus-menu-accent: #c84113; }
+.public-campus-menu > summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; }
+.public-campus-menu > summary::-webkit-details-marker { display: none; }
+.public-campus-menu > summary::before { content: ""; width: 1px; height: 20px; margin-right: 1px; background: var(--line-strong); }
+.public-campus-chevron { width: 7px; height: 7px; margin: -4px 0 0 1px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 140ms ease; }
+.public-campus-menu[open] .public-campus-chevron { margin-top: 4px; transform: rotate(225deg); }
+.public-campus-menu-links { position: absolute; z-index: 40; top: calc(100% + 12px); left: 0; display: grid; min-width: 188px; padding: 7px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card); box-shadow: 0 12px 32px var(--scrim); }
+.public-campus-menu-links a { padding: 10px 12px; border-radius: 8px; color: var(--ink); font-size: 14px; font-weight: 500; }
+.public-campus-menu-links a:hover, .public-campus-menu-links a[aria-current="page"] { background: var(--raised); color: var(--campus-menu-accent); }
 .shop-main { max-width: 1050px; }
 .shop-card { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr); gap: clamp(24px, 5vw, 64px); margin: 28px 0 72px; padding: clamp(20px, 4vw, 40px); border: 1px solid var(--line); border-radius: 22px; background: var(--card); }
 .shop-coins { display: grid; align-content: start; gap: 16px; }
@@ -969,13 +978,15 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
   .brand-logo { height: 27px; }
   .brand-school { gap: 9px; font-size: 14px; }
   .brand-school::before { height: 16px; }
+  .public-campus-menu { font-size: 14px; }
+  .public-campus-menu > summary { gap: 6px; }
+  .public-campus-menu > summary::before { height: 16px; }
+  .public-campus-menu-links { top: calc(100% + 8px); min-width: 160px; }
   .topbar-search, .topbar-nav, .topbar-post, .topbar-shop { display: none; }
   .topbar-mobile-menu { position: relative; display: block; margin-left: auto; }
   .topbar-mobile-menu > summary { min-height: 36px; display: flex; align-items: center; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 9px; color: var(--ink); font-size: 13px; cursor: pointer; list-style: none; }
   .topbar-mobile-links { top: calc(100% + 8px); }
   .owner-menu { display: none; }
-  .public-campus-picker { gap: 4px; }
-  .public-campus-picker select, .public-campus-picker button { min-height: 32px; padding-inline: 6px; font-size: 12px; }
   .topbar-actions { margin-left: 0; gap: 12px; }
   .topbar-me { margin: -6px -6px -6px 0; }
   /* On the feed, the search takes its own row under the bar, which then scrolls away with the page. */

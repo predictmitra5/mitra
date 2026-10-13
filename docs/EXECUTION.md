@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Read this first
 
@@ -24,13 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-13 - Move signed-out campus switcher beside the Mitra mark (Codex)
-
-- Put a compact campus dropdown in the signed-out brand lockup, occupying the same inline campus-identity spot shown after sign-in. Selecting Ohio State or Illinois should switch the public feed immediately and preserve the current search; signed-in campus identity remains verified and non-editable here.
-- Ensure the campus-specific footer disclosure follows the signed-out campus selected in the URL rather than a stale display cookie.
-- Remove the separate far-right selector and keep the header usable on mobile. Update the design/execution record and verify navigation and tests.
-
-**Authority:** the owner's request that visitors choose/toggle Ohio State and Illinois from the header, where campus identity appears after sign-in. This affects presentation/feed campus only; signed-out trading remains unavailable and signed-in identity remains server-derived.
+_None. The production data reset remains pending and is recorded under Current state._
 
 ## Deferred, to come back to
 
@@ -43,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- **Latest local implementation, 2026-10-12 (not deployed):** the shop centers Coin bundles and a single tiered Campus Original badge, with Trade Coin bonus and price disclosed before payment; checkout stays disabled, and no balances are issued without a payment provider. Owners get a downloadable QR image when creating a campus award campaign; claimant coordinates are checked and discarded, and the page discloses that device location can be spoofed. The shared navigation is simplified. Currency copy uses Coins/Trade Coins. Signed-out visitors can switch public browsing between OSU and UIUC; trading remains sign-in gated. Tests (399 passed, 17 skipped), typecheck, lint, Webpack production build and `git diff --check` pass; `npm audit --omit=dev` reports zero vulnerabilities. No code deployment or push occurred.
+- **Latest local implementation, 2026-10-13 (not deployed):** the signed-out campus selector now sits beside the Mitra logo in the same slot as the signed-in campus label. It opens direct Ohio State/Illinois feed links, preserves search, and updates the footer disclosure with the chosen campus. Signed-in campus remains verified and fixed. The previous shop/QR/navigation/currency changes were pushed to `origin/main` as `1792f59`; this focused campus-selector change is local only and has not been pushed or deployment-verified.
 - **Production availability repair, 2026-10-12:** the deployed app queried tables missing from the production schema (`feed_event_buckets` and `silver_wallets`), producing the market/account unavailable errors. Reviewed migrations 0014–0016 were applied to the production Supabase project. The live feed then rendered normally. Database check: 6 profiles (2 active owners), 6 wallets (all funded), 3 trades, 2 positions; 3 markets are open and 2 remain cancelled. No market terms/statuses were changed. The account page's missing-table cause is fixed, but a signed-in account walkthrough was not available here.
 - **Production reset is still pending:** the owner authorized retaining the two owner accounts and all five market definitions/terms/statuses, while deleting other accounts and dependent data, clearing ledgers/trades/positions, and restoring market prices/shares to their opening state. This has **not** been executed. No scoped export has yet been created, and the connected Supabase interface available here lacks an Auth-user deletion and Storage-object deletion API; direct SQL alone cannot safely complete that scope. The production counts above are unchanged by the additive migrations. Do not claim production data was reset.
 
@@ -213,6 +207,12 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-13 - Put the signed-out campus dropdown beside the brand (Codex)
+
+Moved the public Ohio State/Illinois selector from the far-right action group into the brand lockup immediately after the Mitra logo, matching the placement of the verified-campus label for signed-in members. The current campus is the dropdown summary; selecting either school follows a direct link, preserves the feed search, and updates the campus-specific independence statement. Signed-in feed selection remains based on verified identity. Updated DESIGN.md and this execution record.
+
+Validation: 400 tests passed, 17 skipped; typecheck, lint, Webpack production build and `git diff --check` passed. Home-page tests confirm feed/header/footer campus consistency and search preservation; a static-render test confirms the dropdown is beside the brand, has direct links to both campuses, and the old far-right picker is absent. The broader fictional preview server could not start because its seeded trader fixture now fails with `INSUFFICIENT_BALANCE`; no production data was touched.
 
 ### 2026-10-12 - Production availability and requested UI completion (Codex)
 

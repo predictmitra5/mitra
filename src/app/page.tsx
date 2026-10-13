@@ -66,7 +66,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         unavailable={unavailable}
         nowIso={now.toISOString()}
       />
-      <MarketFooter />
+      <MarketFooter campus={campus} />
       {!identity && <SignupPrompt />}
     </div>
   );

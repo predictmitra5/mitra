@@ -15,7 +15,7 @@ import { SearchBox } from "./search-box";
  * are waiting. That link stays visible on a phone, because nothing else tells
  * the owner something is waiting.
  *
- * On a phone the bar keeps the logo, points and photo; the search drops to its
+ * On a phone the bar keeps the logo, campus selector, balance and photo; the search drops to its
  * own row on the feed (`search="feed"`) and is left out elsewhere.
  */
 export function MarketHeader({ viewer, active, query = "", campus, search = "desktop", brandMode = "campus", entryAction }: {
@@ -40,6 +40,18 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
             <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
             <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
           </>}
+          {!viewer && campus && <details className="public-campus-menu" data-campus={campus}>
+            <summary aria-label={`Browse campus; currently ${CAMPUSES[campus].communityName}`}>
+              {CAMPUSES[campus].communityName}<span className="public-campus-chevron" aria-hidden="true" />
+            </summary>
+            <div className="public-campus-menu-links" aria-label="Choose a campus">
+              {(Object.keys(CAMPUSES) as CampusKey[]).map((key) => <Link
+                key={key}
+                href={campusBrowseHref(key, query)}
+                aria-current={campus === key ? "page" : undefined}
+              >{CAMPUSES[key].communityName}</Link>)}
+            </div>
+          </details>}
         </span>
         {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
       </Link>
@@ -64,15 +76,6 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
         </div>
       </details>}
       <div className="topbar-actions">
-        {!neutral && !viewer && campus && <form className="public-campus-picker" action="/" method="get">
-          {query && <input type="hidden" name="q" value={query} />}
-          <label className="sr-only" htmlFor="public-campus">Browse campus</label>
-          <select id="public-campus" name="campus" value={campus}>
-            <option value="osu">Ohio State</option>
-            <option value="uiuc">Illinois</option>
-          </select>
-          <button type="submit">View</button>
-        </form>}
         <ThemeToggle />
         {viewer?.ownerQueue != null && <details className="owner-menu">
           <summary className="owner-link">Owner{viewer.ownerQueue > 0 && <span className="owner-badge" aria-label={`${viewer.ownerQueue} waiting`}>{viewer.ownerQueue}</span>}</summary>
@@ -104,13 +107,19 @@ export function MarketHeader({ viewer, active, query = "", campus, search = "des
   );
 }
 
+function campusBrowseHref(campus: CampusKey, query: string): string {
+  const params = new URLSearchParams({ campus });
+  if (query) params.set("q", query);
+  return `/?${params.toString()}`;
+}
+
 /** Available points for the bar: whole points, or one decimal rounded down, never more than you have. */
 function pointsShort(micro: number): string {
   const tenths = Math.floor(Math.max(0, micro) / 100_000) / 10;
   return tenths.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
-export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | "neutral" }) {
+export function MarketFooter({ brandMode = "campus", campus }: { brandMode?: "campus" | "neutral"; campus?: CampusKey }) {
   if (brandMode === "neutral") {
     return (
       <footer className="market-footer market-footer-entry">
@@ -130,8 +139,12 @@ export function MarketFooter({ brandMode = "campus" }: { brandMode?: "campus" | 
         <Link href="/faq">FAQ</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>
-      <p className="footer-disclaimer campus-only campus-osu">{CAMPUSES.osu.independenceStatement}</p>
-      <p className="footer-disclaimer campus-only campus-uiuc">{CAMPUSES.uiuc.independenceStatement}</p>
+      {campus ? (
+        <p className="footer-disclaimer">{CAMPUSES[campus].independenceStatement}</p>
+      ) : <>
+        <p className="footer-disclaimer campus-only campus-osu">{CAMPUSES.osu.independenceStatement}</p>
+        <p className="footer-disclaimer campus-only campus-uiuc">{CAMPUSES.uiuc.independenceStatement}</p>
+      </>}
     </footer>
   );
 }
