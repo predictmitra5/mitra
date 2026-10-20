@@ -24,7 +24,17 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing. The startup pivot, rebuilt on this line, is on the local branch `startup-pivot` and waits for the owner (Next actions 0).
+### 2026-10-20 - Go live with the startup pivot (Claude Code)
+
+**What and why.** The owner confirmed the carry-over list as built (DECISIONS.md, 2026-10-19 rebuild entry, answer of 2026-10-20) and asked to go live, starting with the read-only report.
+
+**Plan:**
+
+1. Run `scripts/startup-pivot-go-live.mjs` without `--apply` on the branch `startup-pivot`: it only reads the live database and prints what it would do. Check it against what was found on 2026-10-19 (15 recorded migrations, 0014 to 0017 applied by hand, two owners, three open event samples).
+2. Only on the owner's explicit go-ahead after seeing the report: the same script with `--apply --owner=<both owner handles>` (record 0014 to 0017, apply 0018, void the live event samples with refunds, write the demo catalog), then push `startup-pivot` to `main`, then check the live site.
+3. Record the outcome here and clear this entry.
+
+**Relies on:** DECISIONS.md 2026-10-19 (pivot and its rebuild), 2026-10-12 and 10-13, 2026-10-08 (going live waits for the owner's go-ahead).
 
 ## Deferred, to come back to
 

@@ -686,3 +686,5 @@ The owner requested Mitra branding and Ohio State/Illinois accents on verificati
 **Where the pivot still differs from the 2026-10-07 guardrail, for the owner to decide:** signed-out visitors' video events are recorded under a random cookie so the For you feed can learn (this file, 2026-10-19), now capped at 400 per hour and deleted after 60 days. The 2026-10-07 rule kept signed-out page reads from writing anything; making the video feed learn only from signed-in members is a small change.
 
 **Open, because of zero-start:** a new member can watch, follow and comment but cannot trade until they claim a QR award. Whether startup markets need another way to get Trade Coins (a starting grant, a free daily amount) is the owner's decision.
+
+**Owner's answer, 2026-10-20:** "The carry-over list looks right as built. Keep zero starting Trade Coins and the visitor video learning as they are. Next, help me go live: run the read-only go-live report first." The carry-over above stands as built: new members start with zero Trade Coins, and signed-out visitors' video events keep teaching the feed under the cap and 60-day deletion.
