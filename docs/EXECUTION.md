@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing. The YouTube-style home is built locally and waits for the owner (Next actions 0).
+Nothing.
 
 ## Deferred, to come back to
 
@@ -37,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- **Built locally 2026-10-20, not pushed: YouTube's home** (DECISIONS.md and DESIGN.md section 17, 2026-10-20). A YouTube top bar and guide on every page, a YouTube bottom bar on phones, and a home page of founder-video cards with their markets in a grid, the market moving most today first, chips, a Closing soon shelf and endless loading; `/following` is the same grid for followed founders; `/watch/<id>` opens the video's market; the swipe feed is removed. Tests, typecheck, lint and the build pass; checked at 1440, 1100 and 1024 px and on a 375 px phone, dark and light.
+- **Live since 2026-10-20: YouTube's home** (pushed as d6b9d09) (DECISIONS.md and DESIGN.md section 17, 2026-10-20). A YouTube top bar and guide on every page, a YouTube bottom bar on phones, and a home page of founder-video cards with their markets in a grid, the market moving most today first, chips, a Closing soon shelf and endless loading; `/following` is the same grid for followed founders; `/watch/<id>` opens the video's market; the swipe feed is removed. Tests, typecheck, lint and the build pass; checked at 1440, 1100 and 1024 px and on a 375 px phone, dark and light.
 - Stage, 2026-10-20: **live: Mitra is a video-first place to discover founders and their startups, with Yes/No markets on startup milestones traded with Trade Coins** (DECISIONS.md, 2026-10-19, both entries, and the owner's answer of 2026-10-20; DESIGN.md section 16). The pivot, rebuilt on top of Siyansh's 2026-10-12 and 13 work, is `main` (8733bd0, pushed as a fast-forward of fcd365c) and served at https://mitra-gamma-ten.vercel.app. The live database records all 19 migrations (0000 to 0018, plus the 2026-10-09 short titles); 0014 to 0017, applied by hand on 2026-10-12 and 13, are now recorded too, so Drizzle's migrator works there again. The four event markets are void (nobody held them), and the demo catalog is live: 20 fictional startups and founders, 30 videos, 35 markets opening at 50/50 (32 open, 3 resolved), 1,130 simulated trades by fictional demo traders, all labelled Demo. New members start with zero Trade Coins; QR campaigns award them.
 - Stage, 2026-10-09: **live: XO Market/Kalshi type (Geist), smooth loading, short card titles, and Brutus at Smith-Steeb Hall in place of the Gateway Film Center sample** (DECISIONS.md and DESIGN.md section 14, 2026-10-09). Migration 0014 is applied (15 migrations recorded), the two remaining samples carry short titles, the screening is void (nobody held it), the Brutus sample is open at `/markets/99c3ba84-b412-4720-8976-a3afc51a5c8c`, and `main` (e25e4a4, after 2980f73 undid Siyansh's unbuildable 2026-10-08 merge) is served at https://mitra-gamma-ten.vercel.app. Siyansh's 2026-10-07 security remediation waits on the branch `security-remediation-2026-10-07` (Next actions).
 - **Latest implementation, 2026-10-13:** the signed-out campus selector sits beside the Mitra logo, preserves search when switching Ohio State/Illinois feeds, and closes immediately after a school is selected; signed-in campus remains verified and fixed. QR claim pages now show campaign details and the signed-in account, request a one-time location check, and send signed-out members through sign-in back to that same private claim. Owners can edit unclaimed campaigns, pause/resume, rotate QR links, and delete unused campaigns or archive those with claims. Private token hashes are not sent to the browser; claimant coordinates are checked transiently and not stored. Additive migration 0017 was applied to the connected production Supabase project; no account, wallet, market, or campaign data was reset or deleted. Code is pushed to `origin/main` as `42b2e76`; its Vercel Production deployment reached READY. The previous shop/QR/navigation/currency changes were pushed as `1792f59`.
@@ -176,7 +176,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 Refreshed 2026-10-19 for the pivot to founder videos and startup markets.
 
-0. **Show the owner the YouTube-style home, then push on their go-ahead.** It changes only code (no migration). Push `main` to `origin/main`, then check the live site at desktop and phone widths.
+0. **Done 2026-10-20:** the startup pivot and YouTube's home are live (Session history).
 1. **Founder uploads.** Run `node --env-file=.env.local scripts/setup-evidence-storage.mjs` to create the `startup-media` and `media-uploads` buckets, then set `STARTUP_MEDIA_UPLOADS=on` in `.env.local` and in Vercel. Until then founders paste links to photos and videos instead of uploading.
 2. **Real startups.** A founder signs up, makes their founder profile and startup at `/create` and adds videos; the owner approves them at `/review` and writes each market there (question, Yes and No conditions, source, close date, opening chance), checks it as a draft and opens it. Demo markets are voided with refunds one at a time at `/review/markets`; a single owner control to retire the whole demo catalog (void its markets, hide its startups, founders and fictional traders) is not built yet.
 3. **Founder photos and thumbnails.** Demo cards use the drawn composite (initials, name and role beside a product panel). The owner offered AI-generated founder portraits; each goes in a founder's `portrait_url` or a video's `thumbnail_url` and replaces the drawing everywhere.
@@ -217,6 +217,10 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-20 - YouTube's home is live (Claude Code)
+
+On the owner's "Looks good, push it live and check the live site on desktop and phone", after `git fetch` showed `origin/main` still at 71c0d97: `git push origin main` (71c0d97..d6b9d09); the new version was served about 50 seconds later. On the live site as a visitor: at 1440 px the guide (with "Log in to follow founders"), Log in and Sign up, the chips, the moving-most card with Yes/No pills and the grid; as a 375 px phone the page is exactly 375 px wide, the moving-most video plays muted with captions, the Closing soon shelf scrolls inside itself with Explore more, and the bottom bar sits at the bottom; no console errors. Not checked live: signed-in and owner views.
 
 ### 2026-10-20 - YouTube's home, built locally (Claude Code)
 
