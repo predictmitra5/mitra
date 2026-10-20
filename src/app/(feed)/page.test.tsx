@@ -2,35 +2,42 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/app/components/feed/load", () => ({ loadVideoFeed: mocks.load }));
+vi.mock("@/app/components/home/load", () => ({ loadHome: mocks.load }));
 
 import Home from "./page";
-import { FeedPage } from "@/app/components/feed/feed-page";
+import { HomePage } from "@/app/components/home/home-page";
 
-const empty = { cards: [], signedIn: false, viewer: null, unavailable: false, coldStart: true };
+const empty = { items: [], highlight: null, closingSoon: [], signedIn: false, viewer: null, unavailable: false };
+const visit = (topic?: string) => Home({ params: Promise.resolve({}), searchParams: Promise.resolve(topic ? { topic } : {}) } as never);
 
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.load.mockResolvedValue(empty);
 });
 
-describe("home: the For you video feed", () => {
-  it("loads the personal feed and renders it as For you", async () => {
-    const view = await Home();
+describe("home: YouTube's home (2026-10-20)", () => {
+  it("loads the personal home and renders it with every topic", async () => {
+    const view = await visit();
     expect(mocks.load).toHaveBeenCalledExactlyOnceWith();
-    expect(view.type).toBe(FeedPage);
-    expect(view.props).toMatchObject({ tab: "for-you", signedIn: false, unavailable: false });
+    expect(view.type).toBe(HomePage);
+    expect(view.props).toMatchObject({ topic: "all", data: { signedIn: false, unavailable: false } });
+  });
+
+  it("opens on a topic from the address, and ignores one it does not know", async () => {
+    expect((await visit("gaming")).props.topic).toBe("gaming");
+    expect((await visit("closing")).props.topic).toBe("closing");
+    expect((await visit("<script>")).props.topic).toBe("all");
   });
 
   it("passes a member's state through", async () => {
     mocks.load.mockResolvedValue({ ...empty, signedIn: true, viewer: { displayName: "Leo", photo: null, balanceMicro: 1_000_000_000, ownerQueue: null } });
-    const view = await Home();
-    expect(view.props.signedIn).toBe(true);
-    expect(view.props.viewer.displayName).toBe("Leo");
+    const view = await visit();
+    expect(view.props.data.signedIn).toBe(true);
+    expect(view.props.data.viewer.displayName).toBe("Leo");
   });
 
   it("shows the unavailable state rather than failing", async () => {
     mocks.load.mockResolvedValue({ ...empty, unavailable: true });
-    expect((await Home()).props.unavailable).toBe(true);
+    expect((await visit()).props.data.unavailable).toBe(true);
   });
 });

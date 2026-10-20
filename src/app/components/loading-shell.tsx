@@ -11,20 +11,37 @@ export function Bone({ className = "", width }: { className?: string; width?: st
   return <span className={`bone ${className}`} style={width ? { width } : undefined} />;
 }
 
-/** The top bar while a page loads. */
+/** The top bar while a page loads, in YouTube's shape (2026-10-20). */
 export function LoadingBar() {
   return (
-    <header className="topbar">
-      <span className="brand">
-        <span className="brand-lockup"><Logo className="brand-logo" title="Mitra" /></span>
-        <span className="brand-motto">Founders, before they&rsquo;re famous.</span>
+    <header className="yt-topbar">
+      <span className="yt-start">
+        <Bone className="bone-icon" />
+        <span className="brand"><Logo className="brand-logo" title="Mitra" /></span>
       </span>
-      <span className="topbar-search"><Bone className="bone-search" /></span>
-      <span className="topbar-actions" style={{ marginLeft: "auto" }}>
+      <span className="yt-center"><Bone className="bone-search" /></span>
+      <span className="yt-end">
         <Bone className="bone-pill" />
-        <Bone className="bone-pill" />
+        <Bone className="bone-icon" />
       </span>
     </header>
+  );
+}
+
+/** A home grid card's shape: the thumbnail, the avatar and three lines. */
+export function GridCardBone() {
+  return (
+    <div className="yt-card">
+      <Bone className="bone-thumb yt-bone-thumb" />
+      <div className="yt-info">
+        <Bone className="bone-face yt-avatar" />
+        <div className="yt-text">
+          <Bone className="bone-title" width="92%" />
+          <Bone className="bone-line" width="55%" />
+          <Bone className="bone-line" width="40%" />
+        </div>
+      </div>
+    </div>
   );
 }
 

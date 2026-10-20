@@ -141,6 +141,16 @@ export async function readVideoCards<Q extends PgQueryResultHKT>(
   return list.map((id) => byId.get(id)).filter((card): card is VideoCardModel => !!card);
 }
 
+/** Each startup's newest approved video (2026-10-20), so a market can be shown with its founder's video. */
+export async function latestVideoIds<Q extends PgQueryResultHKT>(database: Database<Q>, startupIds: readonly string[]): Promise<Map<string, string>> {
+  const list = [...new Set(startupIds)].filter(isUuid);
+  if (!list.length) return new Map();
+  const rows = await database.selectDistinctOn([videos.startupId], { startupId: videos.startupId, id: videos.id }).from(videos)
+    .where(and(inArray(videos.startupId, list), eq(videos.status, "approved")))
+    .orderBy(videos.startupId, desc(videos.publishedAt), desc(videos.id));
+  return new Map(rows.map((row) => [row.startupId, row.id]));
+}
+
 /** Whether this member may see a record before it is approved: the owner, or the member who manages it. */
 async function canPreview<Q extends PgQueryResultHKT>(database: Database<Q>, viewerUserId: string | null, managers: (string | null)[]) {
   if (!viewerUserId || !isUuid(viewerUserId)) return false;

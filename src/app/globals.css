@@ -1191,87 +1191,14 @@ html[data-theme="light"] .spark-dot { background: #2b8fc4; }
 .price-buttons-card .price-button { height: 46px; border-radius: 12px; font-size: 15px; }
 
 /* ---- The video feed ---- */
-:root:has(.reel) { scroll-snap-type: y proximity; scroll-padding-top: 76px; }
-.feed-tabs ul { margin: 0 auto; }
-.feed-page { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 24px 32px 56px; box-sizing: border-box; }
-.reel-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; }
-.reel { display: flex; flex-direction: column; align-items: center; gap: 36px; min-width: 0; }
-.reel-item { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; scroll-snap-align: start; }
-.reel-reason { align-self: center; margin: -12px 0 8px; padding: 3px 10px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-wash-ink); font-size: 12px; font-weight: 600; animation: appear 240ms ease-out; }
-.reel-end { display: flex; justify-content: center; width: 100%; min-height: 60px; }
-.reel-done { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 16px; text-align: center; }
-.reel-done h2 { margin: 0; font-size: 20px; font-weight: 600; }
-.reel-done p { margin: 0; }
 
-.vcard { position: relative; display: grid; grid-template-columns: minmax(0, 560px) 64px; gap: 14px; width: 100%; max-width: 640px; }
-.vcard-main { display: flex; flex-direction: column; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 24px; background: var(--card); }
-.reel-item .vcard-main { animation: rise 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: calc(var(--rise-i, 0) * 60ms); }
-.vcard-media { position: relative; }
-.vcard-save { position: absolute; z-index: 4; top: 12px; right: 12px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: rgb(30 30 32 / 0.62); color: #fff; cursor: pointer; backdrop-filter: blur(8px); transition: background-color 160ms var(--ease), transform 160ms var(--ease); }
-.vcard-save.is-on { color: var(--accent); }
-/* Over a photo, as in the owner's second screenshot; a drawn thumbnail keeps its
-   corner clear for the startup's name, and Save stays in the action rail. */
-.vcard-media:has(.thumb-composite) .vcard-save { display: none; }
-.vcard-save:active { transform: scale(0.94); }
-.vcard-body { display: flex; flex-direction: column; gap: 12px; padding: 16px 6px 4px; }
-.vcard-founder { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.vcard-face { display: flex; flex: none; border-radius: 50%; }
-.vcard-who { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
-.vcard-handle { overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.vcard-handle:hover, .vcard-role a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.vcard-role { overflow: hidden; color: var(--muted); font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
-.vcard-role a { color: var(--ink-soft); }
-.vcard-share { flex: none; border-color: transparent; }
-.vcard-title { margin: 2px 0 0; font-size: 28px; font-weight: 600; line-height: 1.16; letter-spacing: -0.025em; text-wrap: balance; }
-.vcard-title a { color: var(--ink); }
-.vcard-title a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.vcard-desc { margin: -4px 0 0; color: var(--ink-soft); font-size: 15.5px; line-height: 1.5; }
-.vcard-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: -2px 0 0; font-size: 15px; }
-.vcard-tags a { color: var(--accent); font-weight: 500; }
-html[data-theme="light"] .vcard-tags a { color: #2b8fc4; }
-.vcard-tags a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.vcard-market { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--line); }
-.vcard-market-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.vcard-market-head .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-.vcard-market-head a { color: var(--accent); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
-html[data-theme="light"] .vcard-market-head a { color: #2b8fc4; }
-.vcard-question { color: var(--ink); font-size: 18px; font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; }
-.vcard-question:hover { text-decoration: underline; text-underline-offset: 3px; }
-.vcard-odds { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 4px 0 2px; }
-.vcard-chance { display: flex; flex-direction: column; gap: 6px; }
-.vcard-chance strong { color: var(--accent); font-size: 44px; font-weight: 500; line-height: 1; letter-spacing: -0.03em; }
-html[data-theme="light"] .vcard-chance strong { color: #2b8fc4; }
-.vcard-chance span { color: var(--muted); font-size: 13px; }
-.vcard-meta { display: flex; justify-content: space-between; gap: 12px; margin: 0; color: var(--muted); font-size: 14px; }
 
-/* Like, comment, share, save and more, beside the card on a desktop. */
-.vcard-rail { position: sticky; top: 120px; align-self: start; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 140px; }
-.rail-button { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-.rail-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--raised); color: var(--ink); transition: background-color 160ms var(--ease), color 160ms var(--ease), transform 160ms var(--ease); }
-.rail-button:active .rail-icon { transform: scale(0.92); }
-.rail-button.is-liked .rail-icon { color: var(--no); }
-.rail-button.is-saved .rail-icon { color: var(--accent); }
-.rail-more { position: relative; }
+/* A card's ⋮ menu. */
 .menu { position: absolute; z-index: 20; right: 0; bottom: calc(100% + 8px); display: flex; flex-direction: column; min-width: 220px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--card); box-shadow: var(--lift); animation: prompt-in 160ms var(--ease); }
 .menu > button { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 9px; background: none; color: var(--ink); font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; }
 .menu-follow { padding: 4px 6px 6px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 .menu-follow .follow-button { width: 100%; justify-content: center; }
 
-/* The side panel beside the feed on a wide screen. */
-.reel-side { position: sticky; top: 140px; display: flex; flex-direction: column; gap: 16px; }
-.reel-panel { display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); animation: appear 220ms ease-out; }
-.reel-panel-head { display: flex; align-items: center; gap: 12px; }
-.reel-panel-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
-.reel-panel-name { color: var(--ink); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-.reel-panel-text { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
-.reel-panel-market { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--raised); color: var(--ink); font-size: 14px; line-height: 1.35; }
-.reel-panel-market strong { color: var(--accent); font-size: 15px; }
-html[data-theme="light"] .reel-panel-market strong { color: #2b8fc4; }
-.reel-next h3 { margin: 0 0 8px; }
-.reel-next ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.reel-next button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.reel-next button > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
-.reel-arrows { display: flex; gap: 8px; }
 
 /* Follow buttons. */
 .follow-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; height: 34px; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease), transform 160ms var(--ease); }
@@ -1317,9 +1244,6 @@ html[data-theme="light"] .reel-panel-market strong { color: #2b8fc4; }
 .toast-host { position: fixed; z-index: 70; left: 50%; bottom: 24px; transform: translateX(-50%); pointer-events: none; }
 .toast { margin: 0; padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 14px; font-weight: 500; box-shadow: var(--lift); animation: prompt-in 200ms var(--ease); }
 
-/* The phone's icons in the top bar, and its bottom bar. */
-.topbar-phone-only { display: none; }
-.bottom-nav { display: none; }
 
 /* Industry chips. */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
@@ -1447,12 +1371,10 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
 .video-tile-title { margin-top: 4px; font-size: 15px; font-weight: 600; line-height: 1.3; }
 @media (hover: hover) and (pointer: fine) {
   .video-tile:hover .thumb { transform: translateY(-2px); box-shadow: var(--lift); }
-  .rail-button:hover .rail-icon { background: var(--hover); }
-  .menu > button:hover, .reel-next button:hover, .report-reason:hover { background: var(--raised); }
+  .menu > button:hover, .report-reason:hover { background: var(--raised); }
   .follow-button:not(.is-on):hover { filter: brightness(var(--bright)); box-shadow: 0 0 0 4px var(--ring); }
   .follow-button.is-on:hover { border-color: var(--ink-soft); }
   .chip:not([aria-pressed="true"]):not([aria-current="true"]):hover { border-color: var(--ink-soft); color: var(--ink); }
-  .vcard-save:hover { background: rgb(30 30 32 / 0.8); }
 }
 
 /* Search, activity, the portfolio and the creator hub. */
@@ -1540,14 +1462,11 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
 .gain-down { color: var(--no); font-weight: 600; }
 
 @media (max-width: 1279px) {
-  .reel-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 28px; }
   .profile, .search-page { padding-left: 32px; padding-right: 32px; }
   .video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1099px) {
-  .reel-layout { grid-template-columns: minmax(0, 1fr); }
-  .reel-side { display: none; }
   .profile-hero, .profile-columns { grid-template-columns: minmax(0, 1fr); }
   .profile-side { position: static; }
   .market-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1555,36 +1474,8 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
 
 /* Phones: one card at a time, actions in a row under the video, the bottom bar. */
 @media (max-width: 899px) {
-  .topbar-phone-only { display: grid; }
-  .topbar .theme-toggle, .topbar-login { display: none; }
-  .topbar-actions { gap: 8px; }
-  .topbar-actions .icon-button { border-color: transparent; }
-  .bottom-nav { position: fixed; z-index: 45; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--line); background: var(--bar); backdrop-filter: blur(16px); }
-  .bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 60px; color: var(--muted); font-size: 10.5px; font-weight: 500; }
-  .bottom-nav a[aria-current="page"] { color: var(--ink); }
-  .bottom-nav .bottom-create { justify-self: center; width: 46px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); }
-  .market-shell { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
-  .goal-shell { padding-bottom: 0; }
-  .goal-shell .bottom-nav { display: none; }
-  .toast-host { bottom: calc(76px + env(safe-area-inset-bottom)); }
-  :root:has(.reel) { scroll-padding-top: 8px; }
 
-  .feed-page { padding: 8px 0 24px; }
-  .reel { gap: 18px; }
-  .reel-reason { margin: 0 0 6px; }
-  .vcard { grid-template-columns: minmax(0, 1fr); gap: 0; max-width: none; padding: 0 10px; box-sizing: border-box; }
-  .vcard-main { padding: 10px; border-radius: 20px; }
-  .vcard-body { gap: 10px; padding: 14px 4px 4px; }
-  .vcard-title { font-size: 23px; }
-  .vcard-desc { font-size: 15px; }
-  .vcard-chance strong { font-size: 40px; }
-  .vcard-odds .spark { flex-basis: 50%; }
-  .vcard .thumb.thumb-has-photo { aspect-ratio: 1 / 1; }
   /* The rail becomes a row between the video and the founder line. */
-  .vcard-rail { position: static; grid-row: 2; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: -6px 10px 0; padding: 8px 4px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 16px 16px; background: var(--card); }
-  .vcard-main { grid-row: 1; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
-  .rail-button { flex-direction: row; justify-content: center; gap: 6px; font-size: 13px; }
-  .rail-icon { width: 36px; height: 36px; background: transparent; }
   .menu { bottom: calc(100% + 6px); }
   .card-odds .card-chance strong { font-size: 28px; }
   .grid-two { grid-template-columns: minmax(0, 1fr) !important; }
@@ -1611,14 +1502,180 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
   .comment-form { flex-direction: column; align-items: stretch; }
 }
 
-@media (max-width: 420px) {
-  .vcard-title { font-size: 21px; }
-  .vcard-question { font-size: 16.5px; }
+@media (prefers-reduced-motion: reduce) {
+  .player.is-playing .thumb-composite, .spark-svg, .spark-dot { animation: none !important; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .player.is-playing .thumb-composite, .spark-svg, .spark-dot, .reel-item .vcard-main { animation: none !important; }
-  :root:has(.reel) { scroll-snap-type: none; }
+/* ========================================================================
+   YouTube's layout, 2026-10-20 (DECISIONS.md, docs/DESIGN.md section 17).
+   The owner: "we are trying to become youtube ... copy that". The top bar,
+   the guide, the chips, the grid and the phone's bottom bar follow YouTube's
+   home; colours, Geist and motion stay Mitra's.
+   ======================================================================== */
+:root { --yt-bar: 56px; --yt-guide: 240px; --yt-mini: 72px; }
+
+/* The top bar: the guide button and logo, a centred search pill, then actions. */
+.yt-topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--yt-bar); padding: 0 16px; background: var(--paper); }
+.yt-start { display: flex; flex: none; align-items: center; gap: 12px; min-width: 200px; }
+.yt-start .brand, .yt-guide-head .brand { padding: 0 4px; }
+.yt-start .brand-logo, .yt-guide-head .brand-logo { height: 26px; }
+.yt-guide-button { border-color: transparent; }
+.yt-center { flex: 0 1 640px; min-width: 0; }
+.yt-center .search { display: flex; }
+.yt-center .search-field { flex: 1; height: 40px; padding: 0 16px; border-color: var(--line-strong); border-radius: 999px 0 0 999px; background: var(--paper); }
+.yt-center .search-field svg { display: none; }
+.search-go { display: none; }
+.yt-center .search-go { display: grid; place-items: center; flex: none; width: 64px; height: 40px; margin-left: -1px; padding: 0; border: 1px solid var(--line-strong); border-radius: 0 999px 999px 0; background: var(--raised); color: var(--ink); cursor: pointer; }
+.yt-end { display: flex; flex: none; align-items: center; justify-content: flex-end; gap: 8px; min-width: 200px; }
+.yt-end .icon-button { border-color: transparent; }
+.icon-button[aria-current="page"] { background: var(--raised); }
+.yt-coins { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.yt-coins span { color: var(--muted); font-weight: 400; }
+.yt-create { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px 0 12px; border-radius: 999px; background: var(--raised); color: var(--ink); font-size: 14px; font-weight: 500; white-space: nowrap; transition: background-color 160ms var(--ease); }
+.yt-phone-only { display: none !important; }
+
+/* The guide: a drawer by default, beside the page on YouTube's home. */
+.yt-guide { position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: var(--yt-guide); box-sizing: border-box; overflow-y: auto; padding: 0 12px 24px; background: var(--paper); scrollbar-width: thin; transform: translateX(-100%); visibility: hidden; transition: transform 220ms var(--ease), visibility 0s linear 220ms; }
+html[data-guide-open] .yt-guide { transform: none; visibility: visible; box-shadow: var(--lift); transition: transform 220ms var(--ease); }
+.yt-guide-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 12px; height: var(--yt-bar); padding: 0 4px; background: var(--paper); }
+.yt-scrim { position: fixed; z-index: 45; inset: 0; padding: 0; border: 0; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity 220ms var(--ease); }
+html[data-guide-open] .yt-scrim { opacity: 1; pointer-events: auto; }
+.yt-guide-section { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.yt-guide-link { display: flex; align-items: center; gap: 24px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: var(--ink); font-size: 14px; }
+.yt-guide-link > span:not(.owner-badge) { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.yt-guide-link svg, .yt-guide-link .founder-face { flex: none; }
+.yt-guide-link[aria-current="page"] { background: var(--raised); font-weight: 500; }
+.yt-guide-title { display: flex; align-items: center; gap: 6px; min-height: 40px; margin: 0; padding: 0 12px; border-radius: 10px; color: var(--ink); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+a.yt-guide-title > span { font-size: 22px; font-weight: 400; line-height: 1; }
+.yt-guide-note { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 0; padding: 4px 12px 8px; color: var(--ink-soft); font-size: 14px; line-height: 1.45; }
+.yt-guide-note p { margin: 0; }
+.yt-guide-signin { gap: 8px; height: 36px; border-color: var(--line-strong); background: transparent; color: var(--accent); }
+.yt-guide-foot { display: flex; flex-direction: column; gap: 10px; padding: 16px 12px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.yt-guide-foot nav { display: flex; flex-wrap: wrap; gap: 4px 14px; font-weight: 500; }
+.yt-guide-foot a { color: var(--ink-soft); }
+.yt-guide-foot p { margin: 0; }
+
+/* The narrow guide: four places as icons over small labels. */
+.yt-mini { position: fixed; z-index: 30; top: var(--yt-bar); bottom: 0; left: 0; display: none; flex-direction: column; gap: 2px; width: var(--yt-mini); box-sizing: border-box; padding: 4px; background: var(--paper); }
+.yt-mini-link { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 0 14px; border-radius: 10px; color: var(--ink); font-size: 10px; }
+.yt-mini-link[aria-current="page"] { background: var(--raised); font-weight: 500; }
+
+/* The home page: chips, then the grid. */
+.yt-main { flex: 1; width: 100%; box-sizing: border-box; padding: 0 24px 48px; }
+.yt-chips { position: sticky; top: var(--yt-bar); z-index: 20; display: flex; align-items: center; gap: 12px; padding: 12px 0; overflow-x: auto; background: var(--paper); scrollbar-width: none; }
+.yt-chips::-webkit-scrollbar { display: none; }
+.yt-chip { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--raised); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.yt-chip[aria-pressed="true"], .yt-chip[aria-current="true"] { background: var(--ink); color: var(--paper); }
+.yt-chip-icon { display: none; padding: 0 9px; }
+.yt-grid { --yt-cols: 3; display: grid; grid-template-columns: repeat(var(--yt-cols), minmax(0, 1fr)); gap: 40px 16px; padding-top: 12px; }
+
+/* A card: the thumbnail, then the avatar beside the words, as YouTube's. */
+.yt-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.yt-media { position: relative; }
+.yt-thumb { position: relative; display: block; border-radius: 12px; }
+.yt-card .thumb, .yt-shelf-card .thumb, .yt-bone-thumb { aspect-ratio: 16 / 9; border-radius: 12px; }
+.yt-card .player { border-radius: 12px; }
+.yt-card .player .thumb { border-radius: 0; }
+.yt-duration { position: absolute; z-index: 2; right: 8px; bottom: 8px; padding: 1px 5px; border-radius: 4px; background: rgb(0 0 0 / 0.75); color: #fff; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; pointer-events: none; }
+.yt-demo { position: absolute; z-index: 4; top: 8px; left: 8px; pointer-events: none; }
+.yt-info { position: relative; display: flex; align-items: flex-start; gap: 12px; padding-right: 28px; }
+.yt-avatar { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; }
+.yt-avatar.startup-mark { border-radius: 50%; font-size: 13px; }
+.yt-text { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.yt-title { display: -webkit-box; margin: 0; overflow: hidden; font-size: 16px; font-weight: 600; line-height: 1.375; letter-spacing: -0.01em; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.yt-title a { color: var(--ink); }
+.yt-desc { display: -webkit-box; margin: 0; overflow: hidden; color: var(--muted); font-size: 14px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.yt-channel, .yt-stats { margin: 0; overflow: hidden; color: var(--muted); font-size: 14px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; }
+.yt-channel a { color: var(--muted); transition: color 160ms var(--ease); }
+.yt-stats strong { color: var(--ink); font-weight: 600; }
+.yt-odds { display: flex; align-items: center; gap: 12px; margin: 2px 0; }
+.yt-chance { flex: none; color: var(--muted); font-size: 14px; white-space: nowrap; }
+.yt-chance strong { color: var(--accent); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.yt-chance.outcome-yes strong { color: var(--yes); }
+.yt-chance.outcome-no strong { color: var(--no); }
+.yt-odds .spark { flex: 1 1 auto; min-width: 0; max-width: 220px; margin-left: auto; }
+.yt-odds .spark-plot { height: 28px; }
+.yt-odds .spark-dot { width: 6px; height: 6px; }
+.yt-more { position: absolute; top: -6px; right: -10px; }
+.yt-more .icon-button { width: 36px; height: 36px; border-color: transparent; }
+.yt-more .menu { top: calc(100% + 4px); bottom: auto; }
+.yt-pills .price-button { height: 40px; border-radius: 999px; font-size: 14.5px; }
+
+/* One shelf, as YouTube's: markets closing soon, sideways, then Explore more. */
+.yt-shelf { display: flex; grid-column: 1 / -1; flex-direction: column; gap: 16px; min-width: 0; padding: 8px 0 24px; border-bottom: 1px solid var(--line); }
+.yt-shelf-head h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em; }
+.yt-shelf-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+/* Positioned, so screen-reader text inside the cards scrolls with them instead of widening the page. */
+.yt-shelf-row { position: relative; display: grid; grid-auto-columns: minmax(220px, calc((100% - 64px) / 5)); grid-auto-flow: column; gap: 16px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.yt-shelf-row::-webkit-scrollbar { display: none; }
+.yt-shelf-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; scroll-snap-align: start; }
+.yt-shelf-card .yt-title { font-size: 14.5px; }
+.yt-shelf-card .yt-channel { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.yt-explore { align-self: center; width: min(360px, 100%); height: 36px; border-color: var(--line-strong); border-radius: 999px; background: transparent; }
+.yt-more-sentinel { height: 1px; }
+.skeleton .bone-chip { width: 72px; height: 32px; flex: none; border-radius: 8px; }
+.skeleton .bone-icon { width: 40px; height: 40px; border-radius: 50%; }
+
+/* The phone's bottom bar (shown below). */
+.yt-bottom { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .yt-create:hover, .yt-guide-link:hover, .yt-mini-link:hover, .yt-guide-title:hover { background: var(--hover); }
+  .yt-chip:not([aria-pressed="true"]):not([aria-current="true"]):hover { background: var(--hover); }
+  .yt-center .search-go:hover { background: var(--hover); }
+  .yt-channel a:hover { color: var(--ink); }
+  .yt-title a:hover { text-decoration: none; }
+  .yt-more .icon-button { opacity: 0; transition: opacity 120ms var(--ease); }
+  .yt-card:hover .yt-more .icon-button, .yt-more .icon-button[aria-expanded="true"], .yt-more .icon-button:focus-visible { opacity: 1; }
+}
+
+/* YouTube's widths: the guide beside the page from 1312 px, icons from 800 px. */
+@media (min-width: 1312px) {
+  .yt-guide[data-persistent] { z-index: 30; top: var(--yt-bar); transform: none; visibility: visible; transition: none; box-shadow: none; }
+  .yt-guide[data-persistent] .yt-guide-head { display: none; }
+  html[data-guide-mini] .yt-guide[data-persistent] { transform: translateX(-100%); visibility: hidden; }
+  html[data-guide-mini] .yt-mini { display: flex; }
+  .yt-main { padding-left: calc(var(--yt-guide) + 24px); }
+  html[data-guide-mini] .yt-main { padding-left: calc(var(--yt-mini) + 24px); }
+}
+@media (min-width: 1900px) { .yt-grid { --yt-cols: 4; } }
+@media (min-width: 800px) and (max-width: 1311px) {
+  .yt-mini { display: flex; }
+  .yt-main { padding-left: calc(var(--yt-mini) + 16px); }
+}
+@media (min-width: 800px) and (max-width: 1099px) { .yt-grid { --yt-cols: 2; } }
+
+/* Phones: YouTube's phone home. Full-width videos, the logo, bell and search on top, the bar along the bottom. */
+@media (max-width: 799px) {
+  .yt-guide-button, .yt-center, .yt-coins, .yt-create, .yt-desktop-only, .yt-login { display: none !important; }
+  .yt-phone-only { display: grid !important; }
+  .yt-topbar { gap: 4px; padding: 0 6px 0 14px; }
+  .yt-start, .yt-end { min-width: 0; }
+  .yt-end { gap: 0; }
+  .yt-end .owner-link { margin-right: 6px; font-size: 13.5px; }
+  .yt-signup { height: 34px; margin-left: 6px; padding: 0 14px; font-size: 14px; }
+  .yt-bottom { position: fixed; z-index: 45; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; height: calc(56px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--line); background: var(--paper); }
+  .yt-bottom a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; color: var(--ink); font-size: 10.5px; }
+  .yt-bottom a[aria-current="page"] { font-weight: 600; }
+  .yt-bottom .yt-bottom-create { justify-self: center; width: 42px; height: 42px; border-radius: 50%; background: var(--raised); }
+  .market-shell { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  .goal-shell { padding-bottom: 0; }
+  .goal-shell .yt-bottom { display: none; }
+  .toast-host { bottom: calc(72px + env(safe-area-inset-bottom)); }
+
+  .yt-main { padding: 0 0 24px; }
+  .yt-chips { gap: 8px; padding: 6px 12px 10px; }
+  .yt-chip { height: 34px; }
+  .yt-chip-icon { display: inline-flex; }
+  .yt-grid { --yt-cols: 1; gap: 28px; padding-top: 0; }
+  .yt-card .thumb, .yt-thumb, .yt-card .player, .yt-bone-thumb { border-radius: 0; }
+  .yt-info { padding: 0 40px 0 12px; }
+  .yt-more { top: -6px; right: 4px; }
+  .yt-pills { padding: 0 12px; }
+  .yt-pills .price-button { height: 44px; }
+  .yt-shelf { gap: 14px; padding: 4px 12px 24px; }
+  .yt-shelf-row { grid-auto-columns: 72%; margin: 0 -12px; padding: 0 12px 4px; scroll-padding: 0 12px; }
+  .yt-odds .spark { max-width: 180px; }
 }
 
 /* ========================================================================

@@ -38,6 +38,13 @@ export function SearchBox({ initial = "", placeholder = "Search founders, startu
           placeholder={placeholder} autoComplete="off" enterKeyHint="search" maxLength={80}
         />
       </label>
+      {/* YouTube's search button at the end of the pill (2026-10-20); hidden where the field stands alone. */}
+      <button type="submit" className="search-go" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4.5 4.5" />
+        </svg>
+      </button>
     </form>
   );
 }

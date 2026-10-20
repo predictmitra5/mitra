@@ -7,6 +7,8 @@ vi.mock("@/modules/auth/server", () => ({ currentIdentity: mocks.identity }));
 vi.mock("@/db/client", () => ({ getDb: mocks.database, schema: {} }));
 vi.mock("@/modules/account/positions", async (original) => ({ ...await original<object>(), loadPositions: mocks.load }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, usePathname: () => "/portfolio" }));
+// The top bar loads the guide's follows on its own (2026-10-20); these tests are about the page.
+vi.mock("@/app/components/market/market-header", () => ({ MarketHeader: () => null, MarketFooter: () => null }));
 vi.mock("next/link", () => ({ default: ({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) => React.createElement("a", { href, className }, children) }));
 import Portfolio, { metadata, dynamic } from "./page";
 import { PortfolioView } from "./portfolio-view";

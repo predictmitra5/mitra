@@ -1,17 +1,25 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { loadVideoFeed } from "@/app/components/feed/load";
-import { FeedPage } from "@/app/components/feed/feed-page";
+import { notFound, redirect } from "next/navigation";
+import { getDb } from "@/db/client";
 import { isUuid } from "@/modules/market/input";
+import { readVideoCards } from "@/modules/startups/read";
 
-/* A shared video (2026-10-19): the feed, opening on that video, then carrying on as For you. */
+/*
+ * A shared video's address (2026-10-20). The market page is Mitra's watch
+ * page, the video first and then its market, so the link opens there; a video
+ * whose startup has no market opens the startup.
+ */
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Founder video" };
 
 export default async function Watch({ params }: PageProps<"/watch/[id]">) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
-  const feed = await loadVideoFeed({ first: id.toLowerCase() });
-  if (!feed.unavailable && feed.cards[0]?.id !== id.toLowerCase()) notFound();
-  return <FeedPage tab="for-you" {...feed} />;
+  let target: string | null = null;
+  try {
+    const [card] = await readVideoCards(getDb(), [id.toLowerCase()], null);
+    if (card) target = card.market ? `/markets/${card.market.id}` : `/startups/${card.startup.slug}`;
+  } catch {
+    // Fall through to not found rather than show an error.
+  }
+  if (!target) notFound();
+  redirect(target);
 }

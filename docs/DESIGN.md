@@ -368,3 +368,27 @@ Startup and founder profiles (thumbnail, about, team, videos, markets, updates, 
 ### Rebuilt on the 2026-10-12 line (2026-10-19)
 
 Section 15's shop and QR campaign screens stay as built; its quieter navigation and the campus pickers give way to the bar above (For you, Following, Markets, Activity), because startup markets have no campus. The balance in the bar reads Trade Coins; the account page shows Trade Coins and Coins and links the shop; owners reach QR campaigns from the account page's owner tools. The new section-15 styles use weight 600 where they had 700, so Geist stays at 400, 500 and 600.
+
+## 17. YouTube's home (2026-10-20)
+
+The owner: "we aren't trying to become tiktok here. we are trying to become youtube", with YouTube's home on a desktop and a phone to copy (DECISIONS.md, 2026-10-20). Colours, Geist at 400/500/600, the thumbnails, the chart and the motion of sections 12 to 16 stay; the layout is YouTube's. The swipe feed of section 16 is gone.
+
+### Top bar
+
+`MarketHeader` (every page): the guide button and the logo; a centred search pill with YouTube's search button at its end; then the theme switch, Trade Coins, a raised Create pill, the bell (Activity) and the avatar (Portfolio); Log in and Sign up for visitors; Review with its count for the owner. 56 px tall, on the page colour.
+
+### Guide
+
+YouTube's left column (`Guide` in `market-header.tsx`): Home and Markets; Following, listing the founders you follow (or a Log in note); You (Portfolio, Activity, Saved videos, Your founder page, Shop, Account); Explore (the industries, each opening the home on that topic); Owner (Review, Create a market, Outcomes, QR campaigns, People, Audit record); the small print. On the home and Following pages it stays beside the page from 1312 px wide, narrows to YouTube's icon column (Home, Markets, Following, You) from 800 px, and the guide button toggles full and icons (remembered on the device). On other pages, and between 800 and 1312 px, the guide button opens it as a drawer over a dimmed page, closed by the scrim, Escape or a link (`guide-controls.tsx`).
+
+### Home
+
+`src/app/(feed)/page.tsx` and `src/app/components/home`: chips (All, Following, New, Closing soon, the industries; a compass to Markets on a phone) that filter in place and live in `?topic=`; a grid of three columns (four from 1900 px, two from 800 to 1099 px, one on a phone); one Closing soon shelf after the first six cards, scrolling sideways, with Explore more; more cards as the page scrolls.
+
+### Card
+
+`GridCard`: the 16:9 thumbnail with the video's length in its corner and the Demo tag; the founder's avatar beside the market's question (two lines at most); the startup and founder as the channel; the chance in baby blue with today's change and the price line; "308 traded · 15 months left" where YouTube puts views and age; a ⋮ menu (Save, Follow the startup, Not interested, Copy link, Report) that shows on hover on a desktop. One card per market. The first card is the market moving most today (YouTube's sponsored slot): "Moving most today" in its stats and Yes and No pills under it; on a phone its video plays muted with captions and its description shows, as YouTube's first video does.
+
+### Phone
+
+Below 800 px: the logo, the theme switch, search and the bell on top; full-width videos with square corners; the bar along the bottom: Home, Markets, Create (a round +), Following and You (the avatar).

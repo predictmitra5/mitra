@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { loadVideoFeed } from "@/app/components/feed/load";
-import { FeedPage } from "@/app/components/feed/feed-page";
+import { loadHome } from "@/app/components/home/load";
+import { HomePage } from "@/app/components/home/home-page";
 
-/* Videos from founders and startups the viewer follows, newest first (2026-10-19). */
+/* Videos from founders and startups the viewer follows, as YouTube's Subscriptions (2026-10-20). */
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Following" };
 
 export default async function Following() {
-  const feed = await loadVideoFeed({ following: true });
-  return <FeedPage tab="following" {...feed} />;
+  const data = await loadHome({ following: true });
+  return <HomePage data={data} following />;
 }
