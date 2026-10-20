@@ -34,6 +34,8 @@ Only one agent should work in this folder at a time. Before starting, check that
 2. Only on the owner's explicit go-ahead after seeing the report: the same script with `--apply --owner=<both owner handles>` (record 0014 to 0017, apply 0018, void the live event samples with refunds, write the demo catalog), then push `startup-pivot` to `main`, then check the live site.
 3. Record the outcome here and clear this entry.
 
+**Step 1 done, 2026-10-20:** the read-only report matched: 15 migrations recorded, 0014 to 0017 applied by hand and checked present (to be recorded), 0018 to be applied, three event samples open (Brutus, Buckeye Donuts, Midway on High; nobody holds any of them and none has a trade since the 2026-10-13 reset, so voiding moves no Trade Coins), the demo catalog to be written. Owners: @ducky and @mitrapredict; two profiles; no wallet disagrees with its ledger. Nothing was written. Waiting for the owner's go-ahead for step 2.
+
 **Relies on:** DECISIONS.md 2026-10-19 (pivot and its rebuild), 2026-10-12 and 10-13, 2026-10-08 (going live waits for the owner's go-ahead).
 
 ## Deferred, to come back to
