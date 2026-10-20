@@ -166,7 +166,7 @@ Decided by the owner's pivot brief and answers (DECISIONS.md, 2026-10-08). Goal 
 
 ## Startup markets (2026-10-19)
 
-Decided in DECISIONS.md, 2026-10-19, and rebuilt the same day on top of the 2026-10-12 and 10-13 decisions (Trade Coins, 50/50 openings, missing data voids, the owner trading block); built locally on the branch `startup-pivot`, not yet live.
+Decided in DECISIONS.md, 2026-10-19, and rebuilt the same day on top of the 2026-10-12 and 10-13 decisions (Trade Coins, 50/50 openings, missing data voids, the owner trading block); live since 2026-10-20.
 
 - **What a market is.** A Yes/No question about one startup's measurable milestone (adoption, accelerator, competition, award, launch, ranking, performance, other; financial milestones such as revenue or a round are demonstration only, pending legal review before any real money). Each names exact Yes and No conditions, a source, a close date (end of that day, Eastern) and a results deadline. Every market opens at 50/50 (2026-10-13); the owner's form has no opening chance, and the server ignores one if sent.
 - **Who makes them.** Only the owner, at `/review`: a draft can be edited until it opens; once open its wording is frozen. A founder can suggest one from `/create`; the owner writes it or turns it down with a reason. Founders never manage, pause or resolve markets.

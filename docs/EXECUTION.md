@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
 
 ## Read this first
 
@@ -24,19 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-### 2026-10-20 - Go live with the startup pivot (Claude Code)
-
-**What and why.** The owner confirmed the carry-over list as built (DECISIONS.md, 2026-10-19 rebuild entry, answer of 2026-10-20) and asked to go live, starting with the read-only report.
-
-**Plan:**
-
-1. Run `scripts/startup-pivot-go-live.mjs` without `--apply` on the branch `startup-pivot`: it only reads the live database and prints what it would do. Check it against what was found on 2026-10-19 (15 recorded migrations, 0014 to 0017 applied by hand, two owners, three open event samples).
-2. Only on the owner's explicit go-ahead after seeing the report: the same script with `--apply --owner=<both owner handles>` (record 0014 to 0017, apply 0018, void the live event samples with refunds, write the demo catalog), then push `startup-pivot` to `main`, then check the live site.
-3. Record the outcome here and clear this entry.
-
-**Step 1 done, 2026-10-20:** the read-only report matched: 15 migrations recorded, 0014 to 0017 applied by hand and checked present (to be recorded), 0018 to be applied, three event samples open (Brutus, Buckeye Donuts, Midway on High; nobody holds any of them and none has a trade since the 2026-10-13 reset, so voiding moves no Trade Coins), the demo catalog to be written. Owners: @ducky and @mitrapredict; two profiles; no wallet disagrees with its ledger. Nothing was written. Waiting for the owner's go-ahead for step 2.
-
-**Relies on:** DECISIONS.md 2026-10-19 (pivot and its rebuild), 2026-10-12 and 10-13, 2026-10-08 (going live waits for the owner's go-ahead).
+Nothing.
 
 ## Deferred, to come back to
 
@@ -49,7 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
-- Stage, 2026-10-19: **built locally, not live: Mitra is a video-first place to discover founders and their startups, with Yes/No markets on startup milestones traded with Trade Coins** (DECISIONS.md, 2026-10-19, both entries; DESIGN.md section 16). The pivot was first built on the older line (local `main`) and then, on the owner's instruction, rebuilt on top of Siyansh's 2026-10-12 and 13 work on the local branch `startup-pivot`, which starts from `origin/main` (fcd365c). Nothing is pushed; production still serves the event-market version with Siyansh's Coins, QR campaigns and campus picker. The startup schema is migration `0018_startup_markets`, written and tested but not applied live. The live database has this line's 0014 to 0017 applied by hand but not recorded in Drizzle's table (its last record is 2026-10-09's `0014_short_titles`), which the go-live script repairs before migrating. The demo catalog (20 fictional startups and founders, 30 videos, 35 markets opening at 50/50 with about 1,130 simulated trades, every one labelled Demo) has only been written into disposable preview schemas.
+- Stage, 2026-10-20: **live: Mitra is a video-first place to discover founders and their startups, with Yes/No markets on startup milestones traded with Trade Coins** (DECISIONS.md, 2026-10-19, both entries, and the owner's answer of 2026-10-20; DESIGN.md section 16). The pivot, rebuilt on top of Siyansh's 2026-10-12 and 13 work, is `main` (8733bd0, pushed as a fast-forward of fcd365c) and served at https://mitra-gamma-ten.vercel.app. The live database records all 19 migrations (0000 to 0018, plus the 2026-10-09 short titles); 0014 to 0017, applied by hand on 2026-10-12 and 13, are now recorded too, so Drizzle's migrator works there again. The four event markets are void (nobody held them), and the demo catalog is live: 20 fictional startups and founders, 30 videos, 35 markets opening at 50/50 (32 open, 3 resolved), 1,130 simulated trades by fictional demo traders, all labelled Demo. New members start with zero Trade Coins; QR campaigns award them.
 - Stage, 2026-10-09: **live: XO Market/Kalshi type (Geist), smooth loading, short card titles, and Brutus at Smith-Steeb Hall in place of the Gateway Film Center sample** (DECISIONS.md and DESIGN.md section 14, 2026-10-09). Migration 0014 is applied (15 migrations recorded), the two remaining samples carry short titles, the screening is void (nobody held it), the Brutus sample is open at `/markets/99c3ba84-b412-4720-8976-a3afc51a5c8c`, and `main` (e25e4a4, after 2980f73 undid Siyansh's unbuildable 2026-10-08 merge) is served at https://mitra-gamma-ten.vercel.app. Siyansh's 2026-10-07 security remediation waits on the branch `security-remediation-2026-10-07` (Next actions).
 - **Latest implementation, 2026-10-13:** the signed-out campus selector sits beside the Mitra logo, preserves search when switching Ohio State/Illinois feeds, and closes immediately after a school is selected; signed-in campus remains verified and fixed. QR claim pages now show campaign details and the signed-in account, request a one-time location check, and send signed-out members through sign-in back to that same private claim. Owners can edit unclaimed campaigns, pause/resume, rotate QR links, and delete unused campaigns or archive those with claims. Private token hashes are not sent to the browser; claimant coordinates are checked transiently and not stored. Additive migration 0017 was applied to the connected production Supabase project; no account, wallet, market, or campaign data was reset or deleted. Code is pushed to `origin/main` as `42b2e76`; its Vercel Production deployment reached READY. The previous shop/QR/navigation/currency changes were pushed as `1792f59`.
 - **Production availability repair, 2026-10-12:** the deployed app queried tables missing from the production schema (`feed_event_buckets` and `silver_wallets`), producing the market/account unavailable errors. Reviewed migrations 0014–0016 were applied to the production Supabase project. The live feed then rendered normally. Database check: 6 profiles (2 active owners), 6 wallets (all funded), 3 trades, 2 positions; 3 markets are open and 2 remain cancelled. No market terms/statuses were changed. The account page's missing-table cause is fixed, but a signed-in account walkthrough was not available here.
@@ -187,7 +175,7 @@ Other important risks: sparse liquidity; long outcome horizons delaying learning
 
 Refreshed 2026-10-19 for the pivot to founder videos and startup markets.
 
-0. **Owner review of the rebuild, then go live on the owner's go-ahead.** The branch `startup-pivot` is local. First confirm the carry-over choices in DECISIONS.md (2026-10-19, "rebuilt on the 2026-10-12 line"), including how new members get Trade Coins, and tell Siyansh. Then, from the project folder on that branch: `node --env-file=.env.local scripts/startup-pivot-go-live.mjs` prints a read-only report; the same command with `--apply --owner=<handle>[,<handle>]` checks and records the hand-applied 0014 to 0017, applies 0018, voids every live event market with refunds and writes the demo catalog, ending with a ledger check. Then push the branch to `main` (a fast-forward of `origin/main`; its commits are authored as predictmitra@gmail.com). Run the script before the push: 0018 only adds, so the event version keeps working against it, while the new version needs it. Vercel needs `CRON_SECRET` for the maintenance route, as before.
+0. **Done 2026-10-20:** the startup pivot is live (Session history).
 1. **Founder uploads.** Run `node --env-file=.env.local scripts/setup-evidence-storage.mjs` to create the `startup-media` and `media-uploads` buckets, then set `STARTUP_MEDIA_UPLOADS=on` in `.env.local` and in Vercel. Until then founders paste links to photos and videos instead of uploading.
 2. **Real startups.** A founder signs up, makes their founder profile and startup at `/create` and adds videos; the owner approves them at `/review` and writes each market there (question, Yes and No conditions, source, close date, opening chance), checks it as a draft and opens it. Demo markets are voided with refunds one at a time at `/review/markets`; a single owner control to retire the whole demo catalog (void its markets, hide its startups, founders and fictional traders) is not built yet.
 3. **Founder photos and thumbnails.** Demo cards use the drawn composite (initials, name and role beside a product panel). The owner offered AI-generated founder portraits; each goes in a founder's `portrait_url` or a video's `thumbnail_url` and replaces the drawing everywhere.
@@ -228,6 +216,11 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-20 - The startup pivot is live (Claude Code)
+
+The owner confirmed the carry-over list as built, keeping zero starting Trade Coins and the visitor video learning (DECISIONS.md), and asked to go live; plan committed first (fcec201). The read-only report matched what was found on 2026-10-19 (8733bd0 records it). On the owner's "Go ahead", after `git fetch` showed `origin/main` still at fcd365c: `scripts/startup-pivot-go-live.mjs --apply --owner=mitrapredict,ducky` recorded 0014 to 0017 after checking their objects, applied 0018, voided the Brutus, Buckeye Donuts and Midway on High samples (no holders, no trades) and wrote the demo catalog (20 startups, 30 videos, 35 markets, 1,130 simulated trades); no wallet disagrees with its ledger. Checked afterwards, read-only: 20 migration records, the startup tables present, every event market cancelled, 40 markets (32 open), 74 profiles (2 owners and the fictional demo traders). Then `git push origin startup-pivot:main` (fcd365c..8733bd0); the new version was served about 45 seconds later. On the live site as a visitor: the For you feed plays a demo video with captions and its prediction card ("346 demo Trade Coins traded · 29 traders"); the market directory's cards show thumbnail, question, chance, chart and Yes/No; a startup market page shows its demo note in Trade Coins and "If no result arrives: Void and held costs refunded"; the old Brutus address shows "Void. Held costs refunded."; no console errors. Not checked live: signing in, trading and owner pages with real accounts.
+
 
 ### 2026-10-19 - The startup pivot rebuilt on Siyansh's line (Claude Code)
 
