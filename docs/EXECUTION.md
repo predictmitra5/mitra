@@ -24,7 +24,20 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None.
+### 2026-10-19 - Rebuild the startup pivot on top of this line (Claude Code)
+
+**What and why.** On 2026-10-19 the owner had Claude Code build a pivot to founder videos and startup markets (DECISIONS.md, 2026-10-19, recorded on the local `main` line) without knowing this line existed: `main` there grew from 2980f73, which undid the 2026-10-08 merge, while this line grew from that merge (a9ef7cd). Shown both, the owner said: "Rebuild the startup pivot on top of Siyansh's origin/main: keep their security, email and account work, renumber the startup migration after 0017, and show me what of their campus features would carry over before pushing anything."
+
+**Plan, on the local branch `startup-pivot` (nothing is pushed):**
+
+1. Port, in one three-way merge against the tree both lines started from (5a8d8b4), the owner's 2026-10-09 and 10-10 work (Geist, short titles, the Brutus sample, the Midway pin) and the startup pivot. Every file this line changed keeps its changes unless the pivot retired the page it lives on; the security work (bounded feed counters, upload intents and the maintenance route, the owner trading block), the verification email, the account page, sign-in and provisioning are kept as they are.
+2. Migrations: this line's 0014 to 0017 unchanged; the startup schema becomes `0018_startup_markets`, generated against this line's 0017 snapshot, with `markets.short_question` added only if missing (it is already live).
+3. Apply this line's recorded decisions to the pivot: Trade Coins (the market balance, zero at sign-up) and Coins (the shop) instead of "credits"; every market opens at 50/50, with no opening chance on the owner's form; missing source data voids and refunds; the owner cannot trade. Demo traders still receive their simulated balance.
+4. Campus features: keep QR campaigns (they award Trade Coins) and the shop (checkout still off); retire the campus pickers from the interface, since startup markets have no campus. List each for the owner to confirm before anything is pushed.
+5. Go live (not done here): the live database has this line's 0014 to 0017 applied by hand but not recorded in Drizzle's table (its last record is 0014_short_titles), so a plain migrate would re-run 0015 and fail. The go-live script first checks each of those migrations' objects exist and records it, then applies 0018.
+6. Tests, typecheck, lint, build and a browser walkthrough on a disposable schema; then docs.
+
+**Relies on:** DECISIONS.md 2026-10-19 (pivot), 2026-10-12 and 10-13 (currency, QR awards, reset, 50/50 openings, owner campus), 2026-10-07 (security remediation), 2026-10-09 (type and short titles).
 
 ## Deferred, to come back to
 
