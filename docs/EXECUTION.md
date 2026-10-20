@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing.
+- **2026-10-20 — startup exchange replacement, funding closed.** Current user-supplied blueprint supersedes the campus/dual-currency/LMSR and fake-funds directions. Preserve the current video-first design at 9dd7982; inventory code and connected hosted services; retire college eligibility, currencies, QR, badge/reward and LMSR mutation paths; implement exact-cent CLOB matching, reservations, double-entry accounting, settlement, idempotency and fail-closed launch/funding controls; add consistent Yes/No entry points and honest book quotes. Follow the existing Drizzle migration history and validate fresh/upgrade databases and isolated matching/accounting fixtures. Publish to verified GitHub main and Vercel only after checks and reset prerequisites are resolved. Production reset requires current retained Auth UUID/email confirmation, exact deletion scope/dry-run and recoverable backup verification; missing reset details do not block independent implementation. No real customer funding or execution is authorized. Exact projects: Supabase uexxnlgchhdbbomdaxgg (kalshiforpeople), Vercel mitra/prj_VNwaRvjgz0C4FaO6rCvPcTHCjV20 in mitra25; linked repository/branch/environment still to be verified.
 
 ## Deferred, to come back to
 
