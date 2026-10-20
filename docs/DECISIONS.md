@@ -688,3 +688,19 @@ The owner requested Mitra branding and Ohio State/Illinois accents on verificati
 **Open, because of zero-start:** a new member can watch, follow and comment but cannot trade until they claim a QR award. Whether startup markets need another way to get Trade Coins (a starting grant, a free daily amount) is the owner's decision.
 
 **Owner's answer, 2026-10-20:** "The carry-over list looks right as built. Keep zero starting Trade Coins and the visitor video learning as they are. Next, help me go live: run the read-only go-live report first." The carry-over above stands as built: new members start with zero Trade Coins, and signed-out visitors' video events keep teaching the feed under the cap and 60-day deletion.
+
+## 2026-10-20 - Look like YouTube, not TikTok
+
+**User instruction** (the owner, after the startup pivot went live): "well we need it to look different for phone and desktop right. for desktop i want more of the og mitra style, so a big highlight market and then other markets below like how it was before. i have a feeling it should be similar to that on phone as well, maybe something intensifying the highlight market". Asked where the swipe feed should go: "i dont get it. we aren't trying to become tiktok here. we are trying to become youtube. im going to give you what youtube UI looks like copy that"; the highlight: "Moving most today"; the phone: "going to give you what youtube looks like on phone and computer and u just copy". Then four screenshots of YouTube's home: a desktop with the guide on the left, a chips row and a three-column grid whose first slot is a sponsored video with two buttons; a phone with the logo and icons on top, chips, full-width videos (the first playing muted with captions), a shelf with Explore more, and Home, Shorts, Create, Subscriptions and You along the bottom (spelling tidied).
+
+**Decision:** the home page copies YouTube's home on both sizes, in Mitra's colours, font and motion. The swipe-through video feed is retired.
+
+**Assumptions made to copy it (the owner can change any of them):**
+
+- **Cards are founder videos with their market.** YouTube's home is a grid of recommended videos, so Mitra's is the recommended founder videos (the same For you ranking, which still never reads market data), each card showing its startup's market: the thumbnail with the video's length, the founder's avatar, the market's question as the title, the startup and founder as the channel, and a row with the chance, today's change and the price chart, then Trade Coins traded and the close date. A video without a market shows its own title.
+- **The highlight is the first card**, where YouTube puts its sponsored video: the market moving most today (a pinned market if one is set), labelled "Moving most today", with Yes and No pill buttons under it as YouTube has Watch and Watch now. On a phone it plays its founder video muted with captions, as YouTube's first video does.
+- **Desktop guide** (YouTube's left column): Home and Markets (Markets in YouTube's Shorts place); Following, with the founders you follow (YouTube's Subscriptions); You: portfolio, activity, your founder page, account; Explore: the industries; owner tools for the owner. The hamburger narrows it to icons; on narrower screens it opens as a drawer.
+- **Chips** (YouTube's topic row): All, Following, New, Closing soon and the industries, filtering the home grid.
+- **One shelf**, as YouTube's: markets closing soon, scrolling sideways, with Explore more opening the market directory.
+- **Phone bar** (YouTube's bottom bar): Home, Markets, Create, Following, You. Activity is the bell at the top; search is the magnifier.
+- **The market page is Mitra's watch page.** A card opens its market (video first, then the market). `/following` shows the same grid for followed founders; `/watch/<id>` opens that video's market.

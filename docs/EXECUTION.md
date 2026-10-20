@@ -24,7 +24,18 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-Nothing.
+### 2026-10-20 - YouTube-style home on desktop and phone (Claude Code)
+
+**What and why.** The owner wants Mitra to look like YouTube, not TikTok, and sent YouTube's home on desktop and phone to copy; the highlight is the market moving most today (DECISIONS.md, 2026-10-20, with the assumptions).
+
+**Plan:**
+
+1. A YouTube-style top bar for every page (hamburger, logo, a centred search pill, Create, the bell, the avatar; Trade Coins and the theme kept), a left guide on wide screens (icons only when narrowed, a drawer below that), and a YouTube-style bottom bar on phones. Kept under the same `MarketHeader` name so every page gets it.
+2. The home page: a chips row, then a grid of founder-video cards (three columns on a laptop, one full-width column on a phone) ordered by the existing For you recommendation, each with its market's question, chance, change and chart; the moving-most market first with Yes/No pills (playing muted on a phone); one Closing soon shelf with Explore more. Cards report impressions and opens to the recommendation as the reel did.
+3. `/following` becomes the same grid for followed founders; `/watch/<id>` opens the video's market. The reel and its feed page are removed.
+4. Tests, typecheck, lint, build; the app on a disposable schema at desktop, laptop and phone widths, light and dark. Nothing pushed until the owner has seen it.
+
+**Relies on:** DECISIONS.md 2026-10-20 (this), 2026-10-19 (pivot, recommendation, market integrity), 2026-10-12 (Trade Coins), 2026-10-09 (type and motion).
 
 ## Deferred, to come back to
 
