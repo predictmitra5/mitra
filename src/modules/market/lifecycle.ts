@@ -2,10 +2,10 @@ import { and, asc, desc, eq, inArray, isNotNull, lte, or, sql } from "drizzle-or
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "./input";
-import { EMPTY_POSITION } from "./position";
+import { settleMarket } from "@/modules/exchange/store";
 import { isInactive } from "@/modules/account/standing";
 
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory, venues, resolutionSources, startups } = schema;
+const { profiles, markets, adminActions, contests, venues, resolutionSources, startups } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Market = typeof markets.$inferSelect;
 type Clock = () => Date;
@@ -116,30 +116,7 @@ function safeAmount(value: number) {
 }
 
 /** Caller holds the market lock. Wallets are locked by user id across all markets. */
-async function creditPositions<Q extends PgQueryResultHKT>(tx: Database<Q>, market: Market, kind: "settlement" | "cancellation_refund", now: Date) {
-  const held = await tx.select().from(positions).where(eq(positions.marketId, market.id)).orderBy(asc(positions.userId));
-  if (kind === "settlement" && !market.ruledOutcome) throw new LifecycleError("INVALID_STATE", "This market has no ruling to settle.");
-  let totalMicro = 0;
-  const accountRows = held.length ? await tx.select().from(wallets).where(inArray(wallets.userId, held.map((p) => p.userId)))
-    .orderBy(asc(wallets.userId)).for("update") : [];
-  const balances = new Map(accountRows.map((w) => [w.userId, w.balanceMicro]));
-  for (const position of held) {
-    [position.yesSharesMicro, position.noSharesMicro, position.yesCostBasisMicro, position.noCostBasisMicro].forEach(safeAmount);
-    const cash = balances.get(position.userId);
-    if (cash === undefined) throw new LifecycleError("ACCOUNTING_ERROR", "A participant's wallet needs review before finalization.");
-    const credit = safeAmount(kind === "cancellation_refund"
-      ? position.yesCostBasisMicro + position.noCostBasisMicro
-      : market.ruledOutcome === "yes" ? position.yesSharesMicro : position.noSharesMicro);
-    const balanceMicro = safeAmount(safeAmount(cash) + credit);
-    totalMicro = safeAmount(totalMicro + credit);
-    await tx.update(wallets).set({ balanceMicro, updatedAt: now }).where(eq(wallets.userId, position.userId));
-    // Include zero payouts: the ledger records losing outcomes too.
-    await tx.insert(ledgerEntries).values({ userId: position.userId, marketId: market.id, kind,
-      amountMicro: credit, createdAt: now, memo: kind === "settlement" ? `${market.ruledOutcome!.toUpperCase()} final payout` : "Held-cost refund" });
-  }
-  await tx.update(positions).set({ ...EMPTY_POSITION, updatedAt: now }).where(eq(positions.marketId, market.id));
-  return { participants: held.length, totalMicro };
-}
+async function creditPositions<Q extends PgQueryResultHKT>(tx:Database<Q>,market:Market,kind:'settlement'|'cancellation_refund',now:Date){await settleMarket(tx,market.id,kind==='cancellation_refund'?'void':market.ruledOutcome!, 'final:'+market.id,now);return {participants:0,totalMicro:0};}
 
 async function closeAtDeadline<Q extends PgQueryResultHKT>(tx: Database<Q>, market: Market, now: Date): Promise<Market> {
   if (market.status !== "open" || market.deadlineAt > now) return market;
@@ -160,7 +137,6 @@ export async function advanceMarket<Q extends PgQueryResultHKT>(database: Databa
     if (market.status !== "ruled" || !market.contestEndsAt || market.contestEndsAt > now) return;
     const result = await creditPositions(tx, market, "settlement", now);
     await tx.update(markets).set({ status: "settled", settledAt: now }).where(eq(markets.id, market.id));
-    await tx.insert(priceHistory).values({ marketId: market.id, yesPriceBp: market.ruledOutcome === "yes" ? 10_000 : 0, recordedAt: now });
     await tx.insert(adminActions).values({ marketId: market.id, actorUserId: null, kind: "settle",
       reason: "Contest window completed", details: { ...result, outcome: market.ruledOutcome, rulingVersion: market.rulingVersion }, createdAt: now });
   });
@@ -183,7 +159,7 @@ export async function applyOwnerCommand<Q extends PgQueryResultHKT>(database: Da
     }
     let market = await lockMarket(tx, command.marketId);
     const now = clock();
-    if (final(market, now)) throw new LifecycleError("FINAL", "This outcome is final. Its points cannot be changed or clawed back.");
+    if (final(market, now)) throw new LifecycleError("FINAL", "This outcome is final. Its financial history cannot be changed.");
     if (market.rulingVersion !== command.expectedVersion) throw new LifecycleError("STALE_RULING", "The ruling changed since you opened this form. Reload and review it first.");
     const before = { status: market.status, outcome: market.ruledOutcome, rulingVersion: market.rulingVersion };
     let kind: typeof adminActions.$inferInsert.kind;
@@ -260,10 +236,8 @@ export async function advanceDueMarkets<Q extends PgQueryResultHKT>(database: Da
   const now = clock();
   const due = and(isNotNull(markets.approvedAt), or(and(eq(markets.status, "open"), lte(markets.deadlineAt, now)),
     and(eq(markets.status, "ruled"), lte(markets.contestEndsAt, now))));
-  const rows = userId
-    ? await database.selectDistinct({ id: markets.id }).from(markets).leftJoin(positions, eq(positions.marketId, markets.id))
-      .where(and(due, or(eq(markets.subjectUserId, userId), eq(positions.userId, userId)))).limit(100)
-    : await database.select({ id: markets.id }).from(markets).where(due).orderBy(asc(markets.deadlineAt)).limit(100);
+  void userId;
+  const rows=await database.select({id:markets.id}).from(markets).where(and(due,isNotNull(markets.startupId))).orderBy(asc(markets.deadlineAt)).limit(100);
   for (const row of rows) await advanceMarket(database, row.id, clock);
 }
 

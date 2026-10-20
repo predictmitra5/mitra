@@ -19,7 +19,7 @@ import { Toaster } from "../toaster";
 /**
  * The top of every page, copied from YouTube on the owner's instruction
  * (2026-10-20, DESIGN.md section 17): the guide button and the logo; search in
- * a centred pill; for members their Trade Coins, Create, the bell (activity)
+ * a centred pill; for members their USD, Create, the bell (activity)
  * and their photo (the portfolio); Log in and Sign up for visitors. The owner
  * also gets Review with what is waiting.
  *
@@ -39,7 +39,7 @@ export async function MarketHeader({ viewer, active, query = "", brandMode = "ap
   query?: string;
   /** Older callers passed this; kept so they still compile. */
   search?: "desktop" | "feed";
-  brandMode?: "app" | "campus" | "neutral";
+  brandMode?: "app" | "neutral";
   entryAction?: "sign-in" | "sign-up" | "none";
   /** Keep the guide beside the page (YouTube's home) instead of only as a drawer. */
   guide?: boolean;
@@ -82,8 +82,8 @@ export async function MarketHeader({ viewer, active, query = "", brandMode = "ap
           {viewer ? (
             <>
               {tradeCoins !== null && (
-                <Link className="yt-coins" href="/portfolio" aria-label={`${coinsShort(tradeCoins)} Trade Coins available`}>
-                  <strong>{coinsShort(tradeCoins)}</strong> <span>Trade Coins</span>
+                <Link className="yt-coins" href="/portfolio" aria-label={`${coinsShort(tradeCoins)} USD available`}>
+                  <strong>${coinsShort(tradeCoins)}</strong> <span>Available</span>
                 </Link>
               )}
               <Link className="yt-create" href="/create" aria-current={active === "create" ? "page" : undefined}><Plus size={20} aria-hidden="true" />Create</Link>
@@ -172,7 +172,6 @@ function Guide({ viewer, active, follows, persistent }: { viewer: Viewer | null;
           <GuideLink href="/activity" icon={Bell} label="Activity" current={active === "activity"} />
           <GuideLink href="/portfolio#saved-title" icon={Bookmark} label="Saved videos" />
           <GuideLink href="/create" icon={SquarePlay} label="Your founder page" current={active === "create"} />
-          <GuideLink href="/shop" icon={Store} label="Shop" />
           <GuideLink href="/account" icon={Settings} label="Account" />
         </section>
       )}
@@ -188,14 +187,13 @@ function Guide({ viewer, active, follows, persistent }: { viewer: Viewer | null;
           <GuideLink href="/review" icon={ClipboardCheck} label="Review" badge={viewer.ownerQueue ?? 0} />
           <GuideLink href="/review/markets/new" icon={SquarePlus} label="Create a market" />
           <GuideLink href="/review/markets" icon={Gavel} label="Outcomes" />
-          <GuideLink href="/review/campaigns" icon={QrCode} label="QR campaigns" />
           <GuideLink href="/review/people" icon={Users} label="People" />
           <GuideLink href="/review/audit" icon={ScrollText} label="Audit record" />
         </section>
       )}
       <footer className="yt-guide-foot">
         <nav aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link><Link href="/markets">All markets</Link></nav>
-        <p>Startups, founders and markets marked Demo are fictional. Trade Coins and Coins have no cash value. Mitra is independent and not affiliated with any university.</p>
+        <p>Startups, founders and markets marked Demo are fictional. USD and Coins have no cash value. Mitra is independent and not affiliated with any university.</p>
       </footer>
     </nav>
   );
@@ -235,25 +233,25 @@ function BottomNav({ active, viewer }: { active?: NavKey; viewer: Viewer | null 
   );
 }
 
-/** Available Trade Coins for the bar: whole, or one decimal rounded down, never more than you have. */
+/** Available USD for the bar: whole, or one decimal rounded down, never more than you have. */
 function coinsShort(micro: number): string {
   const tenths = Math.floor(Math.max(0, micro) / 100_000) / 10;
   return tenths.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
-export function MarketFooter({ brandMode = "app" }: { brandMode?: "app" | "campus" | "neutral" }) {
+export function MarketFooter({ brandMode = "app" }: { brandMode?: "app" | "neutral" }) {
   return (
     <footer className={`market-footer${brandMode === "neutral" ? " market-footer-entry" : ""}`}>
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Discover founders early. Predict with Trade Coins, which have no cash value.</span>
+        <span>Discover founders early. Predict with USD, which have no cash value.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/markets">Markets</Link>
         <Link href="/faq">FAQ</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>
-      <p className="footer-disclaimer">Startups, founders and markets marked Demo are fictional, for demonstration. Trade Coins and Coins have no cash value and can’t be withdrawn or redeemed. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
+      <p className="footer-disclaimer">Startups, founders and markets marked Demo are fictional, for demonstration. USD and Coins have no cash value and can’t be withdrawn or redeemed. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
     </footer>
   );
 }

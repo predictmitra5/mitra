@@ -26,6 +26,7 @@ export function toCardData(card: FeedCard): CardData {
     timeZone: card.timeZone,
     isSample: card.isSample,
     yesPrice: card.yesPrice,
+    hasPrice: card.hasPrice, yesAskCents: card.yesAskCents, noAskCents: card.noAskCents,
     tradingOpen: card.tradingOpen,
     paused: card.paused,
     status: card.status,

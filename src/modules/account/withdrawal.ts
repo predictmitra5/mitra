@@ -2,11 +2,12 @@ import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
-import { EMPTY_POSITION } from "@/modules/market/position";
+import { readExchange } from "@/modules/exchange/store";
+import { funds } from "@/modules/exchange/engine";
 import type { UploadIntentKind } from "@/modules/uploads/intents";
 
 const {
-  profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, uploadIntents, marketProposals,
+  profiles, adminActions, evidence, uploadIntents, marketProposals,
   founders, startups, videos, videoEvents, videoLikes, videoSaves, founderFollows, startupFollows, viewerInterests,
 } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -60,69 +61,6 @@ async function beginWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q>
     }
     return profile;
   });
-}
-
-/** Cancels one not-yet-ruled goal and refunds every held position at cost. */
-async function cancelGoal<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, marketId: string, now: Date) {
-  return database.transaction(async (tx) => {
-    const db = tx as unknown as Database<Q>;
-    const [profile] = await db.select({ withdrawnAt: profiles.withdrawnAt }).from(profiles)
-      .where(eq(profiles.id, userId)).for("share");
-    if (!profile?.withdrawnAt) throw new WithdrawalError("NOT_ALLOWED", "This account cannot be deleted.");
-    const [market] = await db.select().from(markets).where(eq(markets.id, marketId)).for("update");
-    if (!market || market.subjectUserId !== userId || !["draft", "open", "closed"].includes(market.status)) return false;
-
-    const held = await db.select().from(positions).where(eq(positions.marketId, market.id)).orderBy(asc(positions.userId));
-    const accountRows = held.length
-      ? await db.select().from(wallets).where(inArray(wallets.userId, held.map((position) => position.userId)))
-        .orderBy(asc(wallets.userId)).for("update")
-      : [];
-    const balances = new Map(accountRows.map((wallet) => [wallet.userId, wallet.balanceMicro]));
-    let totalMicro = 0;
-    for (const position of held) {
-      const balance = balances.get(position.userId);
-      if (balance === undefined) throw new WithdrawalError("UNAVAILABLE", "A participant balance needs review before this account can be deleted.");
-      const credit = safeAmount(position.yesCostBasisMicro + position.noCostBasisMicro);
-      const balanceMicro = safeAmount(safeAmount(balance) + credit);
-      totalMicro = safeAmount(totalMicro + credit);
-      await db.update(wallets).set({ balanceMicro, updatedAt: now }).where(eq(wallets.userId, position.userId));
-      await db.insert(ledgerEntries).values({
-        userId: position.userId,
-        marketId: market.id,
-        kind: "cancellation_refund",
-        amountMicro: credit,
-        createdAt: now,
-        memo: "Held-cost refund",
-      });
-    }
-    if (held.length) await db.update(positions).set({ ...EMPTY_POSITION, updatedAt: now }).where(eq(positions.marketId, market.id));
-    await db.update(markets).set({
-      status: "cancelled",
-      cancelledAt: now,
-      cancelReason: WITHDRAWAL_CANCEL_REASON,
-      tradingClosedAt: market.tradingClosedAt ?? (market.status === "open" ? now : null),
-    }).where(eq(markets.id, market.id));
-    await db.insert(adminActions).values({
-      marketId: market.id,
-      actorUserId: userId,
-      kind: "cancel",
-      reason: WITHDRAWAL_CANCEL_REASON,
-      details: { participants: held.length, totalMicro, accountWithdrawal: true },
-      createdAt: now,
-    });
-    return true;
-  });
-}
-
-async function cancelGoals<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, now: Date) {
-  const pending = await database.select({ id: markets.id }).from(markets)
-    .where(and(eq(markets.subjectUserId, userId), inArray(markets.status, ["draft", "open", "closed"])));
-  let failed = 0;
-  for (const market of pending) {
-    try { await cancelGoal(database, userId, market.id, now); }
-    catch { failed += 1; }
-  }
-  if (failed) throw new WithdrawalError("CLEANUP_REQUIRED", "Some markets still need to be refunded. Please retry account deletion.");
 }
 
 async function objectsFor<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string): Promise<WithdrawalObjects> {
@@ -204,10 +142,12 @@ export async function withdrawAccount<Q extends PgQueryResultHKT>(
 ): Promise<void> {
   if (!isUuid(userId)) throw new WithdrawalError("NOT_ALLOWED", "This account cannot be deleted.");
   const now = clock();
+  const exchange=await readExchange(database),cash=funds(exchange,userId);
+  if(cash.available||cash.reserved||exchange.orders.some(o=>o.userId===userId&&o.status==="open")||exchange.holdings.some(p=>p.userId===userId&&p.available+p.reserved>0))throw new WithdrawalError("NOT_ALLOWED","Close orders, resolve positions and withdraw funds before deleting this account.");
   try {
     const profile = await beginWithdrawal(database, userId, now);
     if (!profile) return; // Auth-only account: the caller still removes the identity.
-    await cancelGoals(database, userId, now);
+
     const objects = await objectsFor(database, userId);
     await storage.remove(userId, objects);
     await finishWithdrawal(database, userId, now);

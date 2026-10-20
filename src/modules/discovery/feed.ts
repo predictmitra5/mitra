@@ -2,13 +2,12 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-o
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { PINNED_FEATURED_MARKET_ID } from "@/config/featured";
-import { price } from "@/modules/market/lmsr";
-import { toLmsr } from "@/modules/market/quote";
-import { MICRO_PER_UNIT } from "@/modules/market/units";
+import { readExchange } from "@/modules/exchange/store";
+import { quotes } from "@/modules/exchange/engine";
 import { isUuid } from "@/modules/market/input";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
-const { markets, startups, startupFounders, founders, trades, feedEventBuckets, priceHistory } = schema;
+const { markets, startups, startupFounders, founders, feedEventBuckets } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
 
@@ -53,6 +52,9 @@ export type FeedCard = {
   status: MarketStatus;
   ruledOutcome: "yes" | "no" | null;
   yesPrice: number;
+  hasPrice?: boolean;
+  yesAskCents?: number | null;
+  noAskCents?: number | null;
   tradingOpen: boolean;
   paused: boolean;
   reason: FeedReason;
@@ -203,14 +205,7 @@ function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
     deadlineAt: row.deadlineAt,
     status: row.status,
     ruledOutcome: row.ruledOutcome,
-    yesPrice: price(
-      toLmsr({
-        liquidity: row.liquidityMicro / MICRO_PER_UNIT,
-        yesSharesMicro: row.yesSharesMicro as number,
-        noSharesMicro: row.noSharesMicro as number,
-      }),
-      "YES",
-    ),
+    yesPrice: 0.5, hasPrice: false, yesAskCents: null, noAskCents: null,
     tradingOpen: row.status === "open" && !row.tradingClosedAt && !row.pausedAt && row.deadlineAt.getTime() > now.getTime(),
     paused: !!row.pausedAt,
     reason,
@@ -310,7 +305,7 @@ function inScope(scope: FeedScope) {
 
 function priced(row: CardRow): boolean {
   // Publishing sets the price; a row without one cannot be shown or ranked.
-  return row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null && row.startupId !== null;
+  return row.approvedAt !== null && row.startupId !== null;
 }
 
 /** Every open startup market in scope, ranked, with its volume, change and chart filled in. */
@@ -331,29 +326,18 @@ async function readRankedCards<Q extends PgQueryResultHKT>(
     .groupBy(feedEventBuckets.marketId)
     .as("click_counts");
 
-  const tradeCounts = database
-    .select({
-      marketId: trades.marketId,
-      trades: sql<number>`count(*)::int`.as("trades"),
-      traders: sql<number>`count(distinct ${trades.userId})::int`.as("traders"),
-    })
-    .from(trades)
-    .where(gte(trades.createdAt, since))
-    .groupBy(trades.marketId)
-    .as("trade_counts");
 
   const rows = await database
     .select({
       ...cardColumns,
       clicks: sql<number>`coalesce(${clickCounts.clicks}, 0)`,
-      trades: sql<number>`coalesce(${tradeCounts.trades}, 0)`,
-      traders: sql<number>`coalesce(${tradeCounts.traders}, 0)`,
+      trades: sql<number>`0`,
+      traders: sql<number>`0`,
     })
     .from(markets)
     // Startup markets only: retired goal and event markets never show here.
     .innerJoin(startups, eq(startups.id, markets.startupId))
     .leftJoin(clickCounts, eq(clickCounts.marketId, markets.id))
-    .leftJoin(tradeCounts, eq(tradeCounts.marketId, markets.id))
     .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt), inScope(scope)))
     .limit(MAX_CARDS);
 
@@ -387,28 +371,14 @@ async function readPastCards<Q extends PgQueryResultHKT>(
 
 /** Volume, traders, the 24-hour change, the chart and the primary founder, for a set of cards. */
 async function fillInformation<Q extends PgQueryResultHKT>(database: Database<Q>, cards: FeedCard[], now: Date) {
-  if (cards.length === 0) return;
-  const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
-  const ids = cards.map((card) => card.id);
-  const [info, sparks, people] = await Promise.all([
-    readMarketInformation(database, ids, since),
-    readSparks(database, ids, now),
-    readPrimaryFounders(database, [...new Set(cards.map((card) => card.startupId))]),
-  ]);
-  for (const card of cards) {
-    card.volumeMicro = info.volume.get(card.id) ?? 0;
-    card.traders = info.traders.get(card.id) ?? 0;
-    const then = info.priceThen.get(card.id);
-    // Only a market still trading has a move today; a payout point is not a price move.
-    card.change24hBp = then === undefined || card.status !== "open" ? 0 : Math.round(card.yesPrice * 10_000) - then;
-    const spark = sparks.get(card.id) ?? [];
-    const last = spark.at(-1);
-    // The chart ends at today's price, so it agrees with the number beside it.
-    card.spark = card.tradingOpen && (!last || last.yesBp !== Math.round(card.yesPrice * 10_000))
-      ? [...spark, { at: now, yesBp: Math.round(card.yesPrice * 10_000) }] : spark;
-    const founder = people.get(card.startupId);
-    if (founder) Object.assign(card, founder);
-  }
+ if (!cards.length) return;
+ const [state,people]=await Promise.all([readExchange(database),readPrimaryFounders(database,[...new Set(cards.map(c=>c.startupId))])]);
+ for(const card of cards){const q=quotes(state,card.id),fills=state.fills.filter(f=>f.marketId===card.id),then=[...fills].reverse().find(f=>f.at<=now.getTime()-86_400_000);
+ card.yesPrice=q.lastYes===null?0.5:q.lastYes/100;card.hasPrice=q.lastYes!==null;card.yesAskCents=q.yes?.price??null;card.noAskCents=q.no?.price??null;
+ card.volumeMicro=q.volumeContracts*1_000_000;card.traders=q.traders;card.change24hBp=then&&q.lastYes!==null?q.lastYes*100-(then.outcome==='yes'?then.price:100-then.price)*100:0;
+ card.spark=thinSeries(fills.map(f=>({at:new Date(f.at),yesBp:(f.outcome==='yes'?f.price:100-f.price)*100})),SPARK_POINTS);
+ const founder=people.get(card.startupId);if(founder)Object.assign(card,founder);
+ }
 }
 
 /** Each startup's primary founder (the one marked primary, else the first linked), for cards. */
@@ -427,32 +397,8 @@ export async function readPrimaryFounders<Q extends PgQueryResultHKT>(database: 
 }
 
 /** The last three months of each market's price, thinned for a small chart, with the price in force at the start carried in. */
-async function readSparks<Q extends PgQueryResultHKT>(database: Database<Q>, ids: readonly string[], now: Date) {
-  const out = new Map<string, PricePoint[]>();
-  if (ids.length === 0) return out;
-  const from = new Date(now.getTime() - SPARK_SPAN_MS);
-  const before = await database
-    .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
-    .from(priceHistory)
-    .where(and(inArray(priceHistory.marketId, [...ids]), lte(priceHistory.recordedAt, from)))
-    .orderBy(priceHistory.marketId, desc(priceHistory.recordedAt));
-  for (const row of before) out.set(row.marketId, [{ at: from, yesBp: row.yesBp }]);
-  const rows = await database
-    .select({ marketId: priceHistory.marketId, at: priceHistory.recordedAt, yesBp: priceHistory.yesPriceBp })
-    .from(priceHistory)
-    .where(and(inArray(priceHistory.marketId, [...ids]), gte(priceHistory.recordedAt, from)))
-    .orderBy(asc(priceHistory.recordedAt));
-  for (const row of rows) {
-    const list = out.get(row.marketId) ?? [];
-    list.push({ at: row.at, yesBp: row.yesBp });
-    out.set(row.marketId, list);
-  }
-  for (const [id, list] of out) out.set(id, thinSeries(list, SPARK_POINTS));
-  return out;
-}
-
 /** A market's live numbers, for pages that refresh prices while open. */
-export type Quote = { id: string; yesBp: number; change24hBp: number; volumeMicro: number; tradingOpen: boolean };
+export type Quote = { id: string; hasPrice: boolean; yesAskCents: number | null; noAskCents: number | null; yesBp: number; change24hBp: number; volumeMicro: number; tradingOpen: boolean };
 
 /** One request refreshes at most a full feed page. */
 export const MAX_QUOTES = MAX_CARDS;
@@ -464,110 +410,11 @@ const QUOTABLE = ["open", "closed", "ruled", "settled", "cancelled"] as const;
  * click, so a page polling it cannot inflate the counts the feed ranks by. It
  * returns only numbers the market's public page already shows.
  */
-export async function readQuotes<Q extends PgQueryResultHKT>(
-  database: Database<Q>,
-  ids: readonly string[],
-  now: Date = new Date(),
-): Promise<Quote[]> {
-  const list = [...new Set(ids)].filter(isUuid).slice(0, MAX_QUOTES);
-  if (list.length === 0) return [];
-  const rows = await database
-    .select({
-      id: markets.id, status: markets.status, deadlineAt: markets.deadlineAt, tradingClosedAt: markets.tradingClosedAt, pausedAt: markets.pausedAt,
-      liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
-    })
-    .from(markets)
-    .where(and(inArray(markets.id, list), isNotNull(markets.approvedAt), inArray(markets.status, [...QUOTABLE])));
-  const priced = rows.filter((row) => row.yesSharesMicro !== null && row.noSharesMicro !== null);
-  const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
-  const info = await readMarketInformation(database, priced.map((row) => row.id), since);
-  return priced.map((row) => {
-    const yesBp = Math.round(price(toLmsr({
-      liquidity: row.liquidityMicro / MICRO_PER_UNIT, yesSharesMicro: row.yesSharesMicro as number, noSharesMicro: row.noSharesMicro as number,
-    }), "YES") * 10_000);
-    const then = info.priceThen.get(row.id);
-    return {
-      id: row.id,
-      yesBp,
-      change24hBp: then === undefined ? 0 : yesBp - then,
-      volumeMicro: info.volume.get(row.id) ?? 0,
-      tradingOpen: row.status === "open" && !row.tradingClosedAt && !row.pausedAt && row.deadlineAt.getTime() > now.getTime(),
-    };
-  });
-}
-
-/**
- * Volume and the price 24 hours ago, for a set of markets. The earlier price is
- * the last recorded point at or before the window; a market younger than that
- * falls back to its first point, which publishing writes at the opening price.
- */
-async function readMarketInformation<Q extends PgQueryResultHKT>(
-  database: Database<Q>,
-  ids: readonly string[],
-  since: Date,
-): Promise<{ volume: Map<string, number>; traders: Map<string, number>; priceThen: Map<string, number> }> {
-  const volume = new Map<string, number>();
-  const traders = new Map<string, number>();
-  const priceThen = new Map<string, number>();
-  if (ids.length === 0) return { volume, traders, priceThen };
-  const list = [...ids];
-
-  const volumes = await database
-    .select({ marketId: trades.marketId, total: sql<string>`coalesce(sum(${trades.amountMicro}), 0)`, people: sql<number>`count(distinct ${trades.userId})::int` })
-    .from(trades)
-    .where(inArray(trades.marketId, list))
-    .groupBy(trades.marketId);
-  for (const row of volumes) { volume.set(row.marketId, Number(row.total)); traders.set(row.marketId, Number(row.people)); }
-
-  const before = await database
-    .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
-    .from(priceHistory)
-    .where(and(inArray(priceHistory.marketId, list), lte(priceHistory.recordedAt, since)))
-    .orderBy(priceHistory.marketId, desc(priceHistory.recordedAt));
-  for (const row of before) priceThen.set(row.marketId, row.yesBp);
-
-  const missing = list.filter((id) => !priceThen.has(id));
-  if (missing.length) {
-    const first = await database
-      .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
-      .from(priceHistory)
-      .where(inArray(priceHistory.marketId, missing))
-      .orderBy(priceHistory.marketId, asc(priceHistory.recordedAt));
-    for (const row of first) priceThen.set(row.marketId, row.yesBp);
-  }
-
-  return { volume, traders, priceThen };
-}
+export async function readQuotes<Q extends PgQueryResultHKT>(database:Database<Q>,ids:readonly string[],now:Date=new Date()):Promise<Quote[]>{return (await readCards(database,ids,now)).map(c=>({id:c.id,yesBp:Math.round(c.yesPrice*10000),hasPrice:c.hasPrice??false,yesAskCents:c.yesAskCents??null,noAskCents:c.noAskCents??null,change24hBp:c.change24hBp,volumeMicro:c.volumeMicro,tradingOpen:c.tradingOpen}));}
 
 /** Full recorded price history for a few markets, oldest first. */
-export async function readSeries<Q extends PgQueryResultHKT>(
-  database: Database<Q>,
-  ids: readonly string[],
-): Promise<Map<string, PricePoint[]>> {
-  const out = new Map<string, PricePoint[]>();
-  if (ids.length === 0) return out;
-  const rows = await database
-    .select({ marketId: priceHistory.marketId, at: priceHistory.recordedAt, yesBp: priceHistory.yesPriceBp })
-    .from(priceHistory)
-    .where(inArray(priceHistory.marketId, [...ids]))
-    .orderBy(asc(priceHistory.recordedAt));
-  for (const row of rows) {
-    const list = out.get(row.marketId) ?? [];
-    list.push({ at: row.at, yesBp: row.yesBp });
-    out.set(row.marketId, list);
-  }
-  return out;
-}
-
-/** One market's price history, for its own page. Public: prices are already public. */
-export async function readPriceSeries<Q extends PgQueryResultHKT>(
-  database: Database<Q>,
-  marketId: string,
-  current: { at: Date; yesBp: number },
-): Promise<PricePoint[]> {
-  const history = (await readSeries(database, [marketId])).get(marketId) ?? [];
-  return thinSeries([...history, current]);
-}
+export async function readSeries<Q extends PgQueryResultHKT>(database:Database<Q>,ids:readonly string[]):Promise<Map<string,PricePoint[]>>{const out=new Map<string,PricePoint[]>();const state=await readExchange(database);for(const fill of state.fills){if(!ids.includes(fill.marketId))continue;const list=out.get(fill.marketId)??[];list.push({at:new Date(fill.at),yesBp:(fill.outcome==='yes'?fill.price:100-fill.price)*100});out.set(fill.marketId,list);}return out;}
+export async function readPriceSeries<Q extends PgQueryResultHKT>(database:Database<Q>,marketId:string,_current:{at:Date;yesBp:number}):Promise<PricePoint[]>{void _current;return thinSeries((await readSeries(database,[marketId])).get(marketId)??[]);}
 
 /**
  * Record that these markets were shown in the feed. Measurement must never break
@@ -652,23 +499,4 @@ export async function readEventCounts<Q extends PgQueryResultHKT>(
  * Trade Coins traded on a market per day, and per hour for the last two days, for
  * the chart's volume bars (2026-10-19). Sums only: never a single trade's size.
  */
-export async function readVolumeBuckets<Q extends PgQueryResultHKT>(
-  database: Database<Q>,
-  marketId: string,
-  now: Date = new Date(),
-): Promise<{ at: Date; micro: number; hourly: boolean }[]> {
-  if (!isUuid(marketId)) return [];
-  const daily = await database
-    .select({ at: sql<string>`date_trunc('day', ${trades.createdAt})`, micro: sql<string>`sum(${trades.amountMicro})` })
-    .from(trades).where(eq(trades.marketId, marketId))
-    .groupBy(sql`date_trunc('day', ${trades.createdAt})`);
-  const since = new Date(now.getTime() - 48 * 3_600_000);
-  const hourly = await database
-    .select({ at: sql<string>`date_trunc('hour', ${trades.createdAt})`, micro: sql<string>`sum(${trades.amountMicro})` })
-    .from(trades).where(and(eq(trades.marketId, marketId), gte(trades.createdAt, since)))
-    .groupBy(sql`date_trunc('hour', ${trades.createdAt})`);
-  return [
-    ...daily.map((row) => ({ at: new Date(row.at), micro: Number(row.micro), hourly: false })),
-    ...hourly.map((row) => ({ at: new Date(row.at), micro: Number(row.micro), hourly: true })),
-  ];
-}
+export async function readVolumeBuckets<Q extends PgQueryResultHKT>(database:Database<Q>,marketId:string,now:Date=new Date()):Promise<{at:Date;micro:number;hourly:boolean}[]>{void now;const fills=(await readExchange(database)).fills.filter(f=>f.marketId===marketId),bins=new Map<number,number>();for(const f of fills){const at=Math.floor(f.at/3600000)*3600000;bins.set(at,(bins.get(at)??0)+f.quantity*1_000_000);}return [...bins].map(([at,micro])=>({at:new Date(at),micro,hourly:true}));}

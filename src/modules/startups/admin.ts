@@ -1,13 +1,10 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { ECONOMY } from "@/modules/market/economy";
-import { stateAtProbability } from "@/modules/market/lmsr";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
 import { isInactive } from "@/modules/account/standing";
 import { isMilestone, VERIFICATION, type MilestoneKey } from "./labels";
-import { OPENING_PROBABILITY_BP } from "@/modules/events/service";
 
 /*
  * The owner's tools for startups (2026-10-19): approving founders, startups and
@@ -20,7 +17,7 @@ import { OPENING_PROBABILITY_BP } from "@/modules/events/service";
 
 const {
   profiles, founders, startups, startupFounders, videos, verificationClaims, reports, comments, markets, resolutionSources,
-  priceHistory, adminActions, marketProposals,
+  adminActions, marketProposals,
 } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type ActionKind = (typeof schema.adminActionKind.enumValues)[number];
@@ -255,7 +252,7 @@ function draftValues(input: MarketDraftInput, now: Date) {
     startupId: input.startupId, kind: input.kind as MilestoneKey, question: text(input.question, "Question", 15, 240), shortQuestion: short,
     yesCondition: text(input.yesCondition, "Resolves Yes if", 15, 800), noCondition: text(input.noCondition, "Resolves No if", 10, 800),
     rules: text(input.rules, "Rules", 30, 4000), sourceName: text(input.sourceName, "Source", 3, 160), sourceMethod: text(input.sourceMethod, "How it is measured", 10, 800),
-    sourceUrl, deadline, resultsDue: new Date(deadline.getTime() + days * 86_400_000), opening: OPENING_PROBABILITY_BP, isDemo: input.isDemo === true || input.isDemo === "on",
+    sourceUrl, deadline, resultsDue: new Date(deadline.getTime() + days * 86_400_000), opening: 5000, isDemo: input.isDemo === true || input.isDemo === "on",
     proposalId: isUuid(input.proposalId) ? input.proposalId : null,
   };
 }
@@ -283,7 +280,7 @@ export async function saveMarketDraft<Q extends PgQueryResultHKT>(database: Data
     }
     const [source] = await tx.insert(resolutionSources).values({ name: v.sourceName, method: v.sourceMethod, url: v.sourceUrl, operational: false, createdAt: now }).returning();
     const [row] = await tx.insert(markets).values({
-      ...values, status: "draft", resolutionSourceId: source.id, liquidityMicro: Math.round(ECONOMY.defaultLiquidity * MICRO_PER_UNIT), createdAt: now,
+      ...values, status: "draft", resolutionSourceId: source.id, liquidityMicro: Math.round(0 * MICRO_PER_UNIT), createdAt: now,
     }).returning();
     if (v.proposalId) await tx.update(marketProposals).set({ marketId: row.id }).where(eq(marketProposals.id, v.proposalId));
     await audit(tx as unknown as Database<Q>, ownerId, "edit_market", "Draft created.", { question: v.question, proposalId: v.proposalId }, row.id, now);
@@ -301,13 +298,11 @@ export async function openMarket<Q extends PgQueryResultHKT>(database: Database<
     if (!draft.startupId) throw new AdminError("INVALID_STATE", "This draft is missing its startup.");
     if (draft.deadlineAt.getTime() <= now.getTime()) throw new AdminError("INVALID_STATE", "Its close date has passed. Edit the draft first.");
     // Neutral whatever the draft says (2026-10-13): the price moves only through trading.
-    const lmsr = stateAtProbability(ECONOMY.defaultLiquidity, OPENING_PROBABILITY_BP / 10_000);
-    const yes = Math.round(lmsr.yesShares * MICRO_PER_UNIT), no = Math.round(lmsr.noShares * MICRO_PER_UNIT);
+    const yes = 0, no = 0;
     const [row] = await tx.update(markets).set({
-      status: "open", openingProbabilityBp: OPENING_PROBABILITY_BP,
+      status: "open", openingProbabilityBp: 5000,
       initialYesSharesMicro: yes, initialNoSharesMicro: no, yesSharesMicro: yes, noSharesMicro: no, approvedAt: now, approvedBy: ownerId,
     }).where(eq(markets.id, marketId)).returning();
-    await tx.insert(priceHistory).values({ marketId: row.id, yesPriceBp: OPENING_PROBABILITY_BP, recordedAt: now });
     await tx.update(marketProposals).set({ status: "approved", reviewedBy: ownerId, reviewedAt: now }).where(and(eq(marketProposals.marketId, row.id), eq(marketProposals.status, "pending")));
     await audit(tx as unknown as Database<Q>, ownerId, "approve", "Market opened.", {
       question: row.question, yesCondition: row.yesCondition, noCondition: row.noCondition, rules: row.resolutionCriteria,

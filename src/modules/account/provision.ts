@@ -1,9 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 
-const { profiles, wallets, ledgerEntries } = schema;
-const NEW_ACCOUNT_GOLD_BALANCE_MICRO = 0;
+const { profiles } = schema;
+const NEW_ACCOUNT_BALANCE_MICRO = 0;
 
 export type AccountErrorCode =
   | "INVALID_IDENTITY"
@@ -84,12 +84,11 @@ function inconsistentAccount(): AccountError {
 }
 
 /**
- * The caller must first verify the current Supabase user and canonical OSU email.
+ * The caller must first verify the current Supabase user and confirmed email.
  * userId is that verified user's id, never a form field. This function has no
  * network identity lookup and deliberately accepts both production and test DBs.
  *
- * Successful insertion of the unique profile id is the only grant gate. A
- * missing wallet or ledger entry on an existing profile never authorizes a grant.
+ * Accounts begin at zero. No grants or currency conversion exist.
  */
 export async function provisionAccount<Q extends PgQueryResultHKT>(
   database: PgDatabase<Q, typeof schema>,
@@ -116,16 +115,11 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
         }).onConflictDoNothing({ target: profiles.id }).returning();
 
         if (created) {
-          await tx.insert(wallets).values({
-            userId,
-            balanceMicro: NEW_ACCOUNT_GOLD_BALANCE_MICRO,
-            updatedAt: now,
-          });
-          return { profile: created, balanceMicro: NEW_ACCOUNT_GOLD_BALANCE_MICRO, created: true };
+          return { profile: created, balanceMicro: NEW_ACCOUNT_BALANCE_MICRO, created: true };
         }
 
         // A concurrent creator won. A separate READ COMMITTED statement sees
-        // its committed account, including the wallet and grant, after waiting.
+        // its committed account, including the profile, after waiting.
         [profile] = await tx.select().from(profiles).where(eq(profiles.id, userId)).for("update");
       }
 
@@ -141,27 +135,10 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
         [profile] = await tx.update(profiles).set({ isOwner: 1 }).where(eq(profiles.id, userId)).returning();
       }
 
-      // Keep the order profile -> wallet for future withdrawal/trading writers.
-      const [wallet] = await tx.select().from(wallets).where(eq(wallets.userId, userId)).for("update");
-      const grants = await tx.select().from(ledgerEntries).where(and(
-        eq(ledgerEntries.userId, userId),
-        eq(ledgerEntries.kind, "signup_grant"),
-      )).limit(2);
-      const [ledger] = await tx.select({
-        total: sql<string>`coalesce(sum(${ledgerEntries.amountMicro}), 0)::text`,
-      }).from(ledgerEntries).where(eq(ledgerEntries.userId, userId));
-      const ledgerTotal = Number(ledger?.total);
-
-      if (
-        !wallet || !Number.isSafeInteger(wallet.balanceMicro) || wallet.balanceMicro < 0 ||
-        grants.length > 1 || grants.some((grant) => !Number.isSafeInteger(grant.amountMicro) || grant.amountMicro <= 0 || grant.marketId !== null || grant.tradeId !== null) ||
-        !Number.isSafeInteger(ledgerTotal) || ledgerTotal !== wallet.balanceMicro
-      ) throw inconsistentAccount();
-
       if (profile.adultConfirmedAt === null) {
         [profile] = await tx.update(profiles).set({ adultConfirmedAt: now }).where(eq(profiles.id, userId)).returning();
       }
-      return { profile, balanceMicro: wallet.balanceMicro, created: false };
+      return { profile, balanceMicro: 0, created: false };
     }, { isolationLevel: "read committed" });
   } catch (error) {
     if (error instanceof AccountError) throw error;

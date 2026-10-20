@@ -1,8 +1,5 @@
-import { isCampusKey } from "@/config/campus";
+import { safeReturnTo } from "@/modules/auth/policy";
 import { AuthScreen } from "../components/auth-screen";
-
-/** ?school=osu or ?school=uiuc comes from the pop-up's buttons and skips the school step. */
 export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
-  const { school } = await searchParams;
-  return <AuthScreen mode="sign-up" school={isCampusKey(school) ? school : null} />;
+ const {next}=await searchParams;return <AuthScreen mode="sign-up" returnTo={safeReturnTo(next)}/>;
 }

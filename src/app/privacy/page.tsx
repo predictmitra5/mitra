@@ -14,12 +14,12 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">01</span>
           <h2>What anyone can see</h2>
-          <p>Approved founder and startup profiles, their videos and updates, and markets: their terms, sources, prices, Trade Coins traded, how many people traded, rulings and outcomes. Comments show the commenter&rsquo;s name, handle and photo. Like, save and follower counts are public; who liked, saved or followed is not. Markets and trades never show who traded.</p>
+          <p>Approved founder and startup profiles, their videos and updates, and markets: their terms, sources, prices, executed contract volume, how many people traded, rulings and outcomes. Comments show the commenter&rsquo;s name, handle and photo. Like, save and follower counts are public; who liked, saved or followed is not. Markets and trades never show who traded.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
           <h2>What stays private</h2>
-          <p>Your sign-in details, Trade Coin and Coin balances, positions, trade history, saved videos, follows, market suggestions, reports, objections and moderation notes. Profiles, startups and videos a founder submits stay private to them and the owner until approved.</p>
+          <p>Your sign-in details, USD balances and order reservations, positions, trade history, saved videos, follows, market suggestions, reports, objections and moderation notes. Profiles, startups and videos a founder submits stay private to them and the owner until approved.</p>
         </section>
         <section className="info-card">
           <span className="info-number">03</span>
@@ -33,8 +33,8 @@ export default function PrivacyPage() {
         </section>
         <section className="info-card">
           <span className="info-number">05</span>
-          <h2>Campus campaign location checks</h2>
-          <p>If you choose to claim an available QR campaign, your browser asks permission to send your current location to Mitra so the server can compare it with the campaign’s owner-set area. Mitra does not store the claimant’s coordinates; it stores the campaign’s reference location and whether a claim was awarded. You can decline location access, but the claim will not be completed.</p>
+          <h2>Financial records</h2>
+          <p>The exchange keeps an append-only record of orders, executions and balanced accounting entries. Account funding and trading are currently unavailable. Identity, custody and retention requirements for a future launch remain subject to the selected operating arrangement.</p>
         </section>
         <section className="info-card">
           <span className="info-number">06</span>
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
       <aside className="info-callout info-callout-wide">
         <div>
           <strong>Independent by design.</strong>
-          <p>Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university or startup on it. Trade Coins and Coins have no cash value.</p>
+          <p>Mitra is an independent platform and does not imply endorsement by any startup featured on it. Account funding and trading are not available yet.</p>
         </div>
         <Link href="/faq">Read the FAQ <span aria-hidden="true">↗︎</span></Link>
       </aside>

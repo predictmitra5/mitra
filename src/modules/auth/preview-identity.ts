@@ -25,5 +25,5 @@ export function previewIdentity(choice: string | undefined, environment: { NODE_
   if (pick === "visitor") return null;
   const id = personas[pick];
   if (typeof id !== "string" || !UUID.test(id)) return undefined;
-  return { id, email: `${pick}.preview@osu.edu`, campus: "osu" };
+  return { id, email: `${pick}.preview@example.test` };
 }

@@ -1,12 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { ECONOMY } from "@/modules/market/economy";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { CONTEST_WINDOW_MS } from "@/modules/market/lifecycle";
 import { DEMO_STARTUPS, type DemoMarket, type DemoStartup } from "./catalog";
-import { openingState, seeded, simulateMarket, type Random } from "./simulate";
-import { OPENING_PROBABILITY_BP } from "@/modules/events/service";
+type Random = () => number;
+function seeded(initial:number):Random {let n=initial>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;};}
 
 /*
  * Writes the demonstration catalog (catalog.ts) into the database through the
@@ -27,9 +26,9 @@ import { OPENING_PROBABILITY_BP } from "@/modules/events/service";
  */
 
 const {
-  profiles, wallets, ledgerEntries, founders, startups, startupFounders, videos, videoEvents, videoLikes, videoSaves,
-  founderFollows, startupFollows, startupUpdates, verificationClaims, comments, markets, resolutionSources, trades,
-  positions, priceHistory, adminActions,
+  profiles, founders, startups, startupFounders, videos, videoEvents, videoLikes, videoSaves,
+  founderFollows, startupFollows, startupUpdates, verificationClaims, comments, markets, resolutionSources,
+  adminActions,
 } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
@@ -61,7 +60,7 @@ export function demoRules(startup: DemoStartup, market: DemoMarket): string {
   return [
     market.method,
     `Source: ${market.source}.`,
-    "If that source is unavailable at the deadline, the owner checks the company's own public announcement and at least one independent report. If sources conflict, the more conservative figure counts. If nothing can be verified within 14 days after the deadline, the market resolves No.",
+    "If that source is unavailable at the deadline, the owner checks the company's own public announcement and at least one independent report. If sources conflict, the more conservative figure counts. If nothing can be verified within 14 days after the deadline, the market is void; missing data never determines No.",
     `${startup.name}'s founders and anyone who manages its profile cannot trade this market. Only the Mitra owner settles it.`,
     `Demo market: ${startup.name}, its founders and every number here are fictional, for demonstrating Mitra. Trades use Trade Coins, which have no cash value.`,
   ].join("\n\n");
@@ -127,10 +126,6 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
     await tx.insert(profiles).values(people.map((p, i) => ({
       id: traderIds[i], handle: p.handle, displayName: p.name, adultConfirmedAt: joined, createdAt: joined, isDemo: true,
     })));
-    const balances = new Map(traderIds.map((id) => [id, ECONOMY.startingBalanceMicro]));
-    const ledger: (typeof ledgerEntries.$inferInsert)[] = traderIds.map((userId) => ({
-      userId, kind: "signup_grant" as const, amountMicro: ECONOMY.startingBalanceMicro, memo: "Simulated starting balance of a fictional demo trader", createdAt: joined,
-    }));
     const audit: (typeof adminActions.$inferInsert)[] = [];
     const approve = (kind: "approve_founder" | "approve_startup" | "approve_video", id: string, at: Date) =>
       audit.push({ actorUserId: ownerId, kind, reason: "Demo data seeded for demonstration.", details: { target: id, demo: true }, createdAt: at });
@@ -192,8 +187,8 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
     await chunked(videoRows, (part) => tx.insert(videos).values(part));
 
     // ---------------------------------------------------------------- markets
-    let tradeCount = 0, pointCount = 0, marketCount = 0;
-    const liquidityMicro = Math.round(ECONOMY.defaultLiquidity * MICRO_PER_UNIT);
+    let marketCount = 0;
+    const liquidityMicro = 0;
     const marketIds = new Map<string, { id: string; startup: DemoStartup; market: DemoMarket; yesBp: number }>();
     for (const startup of DEMO_STARTUPS) {
       for (const market of startup.markets) {
@@ -202,15 +197,6 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
         const deadline = new Date(market.closes);
         const openedAt = new Date(now.getTime() - market.openedDaysAgo * DAY);
         const finished = market.resolved ? deadline.getTime() <= now.getTime() : false;
-        const endAt = finished ? new Date(deadline.getTime() - 2 * HOUR) : new Date(now.getTime() - 10 * 60_000);
-        // The trades that land on today's price fall in the last day, so the
-        // markets show a move today, as live ones do.
-        const settleFrom = new Date(endAt.getTime() - 20 * HOUR);
-        const opening = openingState(ECONOMY.defaultLiquidity, OPENING_PROBABILITY_BP);
-        const sim = simulateMarket({
-          liquidity: ECONOMY.defaultLiquidity, openingBp: OPENING_PROBABILITY_BP, finalBp: market.finalBp, count: market.trades,
-          openedAt, endAt, settleFrom, traders: traderIds, balances, random, newId,
-        });
         const [source] = await tx.insert(resolutionSources).values({ name: market.source, method: market.method, operational: false, createdAt: openedAt }).returning();
         const ruledAt = market.resolved ? new Date(Math.max(deadline.getTime() + HOUR, now.getTime() - market.resolved.daysAgo * DAY)) : null;
         const settledAt = ruledAt ? new Date(ruledAt.getTime() + CONTEST_WINDOW_MS) : null;
@@ -222,61 +208,19 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
           timeZone: "America/New_York", yesCondition: market.yes, noCondition: market.no, isSample: true,
           deadlineAt: deadline, evidenceDeadlineAt: new Date(deadline.getTime() + 14 * DAY),
           tradingClosedAt: market.resolved ? deadline : null,
-          liquidityMicro, openingProbabilityBp: OPENING_PROBABILITY_BP,
-          initialYesSharesMicro: opening.yesSharesMicro, initialNoSharesMicro: opening.noSharesMicro,
-          yesSharesMicro: sim.state.yesSharesMicro, noSharesMicro: sim.state.noSharesMicro,
+          liquidityMicro, openingProbabilityBp: 5000,
+          initialYesSharesMicro: 0, initialNoSharesMicro: 0,
+          yesSharesMicro: 0, noSharesMicro: 0,
           createdAt: openedAt, approvedAt: openedAt, approvedBy: ownerId,
           ruledAt, rulingVersion: market.resolved ? 1 : 0, ruledOutcome: market.resolved?.outcome ?? null,
           rulingReason: market.resolved?.reason ?? null, contestEndsAt: settledAt, settledAt: settled ? settledAt : null,
         });
         audit.push({ marketId: id, actorUserId: ownerId, kind: "approve", reason: "Demo market seeded for demonstration.",
-          details: { question: market.question, openingProbabilityBp: OPENING_PROBABILITY_BP, isSample: true, demo: true }, createdAt: openedAt });
+          details: { question: market.question, openingProbabilityBp: 5000, isSample: true, demo: true }, createdAt: openedAt });
 
-        await chunked(sim.trades.map((t) => ({
-          id: t.id, marketId: id, userId: t.userId, side: t.side === "YES" ? "yes" as const : "no" as const, action: t.action,
-          sharesMicro: t.sharesMicro, amountMicro: t.amountMicro, requestAmountMicro: t.requestAmountMicro,
-          yesPriceBeforeBp: t.yesPriceBeforeBp, yesPriceAfterBp: t.yesPriceAfterBp, idempotencyKey: `demo:${t.id}`, createdAt: t.at,
-        })), (part) => tx.insert(trades).values(part));
-        for (const t of sim.trades) {
-          ledger.push({ userId: t.userId, marketId: id, tradeId: t.id, kind: t.action === "buy" ? "trade_buy" : "trade_sell",
-            amountMicro: t.action === "buy" ? -t.amountMicro : t.amountMicro, createdAt: t.at });
-        }
-        const points = [{ marketId: id, yesPriceBp: OPENING_PROBABILITY_BP, recordedAt: openedAt, tradeId: null as string | null },
-          ...sim.trades.map((t) => ({ marketId: id, yesPriceBp: t.yesPriceAfterBp, recordedAt: t.at, tradeId: t.id }))];
-
-        // Finished demo markets: closed at the deadline, ruled, then paid out as lifecycle.ts does.
-        const held = [...sim.positions.entries()];
-        if (market.resolved && ruledAt) {
-          audit.push({ marketId: id, actorUserId: null, kind: "close_deadline", reason: "Trading deadline reached", details: { deadlineAt: deadline.toISOString(), demo: true }, createdAt: deadline });
-          audit.push({ marketId: id, actorUserId: ownerId, kind: "rule", reason: market.resolved.reason, details: { outcome: market.resolved.outcome, demo: true }, createdAt: ruledAt });
-          if (settled && settledAt) {
-            let total = 0;
-            for (const [userId, position] of held) {
-              const credit = market.resolved.outcome === "yes" ? position.yesSharesMicro : position.noSharesMicro;
-              total += credit;
-              balances.set(userId, (balances.get(userId) ?? 0) + credit);
-              ledger.push({ userId, marketId: id, kind: "settlement", amountMicro: credit, createdAt: settledAt, memo: `${market.resolved.outcome.toUpperCase()} final payout` });
-            }
-            points.push({ marketId: id, yesPriceBp: market.resolved.outcome === "yes" ? 10_000 : 0, recordedAt: settledAt, tradeId: null });
-            audit.push({ marketId: id, actorUserId: null, kind: "settle", reason: "Contest window completed",
-              details: { participants: held.length, totalMicro: total, outcome: market.resolved.outcome, rulingVersion: 1, demo: true }, createdAt: settledAt });
-          }
-        }
-        const zero = settled;
-        await chunked(held.map(([userId, position]) => ({
-          marketId: id, userId, updatedAt: now,
-          ...(zero ? { yesSharesMicro: 0, noSharesMicro: 0, yesCostBasisMicro: 0, noCostBasisMicro: 0 } : position),
-        })), (part) => tx.insert(positions).values(part));
-        await chunked(points, (part) => tx.insert(priceHistory).values(part));
-        tradeCount += sim.trades.length;
-        pointCount += points.length;
-        const last = points.at(-1)!;
-        marketIds.set(market.key, { id, startup, market, yesBp: last.yesPriceBp });
+        marketIds.set(market.key,{id,startup,market,yesBp:market.finalBp});
       }
     }
-
-    await chunked(ledger, (part) => tx.insert(ledgerEntries).values(part));
-    await chunked(traderIds.map((userId) => ({ userId, balanceMicro: balances.get(userId)!, updatedAt: now })), (part) => tx.insert(wallets).values(part));
 
     // ---------------------------------------- engagement, follows, comments
     const events: (typeof videoEvents.$inferInsert)[] = [];
@@ -344,7 +288,7 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
 
     return {
       startups: DEMO_STARTUPS.length, founders: founderCount, videos: videoRows.length, markets: marketCount,
-      trades: tradeCount, pricePoints: pointCount, traders: traderIds.length, comments: commentRows.length,
+      trades: 0, pricePoints: 0, traders: traderIds.length, comments: commentRows.length,
     };
   });
 }
@@ -369,13 +313,4 @@ export async function suspendDemoProfiles<Q extends PgQueryResultHKT>(database: 
     }
     return changed.length;
   });
-}
-
-/** Wallet-ledger agreement for every demo trader, for checks after seeding. */
-export async function demoLedgerMismatches<Q extends PgQueryResultHKT>(database: Database<Q>): Promise<number> {
-  const rows = await database.execute(sql`
-    select count(*)::int as n from ${wallets} w join ${profiles} p on p.id = w.user_id
-    where p.is_demo and w.balance_micro <> (select coalesce(sum(l.amount_micro), 0) from ${ledgerEntries} l where l.user_id = w.user_id)`);
-  const list = (Array.isArray(rows) ? rows : (rows as { rows: { n: number }[] }).rows) as { n: number }[];
-  return Number(list[0]?.n ?? 0);
 }

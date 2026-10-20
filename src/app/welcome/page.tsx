@@ -66,9 +66,9 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
         <h1>How Mitra works</h1>
         <ol className="how-list">
           <li><span>1</span><p><strong>Watch founders</strong><small>Your feed learns which founders and industries you like. Follow the ones you want to hear from.</small></p></li>
-          <li><span>2</span><p><strong>Trade with Trade Coins</strong><small>You start with zero; eligible campus campaigns can award them after a location check. They have no cash value. Buy Yes or No on a startup&rsquo;s milestones: Yes 42¢ means people think there&rsquo;s a 42% chance.</small></p></li>
+          <li><span>2</span><p><strong>Explore startup markets</strong><small>Inspect Yes and No order books on independently verifiable milestones. Account funding and trading are not available yet.</small></p></li>
           <li><span>3</span><p><strong>A named source settles it</strong><small>Each market says exactly what counts and where the number comes from. Only the Mitra owner settles markets.</small></p></li>
-          <li><span>4</span><p><strong>Fair play</strong><small>At most 100 Trade Coins on any one market. Founders can&rsquo;t trade their own startup&rsquo;s markets.</small></p></li>
+          <li><span>4</span><p><strong>Fair play</strong><small>Prices and fills depend on resting orders. Founders can&rsquo;t trade their own startup&rsquo;s markets.</small></p></li>
         </ol>
         <Link className="primary-button" href="/" prefetch={false}>Start exploring</Link>
       </div>

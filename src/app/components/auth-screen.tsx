@@ -1,4 +1,3 @@
-import type { CampusKey } from "@/config/campus";
 import { AuthForm, type AuthMode } from "./auth-form";
 import { SignupFlow } from "./signup-flow";
 import { BackLink, StepFrame } from "./step-frame";
@@ -9,13 +8,13 @@ import { BackLink, StepFrame } from "./step-frame";
  */
 
 const copy: Record<Exclude<AuthMode, "sign-up">, { title: string; description: string }> = {
-  "sign-in": { title: "Log in", description: "Welcome back. Use your school email and password." },
-  "forgot-password": { title: "Reset your password", description: "We’ll email a reset link to your school inbox. Open it in this browser." },
+  "sign-in": { title: "Log in", description: "Welcome back. Use your email and password." },
+  "forgot-password": { title: "Reset your password", description: "We’ll email a reset link to your inbox. Open it in this browser." },
   "reset-password": { title: "Choose a new password", description: "Then you’re back in." },
 };
 
-export function AuthScreen({ mode, notice, school = null, returnTo }: { mode: AuthMode; notice?: string; school?: CampusKey | null; returnTo?: string | null }) {
-  if (mode === "sign-up") return <SignupFlow initialSchool={school} />;
+export function AuthScreen({ mode, notice, returnTo }: { mode: AuthMode; notice?: string; returnTo?: string | null }) {
+  if (mode === "sign-up") return <SignupFlow returnTo={returnTo} />;
   const { title, description } = copy[mode];
   const message = notice === "link-expired"
     ? "That email link is invalid or has expired. Open the latest link in the browser where you requested it, or request a new one."

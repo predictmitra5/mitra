@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cardTitle, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
+import { cardTitle, initials, percent, timeLeft, changeLabel } from "@/modules/discovery/present";
 import { industryLabel } from "@/modules/startups/labels";
 import { statusLine } from "@/modules/events/status";
 import { StartupThumb } from "../startup/thumb";
@@ -39,6 +39,9 @@ export type CardData = {
   timeZone: string | null;
   isSample: boolean;
   yesPrice: number;
+  hasPrice?: boolean;
+  yesAskCents?: number | null;
+  noAskCents?: number | null;
   tradingOpen: boolean;
   paused: boolean;
   status: string;
@@ -65,7 +68,7 @@ export function closesAt(card: Pick<CardData, "deadlineAt" | "timeZone">): strin
 
 /** The small label on demonstration data (2026-10-19): fictional startups, people and numbers. */
 export function SampleTag({ label = "Demo" }: { label?: string }) {
-  return <span className="sample-tag" title="Demonstration data: a fictional startup and market. Trade Coins have no cash value.">{label}</span>;
+  return <span className="sample-tag" title="Fictional startup and market for illustration. No live exchange activity.">{label}</span>;
 }
 
 /**
@@ -116,15 +119,16 @@ export function Gain({ micro }: { micro: number }) {
 }
 
 /** Yes and No with their prices, "YES · 42¢" as in the owner's screenshot; each opens the market with that side chosen. */
-export function PriceButtons({ id, yesPrice, size = "card", onOpen }: { id: string; yesPrice: number; size?: "card" | "large"; onOpen?: () => void }) {
-  const yes = percent(yesPrice);
+export function PriceButtons({ id, yesAskCents = null, noAskCents = null, size = "card", onOpen }: { id: string; yesPrice?: number; yesAskCents?: number | null; noAskCents?: number | null; size?: "card" | "large"; onOpen?: () => void }) {
+  const yes = yesAskCents === null ? "No offer" : `${yesAskCents}¢`;
+  const no = noAskCents === null ? "No offer" : `${noAskCents}¢`;
   return (
     <div className={`price-buttons price-buttons-${size}`}>
-      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Buy Yes at ${yes}¢`} onClick={onOpen}>
-        <span>Yes · {yes}¢</span>
+      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Choose Yes: ${yes}`} onClick={onOpen}>
+        <span>Yes · {yes}</span>
       </Link>
-      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`Buy No at ${100 - yes}¢`} onClick={onOpen}>
-        <span>No · {100 - yes}¢</span>
+      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`Choose No: ${no}`} onClick={onOpen}>
+        <span>No · {no}</span>
       </Link>
     </div>
   );
@@ -132,7 +136,7 @@ export function PriceButtons({ id, yesPrice, size = "card", onOpen }: { id: stri
 
 /** Trade Coins and traders in a few words: "1,284 Trade Coins traded · 27 traders", "demo Trade Coins" on demo markets. */
 export function activityLine(card: Pick<CardData, "volumeMicro" | "traders"> & { isSample?: boolean }): string {
-  const volume = card.isSample ? volumeLabel(card.volumeMicro).replace(/\bTrade Coins? traded/, (w) => `demo ${w}`) : volumeLabel(card.volumeMicro);
+  const volume = `${Math.floor(card.volumeMicro / 1_000_000).toLocaleString()} contracts traded`;
   return card.traders > 0 ? `${volume} · ${card.traders.toLocaleString("en-US")} trader${card.traders === 1 ? "" : "s"}` : volume;
 }
 
@@ -165,13 +169,13 @@ export function MarketCard({ card, now, flash = null, index = 0 }: { card: CardD
           </div>
         ) : (
           <div className="card-chance">
-            <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{yes}%</strong>
-            <span>Yes probability{card.change24hBp !== 0 && <> <Change bp={card.change24hBp} when="today" /></>}</span>
+            <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{card.hasPrice ? `${yes}%` : "—"}</strong>
+            <span>Last trade{card.change24hBp !== 0 && <> <Change bp={card.change24hBp} when="today" /></>}</span>
           </div>
         )}
         <Sparkline points={card.spark} label={`${card.startupName}: chance of Yes over three months`} caption="3M" />
       </div>
-      {card.tradingOpen ? <PriceButtons id={card.id} yesPrice={card.yesPrice} />
+      {card.tradingOpen ? <PriceButtons id={card.id} yesAskCents={card.yesAskCents} noAskCents={card.noAskCents} />
         : !resolved && <p className="card-status">{card.paused ? "Trading paused" : statusLine(card)}</p>}
       <p className="card-when">
         <span>{activityLine(card)}</span>

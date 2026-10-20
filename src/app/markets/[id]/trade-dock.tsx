@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import type { Side } from "@/modules/market/lmsr";
+import type { Side } from "@/modules/exchange/format";
 import { percent } from "@/modules/discovery/present";
 import { Avatar } from "@/app/components/market/market-card";
 import { useLiveQuotes } from "@/app/components/market/live-quotes";
@@ -26,7 +26,7 @@ function watchPhone(onChange: () => void) {
 }
 
 export function TradeDock({
-  marketId, title, name, photo, mark, yesPrice, liquidity, access, balanceMicro, allowanceMicro,
+  marketId, title, name, photo, mark, yesPrice, yesAskCents = null, noAskCents = null, access, balanceMicro,
   heldYesMicro, heldNoMicro, heldYesCostMicro = 0, heldNoCostMicro = 0, initialSide, openInitially, tradingOpen, position,
 }: {
   marketId: string;
@@ -36,7 +36,8 @@ export function TradeDock({
   /** The startup's mark, drawn instead of initials when given. */
   mark?: ReactNode;
   yesPrice: number;
-  liquidity: number;
+  yesAskCents?: number | null;
+  noAskCents?: number | null;
   access: TradeAccess;
   balanceMicro: number | null;
   allowanceMicro: number | null;
@@ -92,7 +93,8 @@ export function TradeDock({
     setOpen(true);
   }
 
-  const yes = percent(price);
+  const yes = quote?.yesAskCents ?? yesAskCents;
+  const no = quote?.noAskCents ?? noAskCents;
   return (
     <>
       <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this market">
@@ -105,19 +107,17 @@ export function TradeDock({
             <h2 id={`trade-title-${marketId}`}>{title}</h2>
             <button type="button" className="dock-close" onClick={() => setOpen(false)}>Close</button>
           </div>
-          <TradePanel marketId={marketId} yesPrice={price} liquidity={liquidity} access={access}
-            balanceMicro={balanceMicro} allowanceMicro={allowanceMicro} heldYesMicro={heldYesMicro} heldNoMicro={heldNoMicro}
-            heldYesCostMicro={heldYesCostMicro} heldNoCostMicro={heldNoCostMicro} side={side} onSide={setSide} />
+          <TradePanel marketId={marketId} yesAskCents={yes} noAskCents={no} access={access} balanceMicro={balanceMicro} side={side} onSide={setSide} />
         </div>
         {position}
       </aside>
       {tradingOpen && (
         <div className="buy-bar">
-          <button type="button" className="buy-bar-yes" aria-label={`Buy Yes, ${yes}¢`} onClick={(event) => openWith("YES", event.currentTarget)}>
-            <span>Buy Yes</span><span>{yes}¢</span>
+          <button type="button" className="buy-bar-yes" aria-label={`Buy Yes, ${yes === null ? "No offer" : `${yes}¢`}`} onClick={(event) => openWith("YES", event.currentTarget)}>
+            <span>Buy Yes</span><span>{yes === null ? "No offer" : `${yes}¢`}</span>
           </button>
-          <button type="button" className="buy-bar-no" aria-label={`Buy No, ${100 - yes}¢`} onClick={(event) => openWith("NO", event.currentTarget)}>
-            <span>Buy No</span><span>{100 - yes}¢</span>
+          <button type="button" className="buy-bar-no" aria-label={`Buy No, ${no === null ? "No offer" : `${no}¢`}`} onClick={(event) => openWith("NO", event.currentTarget)}>
+            <span>Buy No</span><span>{no === null ? "No offer" : `${no}¢`}</span>
           </button>
         </div>
       )}

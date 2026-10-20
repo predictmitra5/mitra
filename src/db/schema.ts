@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { State, Journal } from "@/modules/exchange/engine";
 import {
   bigint,
   boolean,
@@ -22,6 +23,20 @@ import {
  * profiles.id carries the same id. The application enforces that link, because
  * auth.users belongs to a different schema.
  */
+
+export const exchangeSnapshot = pgTable("exchange_snapshot", {
+  id: integer("id").primaryKey(),
+  revision: integer("revision").notNull().default(0),
+  state: jsonb("state").$type<State>().notNull(),
+}, t => [check("exchange_singleton", sql`${t.id} = 1`)]);
+
+export const exchangeJournal = pgTable("exchange_journal", {
+  id: text("id").primaryKey(),
+  sequence: integer("sequence").notNull().unique(),
+  entry: jsonb("entry").$type<Journal>().notNull(),
+  digest: text("digest").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const marketStatus = pgEnum("market_status", [
   "draft", // written by the subject, waiting for the owner

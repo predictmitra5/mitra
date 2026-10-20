@@ -53,7 +53,7 @@ function Featured({ market, live }: { market: FeaturedData; live: ReadonlyMap<st
           </Link>
         )}
         <p className="featured-odds">
-          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
+          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{card.hasPrice ? `${percent(card.yesPrice)}%` : "—"}</strong>
           <span className="featured-chance">Yes probability</span>
           <span className="featured-change"><Change bp={card.change24hBp} when="today" /> <span aria-hidden="true">today</span></span>
         </p>

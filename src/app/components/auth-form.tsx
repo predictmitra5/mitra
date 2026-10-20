@@ -20,10 +20,10 @@ export function AuthForm({ mode, returnTo }: { mode: FormMode; returnTo?: string
       {mode === "sign-in" && returnTo && <input type="hidden" name="next" value={returnTo} />}
       {mode !== "reset-password" && (
         <div className="field">
-          <label htmlFor="email">School email</label>
+          <label htmlFor="email">Email address</label>
           <input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="name@osu.edu or netid@illinois.edu"
             maxLength={254} required autoFocus aria-describedby="email-hint" />
-          <p id="email-hint" className="field-hint">Your @osu.edu or @illinois.edu address.</p>
+          <p id="email-hint" className="field-hint">Use the email you verified for Mitra.</p>
         </div>
       )}
       {mode !== "forgot-password" && (
@@ -48,7 +48,7 @@ export function AuthForm({ mode, returnTo }: { mode: FormMode; returnTo?: string
       {state.success && <p className="form-success" role="status">{state.success}</p>}
       <button className="primary-button" disabled={pending} type="submit">{pending ? busy[mode] : labels[mode]}</button>
       {mode === "sign-in"
-        ? <Link className="secondary-button" href="/sign-up" prefetch={false}>No account? Create one</Link>
+        ? <Link className="secondary-button" href={returnTo ? `/sign-up?next=${encodeURIComponent(returnTo)}` : "/sign-up"} prefetch={false}>No account? Create one</Link>
         : <Link className="secondary-button" href="/sign-in" prefetch={false}>Back to log in</Link>}
     </form>
   );

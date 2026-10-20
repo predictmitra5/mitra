@@ -49,7 +49,7 @@ export function StepFrame({ fills, label, back, closeHref = "/", children }: {
         {children}
       </main>
       <footer className="step-foot">
-        Mitra uses Trade Coins. <Link href="/faq">FAQ</Link> · <Link href="/privacy">Privacy</Link>
+        Discover founders and startup milestones. <Link href="/faq">FAQ</Link> · <Link href="/privacy">Privacy</Link>
       </footer>
     </div>
   );

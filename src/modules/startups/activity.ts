@@ -10,7 +10,7 @@ import { isUuid } from "@/modules/market/input";
  * nobody yet, sees the latest updates from every startup instead.
  */
 
-const { startupUpdates, startups, videos, startupFollows, founderFollows, ledgerEntries, markets } = schema;
+const { startupUpdates, startups, videos, startupFollows, founderFollows } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export type ActivityItem =
@@ -47,17 +47,9 @@ export async function readActivity<Q extends PgQueryResultHKT>(database: Databas
     .where(and(eq(videos.status, "approved"), eq(startups.status, "approved"), gte(videos.publishedAt, new Date(now.getTime() - 45 * DAY)), videoFilter))
     .orderBy(desc(videos.publishedAt)).limit(20);
 
-  const money = userId && isUuid(userId) ? await database.select({
-    id: ledgerEntries.id, at: ledgerEntries.createdAt, what: ledgerEntries.kind, amountMicro: ledgerEntries.amountMicro, marketId: markets.id,
-    question: markets.question, shortQuestion: markets.shortQuestion,
-  }).from(ledgerEntries).innerJoin(markets, eq(markets.id, ledgerEntries.marketId))
-    .where(and(eq(ledgerEntries.userId, userId), inArray(ledgerEntries.kind, ["trade_buy", "trade_sell", "settlement", "cancellation_refund"])))
-    .orderBy(desc(ledgerEntries.createdAt)).limit(20) : [];
-
   const items: ActivityItem[] = [
     ...updates.map((u) => ({ kind: "update" as const, id: u.id, at: u.at, title: u.title, body: u.body, milestone: u.kind === "milestone", verification: u.verification, startupName: u.startupName, startupSlug: u.startupSlug, isDemo: u.isDemo })),
     ...fresh.map((v) => ({ kind: "video" as const, id: v.id, at: v.at as Date, title: v.title, startupName: v.startupName, startupSlug: v.startupSlug, isDemo: v.isDemo })),
-    ...money.map((m) => ({ kind: "money" as const, id: m.id, at: m.at, what: m.what as "trade_buy", amountMicro: m.amountMicro, marketId: m.marketId, question: m.question, shortQuestion: m.shortQuestion })),
   ].sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, limit);
   return { items, personal };
 }

@@ -52,7 +52,7 @@ function Row({ item }: { item: ActivityItem }) {
     <li className="activity-item">
       <span className="activity-icon"><Receipt size={16} aria-hidden="true" /></span>
       <div>
-        <p className="activity-head">{money[item.what]} <span className={item.amountMicro >= 0 ? "gain-up" : "gain-down"}>{item.amountMicro >= 0 ? "+" : "−"}{pointsText(Math.abs(item.amountMicro))} Trade Coins</span></p>
+        <p className="activity-head">{money[item.what]} <span className={item.amountMicro >= 0 ? "gain-up" : "gain-down"}>{item.amountMicro >= 0 ? "+" : "−"}{pointsText(Math.abs(item.amountMicro))} USD</span></p>
         <Link href={`/markets/${item.marketId}`} prefetch={false}>{cardTitle(item)}</Link>
         <span className="activity-meta"><time>{when(item.at)}</time></span>
       </div>

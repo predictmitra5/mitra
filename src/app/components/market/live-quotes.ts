@@ -15,6 +15,9 @@ import { useCallback, useSyncExternalStore } from "react";
 export type LiveQuote = {
   id: string;
   yesBp: number;
+  hasPrice: boolean;
+  yesAskCents: number | null;
+  noAskCents: number | null;
   change24hBp: number;
   volumeMicro: number;
   tradingOpen: boolean;
@@ -46,7 +49,7 @@ async function poll() {
     for (const quote of body.quotes) {
       const prev = snapshot.get(quote.id);
       if (prev && prev.yesBp === quote.yesBp && prev.change24hBp === quote.change24hBp
-        && prev.volumeMicro === quote.volumeMicro && prev.tradingOpen === quote.tradingOpen) continue;
+        && prev.volumeMicro === quote.volumeMicro && prev.tradingOpen === quote.tradingOpen && prev.hasPrice===quote.hasPrice && prev.yesAskCents===quote.yesAskCents && prev.noAskCents===quote.noAskCents) continue;
       next ??= new Map(snapshot);
       const move = !prev || prev.yesBp === quote.yesBp ? prev?.move ?? null : quote.yesBp > prev.yesBp ? "up" : "down";
       next.set(quote.id, { ...quote, at, move });

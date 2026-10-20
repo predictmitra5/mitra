@@ -6,7 +6,8 @@ import { currentIdentity } from "@/modules/auth/server";
 import { signOut } from "@/modules/auth/actions";
 import { readViewerOrNull } from "@/modules/account/viewer";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
-import { pointsText } from "@/modules/discovery/present";
+import { readFunds } from "@/modules/exchange/store";
+import { usd } from "@/modules/exchange/format";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { Avatar } from "@/app/components/market/market-card";
 import { PhotoForm } from "./photo-form";
@@ -27,19 +28,18 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   try {
     const db = getDb();
     await advanceDueMarkets(db, identity.id);
-    const rows = await db.select({ profile: schema.profiles, wallet: schema.wallets, silverWallet: schema.silverWallets })
-      .from(schema.profiles).leftJoin(schema.wallets, eq(schema.wallets.userId, schema.profiles.id))
-      .leftJoin(schema.silverWallets, eq(schema.silverWallets.userId, schema.profiles.id))
+    const rows = await db.select({ profile: schema.profiles })
+      .from(schema.profiles)
       .where(eq(schema.profiles.id, identity.id)).limit(1);
     account = rows[0];
   } catch { unavailable = true; }
   const viewer = await readViewerOrNull(getDb(), identity.id);
   const { notice } = await searchParams;
-  const blocked = account && !account.wallet;
+  const blocked = false;
   // Profile set-up is onboarding's first steps now (2026-10-05).
   if (!unavailable && !blocked && !account?.profile.adultConfirmedAt) redirect("/welcome");
   // Rounded down to a tenth, never showing more than is there.
-  const balanceMicro = Math.floor((account?.wallet?.balanceMicro ?? 0) / 100_000) * 100_000;
+  const balances = await readFunds(getDb(),identity.id);
 
   return <div className="market-shell"><MarketHeader viewer={viewer} active="portfolio" /><main className="account">
     {unavailable ? <section className="account-empty"><h1>Your account is temporarily unavailable.</h1><p>Please contact the app owner before continuing.</p></section>
@@ -55,11 +55,11 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         </div>
 
         <section className="points" aria-label="Balances">
-          <p className="points-available"><span className="muted">Trade Coins</span><strong>{pointsText(balanceMicro, balanceMicro % 1_000_000 === 0 ? 0 : 1)}</strong></p>
+          <p className="points-available"><span className="muted">Available USD</span><strong>{usd(balances.available)}</strong></p>
           <dl className="points-facts">
-            <div><dt>Coins</dt><dd>{account.silverWallet?.balance?.toLocaleString() ?? "0"}</dd></div>
+            <div><dt>Reserved funds</dt><dd>{usd(balances.reserved)}</dd></div>
           </dl>
-          <p className="muted account-small">Trade Coins are for trading and Coins are for the <Link href="/shop">shop</Link>; neither has cash value. Your positions, trades, saved videos and follows are in your <Link href="/portfolio">portfolio</Link>; your founder profile and startups are under <Link href="/create">Create</Link>.</p>
+          <p className="muted account-small">Deposits, withdrawals and trading are not available yet. Your positions, trades, saved videos and follows are in your <Link href="/portfolio">portfolio</Link>; your founder profile and startups are under <Link href="/create">Create</Link>.</p>
         </section>
 
         {account.profile.isOwner === 1 && <section className="owner-tools" aria-labelledby="owner-title">
@@ -68,7 +68,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             <li><Link href="/review">Review queue: founders, startups, videos, reports</Link></li>
             <li><Link href="/review/markets/new">Create a market</Link></li>
             <li><Link href="/review/markets">Manage outcomes, pauses and objections</Link></li>
-            <li><Link href="/review/campaigns">Campus QR campaigns</Link></li>
             <li><Link href="/review/audit">Audit record</Link></li>
             <li><Link href="/review/people">People: photos and bans</Link></li>
           </ul>

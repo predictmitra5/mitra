@@ -16,7 +16,7 @@ export function LiveChart({ id, points, volumes, initialRange = "ALL" }: { id: s
   const live = useLiveQuotes([id]);
   const quote = live.get(id);
   const last = points.at(-1);
-  const series = quote && (!last || last.yesBp !== quote.yesBp)
+  const series = quote?.hasPrice && (!last || last.yesBp !== quote.yesBp)
     ? [...points, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }]
     : points;
   return <PriceChart points={series} variant="page" volumes={volumes} initialRange={initialRange} label="Chance of Yes" headline={false} />;
@@ -25,13 +25,13 @@ export function LiveChart({ id, points, volumes, initialRange = "ALL" }: { id: s
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
 /** The headline under the question: the Yes probability, large, with the latest prices. */
-export function LivePrice({ id, yesPrice, status }: { id: string; yesPrice: number; status: string }) {
+export function LivePrice({ id, yesPrice, status, hasPrice=false, yesAskCents=null, noAskCents=null }: { id: string; yesPrice: number; status: string;hasPrice?:boolean;yesAskCents?:number|null;noAskCents?:number|null }) {
   const quote = useLiveQuotes([id]).get(id);
   const yes = percent(quote ? quote.yesBp / 10_000 : yesPrice);
   return (
     <div className="market-price" aria-live="polite">
-      <p className="market-chance"><strong>{yes}%</strong><span>YES probability</span></p>
-      <p className="market-latest"><span className="side-yes">Yes {yes}¢</span><span className="side-no">No {100 - yes}¢</span><span className="market-state">{status}</span></p>
+      <p className="market-chance"><strong>{(quote?.hasPrice??hasPrice)?`${yes}%`:"—"}</strong><span>Last trade</span></p>
+      <p className="market-latest"><span className="side-yes">Yes {(quote?quote.yesAskCents:yesAskCents)===null?"No offer":`${quote?quote.yesAskCents:yesAskCents}¢`}</span><span className="side-no">No {(quote?quote.noAskCents:noAskCents)===null?"No offer":`${quote?quote.noAskCents:noAskCents}¢`}</span><span className="market-state">{status}</span></p>
     </div>
   );
 }
@@ -45,9 +45,9 @@ export function LiveStats({ id, yesPrice, volumeMicro, traders, closes, created,
   const volume = (quote ? quote.volumeMicro : volumeMicro) / 1_000_000;
   return (
     <dl className="market-stats">
-      <div><dt>Yes price</dt><dd className="side-yes">{yes}¢</dd></div>
-      <div><dt>No price</dt><dd className="side-no">{100 - yes}¢</dd></div>
-      <div><dt>Volume</dt><dd>{volume >= 1 ? `${whole.format(volume)} Trade Coins` : volume > 0 ? "<1 Trade Coin" : "0 Trade Coins"}</dd></div>
+      <div><dt>Yes price</dt><dd className="side-yes">{quote?.yesAskCents==null?"No offer":`${quote.yesAskCents}¢`}</dd></div>
+      <div><dt>No price</dt><dd className="side-no">{quote?.noAskCents==null?"No offer":`${quote.noAskCents}¢`}</dd></div>
+      <div><dt>Volume</dt><dd>{volume >= 1 ? `${whole.format(volume)} contracts` : volume > 0 ? "<1 contract" : "0 contracts"}</dd></div>
       <div><dt>Traders</dt><dd>{traders.toLocaleString("en-US")}</dd></div>
       <div><dt>Closes</dt><dd>{closes}</dd></div>
       <div><dt>Created</dt><dd>{created}</dd></div>

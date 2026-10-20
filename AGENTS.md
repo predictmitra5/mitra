@@ -1,6 +1,6 @@
 
 
-This repository is Mitra, a points-based campus prediction market about local venues and events (since the 2026-10-08 pivot; it began as a market on people's goals, built from `Prediction_Market_MVP_Master_Prompt.pdf`).
+This repository is Mitra: video-first founder/startup discovery and a binary startup-milestone exchange with USD accounting. Deposits, withdrawals and customer execution are closed. The 2026-10-20 exchange blueprint supersedes campus, virtual currency, LMSR and fake-funds instructions below and in historical documents. Preserve the current design.
 
 ## Before substantial work
 
@@ -34,8 +34,8 @@ Set by the owner on 2026-10-09, following XO Market and Kalshi (replacing the 20
 ## Layout
 
 - `src/app`: Next.js App Router pages.
-- `src/modules/market`: market engine (binary LMSR pricing and integer rounding). Keep market, information and discovery logic in separate modules.
-- `src/modules/events`: campus event markets: venues, events, resolution sources, students' suggestions, owner publishing, and the hypothetical Ohio State samples.
+- `src/modules/exchange`: exact-cent matching, double-entry journal and fail-closed funding/launch boundaries. Keep financial, information and discovery logic separate.
+- `src/modules/market`: published startup-market reads and owner lifecycle; no AMM or currency execution. Historical migrations must remain intact.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

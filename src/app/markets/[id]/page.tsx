@@ -8,7 +8,6 @@ import { currentIdentity } from "@/modules/auth/server";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
 import { readCards, readPriceSeries, readTicker, readVolumeBuckets, recordClick } from "@/modules/discovery/feed";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
-import { valueHolding } from "@/modules/account/positions";
 import { readViewerOrNull } from "@/modules/account/viewer";
 import { cardTitle, closesInWords, pointsText } from "@/modules/discovery/present";
 import { statusLine } from "@/modules/events/status";
@@ -65,22 +64,9 @@ type Held = { yesSharesMicro: number; noSharesMicro: number; yesCostBasisMicro: 
 
 /** "Your position": each side's contracts, average entry, value at today's price and the change since bought. */
 function Position({ held, yesPrice, className }: { held: Held; yesPrice: number; className: string }) {
-  const value = valueHolding({ ...held, yesPrice });
-  if (!value || value.sides.length === 0) return null;
-  return (
-    <section className={`goal-position ${className}`} aria-label="Your position">
-      <h2>Your position</h2>
-      <ul>
-        {value.sides.map((side) => (
-          <li key={side.side}>
-            <span className="muted">{pointsText(side.sharesMicro)} {side.side === "yes" ? "Yes" : "No"} at {(side.costMicro / side.sharesMicro * 100).toFixed(1)}¢</span>
-            <span>{pointsText(side.valueMicro)} Trade Coins <Gain micro={side.gainMicro} /></span>
-          </li>
-        ))}
-      </ul>
-      <Link className="goal-position-link" href="/portfolio">Portfolio</Link>
-    </section>
-  );
+  void yesPrice;
+ if(!held.yesSharesMicro&&!held.noSharesMicro)return null;
+ return <section className={className}><h2>Your position</h2><p>{held.yesSharesMicro/1_000_000} Yes contracts · {held.noSharesMicro/1_000_000} No contracts</p><Link href="/portfolio">Portfolio</Link></section>;
 }
 
 function Unavailable() {
@@ -200,10 +186,10 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
           {market.isSample && startup && (
             <p className="sample-note">
               <strong>Demo market.</strong> {startup.name}, its founders and every number on this page are fictional, made to demonstrate Mitra.
-              The price history comes from simulated trades by fictional demo traders. Trades use Trade Coins, which have no cash value.
+              This content is illustrative. Exchange prices and volume include only actual executions; this market cannot accept real orders.
             </p>
           )}
-          <LivePrice id={market.id} yesPrice={market.yesPrice} status={status} />
+          <LivePrice id={market.id} yesPrice={market.yesPrice} hasPrice={market.hasPrice} yesAskCents={market.yesAskCents} noAskCents={market.noAskCents} status={status} />
         </div>
 
         {/* 3. The price over time. */}
@@ -216,15 +202,16 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         {market.ruledOutcome && market.status !== "cancelled" && <section className="goal-notice">
           <h2>{market.status === "settled" ? "Final outcome" : "The owner’s ruling"}: {market.ruledOutcome === "yes" ? "Yes" : "No"}</h2>
           <p className="goal-text">{market.rulingReason}</p>
-          {market.status === "settled" ? <p className="muted">Winning contracts paid 1 Trade Coin each; losing contracts paid 0. Balances are updated. This result is final.</p>
+          {market.status === "settled" ? <p className="muted">Winning contracts pay $1 and losing contracts pay $0 when funded trading is authorized. Demo outcomes are illustrative and have no monetary payouts.</p>
             : <p className="muted">Objections close {market.contestEndsAt && formatMoment(market.contestEndsAt, zone)}. If the owner changes the ruling, a fresh 24-hour window starts.</p>}
           {market.contestOpen && (trader ? <ObjectionForm marketId={id} version={market.rulingVersion} />
             : identity ? <Link className="btn btn-quiet" href="/welcome">Complete your profile to object</Link>
             : <Link className="btn btn-quiet" href="/sign-in" data-needs-account>Log in to object</Link>)}
         </section>}
-        {market.status === "cancelled" && <section className="goal-notice"><h2>Void. Held costs refunded.</h2><p className="goal-text">Every participant received the cost of the contracts they still held. This is a refund, not a Yes or No payout.</p></section>}
+        {market.status === "cancelled" && <section className="goal-notice"><h2>Void. Contracts settle at $0.50.</h2><p className="goal-text">Outstanding orders are cancelled. Each fully collateralized contract pays $0.50; an unavailable source is never treated as No.</p></section>}
         {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}
 
+        <section className="goal-section rise"><h2>Order book</h2>{market.book.length ? <table><thead><tr><th>Outcome</th><th>Direction</th><th>Limit</th><th>Contracts</th></tr></thead><tbody>{market.book.map((o,i)=><tr key={i}><td>{o.outcome}</td><td>{o.direction}</td><td>{o.price}¢</td><td>{o.quantity}</td></tr>)}</tbody></table>:<p className="muted">No resting orders. No executable quote is available.</p>}</section>
         {/* 4. What the startup is. */}
         {info && startup && (
           <section className="goal-section rise" aria-labelledby="about-title">
@@ -331,7 +318,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         photo={null}
         mark={startup ? <StartupMark startup={startup} size={32} /> : undefined}
         yesPrice={market.yesPrice}
-        liquidity={market.liquidity}
+        yesAskCents={market.yesAskCents} noAskCents={market.noAskCents}
         access={access}
         balanceMicro={trader?.balanceMicro ?? null}
         allowanceMicro={trader?.allowanceMicro ?? null}

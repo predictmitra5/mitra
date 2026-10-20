@@ -27,7 +27,7 @@ export function Ticker({ cards }: { cards: CardData[] }) {
             <li key={card.id}>
               <Link className="ticker-item" href={`/markets/${card.id}`} prefetch={false} title={cardTitle(card)}>
                 <span className="ticker-name">{tickerLabel(card.question, card.startupName)}</span>
-                <span className="ticker-odds">{percent(card.yesPrice)}%</span>
+                <span className="ticker-odds">{card.hasPrice ? `${percent(card.yesPrice)}%` : "—"}</span>
                 <Change bp={card.change24hBp} when="today" />
               </Link>
             </li>

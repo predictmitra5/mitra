@@ -1,9 +1,5 @@
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { publishMarket } from "@/modules/events/service";
-import { ECONOMY } from "@/modules/market/economy";
-import { stateAtProbability } from "@/modules/market/lmsr";
-import { MICRO_PER_UNIT } from "@/modules/market/units";
 
 /*
  * Markets for tests. Event markets go through the real publishing service;
@@ -34,24 +30,7 @@ export type EventMarketOptions = {
 
 /** Opens an event market as the owner at `now`. */
 export async function openEventMarket(database: Database, ownerId: string, now: Date, options: EventMarketOptions = {}) {
-  const cutoff = options.cutoff ?? new Date(now.getTime() + 7 * DAY);
-  const windowEnd = options.windowEnd ?? new Date(cutoff.getTime() + 5 * HOUR);
-  const resultsDue = options.resultsDue ?? new Date(windowEnd.getTime() + 3 * DAY);
-  return publishMarket(database, ownerId, {
-    proposalId: options.proposalId ?? null,
-    campus: options.campus ?? "osu",
-    category: options.category ?? "nightlife",
-    question: options.question ?? "Will the Test Tavern sell more than 500 drinks on Friday night?",
-    venue: { name: options.venueName ?? "Test Tavern", area: "North High Street" },
-    eventTitle: "Friday night",
-    windowStartAt: cutoff, windowEndAt: windowEnd, timeZone: "America/New_York",
-    tradingCutoffAt: cutoff, resultsDueAt: resultsDue,
-    yesCondition: "The venue's register count shows more than 500 drinks in the window.",
-    noCondition: "The count shows 500 or fewer, or no count arrives by the results deadline.",
-    rules: "Voided and refunded items don't count. Times are Eastern.",
-    source: { name: "Test Tavern register count", method: "A count of drink items from the venue's register.", operational: false },
-    isSample: options.isSample ?? false,
-  }, now);
+  const startup=await insertStartup(database,now);return openStartupMarket(database,ownerId,now,{startupId:startup.startup.id,question:options.question,closesOn:'2027-12-31'});
 }
 
 /** A goal market about `subjectId`, open at `openingBp`, as the retired goal flow left them. */
@@ -62,11 +41,9 @@ export async function insertGoalMarket(
   const deadline = options.deadline ?? new Date(now.getTime() + 14 * DAY);
   const evidenceDeadline = options.evidenceDeadline ?? new Date(deadline.getTime() + 7 * DAY);
   const openingBp = options.openingBp ?? 5000;
-  const liquidityMicro = Math.round(ECONOMY.defaultLiquidity * MICRO_PER_UNIT);
+  const liquidityMicro = 0;
   const draft = options.status === "draft";
-  const lmsr = stateAtProbability(ECONOMY.defaultLiquidity, openingBp / 10_000);
-  const yes = Math.round(lmsr.yesShares * MICRO_PER_UNIT);
-  const no = Math.round(lmsr.noShares * MICRO_PER_UNIT);
+  const yes = 0, no = 0;
   const [market] = await database.insert(schema.markets).values({
     subjectUserId: subjectId, status: draft ? "draft" : "open",
     question: "Will Sam be offered admission to Chess Club?", resolutionCriteria: "The club's admission offer before the deadline.",
@@ -76,7 +53,6 @@ export async function insertGoalMarket(
       approvedAt: now, approvedBy: ownerId,
     }),
   }).returning();
-  if (!draft) await database.insert(schema.priceHistory).values({ marketId: market.id, yesPriceBp: openingBp, recordedAt: now });
   return market;
 }
 

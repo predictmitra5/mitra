@@ -1,5 +1,10 @@
 # Decision log
 
+## 2026-10-20 — startup exchange, funding closed (current)
+
+The user-supplied exchange blueprint supersedes earlier college eligibility, dual currencies, QR rewards, LMSR execution and fake-funds instructions. Preserve the video-first design at 9dd7982 and the founder/startup/social discovery features. Use integer USD cents, fully collateralized binary contracts, deterministic price/time limit matching, append-only double-entry accounting and isolated test fixtures only. Accounts start at zero; deposits, withdrawals and customer execution remain server-disabled pending a verified operating arrangement, settled-custody integration, identity/geographic eligibility and launch authorization. No environment flag or owner grant may bypass these gates. Every eligible card exposes Yes and No with independent executable asks; empty books have no fabricated quote. Preserve demo content as fictional illustration without monetary activity or live financial statistics. Retain the verified predictmitra@gmail.com and murugan.23@osu.edu owner identities; account/data reset requires a current recoverable export and exact dry-run. Existing historical decisions below are superseded wherever they conflict.
+
+
 Entries distinguish requirements carried from the user-supplied brief, routine project work, recommendations, and decisions awaiting the user.
 
 ## 2026-09-15 - Source review and documentation

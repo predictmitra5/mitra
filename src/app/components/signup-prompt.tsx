@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { CAMPUSES } from "@/config/campus";
 import { NEEDS_ACCOUNT_EVENT } from "./feed/needs-account";
 
 /*
@@ -20,7 +19,7 @@ import { NEEDS_ACCOUNT_EVENT } from "./feed/needs-account";
 const OPEN_AFTER_MS = 30_000;
 const DISMISSED_KEY = "mitra.signup-prompt-dismissed";
 /** Controls that need an account. Links keep a real address for visitors without JavaScript. */
-const NEEDS_ACCOUNT = "[data-needs-account], a.price-button, .trade-side, .buy-bar button";
+const NEEDS_ACCOUNT = "[data-needs-account]";
 
 function wasDismissed(): boolean {
   try { return window.sessionStorage.getItem(DISMISSED_KEY) === "1"; } catch { return false; }
@@ -78,13 +77,9 @@ export function SignupPrompt() {
         </button>
         <h2 id="signup-prompt-title">Create your account</h2>
         <p className="signup-prompt-sub">Follow founders, save videos and predict where their startups go. Sign up in a minute.</p>
-        {Object.values(CAMPUSES).map((campus) => (
-          <Link key={campus.key} className={`school-button school-${campus.key}`} href={`/sign-up?school=${campus.key}`} prefetch={false}>
-            <span className="school-dot" aria-hidden="true" />Continue with {campus.communityName} email
-          </Link>
-        ))}
+        <Link className="primary-button" href="/sign-up">Continue with email</Link>
         <p className="signup-prompt-login">Already have an account? <Link href="/sign-in" prefetch={false}>Log in</Link></p>
-        <p className="signup-prompt-fine">Trade Coins have no cash value. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
+        <p className="signup-prompt-fine">Account funding and trading are not available yet. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
       </div>
     </dialog>
   );

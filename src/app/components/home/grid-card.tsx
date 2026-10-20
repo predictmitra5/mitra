@@ -55,7 +55,7 @@ const short = new Intl.NumberFormat("en-US", { notation: "compact", maximumFract
 /** YouTube's "21K views · 2 days ago", for a market: "308 traded · 14 months left". */
 function traded(market: CardData): string {
   const coins = market.volumeMicro / 1_000_000;
-  return coins >= 1 ? `${short.format(Math.floor(coins))} traded` : coins > 0 ? "<1 traded" : "No trades yet";
+  return coins >= 1 ? `${short.format(Math.floor(coins))} contracts traded` : coins > 0 ? "<1 contract traded" : "No trades yet";
 }
 
 function Odds({ market }: { market: CardData }) {
@@ -65,7 +65,7 @@ function Odds({ market }: { market: CardData }) {
       {resolved ? (
         <span className={`yt-chance outcome-${market.ruledOutcome}`}><strong>{market.ruledOutcome === "yes" ? "Yes" : "No"}</strong> {market.status === "settled" ? "resolved" : "ruled"}</span>
       ) : (
-        <span className="yt-chance"><strong>{percent(market.yesPrice)}%</strong> Yes{market.change24hBp !== 0 && <> <Change bp={market.change24hBp} when="today" /></>}</span>
+        <span className="yt-chance"><strong>{market.hasPrice ? `${percent(market.yesPrice)}%` : "—"}</strong> Last trade{market.change24hBp !== 0 && <> <Change bp={market.change24hBp} when="today" /></>}</span>
       )}
       <Sparkline points={market.spark} label={`${market.startupName}: chance of Yes over three months`} />
     </div>
@@ -190,8 +190,8 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
           )}
         </div>
       </div>
-      {highlight && market?.tradingOpen && (
-        <div className="yt-pills"><PriceButtons id={market.id} yesPrice={market.yesPrice} size="large" onOpen={open} /></div>
+      {market?.tradingOpen && (
+        <div className="yt-pills"><PriceButtons id={market.id} yesAskCents={market.yesAskCents} noAskCents={market.noAskCents} size="large" onOpen={open} /></div>
       )}
       <ReportSheet open={report} onClose={() => setReport(false)} target="video" targetId={card.id} what="this video" signedIn={signedIn} />
     </article>
@@ -212,6 +212,7 @@ export function ShelfCard({ card, now }: { card: CardData; now: Date }) {
       <h3 className="yt-title"><Link href={href} prefetch={false} title={card.shortQuestion ? card.question : undefined}>{cardTitle(card)}</Link></h3>
       <p className="yt-channel">{card.startupName}{card.isSample && <> <SampleTag /></>}</p>
       <Odds market={card} />
+      {card.tradingOpen && <PriceButtons id={card.id} yesAskCents={card.yesAskCents} noAskCents={card.noAskCents} />}
     </article>
   );
 }

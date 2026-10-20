@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { cookies } from "next/headers";
-import { selectedCampus } from "@/config/campus-server";
 import { THEME_COOKIE, themeFor } from "@/config/theme";
 import "./globals.css";
 
@@ -13,14 +12,13 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "sw
 
 export const metadata: Metadata = {
   title: { default: "Mitra", template: "%s · Mitra" },
-  description: "Discover founders before they're famous, and predict where their startups go with Trade Coins.",
+  description: "Discover founders before they're famous and follow independently verifiable startup milestones.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const campus = await selectedCampus();
   const theme = themeFor((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en" data-campus={campus.key} data-theme={theme} className={`h-full ${geist.variable}`}>
+    <html lang="en" data-theme={theme} className={`h-full ${geist.variable}`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

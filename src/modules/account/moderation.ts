@@ -4,7 +4,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { applyOwnerCommand } from "@/modules/market/lifecycle";
-import { rejectProposal } from "@/modules/events/service";
+import { declineSuggestion } from "@/modules/startups/admin";
 import { isInactive } from "./standing";
 
 /*
@@ -102,7 +102,7 @@ export async function banPerson<Q extends PgQueryResultHKT>(
     .where(and(eq(marketProposals.proposerUserId, targetId), eq(marketProposals.status, "pending")));
   for (const proposal of waiting) {
     try {
-      await rejectProposal(database, ownerId, proposal.id, BAN_REJECT_REASON, clock());
+      await declineSuggestion(database, ownerId, proposal.id, BAN_REJECT_REASON, clock());
       result.rejected += 1;
     } catch {
       result.remaining += 1;

@@ -3,10 +3,11 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { ownerQueue } from "./owner-queue";
+import { readFunds } from "@/modules/exchange/store";
 import { photoUrl } from "./photo-url";
 import { isInactive } from "./standing";
 
-const { profiles, wallets } = schema;
+const { profiles } = schema;
 
 /**
  * What the top bar shows a signed-in person about themselves (2026-09-24): their
@@ -29,14 +30,14 @@ export async function readViewer<Q extends PgQueryResultHKT>(
 ): Promise<Viewer> {
   const empty: Viewer = { displayName: null, photo: null, balanceMicro: null, ownerQueue: null };
   if (!isUuid(userId)) return empty;
-  const [row] = await database.select({ profile: profiles, balanceMicro: wallets.balanceMicro })
-    .from(profiles).leftJoin(wallets, eq(wallets.userId, profiles.id))
+  const [row] = await database.select({ profile: profiles })
+    .from(profiles)
     .where(eq(profiles.id, userId)).limit(1);
   if (!row || !row.profile.adultConfirmedAt || isInactive(row.profile)) return empty;
   return {
     displayName: row.profile.displayName,
     photo: photoUrl(row.profile.handle, row.profile.photoUpdatedAt),
-    balanceMicro: row.balanceMicro ?? null,
+    balanceMicro: (await readFunds(database,userId)).available * 10_000,
     ownerQueue: await ownerQueue(database, userId),
   };
 }
