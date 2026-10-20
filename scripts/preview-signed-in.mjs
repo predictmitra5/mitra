@@ -61,7 +61,7 @@ export { default as ReviewPage } from "@/app/review/page";
 export { default as OutcomesPage } from "@/app/review/markets/page";
 export { default as MarketPage } from "@/app/markets/[id]/page";
 export { default as PeoplePage } from "@/app/review/people/page";
-export { default as FeedPage } from "@/app/page";
+export { default as FeedPage } from "@/app/(feed)/page";
 export { default as SignUpPage } from "@/app/sign-up/page";
 export { default as SignInPage } from "@/app/sign-in/page";
 export { default as WelcomePage } from "@/app/welcome/page";
@@ -176,7 +176,7 @@ const voided = await market({ venue: "North Quad Rec", category: "campus", quest
 
 const { kai, rosa, theo, wen, ben, trader: leo, maya } = people;
 await trades([
-  [kai, samples["midway-on-high"], "YES", 20, 0.4], [rosa, samples["buckeye-donuts"], "NO", 15, 0.2], [leo, samples["gateway-film-center"], "YES", 25, 0.3],
+  [kai, samples["midway-on-high"], "YES", 20, 0.4], [rosa, samples["buckeye-donuts"], "NO", 15, 0.2], [leo, samples["smith-steeb-hall"], "YES", 25, 0.3],
   [kai, comedy, "YES", 30, 5], [rosa, comedy, "YES", 25, 3], [theo, comedy, "NO", 15, 2], [leo, comedy, "YES", 40, 0.6],
   [leo, rec, "NO", 30, 4], [ben, rec, "YES", 25, 3], [maya, rec, "NO", 15, 1], [kai, rec, "YES", 20, 0.3],
   [theo, bowling, "YES", 15, 7], [wen, bowling, "NO", 10, 2], [kai, bowling, "YES", 10, 0.5],
@@ -261,14 +261,6 @@ const server = createServer(async (request, response) => {
   if (asset) {
     const file = await readFile(join(staticDirectory, asset[1])).catch(() => null);
     response.writeHead(file ? 200 : 404, { "Content-Type": "font/woff2" });
-    response.end(file ?? "Not found.");
-    return;
-  }
-  // The self-hosted fonts in public/fonts (TeX Gyre Heros, for devices without Helvetica).
-  const font = url.pathname.match(/^\/fonts\/([\w-]+\/[\w.-]+\.otf)$/);
-  if (font) {
-    const file = await readFile(join(project, "public/fonts", font[1])).catch(() => null);
-    response.writeHead(file ? 200 : 404, { "Content-Type": "font/otf" });
     response.end(file ?? "Not found.");
     return;
   }

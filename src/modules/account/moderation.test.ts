@@ -26,7 +26,7 @@ beforeAll(async () => {
   }
 }, 30_000);
 beforeEach(async () => {
-  await db.execute(sql`TRUNCATE TABLE profiles CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE profiles, startups, founders, reports CASCADE`);
   owner = await account("owner"); subject = await account("subject"); trader = await account("trader"); other = await account("other");
   await db.update(profiles).set({ isOwner: 1 }).where(eq(profiles.id, owner));
 });
@@ -161,10 +161,15 @@ describe("the people list", () => {
 });
 
 describe("the owner's waiting count", () => {
-  it("counts suggestions waiting for review, for the owner only", async () => {
+  it("counts what waits for review (founders, startups, videos, reports), for the owner only", async () => {
     expect(await ownerQueue(db, owner)).toBe(0);
-    await suggest(subject); await suggest(other);
-    expect(await ownerQueue(db, owner)).toBe(2);
+    // Old event suggestions no longer wait for anything: the form is gone.
+    await suggest(subject);
+    expect(await ownerQueue(db, owner)).toBe(0);
+    const [founder] = await db.insert(schema.founders).values({ handle: "waiting_founder", name: "Waiting Founder", headline: "Building", bio: "A founder waiting for review.", userId: other }).returning();
+    await db.insert(schema.startups).values({ slug: "waiting-co", name: "Waiting Co", tagline: "Waits", headline: "Waiting for review", description: "A startup waiting for review.", industry: "ai", stage: "Idea", productDetails: "Nothing yet." });
+    await db.insert(schema.reports).values({ target: "founder", targetId: founder.id, reporterUserId: trader, reason: "Looks off." });
+    expect(await ownerQueue(db, owner)).toBe(3);
     expect(await ownerQueue(db, trader)).toBeNull();
     expect(await ownerQueueOrNull(db, null)).toBeNull();
     expect(await ownerQueueOrNull(db, "not-a-uuid")).toBeNull();

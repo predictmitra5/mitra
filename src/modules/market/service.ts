@@ -7,11 +7,11 @@ import { isUuid } from "./input";
 import { price, type Side } from "./lmsr";
 import { EMPTY_POSITION, remainingAllowance } from "./position";
 import { toLmsr, type MarketMakerState } from "./quote";
-import { planBuy, planSell } from "./trade";
+import { planBuy, planBuyShares, planSell } from "./trade";
 import { MICRO_PER_UNIT } from "./units";
 import { isInactive } from "@/modules/account/standing";
 
-const { markets, profiles, wallets, positions, trades, ledgerEntries, priceHistory, marketOutcomeDeciders, venues, events, resolutionSources } = schema;
+const { markets, profiles, wallets, positions, trades, ledgerEntries, priceHistory, marketOutcomeDeciders, venues, events, resolutionSources, startups, startupFounders, founders } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Market = typeof markets.$inferSelect;
 type Clock = () => Date;
@@ -28,8 +28,10 @@ export interface TradeRequest {
   marketId: string;
   action: "buy" | "sell";
   side: Side;
-  /** Buy: maximum spend in micro-points. Sell: micro-shares. */
+  /** Buy: maximum spend in micro Trade Coins, or micro-contracts when unit is "contracts". Sell: micro-shares. */
   amountMicro: number;
+  /** Buys only (2026-10-19): spend an amount of Trade Coins (the default) or buy an exact number of contracts. */
+  unit?: "credits" | "contracts";
 }
 
 export interface TradeConfirmation extends TradeRequest {
@@ -57,7 +59,8 @@ export interface TradeReceipt {
 
 function validateRequest(input: TradeRequest) {
   if (!input || !isUuid(input.marketId) || !["buy", "sell"].includes(input.action) ||
-    !["YES", "NO"].includes(input.side) || !Number.isSafeInteger(input.amountMicro) || input.amountMicro <= 0) {
+    !["YES", "NO"].includes(input.side) || !Number.isSafeInteger(input.amountMicro) || input.amountMicro <= 0 ||
+    (input.unit !== undefined && input.unit !== "credits" && input.unit !== "contracts") || (input.unit === "contracts" && input.action !== "buy")) {
     throw new TradingError("INVALID_INPUT", "Enter a positive amount with at most six decimal places.");
   }
 }
@@ -77,7 +80,7 @@ export function marketMaker(market: Market): MarketMakerState {
 export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Database<Q>, id: string) {
   if (!isUuid(id)) return null;
   const [row] = await database.select({
-    id: markets.id, question: markets.question, resolutionCriteria: markets.resolutionCriteria,
+    id: markets.id, question: markets.question, shortQuestion: markets.shortQuestion, resolutionCriteria: markets.resolutionCriteria,
     status: markets.status, deadlineAt: markets.deadlineAt,
     evidenceDeadlineAt: markets.evidenceDeadlineAt, tradingClosedAt: markets.tradingClosedAt,
     ruledOutcome: markets.ruledOutcome, rulingReason: markets.rulingReason, rulingVersion: markets.rulingVersion,
@@ -90,6 +93,8 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     eventTitle: events.title,
     sourceName: resolutionSources.name, sourceMethod: resolutionSources.method, sourceUrl: resolutionSources.url,
     sourceOperational: resolutionSources.operational,
+    startupId: markets.startupId, milestoneKind: markets.milestoneKind, pausedAt: markets.pausedAt, pausedReason: markets.pausedReason,
+    createdAt: markets.createdAt,
     liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
   }).from(markets)
     .leftJoin(venues, eq(venues.id, markets.venueId))
@@ -102,7 +107,7 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(database: Dat
     // The market maker's liquidity is a published constant (b = 150), shown so the
     // trade panel can estimate price impact; the share counts stay private.
     liquidity: liquidityMicro / MICRO_PER_UNIT,
-    tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > Date.now(),
+    tradingOpen: row.status === "open" && !row.tradingClosedAt && !row.pausedAt && row.deadlineAt.getTime() > Date.now(),
     contestOpen: row.status === "ruled" && !!row.contestEndsAt && row.contestEndsAt.getTime() > Date.now(),
     yesPrice: price(toLmsr({ liquidity: liquidityMicro / MICRO_PER_UNIT, yesSharesMicro, noSharesMicro }), "YES") };
 }
@@ -112,10 +117,23 @@ export type PublicMarket = NonNullable<Awaited<ReturnType<typeof readPublicMarke
 const rejectionMessages: Record<string, string> = {
   SUBJECT_OF_MARKET: "You can follow this market, but you cannot trade it.",
   DECIDES_OUTCOME: "You cannot trade this market because you help decide its outcome.",
-  OVER_MARKET_LIMIT: "This would exceed your 100-point held-cost limit for this market. Reduce the amount.",
-  INSUFFICIENT_BALANCE: "You do not have enough available points.",
+  INSIDER: "Founders and the people who manage a startup's profile can't trade its markets.",
+  OVER_MARKET_LIMIT: "This would exceed your 100-Trade-Coin held-cost limit for this market. Reduce the amount.",
+  INSUFFICIENT_BALANCE: "You do not have enough Trade Coins.",
   INSUFFICIENT_SHARES: "You cannot sell more shares than you hold.",
 };
+
+/**
+ * The accounts that may not trade a startup's markets (2026-10-19): the members
+ * who manage its founders' profiles and the member who registered it.
+ */
+export async function insidersFor<Q extends PgQueryResultHKT>(database: Database<Q>, market: Pick<Market, "startupId">): Promise<string[]> {
+  if (!market.startupId) return [];
+  const linked = await database.select({ userId: founders.userId }).from(startupFounders)
+    .innerJoin(founders, eq(founders.id, startupFounders.founderId)).where(eq(startupFounders.startupId, market.startupId));
+  const [startup] = await database.select({ createdBy: startups.createdBy }).from(startups).where(eq(startups.id, market.startupId));
+  return [...new Set([...linked.map((row) => row.userId), startup?.createdBy ?? null].filter((id): id is string => !!id))];
+}
 
 /** The caller supplies a freshly verified identity; never accept a user id from form data. */
 export async function readTrader<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, marketId: string) {
@@ -130,7 +148,7 @@ export async function readTrader<Q extends PgQueryResultHKT>(database: Database<
   const outcomeDeciderUserIds = deciders.map((p) => p.userId);
   // The active owner can rule every goal, whether or not they approved it.
   if (profile.isOwner === 1) outcomeDeciderUserIds.push(userId);
-  const blocked = tradeBlockReason(userId, { subjectUserId: market.subjectUserId, outcomeDeciderUserIds });
+  const blocked = tradeBlockReason(userId, { subjectUserId: market.subjectUserId, outcomeDeciderUserIds, insiderUserIds: await insidersFor(database, market) });
   return { balanceMicro: wallet.balanceMicro, position: {
     yesSharesMicro: position.yesSharesMicro, noSharesMicro: position.noSharesMicro,
     yesCostBasisMicro: position.yesCostBasisMicro, noCostBasisMicro: position.noCostBasisMicro,
@@ -170,6 +188,7 @@ async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
   if (!Number.isFinite(now.getTime()) || market.status !== "open" || market.tradingClosedAt || market.deadlineAt <= now) {
     throw new TradingError("CLOSED", "Trading has closed for this market.");
   }
+  if (market.pausedAt) throw new TradingError("PAUSED", "Trading is paused on this market while the owner reviews it.");
   const deciders = await tx.select({ userId: marketOutcomeDeciders.userId }).from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, input.marketId));
   const outcomeDeciderUserIds = deciders.map((p) => p.userId);
   if (traderIsOwner && !outcomeDeciderUserIds.includes(userId)) outcomeDeciderUserIds.push(userId);
@@ -180,15 +199,15 @@ async function loadContext<Q extends PgQueryResultHKT>(tx: Database<Q>, userId: 
   return { market, now, context: {
     traderUserId: userId, side: input.side, balanceMicro: wallet.balanceMicro,
     position: position ?? EMPTY_POSITION, marketMaker: marketMaker(market),
-    participants: { subjectUserId: market.subjectUserId, outcomeDeciderUserIds },
+    participants: { subjectUserId: market.subjectUserId, outcomeDeciderUserIds, insiderUserIds: await insidersFor(tx, market) },
   } };
 }
 
 function calculate(input: TradeRequest, context: Awaited<ReturnType<typeof loadContext>>["context"]) {
   try {
-    const plan = input.action === "buy"
-      ? planBuy({ ...context, spendMicro: input.amountMicro, perMarketLimitMicro: ECONOMY.perMarketLimitMicro })
-      : planSell({ ...context, sharesMicro: input.amountMicro });
+    const plan = input.action === "sell" ? planSell({ ...context, sharesMicro: input.amountMicro })
+      : input.unit === "contracts" ? planBuyShares({ ...context, sharesMicro: input.amountMicro, perMarketLimitMicro: ECONOMY.perMarketLimitMicro })
+      : planBuy({ ...context, spendMicro: input.amountMicro, perMarketLimitMicro: ECONOMY.perMarketLimitMicro });
     if (!plan.ok) throw new TradingError(plan.reason, rejectionMessages[plan.reason]);
     const totalMicro = "costMicro" in plan.quote ? plan.quote.costMicro : plan.quote.proceedsMicro;
     // Zero proceeds on a tiny sale are an explicit preview, not a hidden fee.
@@ -228,7 +247,9 @@ export async function executeTrade<Q extends PgQueryResultHKT>(database: Databas
   }
   return transaction(database, async (tx) => {
     const profile = await lockAccount(tx, userId);
-    const key = `${userId.toLowerCase()}:${input.requestId.toLowerCase()}`;
+    // A contract-quantity buy carries its unit in the key, so the same request id
+    // can never be read back as a spend of the same number of Trade Coins.
+    const key = `${userId.toLowerCase()}:${input.requestId.toLowerCase()}${input.unit === "contracts" ? ":contracts" : ""}`;
     // This transaction-scoped lock serializes a retry even if it changes the
     // market id. Hash collisions only serialize unrelated requests, never merge them.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);

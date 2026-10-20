@@ -1,98 +1,123 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getDb } from "@/db/client";
-import { CAMPUSES, isCampusKey } from "@/config/campus";
 import { currentIdentity } from "@/modules/auth/server";
-import { EventError, listPendingProposals, listSources, listVenues } from "@/modules/events/service";
-import { categoryLabel } from "@/modules/events/categories";
-import { formatMoment, toLocalInput } from "@/modules/events/time";
-import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import { PublishForm, RejectForm, type PublishDefaults } from "./review-forms";
+import { AdminError, readReviewQueue } from "@/modules/startups/admin";
+import { duration, industryLabel, verificationLabel, videoKindLabel } from "@/modules/startups/labels";
+import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
+import { StartupThumb } from "@/app/components/startup/thumb";
+import { ClaimForm, DeclineSuggestionForm, OpenDraftForm, ReportForm, ReviewForm } from "./admin-forms";
 
-export const metadata = { title: "Review suggestions", robots: { index: false } };
+export const metadata = { title: "Review queue", robots: { index: false } };
+export const dynamic = "force-dynamic";
 
-const HOUR = 3_600_000;
+const day = (value: Date | null) => value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" }).format(value) : "";
 
 /**
- * The owner's queue (2026-10-08): students' market suggestions, oldest first,
- * each with a publish form prefilled from it and a turn-down form, and a form
- * for publishing a market from scratch. Hidden from everyone else.
+ * The owner's queue (2026-10-19): founders, startups and videos waiting for
+ * approval, market suggestions from founders, claims to verify, reports, and
+ * draft markets. Nothing a member submits is public until approved here.
+ * Hidden from everyone else.
  */
-export default async function ReviewPage({ searchParams }: PageProps<"/review">) {
+export default async function ReviewPage() {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
   const database = getDb();
+  let queue;
+  try { queue = await readReviewQueue(database, identity.id); }
+  catch (error) { if (error instanceof AdminError && error.code === "NOT_OWNER") notFound(); throw error; }
   const viewer = await readViewerOrNull(database, identity.id);
-
-  let proposals;
-  try {
-    proposals = await listPendingProposals(database, identity.id);
-  } catch (error) {
-    // Hide the page entirely from anyone who isn't the owner.
-    if (error instanceof EventError && error.code === "NOT_OWNER") notFound();
-    throw error;
-  }
-  const venuesByCampus = Object.fromEntries(await Promise.all(Object.keys(CAMPUSES).map(async (key) =>
-    [key, isCampusKey(key) ? await listVenues(database, key) : []] as const)));
-  const sources = await listSources(database);
-  const campuses = Object.values(CAMPUSES).map((campus) => ({ key: campus.key, name: campus.communityName }));
-  const home = CAMPUSES[identity.campus];
-
-  const { notice } = await searchParams;
-  const message = notice === "rejected" ? "Suggestion turned down. They can see your reason." : undefined;
-
-  const blank: PublishDefaults = {
-    proposalId: null, campus: home.key, question: "", category: "nightlife", venueId: "", venueName: "", eventTitle: "",
-    windowStart: "", windowEnd: "", cutoff: "", resultsDue: "",
-  };
-  const venueOptions = (campus: string) => (venuesByCampus[campus] ?? []).map((venue) => ({ id: venue.id, name: venue.name }));
+  const waiting = queue.founders.length + queue.startups.length + queue.videos.length + queue.suggestions.length + queue.claims.length + queue.reports.length;
 
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
     <div className="account-topline"><span className="eyebrow">OWNER REVIEW</span><Link className="text-button" href="/account">Back to account</Link></div>
-    <div className="owner-links"><Link className="secondary-button" href="/review/markets">Outcomes and objections ↗︎</Link><Link className="secondary-button" href="/review/people">People: photos and bans ↗︎</Link></div>
+    <div className="owner-links">
+      <Link className="btn btn-primary" href="/review/markets/new">Create a market</Link>
+      <Link className="btn btn-quiet" href="/review/markets">Outcomes, pauses and objections</Link>
+      <Link className="btn btn-quiet" href="/review/audit">Audit record</Link>
+      <Link className="btn btn-quiet" href="/review/people">People</Link>
+    </div>
     <section className="account-welcome">
-      <h1>{proposals.length === 0 ? "No suggestions waiting." : `${proposals.length} suggestion${proposals.length === 1 ? "" : "s"} waiting.`}</h1>
-      <p>Publish only what a named source can settle exactly: a count, a window, a time zone, a cutoff. Every new market starts at 50/50; odds move only through trading. Nothing a student suggests goes live until you publish it.</p>
+      <h1>{waiting === 0 ? "Nothing waiting." : `${waiting} waiting for you.`}</h1>
+      <p>Approve founders, startups and videos before anyone else sees them. Only you create, open, pause and settle markets; founders can suggest them. Every new market opens at 50/50; odds move only through trading. Keep demo data labelled, and never present simulated numbers as verified.</p>
     </section>
-    {message && <p className="form-success" role="status">{message}</p>}
 
-    <details className="review-card publish-new">
-      <summary>Publish a new market</summary>
-      <PublishForm defaults={blank} venues={venueOptions(home.key)} sources={sources} campuses={campuses} />
-    </details>
+    {queue.startups.length > 0 && <section className="review-group" aria-labelledby="q-startups">
+      <h2 id="q-startups">Startups ({queue.startups.length})</h2>
+      {queue.startups.map(({ startup, founderName, founderStatus }) => <article className="review-card" key={startup.id}>
+        <div className="review-meta"><span className="status-pill">{industryLabel(startup.industry)}</span><span>{startup.stage}</span><span>by {founderName ?? "unknown"}{founderStatus === "pending" ? " (founder also waiting)" : ""}</span><span>{day(startup.createdAt)}</span></div>
+        <h3><Link href={`/startups/${startup.slug}`}>{startup.name}: {startup.headline} ↗︎</Link></h3>
+        <p className="review-criteria">{startup.description}</p>
+        <p className="field-hint">Product: {startup.productDetails}</p>
+        <ReviewForm what="startup" id={startup.id} />
+      </article>)}
+    </section>}
 
-    {proposals.map(({ proposal, proposer }) => {
-      const zone = CAMPUSES[isCampusKey(proposal.campus) ? proposal.campus : home.key].timeZone;
-      const start = proposal.windowStartAt;
-      const end = proposal.windowEndAt ?? new Date(start.getTime() + 3 * HOUR);
-      const defaults: PublishDefaults = {
-        proposalId: proposal.id, campus: proposal.campus, question: proposal.question, category: proposal.category,
-        venueId: proposal.venueId ?? "", venueName: proposal.venueName, eventTitle: "",
-        windowStart: toLocalInput(start, zone), windowEnd: toLocalInput(end, zone),
-        cutoff: toLocalInput(start, zone), resultsDue: toLocalInput(new Date(end.getTime() + 72 * HOUR), zone),
-      };
-      return <article key={proposal.id} className="review-card">
-        <div className="review-meta">
-          <span className="status-pill status-draft">{categoryLabel(proposal.category)}</span>
-          <span>{proposal.venueName}{proposal.venueId ? "" : " (new venue)"} · {CAMPUSES[isCampusKey(proposal.campus) ? proposal.campus : home.key].communityName}</span>
-          <span>from {proposer.displayName} · @{proposer.handle}</span>
+    {queue.founders.length > 0 && <section className="review-group" aria-labelledby="q-founders">
+      <h2 id="q-founders">Founder profiles ({queue.founders.length})</h2>
+      {queue.founders.map(({ founder, handle }) => <article className="review-card" key={founder.id}>
+        <div className="review-meta"><span>@{founder.handle}</span>{handle && <span>account @{handle}</span>}<span>{day(founder.createdAt)}</span></div>
+        <h3><Link href={`/founders/${founder.handle}`}>{founder.name} ↗︎</Link></h3>
+        <p className="review-criteria">{founder.headline}. {founder.bio}</p>
+        {founder.background && <p className="field-hint">{founder.background}</p>}
+        <ReviewForm what="founder" id={founder.id} />
+      </article>)}
+    </section>}
+
+    {queue.videos.length > 0 && <section className="review-group" aria-labelledby="q-videos">
+      <h2 id="q-videos">Videos ({queue.videos.length})</h2>
+      {queue.videos.map(({ video, startupName, startupStatus }) => <article className="review-card" key={video.id}>
+        <div className="review-meta"><span className="status-pill">{videoKindLabel(video.kind)}</span><span>{startupName}{startupStatus !== "approved" ? ` (startup ${startupStatus})` : ""}</span><span>{duration(video.durationSeconds)}</span></div>
+        <h3>{video.title}</h3>
+        <p className="review-criteria">{video.description}</p>
+        {video.videoUrl ? <video className="review-video" src={video.videoUrl} controls preload="metadata" /> : <p className="field-hint">No file: plays as a captioned placeholder.</p>}
+        {video.thumbnailUrl && <StartupThumb startup={{ name: startupName, tagline: "", glyph: "sparkles", hue: 210, logoUrl: null, productFeatures: [] }} founder={null} imageUrl={video.thumbnailUrl} bar={false} className="review-thumb" />}
+        {video.captions.length > 0 && <details><summary>Captions ({video.captions.length})</summary><ol className="review-captions">{video.captions.map((c, i) => <li key={i}><span className="muted">{duration(c.at)}</span> {c.text}</li>)}</ol></details>}
+        <ReviewForm what="video" id={video.id} />
+      </article>)}
+    </section>}
+
+    {queue.suggestions.length > 0 && <section className="review-group" aria-labelledby="q-suggest">
+      <h2 id="q-suggest">Market suggestions ({queue.suggestions.length})</h2>
+      {queue.suggestions.map(({ proposal, startupName, handle }) => <article className="review-card" key={proposal.id}>
+        <div className="review-meta"><span>{startupName}</span><span>from @{handle}</span><span>{day(proposal.createdAt)}</span>{proposal.suggestedCloseAt && <span>close {day(proposal.suggestedCloseAt)}</span>}</div>
+        <h3>{proposal.question}</h3>
+        <p className="review-criteria">How to check: {proposal.resolutionNote}</p>
+        <div className="review-buttons">
+          <Link className="btn btn-primary" href={`/review/markets/new?suggestion=${proposal.id}`}>Write it as a market</Link>
+          <DeclineSuggestionForm id={proposal.id} />
         </div>
-        <h2>{proposal.question}</h2>
-        <dl className="goal-dates">
-          <div><dt>Starts</dt><dd>{formatMoment(start, zone)}</dd></div>
-          {proposal.windowEndAt && <div><dt>Ends</dt><dd>{formatMoment(proposal.windowEndAt, zone)}</dd></div>}
-          <div><dt>Suggested</dt><dd>{formatMoment(proposal.createdAt, zone)}</dd></div>
-        </dl>
-        <p className="review-criteria"><strong>How they’d check it:</strong> {proposal.resolutionNote}</p>
-        <div className="review-actions review-actions-stack">
-          <details>
-            <summary>Publish as a market</summary>
-            <PublishForm defaults={defaults} venues={venueOptions(proposal.campus)} sources={sources} campuses={campuses} />
-          </details>
-          <RejectForm proposalId={proposal.id} />
-        </div>
-      </article>;
-    })}
+      </article>)}
+    </section>}
+
+    {queue.claims.length > 0 && <section className="review-group" aria-labelledby="q-claims">
+      <h2 id="q-claims">Claims to verify ({queue.claims.length})</h2>
+      {queue.claims.map(({ claim, startupName }) => <article className="review-card" key={claim.id}>
+        <div className="review-meta"><span>{startupName}</span><span className="status-pill">{verificationLabel(claim.level)}</span></div>
+        <h3>{claim.statement}</h3>
+        {(claim.sourceName || claim.sourceUrl) && <p className="field-hint">Source: {claim.sourceUrl ? <a href={claim.sourceUrl} target="_blank" rel="noopener noreferrer nofollow">{claim.sourceName ?? claim.sourceUrl}</a> : claim.sourceName}</p>}
+        <ClaimForm id={claim.id} />
+      </article>)}
+    </section>}
+
+    {queue.reports.length > 0 && <section className="review-group" aria-labelledby="q-reports">
+      <h2 id="q-reports">Reports ({queue.reports.length})</h2>
+      {queue.reports.map(({ report, reporter, label, href }) => <article className="review-card" key={report.id}>
+        <div className="review-meta"><span className="status-pill">{report.target}</span><span>by @{reporter ?? "someone"}</span><span>{day(report.createdAt)}</span></div>
+        <h3>{href ? <Link href={href}>{label} ↗︎</Link> : label}</h3>
+        <p className="review-criteria">{report.reason}</p>
+        <ReportForm id={report.id} canRemove={report.target === "comment" || report.target === "video"} />
+      </article>)}
+    </section>}
+
+    {queue.drafts.length > 0 && <section className="review-group" aria-labelledby="q-drafts">
+      <h2 id="q-drafts">Draft markets ({queue.drafts.length})</h2>
+      {queue.drafts.map(({ market, startupName }) => <article className="review-card" key={market.id}>
+        <div className="review-meta"><span>{startupName}</span><span>closes {day(market.deadlineAt)}</span><span>opens at 50%</span>{market.isSample && <span className="sample-tag">Demo</span>}</div>
+        <h3>{market.question}</h3>
+        <div className="review-buttons"><Link className="btn btn-quiet" href={`/review/markets/new?draft=${market.id}`}>Edit the rules</Link><OpenDraftForm id={market.id} /></div>
+      </article>)}
+    </section>}
   </main><MarketFooter /></div>;
 }

@@ -62,6 +62,11 @@ async function poll() {
   }
 }
 
+/** Asks for fresh prices now, after a trade on this page, instead of waiting for the next poll. */
+export function refreshQuotes() {
+  if (typeof document !== "undefined") void poll();
+}
+
 function onVisibility() {
   if (document.visibilityState === "visible") void poll();
 }

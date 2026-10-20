@@ -9,7 +9,7 @@ const check = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
 );
 
-/** Onboarding: topics to follow (decided 2026-10-05). Stored only; see topics.ts. */
+/** Onboarding: industries to follow (2026-10-05; startup industries since 2026-10-19). They start the feed's leaning; see topics.ts. */
 export function TopicsStep({ initial }: { initial: readonly string[] }) {
   const [chosen, setChosen] = useState(() => new Set(initial));
   const [state, action, pending] = useActionState(saveOnboardingTopics, {} as FormState);
@@ -24,8 +24,8 @@ export function TopicsStep({ initial }: { initial: readonly string[] }) {
 
   return (
     <form action={action} className="step-form" aria-busy={pending}>
-      <h1>What do you want to follow?</h1>
-      <p className="step-sub">Pick as many as you like. You’ll still see everything.</p>
+      <h1>What are you curious about?</h1>
+      <p className="step-sub">Pick the industries you want to see founders from. Your feed starts there and learns from what you watch.</p>
       <fieldset className="topics">
         <legend className="sr-only">Topics</legend>
         {TOPICS.map((topic) => {

@@ -1,138 +1,125 @@
 import Link from "next/link";
-import { CAMPUSES, type CampusKey } from "@/config/campus";
+import { Bell, BriefcaseBusiness, Compass, House, LineChart, Plus, Search } from "lucide-react";
 import type { Viewer } from "@/modules/account/viewer";
 import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
 import { Avatar } from "./market-card";
-import { PublicCampusPicker } from "./public-campus-picker";
-import { OwnerCampusPicker } from "./owner-campus-picker";
 import { SearchBox } from "./search-box";
+import { Toaster } from "../toaster";
 
 /**
- * The top bar on every page: the Mitra logo and campus identity, search, core
- * navigation, balance, theme choice and account. Owner tools are grouped so
- * they do not compete with the main destinations.
+ * The top bar on every page (2026-10-19): the owner's new logo; search across
+ * founders, startups and markets; For you, Following, Markets and Activity;
+ * the black/white switch; for members their Trade Coins, a baby blue Create and
+ * their photo (the portfolio); Log in and Sign up for visitors. The owner also
+ * gets Review with what is waiting. The shop (2026-10-12) is linked from the
+ * account page and the portfolio, not the bar.
  *
- * `viewer.ownerQueue` is set only for the owner: how many market suggestions
- * are waiting. That link stays visible on a phone, because nothing else tells
- * the owner something is waiting.
- *
- * On a phone the bar keeps the logo, campus selector, balance and photo; the search drops to its
- * own row on the feed (`search="feed"`) and is left out elsewhere.
+ * On a phone the bar keeps the logo, search and activity (like the owner's
+ * second screenshot) and the main places move to a bar along the bottom.
  */
-export function MarketHeader({ viewer, active, query = "", campus, search = "desktop", brandMode = "campus", entryAction }: {
+export type NavKey = "for-you" | "following" | "markets" | "activity" | "portfolio" | "create" | "search";
+
+export function MarketHeader({ viewer, active, query = "", brandMode = "app", entryAction }: {
   viewer: Viewer | null;
-  active?: "markets" | "positions";
-  /** The search already in the address, on the feed. */
+  active?: NavKey;
+  /** The search already in the address. */
   query?: string;
-  /** Selected public feed campus; only passed on the signed-out home page. */
-  campus?: CampusKey;
+  /** Older callers passed these; kept so they still compile. */
   search?: "desktop" | "feed";
-  brandMode?: "campus" | "neutral";
+  brandMode?: "app" | "campus" | "neutral";
   entryAction?: "sign-in" | "sign-up" | "none";
 }) {
-  const points = viewer?.balanceMicro ?? null;
+  const tradeCoins = viewer?.balanceMicro ?? null;
   const neutral = brandMode === "neutral";
+  const current = (key: NavKey) => (active === key ? "page" : undefined);
   return (
-    <header className={`topbar${search === "feed" && !neutral ? " topbar-with-search" : ""}${neutral ? " topbar-entry" : ""}`}>
-      <div className="brand">
-        <Link className="brand-home" href="/" prefetch={false} aria-label="Mitra home">
-          <span className="brand-lockup">
-            <Logo className="brand-logo" title="Mitra" />
-            {viewer && viewer.ownerQueue == null && <>
-              <span className="brand-school campus-only campus-osu">{CAMPUSES.osu.communityName}</span>
-              <span className="brand-school campus-only campus-uiuc">{CAMPUSES.uiuc.communityName}</span>
-            </>}
-          </span>
+    <>
+      <header className={`topbar${neutral ? " topbar-entry" : ""}`}>
+        <Link className="brand" href="/" prefetch={false} aria-label="Mitra home">
+          <Logo className="brand-logo" title="Mitra" />
+          {!neutral && <span className="brand-motto">Founders, before they&rsquo;re famous.</span>}
         </Link>
-        {!neutral && viewer?.ownerQueue != null && <OwnerCampusPicker campus={campus} />}
-        {!neutral && !viewer && campus && <PublicCampusPicker campus={campus} query={query} />}
-        {!neutral && <span className="brand-motto">Trade on what happens here.</span>}
-      </div>
-      {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
-      {!neutral && <nav className="topbar-nav" aria-label="Main">
-        <Link href="/" prefetch={false} aria-current={active === "markets" ? "page" : undefined}>Markets</Link>
-        {viewer && <Link href="/positions" prefetch={false} aria-current={active === "positions" ? "page" : undefined}>Positions</Link>}
-        {viewer && <Link href="/shop">Shop</Link>}
-        {viewer && <Link href="/suggest">Suggest</Link>}
-      </nav>}
-      {!neutral && <details className="topbar-mobile-menu">
-        <summary>Menu</summary>
-        <div className="topbar-mobile-links">
-          <Link href="/">Markets</Link>
-          {viewer && <Link href="/positions">Positions</Link>}
-          {viewer && <Link href="/shop">Shop</Link>}
-          {viewer && <Link href="/suggest">Suggest a market</Link>}
-          {viewer?.ownerQueue != null && <>
-            <Link href="/review">Review{viewer.ownerQueue > 0 ? ` · ${viewer.ownerQueue} waiting` : ""}</Link>
-            <Link href="/review/campaigns">Campaigns</Link>
-          </>}
-        </div>
-      </details>}
-      <div className="topbar-actions">
-        <ThemeToggle />
-        {viewer?.ownerQueue != null && <details className="owner-menu">
-          <summary className="owner-link">Owner{viewer.ownerQueue > 0 && <span className="owner-badge" aria-label={`${viewer.ownerQueue} waiting`}>{viewer.ownerQueue}</span>}</summary>
-          <div className="owner-menu-links"><Link href="/review">Review suggestions</Link><Link href="/review/markets">Market outcomes</Link><Link href="/review/campaigns">QR campaigns</Link><Link href="/review/people">People</Link></div>
-        </details>}
-        {viewer ? (
-          <>
-            {points !== null && (
-              <Link className="topbar-points" href="/account" aria-label={`${pointsShort(points)} Trade Coins available`}>
-                <strong>{pointsShort(points)}</strong> <span>Trade Coins</span>
-              </Link>
-            )}
-            <Link className="topbar-me" href="/account" aria-label="Your account">
-              <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
+        {!neutral && <div className="topbar-search"><SearchBox initial={query} /></div>}
+        {!neutral && <nav className="topbar-nav" aria-label="Main">
+          <Link href="/" prefetch={false} aria-current={current("for-you")}>For you</Link>
+          <Link href="/following" prefetch={false} aria-current={current("following")}>Following</Link>
+          <Link href="/markets" prefetch={false} aria-current={current("markets")}>Markets</Link>
+          <Link href="/activity" prefetch={false} aria-current={current("activity")}>Activity</Link>
+        </nav>}
+        <div className="topbar-actions">
+          {!neutral && <Link className="icon-button topbar-phone-only" href="/search" prefetch={false} aria-label="Search"><Search size={18} aria-hidden="true" /></Link>}
+          {!neutral && <Link className="icon-button topbar-phone-only" href="/activity" prefetch={false} aria-label="Activity"><Bell size={18} aria-hidden="true" /></Link>}
+          <ThemeToggle />
+          {viewer?.ownerQueue != null && (
+            <Link className="owner-link" href="/review" aria-label={viewer.ownerQueue > 0 ? `Owner review: ${viewer.ownerQueue} waiting` : "Owner review"}>
+              Review
+              {viewer.ownerQueue > 0 && <span className="owner-badge" aria-hidden="true">{viewer.ownerQueue}</span>}
             </Link>
-          </>
-        ) : neutral ? (
-          entryAction && entryAction !== "none" ? <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
-            {entryAction === "sign-in" ? "Sign in" : "Create account"}
-          </Link> : null
-        ) : (
-          <>
-            <Link className="btn btn-quiet" href="/sign-in">Log in</Link>
-            <Link className="btn btn-primary" href="/sign-up">Sign up</Link>
-          </>
-        )}
-      </div>
-    </header>
+          )}
+          {viewer ? (
+            <>
+              {tradeCoins !== null && (
+                <Link className="topbar-points" href="/portfolio" aria-label={`${coinsShort(tradeCoins)} Trade Coins available`}>
+                  <strong>{coinsShort(tradeCoins)}</strong> <span>Trade Coins</span>
+                </Link>
+              )}
+              <Link className="btn btn-primary topbar-post" href="/create" aria-current={current("create")}><Plus size={16} aria-hidden="true" />Create</Link>
+              <Link className="topbar-me" href="/portfolio" aria-label="Your profile and portfolio">
+                <Avatar name={viewer.displayName ?? "You"} photo={viewer.photo} size={32} />
+              </Link>
+            </>
+          ) : neutral ? (
+            entryAction === "none" ? null : <Link className="btn btn-quiet entry-header-action" href={entryAction === "sign-in" ? "/sign-in" : "/sign-up"}>
+              {entryAction === "sign-in" ? "Sign in" : "Create account"}
+            </Link>
+          ) : (
+            <>
+              <Link className="btn btn-quiet topbar-login" href="/sign-in">Log in</Link>
+              <Link className="btn btn-primary" href="/sign-up">Sign up</Link>
+            </>
+          )}
+        </div>
+      </header>
+      {!neutral && <BottomNav active={active} signedIn={!!viewer} />}
+      <Toaster />
+    </>
   );
 }
 
-/** Available points for the bar: whole points, or one decimal rounded down, never more than you have. */
-function pointsShort(micro: number): string {
+/** The phone's bar along the bottom: Home, Markets, Create, Activity, Profile. */
+function BottomNav({ active, signedIn }: { active?: NavKey; signedIn: boolean }) {
+  const current = (keys: NavKey[]) => (active && keys.includes(active) ? "page" : undefined);
+  return (
+    <nav className="bottom-nav" aria-label="Main">
+      <Link href="/" prefetch={false} aria-current={current(["for-you", "following"])}><House size={21} aria-hidden="true" /><span>Home</span></Link>
+      <Link href="/markets" prefetch={false} aria-current={current(["markets", "search"])}><LineChart size={21} aria-hidden="true" /><span>Markets</span></Link>
+      <Link href={signedIn ? "/create" : "/sign-up"} prefetch={false} className="bottom-create" aria-current={current(["create"])} aria-label="Create"><Plus size={22} aria-hidden="true" /></Link>
+      <Link href="/activity" prefetch={false} aria-current={current(["activity"])}><Compass size={21} aria-hidden="true" /><span>Activity</span></Link>
+      <Link href={signedIn ? "/portfolio" : "/sign-in"} prefetch={false} aria-current={current(["portfolio"])}><BriefcaseBusiness size={21} aria-hidden="true" /><span>Portfolio</span></Link>
+    </nav>
+  );
+}
+
+/** Available Trade Coins for the bar: whole, or one decimal rounded down, never more than you have. */
+function coinsShort(micro: number): string {
   const tenths = Math.floor(Math.max(0, micro) / 100_000) / 10;
   return tenths.toLocaleString("en-US", { maximumFractionDigits: 1 });
 }
 
-export function MarketFooter({ brandMode = "campus", campus }: { brandMode?: "campus" | "neutral"; campus?: CampusKey }) {
-  if (brandMode === "neutral") {
-    return (
-      <footer className="market-footer market-footer-entry">
-        <div className="footer-brand"><span className="footer-edition">Mitra</span><span>Trade Coins.</span></div>
-        <nav className="footer-links" aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link></nav>
-        <p className="footer-disclaimer">Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
-      </footer>
-    );
-  }
+export function MarketFooter({ brandMode = "app" }: { brandMode?: "app" | "campus" | "neutral" }) {
   return (
-    <footer className="market-footer">
+    <footer className={`market-footer${brandMode === "neutral" ? " market-footer-entry" : ""}`}>
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Trade on what happens here.</span>
+        <span>Discover founders early. Predict with Trade Coins, which have no cash value.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
+        <Link href="/markets">Markets</Link>
         <Link href="/faq">FAQ</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>
-      {campus ? (
-        <p className="footer-disclaimer">{CAMPUSES[campus].independenceStatement}</p>
-      ) : <>
-        <p className="footer-disclaimer campus-only campus-osu">{CAMPUSES.osu.independenceStatement}</p>
-        <p className="footer-disclaimer campus-only campus-uiuc">{CAMPUSES.uiuc.independenceStatement}</p>
-      </>}
+      <p className="footer-disclaimer">Startups, founders and markets marked Demo are fictional, for demonstration. Trade Coins and Coins have no cash value and can’t be withdrawn or redeemed. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
     </footer>
   );
 }

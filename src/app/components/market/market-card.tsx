@@ -1,59 +1,76 @@
 import Link from "next/link";
-import { categoryLabel, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
+import { cardTitle, initials, percent, timeLeft, changeLabel, volumeLabel } from "@/modules/discovery/present";
+import { industryLabel } from "@/modules/startups/labels";
 import { statusLine } from "@/modules/events/status";
+import { StartupThumb } from "../startup/thumb";
+import { Sparkline, type SparkPoint } from "./sparkline";
 
 /*
- * Market cards in the Kalshi direction (2026-09-24), moved from people's goals
- * to campus events on 2026-10-08 (DECISIONS.md): the venue's mark as a small
- * square, the category and venue, the question, the chance large on the right,
- * today's change, points traded and the closing time, and Yes and No with
- * their prices. A sample market says so beside its venue. Flat: no thumbnails,
- * gradients or stickers.
+ * Market cards (2026-10-19, startup markets), in the language of the owner's
+ * card screenshots and the existing Kalshi direction: the founder-and-startup
+ * thumbnail on top, the industry and startup in small capitals, the market's
+ * short question, the chance large in baby blue with three months of price
+ * beside it, Yes and No with their prices, then Trade Coins traded, traders and
+ * the close date. The whole card opens the market; the startup link and the
+ * Yes/No buttons stay clickable on top. Demo markets say so.
  */
 
 export type CardData = {
   id: string;
   question: string;
-  category: string | null;
-  venueName: string | null;
-  venueSlug: string | null;
-  eventTitle: string | null;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
+  milestoneKind: string | null;
+  startupId: string;
+  startupName: string;
+  startupSlug: string;
+  startupTagline: string;
+  industry: string;
+  glyph: string;
+  hue: number;
+  logoUrl: string | null;
+  productFeatures: string[];
+  thumbnailUrl: string | null;
+  founderName: string | null;
+  founderHandle: string | null;
+  founderHue: number;
+  founderPortraitUrl: string | null;
+  founderRole: string | null;
+  timeZone: string | null;
   isSample: boolean;
   yesPrice: number;
   tradingOpen: boolean;
+  paused: boolean;
   status: string;
   ruledOutcome: "yes" | "no" | null;
   /** ISO strings: this crosses from server to client components. */
   deadlineAt: string;
-  windowStartAt: string | null;
-  timeZone: string | null;
   approvedAt: string;
   volumeMicro: number;
+  traders: number;
   change24hBp: number;
   reason: "just added" | "closing soon" | "active" | "quiet";
+  spark: SparkPoint[];
 };
 
-/** "Closes Oct 16, 9:00 PM" in the market's own zone. */
+/** "Dec 31, 2027" in Eastern time, where every startup market's deadline is written. */
+export function closeDate(card: Pick<CardData, "deadlineAt" | "timeZone">): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: card.timeZone ?? "America/New_York", month: "short", day: "numeric", year: "numeric" }).format(new Date(card.deadlineAt));
+}
+
+/** "Closes Dec 31, 2027". Kept for lists that say so in words. */
 export function closesAt(card: Pick<CardData, "deadlineAt" | "timeZone">): string {
-  const text = new Intl.DateTimeFormat("en-US", {
-    timeZone: card.timeZone ?? "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  }).format(new Date(card.deadlineAt));
-  return `Closes ${text}`;
+  return `Closes ${closeDate(card)}`;
 }
 
-/** The small "Sample" label on hypothetical demonstration markets. */
-export function SampleTag() {
-  return <span className="sample-tag" title="A hypothetical demonstration market. Not verified by the venue.">Sample</span>;
-}
-
-/** The venue's mark: its initials in a small square, beside its markets. */
-export function VenueMark({ name, size }: { name: string | null; size?: number }) {
-  return <Avatar name={name ?? "Mitra"} size={size} shape="square" />;
+/** The small label on demonstration data (2026-10-19): fictional startups, people and numbers. */
+export function SampleTag({ label = "Demo" }: { label?: string }) {
+  return <span className="sample-tag" title="Demonstration data: a fictional startup and market. Trade Coins have no cash value.">{label}</span>;
 }
 
 /**
- * A photo or initials: a small square beside a venue's markets, a circle for the viewer.
- * Without a size, the stylesheet sets it, so it can change with the screen.
+ * A photo or initials: a circle for people, a small square for older venue
+ * markets. Without a size, the stylesheet sets it, so it can change with the screen.
  */
 export function Avatar({ name, photo = null, size, shape = "round" }: {
   name: string; photo?: string | null; size?: number; shape?: "round" | "square";
@@ -70,6 +87,11 @@ export function Avatar({ name, photo = null, size, shape = "round" }: {
   return <span className={className} style={style} aria-hidden="true">{initials(name)}</span>;
 }
 
+/** Kept for older event markets' pages: a venue's initials in a small square. */
+export function VenueMark({ name, size }: { name: string | null; size?: number }) {
+  return <Avatar name={name ?? "Mitra"} size={size} shape="square" />;
+}
+
 /** A price change to one decimal. The arrow carries the direction; colour repeats it. */
 export function Change({ bp, when }: { bp: number; when?: string }) {
   const { text, direction } = changeLabel(bp);
@@ -82,7 +104,7 @@ export function Change({ bp, when }: { bp: number; when?: string }) {
   );
 }
 
-/** A gain or loss in points to one decimal, as "+7.3" or "−1.6", with its colour. */
+/** A gain or loss in Trade Coins to one decimal, as "+7.3" or "−1.6", with its colour. */
 export function Gain({ micro }: { micro: number }) {
   const tenths = Math.round(micro / 100_000);
   if (tenths === 0) return <span className="gain gain-flat">0.0</span>;
@@ -93,53 +115,68 @@ export function Gain({ micro }: { micro: number }) {
   );
 }
 
-/** Yes and No with their prices, in words; each opens the market with that side chosen. */
-export function PriceButtons({ id, yesPrice, size = "card" }: { id: string; yesPrice: number; size?: "card" | "large" }) {
+/** Yes and No with their prices, "YES · 42¢" as in the owner's screenshot; each opens the market with that side chosen. */
+export function PriceButtons({ id, yesPrice, size = "card", onOpen }: { id: string; yesPrice: number; size?: "card" | "large"; onOpen?: () => void }) {
   const yes = percent(yesPrice);
   return (
     <div className={`price-buttons price-buttons-${size}`}>
-      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Yes, ${yes}¢`}>
-        <span>Yes</span><span>{yes}¢</span>
+      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Buy Yes at ${yes}¢`} onClick={onOpen}>
+        <span>Yes · {yes}¢</span>
       </Link>
-      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`No, ${100 - yes}¢`}>
-        <span>No</span><span>{100 - yes}¢</span>
+      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`Buy No at ${100 - yes}¢`} onClick={onOpen}>
+        <span>No · {100 - yes}¢</span>
       </Link>
     </div>
   );
 }
 
-/** `flash` marks a live price move, so the number pulses once in its direction. */
-export function MarketCard({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
+/** Trade Coins and traders in a few words: "1,284 Trade Coins traded · 27 traders", "demo Trade Coins" on demo markets. */
+export function activityLine(card: Pick<CardData, "volumeMicro" | "traders"> & { isSample?: boolean }): string {
+  const volume = card.isSample ? volumeLabel(card.volumeMicro).replace(/\bTrade Coins? traded/, (w) => `demo ${w}`) : volumeLabel(card.volumeMicro);
+  return card.traders > 0 ? `${volume} · ${card.traders.toLocaleString("en-US")} trader${card.traders === 1 ? "" : "s"}` : volume;
+}
+
+/**
+ * `flash` marks a live price move, so the number pulses once in its direction.
+ * `index` staggers the card's entrance on load (the Motion block in globals.css).
+ */
+export function MarketCard({ card, now, flash = null, index = 0 }: { card: CardData; now: Date; flash?: "up" | "down" | null; index?: number }) {
   const href = `/markets/${card.id}`;
+  const yes = percent(card.yesPrice);
+  const resolved = (card.status === "settled" || card.status === "ruled") && card.ruledOutcome;
   return (
-    <article className="card">
+    <article className="card rise" style={{ "--rise-i": Math.min(index, 8) } as React.CSSProperties}>
+      <StartupThumb className="card-thumb"
+        startup={{ name: card.startupName, tagline: card.startupTagline, glyph: card.glyph, hue: card.hue, logoUrl: card.logoUrl, productFeatures: card.productFeatures, thumbnailUrl: card.thumbnailUrl }}
+        founder={card.founderName ? { name: card.founderName, portraitUrl: card.founderPortraitUrl, hue: card.founderHue, role: card.founderRole } : null}
+        bar={false} />
       <div className="card-top">
-        <VenueMark name={card.venueName} size={40} />
-        <div className="card-head">
-          <span className="card-kicker">
-            {categoryLabel(card.category)}
-            {card.venueName && <> &middot; {card.venueSlug ? <Link href={`/venues/${card.venueSlug}`} prefetch={false}>{card.venueName}</Link> : card.venueName}</>}
-            {card.isSample && <> <SampleTag /></>}
-          </span>
-          <Link className="card-title" href={href} prefetch={false}>{card.question}</Link>
-        </div>
-        <div className="card-chance">
-          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
-          <span>chance</span>
-        </div>
+        <span className="card-kicker">
+          {industryLabel(card.industry)} &middot; <Link href={`/startups/${card.startupSlug}`} prefetch={false}>{card.startupName}</Link>
+        </span>
+        {card.isSample && <SampleTag />}
       </div>
-      <p className="card-meta">
-        <Change bp={card.change24hBp} when="today" />
-        <span aria-hidden="true">today</span>
-        <span aria-hidden="true">&middot;</span>
-        <span>{volumeLabel(card.volumeMicro)}</span>
-      </p>
+      <Link className="card-title" href={href} title={card.shortQuestion ? card.question : undefined}>{cardTitle(card)}</Link>
+      <div className="card-odds">
+        {resolved ? (
+          <div className="card-chance card-resolved">
+            <strong className={`outcome-${card.ruledOutcome}`}>{card.ruledOutcome === "yes" ? "Yes" : "No"}</strong>
+            <span>{card.status === "settled" ? "Resolved" : "Ruled, objections open"}</span>
+          </div>
+        ) : (
+          <div className="card-chance">
+            <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{yes}%</strong>
+            <span>Yes probability{card.change24hBp !== 0 && <> <Change bp={card.change24hBp} when="today" /></>}</span>
+          </div>
+        )}
+        <Sparkline points={card.spark} label={`${card.startupName}: chance of Yes over three months`} caption="3M" />
+      </div>
+      {card.tradingOpen ? <PriceButtons id={card.id} yesPrice={card.yesPrice} />
+        : !resolved && <p className="card-status">{card.paused ? "Trading paused" : statusLine(card)}</p>}
       <p className="card-when">
-        {card.tradingOpen
-          ? <><span>{closesAt(card)}</span><span className="card-left">{timeLeft(new Date(card.deadlineAt), now)}</span></>
-          : <span className="card-status">{statusLine(card)}</span>}
+        <span>{activityLine(card)}</span>
+        <span className="card-left" title={card.tradingOpen ? timeLeft(new Date(card.deadlineAt), now) : undefined}>{closeDate(card)}</span>
       </p>
-      {card.tradingOpen && <PriceButtons id={card.id} yesPrice={card.yesPrice} />}
     </article>
   );
 }
@@ -148,10 +185,10 @@ export function MarketCard({ card, now, flash = null }: { card: CardData; now: D
 export function ClosingRow({ card, now, flash = null }: { card: CardData; now: Date; flash?: "up" | "down" | null }) {
   return (
     <li>
-      <Link className="closing-row" href={`/markets/${card.id}`} prefetch={false}>
-        <VenueMark name={card.venueName} size={32} />
+      <Link className="closing-row" href={`/markets/${card.id}`}>
+        <span className="startup-mark closing-mark" style={{ "--mark-hue": card.hue } as React.CSSProperties} aria-hidden="true">{initials(card.startupName)}</span>
         <span className="closing-text">
-          <span className="closing-title">{card.question}</span>
+          <span className="closing-title">{cardTitle(card)}</span>
           <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}{card.isSample && <> <SampleTag /></>}</span>
         </span>
         <span className="closing-value">

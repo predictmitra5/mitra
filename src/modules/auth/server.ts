@@ -6,6 +6,7 @@ import { authConfig } from "./config";
 import { eligibleIdentity } from "./policy";
 import { getDb } from "@/db/client";
 import { isBanned } from "@/modules/account/standing";
+import { PREVIEW_COOKIE, previewIdentity } from "./preview-identity";
 
 export async function createAuthClient(readOnly = false) {
   const { url, key } = authConfig();
@@ -24,6 +25,11 @@ export async function createAuthClient(readOnly = false) {
 }
 
 export const currentIdentity = cache(async () => {
+  // Local previews only (preview-identity.ts); always undefined outside `next dev`.
+  if (process.env.NODE_ENV === "development") {
+    const preview = previewIdentity((await cookies()).get(PREVIEW_COOKIE)?.value);
+    if (preview !== undefined) return preview;
+  }
   const client = await createAuthClient(true);
   const { data, error } = await client.auth.getUser();
   const identity = error ? null : eligibleIdentity(data.user);

@@ -1,6 +1,7 @@
 import "server-only";
 import { createAuthAdminClient } from "@/modules/auth/admin";
 import { ORIGINALS_BUCKET } from "@/modules/evidence/storage";
+import { MEDIA_BUCKET, MEDIA_STAGING_BUCKET } from "@/modules/startups/media-buckets";
 import { PHOTO_BUCKET, PHOTO_UPLOAD_BUCKET } from "./photos";
 import type { WithdrawalObjects, WithdrawalStorage } from "./withdrawal";
 
@@ -20,6 +21,9 @@ export const withdrawalStorage: WithdrawalStorage = {
 
     await removeExact(ORIGINALS_BUCKET, objects.uploadPaths.filter((item) => item.kind === "evidence").map((item) => item.path));
     await removeExact(PHOTO_UPLOAD_BUCKET, objects.uploadPaths.filter((item) => item.kind === "photo").map((item) => item.path));
+    // Founder uploads still waiting (2026-10-19).
+    await removeExact(MEDIA_STAGING_BUCKET, objects.uploadPaths.filter((item) => item.kind === "media_image").map((item) => item.path));
+    await removeExact(MEDIA_BUCKET, objects.uploadPaths.filter((item) => item.kind === "media_video").map((item) => item.path));
 
     // Originals normally leave the staging bucket immediately, but remove any
     // interrupted upload that is still under this user's private prefix. This

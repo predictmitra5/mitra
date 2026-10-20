@@ -1,6 +1,10 @@
 # Product
 
+> **2026-10-19: pivot to founder videos and startup markets.** Mitra is a video-first place to discover early founders and their startups, with Yes/No markets on measurable startup milestones traded with Trade Coins. A viewer watches a founder's video, learns about the startup, reads its market's price history, takes a position and follows the founder. Three systems stay separate: discovery (the personalised feed), information (profiles, videos, updates, verification) and prediction (markets). What follows about events and goals describes earlier versions. See DECISIONS.md, 2026-10-19, and MARKETS.md, Startup markets.
+
 > **2026-10-12: current implementation direction.** Mitra is a campus event-market prototype. New accounts and retained owner accounts start with zero Gold Trade Coins. The app has separate Silver Coin balances and badge offers, but purchases fail closed until a payment provider is connected; no money is accepted. Owners can configure location-checked campus QR campaigns for free Gold awards. Signed-out visitors can choose OSU or UIUC to browse; they cannot trade. These mechanics do not establish legal compliance or a safe harbor. See DECISIONS.md and MARKETS.md.
+
+> **2026-10-08: pivot to campus event markets.** Markets are now about what happens at venues and events on a campus, launching at Ohio State, not about people's goals. Students suggest markets; the owner publishes them with exact terms and a named source. What follows about goals describes the product before the pivot. See DECISIONS.md, 2026-10-08, and MARKETS.md, Event markets.
 
 Status: participation rules, accounts, economy, market lifecycle and goal templates are confirmed; verification, discovery and the final MVP screens remain open.
 

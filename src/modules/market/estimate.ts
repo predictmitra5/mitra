@@ -1,4 +1,4 @@
-import { price, sellProceeds, sharesForSpend, stateAtProbability, type Side } from "./lmsr";
+import { buyCost, price, sellProceeds, sharesForSpend, stateAtProbability, type Side } from "./lmsr";
 
 /*
  * The trade panel's estimate (decided 2026-09-24: "To win" and quick amounts).
@@ -45,6 +45,20 @@ export function estimateSell(yesPrice: number, liquidity: number, side: Side, sh
     const proceeds = sellProceeds(lifted, side, shares);
     const after = side === "YES" ? { ...lifted, yesShares: lifted.yesShares - shares } : { ...lifted, noShares: lifted.noShares - shares };
     return { proceeds, averagePrice: proceeds / shares, priceAfter: price(after, side) };
+  } catch {
+    return null;
+  }
+}
+
+/** Buying exactly `shares` contracts of `side` (2026-10-19): what it costs and where the price ends. */
+export function estimateBuyShares(yesPrice: number, liquidity: number, side: Side, shares: number): BuyEstimate & { cost: number } | null {
+  const state = stateAt(yesPrice, liquidity);
+  if (!state || !(shares > 0) || !Number.isFinite(shares)) return null;
+  try {
+    const cost = buyCost(state, side, shares);
+    if (!(cost > 0) || !Number.isFinite(cost)) return null;
+    const after = side === "YES" ? { ...state, yesShares: state.yesShares + shares } : { ...state, noShares: state.noShares + shares };
+    return { shares, cost, averagePrice: cost / shares, toWin: shares, priceAfter: price(after, side) };
   } catch {
     return null;
   }

@@ -5,7 +5,7 @@ import { isUuid } from "./input";
 import { EMPTY_POSITION } from "./position";
 import { isInactive } from "@/modules/account/standing";
 
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory, venues, resolutionSources } = schema;
+const { profiles, markets, positions, wallets, ledgerEntries, adminActions, contests, priceHistory, venues, resolutionSources, startups } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Market = typeof markets.$inferSelect;
 type Clock = () => Date;
@@ -96,8 +96,12 @@ async function lockMarket<Q extends PgQueryResultHKT>(database: Database<Q>, mar
  * named source once the event window ends. Source failure is handled by voiding,
  * not by inventing an outcome. A retired goal market keeps its proof period.
  */
-export function rulingOpensAt(market: Pick<Market, "venueId" | "windowEndAt" | "evidenceDeadlineAt">): Date {
+export function rulingOpensAt(market: Pick<Market, "venueId" | "windowEndAt" | "evidenceDeadlineAt" | "startupId" | "tradingClosedAt" | "deadlineAt">): Date {
   if (market.venueId && market.windowEndAt) return market.windowEndAt;
+  // A startup market (2026-10-19) can be ruled from its source once trading has
+  // closed: at the deadline, or earlier when the owner closed it because the
+  // outcome was already public.
+  if (market.startupId) return market.tradingClosedAt ?? market.deadlineAt;
   return market.evidenceDeadlineAt;
 }
 
@@ -266,9 +270,10 @@ export async function advanceDueMarkets<Q extends PgQueryResultHKT>(database: Da
 export async function listLifecycleMarkets<Q extends PgQueryResultHKT>(database: Database<Q>, actorId: string) {
   await requireLifecycleOwner(database, actorId);
   await advanceDueMarkets(database);
-  const rows = await database.select({ market: markets, venueName: venues.name, sourceName: resolutionSources.name, sourceUrl: resolutionSources.url })
+  const rows = await database.select({ market: markets, venueName: venues.name, startupName: startups.name, sourceName: resolutionSources.name, sourceUrl: resolutionSources.url })
     .from(markets)
     .leftJoin(venues, eq(venues.id, markets.venueId))
+    .leftJoin(startups, eq(startups.id, markets.startupId))
     .leftJoin(resolutionSources, eq(resolutionSources.id, markets.resolutionSourceId))
     .where(and(isNotNull(markets.approvedAt), inArray(markets.status, ["open", "closed", "ruled"])))
     .orderBy(asc(markets.deadlineAt));

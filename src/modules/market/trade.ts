@@ -1,7 +1,7 @@
 import { tradeBlockReason, type MarketParticipants, type TradeBlockReason } from "./eligibility";
 import type { Side } from "./lmsr";
 import { applyBuy, applySell, remainingAllowance, sharesHeld, type Position } from "./position";
-import { quoteBuy, quoteSell, type BuyQuote, type MarketMakerState, type SellQuote } from "./quote";
+import { quoteBuy, quoteBuyShares, quoteSell, type BuyQuote, type MarketMakerState, type SellQuote } from "./quote";
 import { assertNonNegativeMicro, assertPositiveMicro } from "./units";
 
 /*
@@ -49,6 +49,24 @@ export function planBuy(context: TradeContext & { spendMicro: number; perMarketL
   }
 
   const quote = quoteBuy(context.marketMaker, context.side, context.spendMicro);
+  return {
+    ok: true,
+    quote,
+    positionAfter: applyBuy(context.position, context.side, quote.sharesMicro, quote.costMicro),
+    balanceAfterMicro: context.balanceMicro - quote.costMicro,
+  };
+}
+
+/** Buying an exact number of contracts (2026-10-19). The same limits apply to its cost. */
+export function planBuyShares(context: TradeContext & { sharesMicro: number; perMarketLimitMicro: number }): BuyPlan {
+  assertPositiveMicro(context.sharesMicro, "sharesMicro");
+  assertNonNegativeMicro(context.balanceMicro, "balanceMicro");
+  const blocked = tradeBlockReason(context.traderUserId, context.participants);
+  if (blocked) return { ok: false, reason: blocked };
+  const quote = quoteBuyShares(context.marketMaker, context.side, context.sharesMicro);
+  const allowance = remainingAllowance(context.position, context.perMarketLimitMicro);
+  if (quote.costMicro > allowance) return { ok: false, reason: "OVER_MARKET_LIMIT", remainingAllowanceMicro: allowance };
+  if (quote.costMicro > context.balanceMicro) return { ok: false, reason: "INSUFFICIENT_BALANCE", balanceMicro: context.balanceMicro };
   return {
     ok: true,
     quote,

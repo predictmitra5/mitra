@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
@@ -8,7 +8,7 @@ import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { advanceDueMarkets } from "@/modules/market/lifecycle";
 import { isInactive } from "@/modules/account/standing";
 
-const { profiles, positions, markets, venues, trades } = schema;
+const { profiles, positions, markets, venues, trades, startups, ledgerEntries } = schema;
 export const POSITIONS_PAGE_SIZE = 20;
 
 export class PositionsError extends Error {
@@ -20,9 +20,15 @@ export class PositionsError extends Error {
 export interface HeldMarket {
   marketId: string;
   question: string;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
   category: string | null;
-  /** The venue, for an event market; null on a retired goal market. */
+  /** The venue, for an older event market; null otherwise. */
   venueName: string | null;
+  /** The startup, for a startup market (2026-10-19). */
+  startupName: string | null;
+  startupSlug: string | null;
+  industry: string | null;
   isSample: boolean;
   /**
    * The market's public chance of YES, the same number its page shows: the
@@ -159,14 +165,15 @@ export async function readPositions<Q extends PgQueryResultHKT>(
       // final remaining page instead of a misleading empty portfolio.
       const page = Math.min(requestedPage, pages);
       const rows = await tx.select({
-        marketId: markets.id, question: markets.question, category: markets.category, venueName: venues.name, isSample: markets.isSample,
+        marketId: markets.id, question: markets.question, shortQuestion: markets.shortQuestion, category: markets.category, venueName: venues.name, isSample: markets.isSample,
+        startupName: startups.name, startupSlug: startups.slug, industry: startups.industry,
         liquidityMicro: markets.liquidityMicro, marketYesMicro: markets.yesSharesMicro, marketNoMicro: markets.noSharesMicro,
         status: markets.status, deadlineAt: markets.deadlineAt, evidenceDeadlineAt: markets.evidenceDeadlineAt,
         contestEndsAt: markets.contestEndsAt, ruledOutcome: markets.ruledOutcome, tradingClosedAt: markets.tradingClosedAt,
         yesSharesMicro: positions.yesSharesMicro, noSharesMicro: positions.noSharesMicro,
         yesCostBasisMicro: positions.yesCostBasisMicro, noCostBasisMicro: positions.noCostBasisMicro,
       }).from(positions).innerJoin(markets, eq(markets.id, positions.marketId))
-        .leftJoin(venues, eq(venues.id, markets.venueId)).where(visible)
+        .leftJoin(venues, eq(venues.id, markets.venueId)).leftJoin(startups, eq(startups.id, markets.startupId)).where(visible)
         .orderBy(asc(markets.deadlineAt), asc(markets.id)).limit(POSITIONS_PAGE_SIZE).offset((page - 1) * POSITIONS_PAGE_SIZE);
       // Totals cover every holding, not just this page, for the account summary.
       const all = await tx.select({
@@ -199,7 +206,9 @@ export interface TradeRecord {
   id: string;
   marketId: string;
   question: string;
+  shortQuestion: string | null;
   venueName: string | null;
+  startupName: string | null;
   action: "buy" | "sell";
   side: "yes" | "no";
   sharesMicro: number;
@@ -222,9 +231,59 @@ export async function readTradeHistory<Q extends PgQueryResultHKT>(
 ): Promise<TradeRecord[]> {
   if (!isUuid(userId)) return [];
   return database.select({
-    id: trades.id, marketId: trades.marketId, question: markets.question, venueName: venues.name,
+    id: trades.id, marketId: trades.marketId, question: markets.question, shortQuestion: markets.shortQuestion, venueName: venues.name, startupName: startups.name,
     action: trades.action, side: trades.side, sharesMicro: trades.sharesMicro, amountMicro: trades.amountMicro,
     yesPriceAfterBp: trades.yesPriceAfterBp, createdAt: trades.createdAt,
-  }).from(trades).innerJoin(markets, eq(markets.id, trades.marketId)).leftJoin(venues, eq(venues.id, markets.venueId))
+  }).from(trades).innerJoin(markets, eq(markets.id, trades.marketId)).leftJoin(venues, eq(venues.id, markets.venueId)).leftJoin(startups, eq(startups.id, markets.startupId))
     .where(eq(trades.userId, userId)).orderBy(desc(trades.createdAt)).limit(Math.min(Math.max(1, limit), 100));
+}
+
+export interface ClosedPosition {
+  marketId: string;
+  question: string;
+  shortQuestion: string | null;
+  startupName: string | null;
+  status: string;
+  ruledOutcome: "yes" | "no" | null;
+  /** Trade Coins paid in over the market's life (buys). */
+  paidMicro: number;
+  /** Trade Coins received back: sales, the payout and any refund. */
+  receivedMicro: number;
+  /** Received minus paid: the realized profit or loss. */
+  realizedMicro: number;
+  lastAt: Date;
+}
+
+/**
+ * Markets the member traded and no longer holds, or that are settled or void
+ * (2026-10-19, the portfolio's closed positions), with the realized profit or
+ * loss from the ledger. Private: userId must be the freshly verified identity.
+ */
+export async function readClosedPositions<Q extends PgQueryResultHKT>(
+  database: PgDatabase<Q, typeof schema>, userId: string, limit = 30,
+): Promise<ClosedPosition[]> {
+  if (!isUuid(userId)) return [];
+  const rows = await database.select({
+    marketId: markets.id, question: markets.question, shortQuestion: markets.shortQuestion, startupName: startups.name,
+    status: markets.status, ruledOutcome: markets.ruledOutcome,
+    paid: sql<string>`coalesce(sum(case when ${ledgerEntries.amountMicro} < 0 then -${ledgerEntries.amountMicro} else 0 end), 0)`,
+    received: sql<string>`coalesce(sum(case when ${ledgerEntries.amountMicro} > 0 then ${ledgerEntries.amountMicro} else 0 end), 0)`,
+    lastAt: sql<string>`max(${ledgerEntries.createdAt})`,
+    heldShares: sql<string>`coalesce(max(${positions.yesSharesMicro} + ${positions.noSharesMicro}), 0)`,
+  }).from(ledgerEntries)
+    .innerJoin(markets, eq(markets.id, ledgerEntries.marketId))
+    .leftJoin(startups, eq(startups.id, markets.startupId))
+    .leftJoin(positions, and(eq(positions.marketId, markets.id), eq(positions.userId, userId)))
+    .where(and(eq(ledgerEntries.userId, userId), isNotNull(ledgerEntries.marketId)))
+    .groupBy(markets.id, startups.name)
+    .orderBy(desc(sql`max(${ledgerEntries.createdAt})`))
+    .limit(200);
+  return rows
+    .filter((row) => Number(row.heldShares) === 0 || row.status === "settled" || row.status === "cancelled")
+    .slice(0, Math.min(100, Math.max(1, limit)))
+    .map((row) => {
+      const paidMicro = Number(row.paid), receivedMicro = Number(row.received);
+      return { marketId: row.marketId, question: row.question, shortQuestion: row.shortQuestion, startupName: row.startupName, status: row.status,
+        ruledOutcome: row.ruledOutcome, paidMicro, receivedMicro, realizedMicro: receivedMicro - paidMicro, lastAt: new Date(row.lastAt) };
+    });
 }

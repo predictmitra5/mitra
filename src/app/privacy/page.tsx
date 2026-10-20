@@ -4,32 +4,32 @@ import { InfoPage } from "@/app/components/info-page";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "A plain-language privacy summary for the Mitra campus pilot.",
+  description: "A plain-language privacy summary for Mitra.",
 };
 
 export default function PrivacyPage() {
   return (
-    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 12, 2026" title="Markets are public. Your account is not." intro="This is a plain-language summary of what Mitra collects, what anyone visiting can see, and what stays private.">
+    <InfoPage eyebrow="PRIVACY · UPDATED OCTOBER 19, 2026" title="Founders are public. Your account is not." intro="This is a plain-language summary of what Mitra collects, what anyone visiting can see, and what stays private.">
       <div className="info-grid">
         <section className="info-card">
           <span className="info-number">01</span>
           <h2>What anyone can see</h2>
-          <p>Anyone who visits Mitra, with or without an account, can choose a campus and see its published markets: venues, terms, sources, prices, aggregate Trade Coin volume, rulings and outcomes. Your display name, handle and profile photo make up your profile; markets and trades do not show who traded. Market pages ask search engines not to list them.</p>
+          <p>Approved founder and startup profiles, their videos and updates, and markets: their terms, sources, prices, Trade Coins traded, how many people traded, rulings and outcomes. Comments show the commenter&rsquo;s name, handle and photo. Like, save and follower counts are public; who liked, saved or followed is not. Markets and trades never show who traded.</p>
         </section>
         <section className="info-card">
           <span className="info-number">02</span>
           <h2>What stays private</h2>
-          <p>Your sign-in details, wallet, individual positions, trade history, market suggestions, objections and moderation notes are not shown to the community. Suggestions and objections are visible only to you and the Mitra owner.</p>
+          <p>Your sign-in details, Trade Coin and Coin balances, positions, trade history, saved videos, follows, market suggestions, reports, objections and moderation notes. Profiles, startups and videos a founder submits stay private to them and the owner until approved.</p>
         </section>
         <section className="info-card">
           <span className="info-number">03</span>
-          <h2>How markets are settled</h2>
-          <p>Markets are settled by the Mitra owner from each market’s named source, such as a venue’s own count. Mitra does not collect personal information about venue customers. Earlier goal markets that asked members for proof documents have ended.</p>
+          <h2>What the feed learns from</h2>
+          <p>To pick videos for you, Mitra records what you are shown, how long and how far you watch, skips, shares, likes, saves, follows, comments and &ldquo;not interested&rdquo;, and keeps a running interest score per industry. If you are signed in this is stored with your account; if not, with a random identifier in a first-party cookie (mitra_viewer) that holds nothing personal. Prices and trading are never used to rank videos.</p>
         </section>
         <section className="info-card">
           <span className="info-number">04</span>
-          <h2>Basic activity measurement</h2>
-          <p>Mitra records when a market is shown or opened, whether or not the visitor has an account, and records completed trades for accounting. The current feed events do not include a viewer identity, but repeated refreshes can create additional event counts.</p>
+          <h2>Markets and measurement</h2>
+          <p>Markets are settled by the Mitra owner from each market&rsquo;s named source. Mitra also counts when a market is shown to or opened by a signed-in member, as capped hourly totals with no viewer identity kept for 24 hours, to order the market directory, and records completed trades for accounting.</p>
         </section>
         <section className="info-card">
           <span className="info-number">05</span>
@@ -39,18 +39,18 @@ export default function PrivacyPage() {
         <section className="info-card">
           <span className="info-number">06</span>
           <h2>Storage and access</h2>
-          <p>Authentication, database records, and private file storage are provided through Supabase. Application hosting is provided through Vercel. Access is limited by the app’s account and owner controls, but no online service can promise absolute security.</p>
+          <p>Authentication, the database and file storage are provided through Supabase; hosting through Vercel. Images founders upload are re-encoded so no location or camera data stays in them. Access is limited by the app&rsquo;s account and owner controls, but no online service can promise absolute security.</p>
         </section>
         <section className="info-card">
           <span className="info-number">07</span>
-          <h2>Leaving the pilot</h2>
+          <h2>Leaving</h2>
           <p>You can permanently delete your account from the account page. Mitra removes your login, profile details, photo, any earlier proof files, and suggestions that were never published. Settled trades and ledger entries remain as anonymized accounting records.</p>
         </section>
       </div>
       <aside className="info-callout info-callout-wide">
         <div>
           <strong>Independent by design.</strong>
-          <p>Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
+          <p>Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university or startup on it. Trade Coins and Coins have no cash value.</p>
         </div>
         <Link href="/faq">Read the FAQ <span aria-hidden="true">↗︎</span></Link>
       </aside>

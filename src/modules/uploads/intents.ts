@@ -6,15 +6,18 @@ const { uploadIntents } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export const UPLOAD_INTENT_TTL_HOURS = 48;
-const MAX_PENDING_PHOTOS = 2;
-const MAX_PENDING_EVIDENCE_PER_USER = 5;
 const MAX_PENDING_EVIDENCE_PER_MARKET = 10;
+
+export type UploadIntentKind = (typeof schema.uploadIntentKind.enumValues)[number];
+
+/** Pending (unfinished, unexpired) grants one person may hold of each kind. Founder media since 2026-10-19. */
+const MAX_PENDING: Record<UploadIntentKind, number> = { photo: 2, evidence: 5, media_image: 6, media_video: 2 };
 
 export type UploadIntent = {
   id: string;
   userId: string;
   marketId: string | null;
-  kind: "photo" | "evidence";
+  kind: UploadIntentKind;
   objectPath: string;
   createdAt: Date;
   expiresAt: Date;
@@ -33,7 +36,7 @@ export async function reserveUploadIntent<Q extends PgQueryResultHKT>(
     const pending = and(gt(uploadIntents.expiresAt, now), isNull(uploadIntents.cleaningAt));
     const userCount = await db.select({ total: count() }).from(uploadIntents)
       .where(and(eq(uploadIntents.userId, input.userId), eq(uploadIntents.kind, input.kind), pending));
-    const limit = input.kind === "photo" ? MAX_PENDING_PHOTOS : MAX_PENDING_EVIDENCE_PER_USER;
+    const limit = MAX_PENDING[input.kind];
     if (Number(userCount[0]?.total ?? 0) >= limit) return false;
 
     if (input.kind === "evidence" && input.marketId) {

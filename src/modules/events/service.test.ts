@@ -124,6 +124,16 @@ describe("publishing a market", () => {
     const [audit] = await db.select().from(adminActions).where(eq(adminActions.marketId, market.id));
     expect(audit).toMatchObject({ kind: "approve", actorUserId: owner });
     expect(audit.details).toMatchObject({ venue: "Buckeye Donuts", sourceOperational: false, isSample: false, proposalId: null });
+    expect(market.shortQuestion).toBeNull();
+  });
+
+  it("keeps a short title for the cards beside the full question, and treats a blank one as none", async () => {
+    const titled = await publishMarket(db, owner, terms({ shortQuestion: "  Will Buckeye Donuts sell   1,200 donuts?  " }), now);
+    expect(titled.shortQuestion).toBe("Will Buckeye Donuts sell 1,200 donuts?");
+    expect((await readPublicMarket(db, titled.id))?.shortQuestion).toBe("Will Buckeye Donuts sell 1,200 donuts?");
+    const [audit] = await db.select().from(adminActions).where(eq(adminActions.marketId, titled.id));
+    expect(audit.details).toMatchObject({ shortQuestion: "Will Buckeye Donuts sell 1,200 donuts?" });
+    expect((await publishMarket(db, owner, terms({ shortQuestion: "   " }), now)).shortQuestion).toBeNull();
   });
 
   it("ignores a forged opening-odds field", async () => {
@@ -164,6 +174,8 @@ describe("publishing a market", () => {
       { windowStartAt: null },
       { timeZone: "Mars/Olympus" },
       { source: { name: "Feed", method: "A count.", url: "javascript:alert(1)", operational: true } },
+      { shortQuestion: "Donuts?" },
+      { shortQuestion: "Will Buckeye Donuts sell more than one thousand two hundred donuts overnight this Friday?" },
     ];
     for (const over of bad) await expectCode(publishMarket(db, owner, terms(over), now), "INVALID_INPUT");
     await expectCode(publishMarket(db, student, terms(), now), "NOT_OWNER");
@@ -186,35 +198,36 @@ describe("publishing a market", () => {
 describe("the three Ohio State samples", () => {
   it("publish through the real service as labelled, hypothetical markets with placeholder sources", async () => {
     const samples = osuSampleMarkets(now);
-    expect(samples.map((sample) => sample.slug)).toEqual(["midway-on-high", "buckeye-donuts", "gateway-film-center"]);
+    expect(samples.map((sample) => sample.slug)).toEqual(["midway-on-high", "buckeye-donuts", "smith-steeb-hall"]);
     for (const sample of samples) {
       const { slug, ...input } = sample;
       const market = await publishMarket(db, owner, input, now);
       const published = await readPublicMarket(db, market.id);
-      expect(published).toMatchObject({ isSample: true, venueSlug: slug, sourceOperational: false });
+      expect(published).toMatchObject({ isSample: true, venueSlug: slug, sourceOperational: false, shortQuestion: input.shortQuestion });
+      expect(published?.shortQuestion?.length).toBeLessThan(published!.question.length);
       expect(published?.sourceName).toContain("placeholder");
       expect(published?.resolutionCriteria).toContain("hypothetical");
-      expect(published?.resolutionCriteria).toContain("Don’t buy");
+      expect(published?.resolutionCriteria).toMatch(/Don’t (buy|invite)/);
       // New markets have only one price point before any trades: neutral 50/50.
       const series = await readPriceSeries(db, market.id, { at: now, yesBp: market.openingProbabilityBp! });
       expect(series.every((point) => point.yesBp === 5000)).toBe(true);
       expect(series.every((point) => point.at <= now)).toBe(true);
     }
-    expect((await listVenues(db, "osu")).map((venue) => venue.name)).toEqual(["Buckeye Donuts", "Gateway Film Center", "Midway on High"]);
+    expect((await listVenues(db, "osu")).map((venue) => venue.name)).toEqual(["Buckeye Donuts", "Midway on High", "Smith-Steeb Hall"]);
   });
 
   it("are scheduled for a Friday at least six days out, trading until each window opens", () => {
     for (const start of ["2026-10-08T16:00:00Z", "2026-10-09T16:00:00Z", "2026-10-10T16:00:00Z", "2026-10-15T03:00:00Z"]) {
       const at = new Date(start);
-      const [midway, donuts, film] = osuSampleMarkets(at);
+      const [midway, donuts, brutus] = osuSampleMarkets(at);
       const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(midway.windowStartAt!);
       expect(weekday).toBe("Fri");
       expect(midway.windowStartAt!.getTime() - at.getTime()).toBeGreaterThanOrEqual(5 * 24 * 3_600_000);
-      for (const sample of [midway, donuts, film]) {
+      for (const sample of [midway, donuts, brutus]) {
         expect(sample.tradingCutoffAt).toEqual(sample.windowStartAt);
         expect(sample.resultsDueAt!.getTime() - sample.windowEndAt!.getTime()).toBe(3 * 24 * 3_600_000);
       }
-      expect(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric" }).format(film.windowStartAt!)).toBe("Sat 7 PM");
+      expect(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric" }).format(brutus.windowStartAt!)).toBe("Sat 8 AM");
     }
   });
 });

@@ -37,7 +37,7 @@ describe("trade action authorization boundary", () => {
   });
   it("uses server identity and parsed amounts, ignoring forged balance, price and user fields", async () => {
     await previewOrder(form({ userId: "victim", balanceMicro: "999999999", price: "0.01" }));
-    expect(mocks.preview).toHaveBeenCalledExactlyOnceWith("server-database", "verified-user", { marketId, side: "YES", action: "buy", amountMicro: 10_000_000 });
+    expect(mocks.preview).toHaveBeenCalledExactlyOnceWith("server-database", "verified-user", { marketId, side: "YES", action: "buy", amountMicro: 10_000_000, unit: "credits" });
     await confirmOrder(confirmation);
     expect(mocks.execute).toHaveBeenCalledExactlyOnceWith("server-database", "verified-user", confirmation);
     expect(mocks.identity).toHaveBeenCalledTimes(2);
@@ -58,8 +58,8 @@ describe("trade action authorization boundary", () => {
     expect(JSON.stringify(result)).not.toContain("private database");
     expect(mocks.revalidate).not.toHaveBeenCalled();
   });
-  it("refreshes the account, market and positions after a successful trade", async () => {
+  it("refreshes the account, market and portfolio after a successful trade", async () => {
     expect(await confirmOrder(confirmation)).toMatchObject({ ok: true });
-    expect(mocks.revalidate.mock.calls).toEqual([[`/markets/${marketId}`], ["/account"], ["/positions"]]);
+    expect(mocks.revalidate.mock.calls).toEqual([[`/markets/${marketId}`], ["/account"], ["/portfolio"]]);
   });
 });

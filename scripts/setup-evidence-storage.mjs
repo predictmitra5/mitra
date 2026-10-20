@@ -8,12 +8,21 @@
 //                                only through the app's /photos route
 //   photo-uploads       private  originals uploaded from the browser (2026-09-24),
 //                                kept only until checked and re-encoded
+//   media-uploads       private  founder photos, logos and thumbnails as uploaded
+//                                (2026-10-19), kept only until re-encoded
+//   startup-media       public   the re-encoded images and the founder videos
+//                                (2026-10-19); the app shows them only once the
+//                                owner approves, under unguessable paths
 //
-// There is deliberately no public bucket. Since the revision of 2026-09-19 no
-// uploaded document is ever published: what goes public is a statement the
-// owner wrote after reading it. An earlier version of this script created an
-// "evidence-public" bucket; if your project still has one it is unused and can
-// be removed in the Supabase dashboard.
+// startup-media is the only public bucket, and it holds only what founders
+// chose to publish about their startup. No uploaded document is ever published:
+// since the revision of 2026-09-19 what goes public about proof is a statement
+// the owner wrote after reading it. An earlier version of this script created
+// an "evidence-public" bucket; if your project still has one it is unused and
+// can be removed in the Supabase dashboard.
+//
+// Founder uploads stay off until this has run and STARTUP_MEDIA_UPLOADS=on is
+// set in the environment.
 //
 // Safe to run repeatedly. It never deletes a bucket or anything inside one, and
 // it refuses to continue if the bucket has the wrong privacy.
@@ -50,6 +59,23 @@ const wanted = [
     allowedMimeTypes: IMAGE_TYPES,
     fileSizeLimit: 8 * 1024 * 1024,
     why: "holds originals with their metadata, including location, until the app strips it",
+  },
+  {
+    id: "media-uploads",
+    public: false,
+    // Founder photos, logos and thumbnails as the browser sent them; the app
+    // re-encodes each to WebP in startup-media and deletes the original.
+    allowedMimeTypes: IMAGE_TYPES,
+    fileSizeLimit: MAX_BYTES,
+    why: "holds originals with their metadata, including location, until the app strips it",
+  },
+  {
+    id: "startup-media",
+    public: true,
+    // Only the WebP images the app wrote itself, and founder videos.
+    allowedMimeTypes: ["image/webp", "video/mp4", "video/webm"],
+    fileSizeLimit: 50 * 1024 * 1024,
+    why: "founder videos and startup images are shown to visitors who are not signed in",
   },
 ];
 

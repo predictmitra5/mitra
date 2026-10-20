@@ -9,7 +9,6 @@ import { migrate } from "drizzle-orm/pglite/migrator";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
-import { readFeed } from "@/modules/discovery/feed";
 import { RETIRE_REASON, runEventPivot } from "./go-live";
 
 /*
@@ -68,6 +67,14 @@ afterAll(async () => {
   rmSync(folder, { recursive: true, force: true });
 });
 
+
+/** The open sample markets' venues, read directly: the feed shows startup markets since 2026-10-19. */
+async function openSamples() {
+  return db.select({ venueSlug: schema.venues.slug, isSample: schema.markets.isSample, status: schema.markets.status, shortQuestion: schema.markets.shortQuestion,
+    question: schema.markets.question, category: schema.markets.category })
+    .from(schema.markets).innerJoin(schema.venues, eq(schema.venues.id, schema.markets.venueId)).where(eq(schema.markets.status, "open"));
+}
+
 describe("going live with event markets", () => {
   it("reports without writing anything, even before 0013 exists", async () => {
     const result = await run(false);
@@ -109,9 +116,9 @@ describe("going live with event markets", () => {
       const [wallet] = await db.select().from(schema.wallets).where(eq(schema.wallets.userId, user));
       expect(wallet.balanceMicro).toBe(1_000_000_000); // 980 left plus the 20 they paid.
     }
-    const feed = await readFeed(db, now, { campus: "osu" });
-    expect(feed.cards.map((card) => card.venueSlug).sort()).toEqual(["buckeye-donuts", "gateway-film-center", "midway-on-high"]);
-    expect(feed.cards.every((card) => card.isSample && card.tradingOpen)).toBe(true);
+    const open = await openSamples();
+    expect(open.map((card) => card.venueSlug).sort()).toEqual(["buckeye-donuts", "midway-on-high", "smith-steeb-hall"]);
+    expect(open.every((card) => card.isSample && card.status === "open")).toBe(true);
   });
 
   it("does nothing the second time", async () => {

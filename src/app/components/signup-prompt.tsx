@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { CAMPUSES } from "@/config/campus";
+import { NEEDS_ACCOUNT_EVENT } from "./feed/needs-account";
 
 /*
  * The sign-up pop-up for visitors without an account (decided 2026-10-05, like
@@ -48,9 +49,12 @@ export function SignupPrompt() {
     }
     // Capture, so the control's own handler never runs for a visitor.
     document.addEventListener("click", intercept, true);
+    // Likes, saves, follows and comments ask for it by name (2026-10-19).
+    window.addEventListener(NEEDS_ACCOUNT_EVENT, open);
     return () => {
       window.clearTimeout(timer);
       document.removeEventListener("click", intercept, true);
+      window.removeEventListener(NEEDS_ACCOUNT_EVENT, open);
     };
   }, []);
 
@@ -73,14 +77,14 @@ export function SignupPrompt() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
         <h2 id="signup-prompt-title">Create your account</h2>
-        <p className="signup-prompt-sub">Join your campus community and follow what happens around you.</p>
+        <p className="signup-prompt-sub">Follow founders, save videos and predict where their startups go. Sign up in a minute.</p>
         {Object.values(CAMPUSES).map((campus) => (
           <Link key={campus.key} className={`school-button school-${campus.key}`} href={`/sign-up?school=${campus.key}`} prefetch={false}>
             <span className="school-dot" aria-hidden="true" />Continue with {campus.communityName} email
           </Link>
         ))}
         <p className="signup-prompt-login">Already have an account? <Link href="/sign-in" prefetch={false}>Log in</Link></p>
-        <p className="signup-prompt-fine">See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
+        <p className="signup-prompt-fine">Trade Coins have no cash value. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
       </div>
     </dialog>
   );

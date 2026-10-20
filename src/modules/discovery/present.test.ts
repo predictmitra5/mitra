@@ -52,11 +52,11 @@ describe("initials", () => {
 });
 
 describe("points", () => {
-  it("reads volume as whole points traded", () => {
+  it("reads volume as whole Trade Coins traded", () => {
     expect(volumeLabel(0)).toBe("No trades yet");
-    expect(volumeLabel(400_000)).toBe("<1 pt traded");
-    expect(volumeLabel(45_000_000)).toBe("45 pts traded");
-    expect(volumeLabel(4_138_400_000)).toBe("4,138 pts traded");
+    expect(volumeLabel(400_000)).toBe("<1 Trade Coin traded");
+    expect(volumeLabel(45_000_000)).toBe("45 Trade Coins traded");
+    expect(volumeLabel(4_138_400_000)).toBe("4,138 Trade Coins traded");
   });
 
   it("shows other amounts to one decimal", () => {

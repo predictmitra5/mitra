@@ -79,3 +79,38 @@ export async function insertGoalMarket(
   if (!draft) await database.insert(schema.priceHistory).values({ marketId: market.id, yesPriceBp: openingBp, recordedAt: now });
   return market;
 }
+
+let startupCount = 0;
+
+/** An approved startup with an approved primary founder (2026-10-19), inserted directly. */
+export async function insertStartup(database: Database, now: Date, options: { name?: string; industry?: (typeof schema.industry.enumValues)[number]; founderUserId?: string | null; createdBy?: string | null } = {}) {
+  startupCount += 1;
+  const name = options.name ?? `Test Startup ${startupCount}`;
+  const slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${startupCount}`;
+  const [founder] = await database.insert(schema.founders).values({
+    handle: `founder_${startupCount}_${Math.floor(Math.random() * 1e6)}`.slice(0, 24), name: `Founder ${startupCount}`, headline: "Building something people want",
+    bio: "A founder in a test.", userId: options.founderUserId ?? null, status: "approved", approvedAt: now, createdAt: now,
+  }).returning();
+  const [startup] = await database.insert(schema.startups).values({
+    slug, name, tagline: "A test product", headline: "Testing the future", description: "A startup that exists only in tests.",
+    industry: options.industry ?? "ai", stage: "Seed", productDetails: "It does test things.", productFeatures: ["check:One", "book:Two", "bot:Three"],
+    status: "approved", createdBy: options.createdBy ?? null, approvedAt: now, createdAt: now,
+  }).returning();
+  await database.insert(schema.startupFounders).values({ startupId: startup.id, founderId: founder.id, role: "Founder / CEO", isPrimary: true, createdAt: now });
+  return { startup, founder };
+}
+
+export type StartupMarketOptions = { startupId: string; question?: string; closesOn?: string; openingBp?: number; isDemo?: boolean; kind?: string };
+
+/** Opens a startup market as the owner at `now`, through the owner's own draft-and-open service. */
+export async function openStartupMarket(database: Database, ownerId: string, now: Date, options: StartupMarketOptions) {
+  const { saveMarketDraft, openMarket } = await import("@/modules/startups/admin");
+  const draft = await saveMarketDraft(database, ownerId, {
+    startupId: options.startupId, question: options.question ?? "Will this test startup reach 1,000 verified users by the close date?",
+    kind: options.kind ?? "adoption", yesCondition: "An independent audit shows at least 1,000 verified users by the close date.",
+    noCondition: "Fewer than 1,000, or it cannot be verified.", rules: "Users are distinct accounts active in the month. If the audit is unavailable, the market resolves No.",
+    sourceName: "Independent audit", sourceMethod: "A count of distinct active accounts.", closesOn: options.closesOn ?? "2027-12-31",
+    openingProbabilityBp: options.openingBp ?? 5000, isDemo: options.isDemo ?? false,
+  }, null, now);
+  return openMarket(database, ownerId, draft.id, now);
+}

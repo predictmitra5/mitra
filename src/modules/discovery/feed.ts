@@ -1,13 +1,14 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
+import { PINNED_FEATURED_MARKET_ID } from "@/config/featured";
 import { price } from "@/modules/market/lmsr";
 import { toLmsr } from "@/modules/market/quote";
 import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
-const { markets, venues, events, trades, feedEventBuckets, priceHistory } = schema;
+const { markets, startups, startupFounders, founders, trades, feedEventBuckets, priceHistory } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type MarketStatus = (typeof schema.marketStatus.enumValues)[number];
 
@@ -16,23 +17,36 @@ const MAX_CLICKS_PER_MARKET_HOUR = 3;
 const MAX_EXPOSURES_PER_MARKET_HOUR = 500;
 
 /**
- * The public feed, decided 2026-09-19 and moved to event markets on
- * 2026-10-08. Anyone may read this without an account, so the projection below
- * is the whole contract: it carries exactly what a market page already shows in
- * public, and nothing else. No account identifiers, no wallet or position data,
- * no owner notes, no objections, and no people.
+ * A market as cards, the ticker and the directory show it (2026-10-19: startup
+ * markets). Anyone may read this without an account, so the projection below
+ * is the whole contract: what a market page already shows in public, the
+ * startup and its primary founder, and nothing else. No account identifiers,
+ * wallet or position data, owner notes or objections.
  */
 export type FeedCard = {
   id: string;
   question: string;
-  category: string | null;
-  venueName: string | null;
-  venueSlug: string | null;
-  eventTitle: string | null;
-  /** When the measured window starts. */
-  windowStartAt: Date | null;
+  /** The card's few words (2026-10-09); null shows the full question. */
+  shortQuestion: string | null;
+  milestoneKind: string | null;
+  startupId: string;
+  startupName: string;
+  startupSlug: string;
+  startupTagline: string;
+  industry: string;
+  glyph: string;
+  hue: number;
+  logoUrl: string | null;
+  /** For the founder-and-startup thumbnail on the card. */
+  productFeatures: string[];
+  thumbnailUrl: string | null;
+  founderName: string | null;
+  founderHandle: string | null;
+  founderHue: number;
+  founderPortraitUrl: string | null;
+  founderRole: string | null;
   timeZone: string | null;
-  /** A hypothetical demonstration market (2026-10-08), labelled wherever it appears. */
+  /** Demonstration data (2026-10-19), labelled wherever it appears. */
   isSample: boolean;
   /** The trading cutoff. */
   deadlineAt: Date;
@@ -40,26 +54,27 @@ export type FeedCard = {
   ruledOutcome: "yes" | "no" | null;
   yesPrice: number;
   tradingOpen: boolean;
+  paused: boolean;
   reason: FeedReason;
-  /** When the market opened, for "2d ago". */
+  /** When the market opened. */
   approvedAt: Date;
-  /**
-   * Points traded on this market, all time. An aggregate, shown the way Kalshi
-   * shows volume. Trader counts are deliberately not exposed: in a small group
-   * "1 trader" can identify a person.
-   */
+  /** Trade Coins traded on this market, all time. */
   volumeMicro: number;
+  /** Distinct traders, all time. Shown on startup markets, as the brief asks. */
+  traders: number;
   /** YES price now minus 24 hours ago, in basis points. Opening price if younger. */
   change24hBp: number;
+  /** The last three months of the price, thinned, for the card's chart. */
+  spark: PricePoint[];
 };
 
 /** One point of a market's price history, for a chart. */
 export type PricePoint = { at: Date; yesBp: number };
 
 /**
- * The featured market carries its history, so the feed can draw its chart.
- * `moving` says it was chosen as the market moving most today; when nothing
- * moved, the leading traded market stands in and is not called a mover.
+ * The featured market carries its full history. `moving` says it was chosen as
+ * the market moving most today; when nothing moved, the leading traded market
+ * stands in and is not called a mover.
  */
 export type FeaturedMarket = FeedCard & { series: PricePoint[]; moving: boolean };
 
@@ -68,7 +83,7 @@ export type Feed = {
   cards: FeedCard[];
   /** Recently closed, resolved and void markets, latest cutoff first, for the status filter. */
   past: FeedCard[];
-  /** One market with its chart: the one moving most today. */
+  /** One market with its chart: the owner's pin while it is open, else the one moving most today. */
   featured: FeaturedMarket | null;
   /** Open markets whose trading cutoff is nearest, for the desktop side list. */
   closingSoon: FeedCard[];
@@ -81,31 +96,40 @@ const CLOSING_SOON_COUNT = 5;
 export const TICKER_COUNT = 20;
 /** A chart wider than this many points is visually identical; keep payloads small. */
 const MAX_SERIES_POINTS = 120;
+const SPARK_POINTS = 40;
+const SPARK_SPAN_MS = 92 * 24 * 3_600_000;
 
 const SIGNAL_WINDOW_HOURS = 24;
-/** An upper bound on one page of the feed, so a busy app cannot render forever. */
-const MAX_CARDS = 60;
+/** An upper bound on one page of the directory, so a busy app cannot render forever. */
+const MAX_CARDS = 80;
 const MAX_PAST = 40;
 
-/** Which markets a read covers: one campus's, or one venue's. */
-export type FeedScope = { campus: string } | { venueId: string };
+/** Which markets a read covers: every approved startup's, one startup's, or a list. */
+export type FeedScope = { all: true } | { startupId: string } | { ids: readonly string[] };
 
 const cardColumns = {
   id: markets.id,
-  venueId: markets.venueId,
+  startupId: markets.startupId,
   approvedAt: markets.approvedAt,
   deadlineAt: markets.deadlineAt,
   tradingClosedAt: markets.tradingClosedAt,
+  pausedAt: markets.pausedAt,
   question: markets.question,
-  category: markets.category,
+  shortQuestion: markets.shortQuestion,
+  milestoneKind: markets.milestoneKind,
   status: markets.status,
   ruledOutcome: markets.ruledOutcome,
-  windowStartAt: markets.windowStartAt,
   timeZone: markets.timeZone,
   isSample: markets.isSample,
-  venueName: venues.name,
-  venueSlug: venues.slug,
-  eventTitle: events.title,
+  startupName: startups.name,
+  startupSlug: startups.slug,
+  startupTagline: startups.tagline,
+  industry: startups.industry,
+  glyph: startups.glyph,
+  hue: startups.hue,
+  logoUrl: startups.logoUrl,
+  productFeatures: startups.productFeatures,
+  thumbnailUrl: startups.thumbnailUrl,
   liquidityMicro: markets.liquidityMicro,
   yesSharesMicro: markets.yesSharesMicro,
   noSharesMicro: markets.noSharesMicro,
@@ -113,20 +137,27 @@ const cardColumns = {
 
 type CardRow = {
   id: string;
-  venueId: string | null;
+  startupId: string | null;
   approvedAt: Date | null;
   deadlineAt: Date;
   tradingClosedAt: Date | null;
+  pausedAt: Date | null;
   question: string;
-  category: string | null;
+  shortQuestion: string | null;
+  milestoneKind: string | null;
   status: MarketStatus;
   ruledOutcome: "yes" | "no" | null;
-  windowStartAt: Date | null;
   timeZone: string | null;
   isSample: boolean;
-  venueName: string | null;
-  venueSlug: string | null;
-  eventTitle: string | null;
+  startupName: string;
+  startupSlug: string;
+  startupTagline: string;
+  industry: string;
+  glyph: string;
+  hue: number;
+  logoUrl: string | null;
+  productFeatures: string[] | null;
+  thumbnailUrl: string | null;
   liquidityMicro: number;
   yesSharesMicro: number | null;
   noSharesMicro: number | null;
@@ -137,8 +168,8 @@ type FeedRow = MarketSignals & Omit<CardRow, "approvedAt">;
 function toSignals(row: CardRow, counts = { clicks: 0, trades: 0, traders: 0 }): FeedRow {
   return {
     ...row,
-    // The cap counts venues; every event market has one.
-    groupKey: row.venueId ?? row.id,
+    // The cap counts startups, so one company cannot fill the top of the list.
+    groupKey: row.startupId ?? row.id,
     approvedAt: row.approvedAt as Date,
     clicks24h: counts.clicks,
     trades24h: counts.trades,
@@ -150,11 +181,23 @@ function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
   return {
     id: row.id,
     question: row.question,
-    category: row.category,
-    venueName: row.venueName,
-    venueSlug: row.venueSlug,
-    eventTitle: row.eventTitle,
-    windowStartAt: row.windowStartAt,
+    shortQuestion: row.shortQuestion,
+    milestoneKind: row.milestoneKind,
+    startupId: row.startupId as string,
+    startupName: row.startupName,
+    startupSlug: row.startupSlug,
+    startupTagline: row.startupTagline,
+    industry: row.industry,
+    glyph: row.glyph,
+    hue: row.hue,
+    logoUrl: row.logoUrl,
+    productFeatures: row.productFeatures ?? [],
+    thumbnailUrl: row.thumbnailUrl,
+    founderName: null,
+    founderHandle: null,
+    founderHue: 205,
+    founderPortraitUrl: null,
+    founderRole: null,
     timeZone: row.timeZone,
     isSample: row.isSample,
     deadlineAt: row.deadlineAt,
@@ -168,12 +211,15 @@ function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
       }),
       "YES",
     ),
-    tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
+    tradingOpen: row.status === "open" && !row.tradingClosedAt && !row.pausedAt && row.deadlineAt.getTime() > now.getTime(),
+    paused: !!row.pausedAt,
     reason,
     approvedAt: row.approvedAt,
     // Filled in once volume and history are loaded.
     volumeMicro: 0,
+    traders: 0,
     change24hBp: 0,
+    spark: [],
   };
 }
 
@@ -187,27 +233,28 @@ export function thinSeries(points: readonly PricePoint[], max = MAX_SERIES_POINT
 }
 
 /**
- * Read every open event market in scope with its last 24 hours of activity,
- * rank it, and add the recent past for the status filter. The counts come from
- * `feed_events` and `trades`; `feed_events` carries no viewer identity, so
- * clicks cannot be deduplicated per person.
+ * Read every open startup market in scope with its last 24 hours of activity,
+ * rank it, and add the recent past for the status filter. This orders the
+ * market directory only; the video feed's recommendation (src/modules/recommend)
+ * never reads prices, trades or positions.
  */
 export async function readFeed<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
-  scope: FeedScope = { campus: "osu" },
+  scope: FeedScope = { all: true },
+  pinnedId: string | null = PINNED_FEATURED_MARKET_ID,
 ): Promise<Feed> {
   const cards = await readRankedCards(database, now, scope);
   const past = await readPastCards(database, now, scope);
   const open = cards.filter((card) => card.tradingOpen);
 
   // "Moving most today" (2026-09-24): the biggest 24-hour move either way, ties
-  // kept in rank order. When nothing moved, the leading traded market stands
-  // in, because a chart of a market nobody has traded is a flat line.
+  // kept in rank order. When nothing moved, the leading traded market stands in.
   const mover = [...open]
     .filter((card) => card.change24hBp !== 0)
     .sort((a, b) => Math.abs(b.change24hBp) - Math.abs(a.change24hBp))[0];
-  const pick = mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
+  const pinned = pinnedId ? open.find((card) => card.id === pinnedId) : undefined;
+  const pick = pinned ?? mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
   let featured: FeaturedMarket | null = null;
   if (pick) {
     const history = (await readSeries(database, [pick.id])).get(pick.id) ?? [];
@@ -226,20 +273,47 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   };
 }
 
-/** The leading markets for the price ticker on pages other than the feed. */
+/** The leading markets for the price ticker. */
 export async function readTicker<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date = new Date(),
-  scope: FeedScope = { campus: "osu" },
+  scope: FeedScope = { all: true },
 ): Promise<FeedCard[]> {
   return (await readRankedCards(database, now, scope)).slice(0, TICKER_COUNT);
 }
 
-function inScope(scope: FeedScope) {
-  return "venueId" in scope ? eq(markets.venueId, scope.venueId) : eq(markets.campus, scope.campus);
+/** Cards for a known set of markets, in the order given (a feed's predictions, search results, a profile). */
+export async function readCards<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  ids: readonly string[],
+  now: Date = new Date(),
+): Promise<FeedCard[]> {
+  const list = [...new Set(ids)].filter(isUuid).slice(0, MAX_CARDS);
+  if (list.length === 0) return [];
+  const rows = await database.select(cardColumns).from(markets)
+    .innerJoin(startups, eq(startups.id, markets.startupId))
+    .where(and(inArray(markets.id, list), isNotNull(markets.approvedAt), eq(startups.status, "approved"),
+      inArray(markets.status, ["open", "closed", "ruled", "settled", "cancelled"])));
+  const byId = new Map(rows.filter(priced).map((row) => [row.id, toCard(toSignals(row), "quiet", now)]));
+  const cards = list.map((id) => byId.get(id)).filter((card): card is FeedCard => !!card);
+  await fillInformation(database, cards, now);
+  return cards;
 }
 
-/** Every open event market in scope, ranked, with its volume and 24-hour change filled in. */
+function inScope(scope: FeedScope) {
+  // Only approved startups' markets are public.
+  const visible = eq(startups.status, "approved");
+  if ("startupId" in scope) return and(visible, eq(markets.startupId, scope.startupId));
+  if ("ids" in scope) return and(visible, scope.ids.length ? inArray(markets.id, [...scope.ids]) : sql`false`);
+  return visible;
+}
+
+function priced(row: CardRow): boolean {
+  // Publishing sets the price; a row without one cannot be shown or ranked.
+  return row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null && row.startupId !== null;
+}
+
+/** Every open startup market in scope, ranked, with its volume, change and chart filled in. */
 async function readRankedCards<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   now: Date,
@@ -276,17 +350,15 @@ async function readRankedCards<Q extends PgQueryResultHKT>(
       traders: sql<number>`coalesce(${tradeCounts.traders}, 0)`,
     })
     .from(markets)
-    // Event markets only: a retired goal market has no venue and never shows here.
-    .innerJoin(venues, eq(venues.id, markets.venueId))
-    .leftJoin(events, eq(events.id, markets.eventId))
+    // Startup markets only: retired goal and event markets never show here.
+    .innerJoin(startups, eq(startups.id, markets.startupId))
     .leftJoin(clickCounts, eq(clickCounts.marketId, markets.id))
     .leftJoin(tradeCounts, eq(tradeCounts.marketId, markets.id))
     .where(and(eq(markets.status, "open"), isNotNull(markets.approvedAt), inScope(scope)))
     .limit(MAX_CARDS);
 
   const signals: FeedRow[] = rows
-    // Publishing sets the price; a row without one cannot be shown or ranked.
-    .filter((row) => row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null)
+    .filter(priced)
     .map(({ clicks, trades: tradeCount, traders, ...row }) =>
       toSignals(row, { clicks: Number(clicks), trades: Number(tradeCount), traders: Number(traders) }));
 
@@ -304,26 +376,79 @@ async function readPastCards<Q extends PgQueryResultHKT>(
   const rows = await database
     .select(cardColumns)
     .from(markets)
-    .innerJoin(venues, eq(venues.id, markets.venueId))
-    .leftJoin(events, eq(events.id, markets.eventId))
+    .innerJoin(startups, eq(startups.id, markets.startupId))
     .where(and(inArray(markets.status, ["closed", "ruled", "settled", "cancelled"]), isNotNull(markets.approvedAt), inScope(scope)))
     .orderBy(desc(markets.deadlineAt))
     .limit(MAX_PAST);
-  const cards = rows
-    .filter((row) => row.approvedAt !== null && row.yesSharesMicro !== null && row.noSharesMicro !== null)
-    .map((row) => toCard(toSignals(row), "quiet", now));
+  const cards = rows.filter(priced).map((row) => toCard(toSignals(row), "quiet", now));
   await fillInformation(database, cards, now);
   return cards;
 }
 
+/** Volume, traders, the 24-hour change, the chart and the primary founder, for a set of cards. */
 async function fillInformation<Q extends PgQueryResultHKT>(database: Database<Q>, cards: FeedCard[], now: Date) {
+  if (cards.length === 0) return;
   const since = new Date(now.getTime() - SIGNAL_WINDOW_HOURS * 3_600_000);
-  const info = await readMarketInformation(database, cards.map((card) => card.id), since);
+  const ids = cards.map((card) => card.id);
+  const [info, sparks, people] = await Promise.all([
+    readMarketInformation(database, ids, since),
+    readSparks(database, ids, now),
+    readPrimaryFounders(database, [...new Set(cards.map((card) => card.startupId))]),
+  ]);
   for (const card of cards) {
     card.volumeMicro = info.volume.get(card.id) ?? 0;
+    card.traders = info.traders.get(card.id) ?? 0;
     const then = info.priceThen.get(card.id);
-    card.change24hBp = then === undefined ? 0 : Math.round(card.yesPrice * 10_000) - then;
+    // Only a market still trading has a move today; a payout point is not a price move.
+    card.change24hBp = then === undefined || card.status !== "open" ? 0 : Math.round(card.yesPrice * 10_000) - then;
+    const spark = sparks.get(card.id) ?? [];
+    const last = spark.at(-1);
+    // The chart ends at today's price, so it agrees with the number beside it.
+    card.spark = card.tradingOpen && (!last || last.yesBp !== Math.round(card.yesPrice * 10_000))
+      ? [...spark, { at: now, yesBp: Math.round(card.yesPrice * 10_000) }] : spark;
+    const founder = people.get(card.startupId);
+    if (founder) Object.assign(card, founder);
   }
+}
+
+/** Each startup's primary founder (the one marked primary, else the first linked), for cards. */
+export async function readPrimaryFounders<Q extends PgQueryResultHKT>(database: Database<Q>, startupIds: readonly string[]) {
+  const out = new Map<string, { founderName: string; founderHandle: string; founderHue: number; founderPortraitUrl: string | null; founderRole: string }>();
+  if (startupIds.length === 0) return out;
+  const rows = await database.select({
+    startupId: startupFounders.startupId, name: founders.name, handle: founders.handle, hue: founders.hue, portraitUrl: founders.portraitUrl, role: startupFounders.role,
+  }).from(startupFounders).innerJoin(founders, eq(founders.id, startupFounders.founderId))
+    .where(and(inArray(startupFounders.startupId, [...startupIds]), eq(founders.status, "approved")))
+    .orderBy(desc(startupFounders.isPrimary), asc(startupFounders.createdAt));
+  for (const row of rows) {
+    if (!out.has(row.startupId)) out.set(row.startupId, { founderName: row.name, founderHandle: row.handle, founderHue: row.hue, founderPortraitUrl: row.portraitUrl, founderRole: row.role });
+  }
+  return out;
+}
+
+/** The last three months of each market's price, thinned for a small chart, with the price in force at the start carried in. */
+async function readSparks<Q extends PgQueryResultHKT>(database: Database<Q>, ids: readonly string[], now: Date) {
+  const out = new Map<string, PricePoint[]>();
+  if (ids.length === 0) return out;
+  const from = new Date(now.getTime() - SPARK_SPAN_MS);
+  const before = await database
+    .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
+    .from(priceHistory)
+    .where(and(inArray(priceHistory.marketId, [...ids]), lte(priceHistory.recordedAt, from)))
+    .orderBy(priceHistory.marketId, desc(priceHistory.recordedAt));
+  for (const row of before) out.set(row.marketId, [{ at: from, yesBp: row.yesBp }]);
+  const rows = await database
+    .select({ marketId: priceHistory.marketId, at: priceHistory.recordedAt, yesBp: priceHistory.yesPriceBp })
+    .from(priceHistory)
+    .where(and(inArray(priceHistory.marketId, [...ids]), gte(priceHistory.recordedAt, from)))
+    .orderBy(asc(priceHistory.recordedAt));
+  for (const row of rows) {
+    const list = out.get(row.marketId) ?? [];
+    list.push({ at: row.at, yesBp: row.yesBp });
+    out.set(row.marketId, list);
+  }
+  for (const [id, list] of out) out.set(id, thinSeries(list, SPARK_POINTS));
+  return out;
 }
 
 /** A market's live numbers, for pages that refresh prices while open. */
@@ -348,7 +473,7 @@ export async function readQuotes<Q extends PgQueryResultHKT>(
   if (list.length === 0) return [];
   const rows = await database
     .select({
-      id: markets.id, status: markets.status, deadlineAt: markets.deadlineAt, tradingClosedAt: markets.tradingClosedAt,
+      id: markets.id, status: markets.status, deadlineAt: markets.deadlineAt, tradingClosedAt: markets.tradingClosedAt, pausedAt: markets.pausedAt,
       liquidityMicro: markets.liquidityMicro, yesSharesMicro: markets.yesSharesMicro, noSharesMicro: markets.noSharesMicro,
     })
     .from(markets)
@@ -366,7 +491,7 @@ export async function readQuotes<Q extends PgQueryResultHKT>(
       yesBp,
       change24hBp: then === undefined ? 0 : yesBp - then,
       volumeMicro: info.volume.get(row.id) ?? 0,
-      tradingOpen: row.status === "open" && !row.tradingClosedAt && row.deadlineAt.getTime() > now.getTime(),
+      tradingOpen: row.status === "open" && !row.tradingClosedAt && !row.pausedAt && row.deadlineAt.getTime() > now.getTime(),
     };
   });
 }
@@ -380,18 +505,19 @@ async function readMarketInformation<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   ids: readonly string[],
   since: Date,
-): Promise<{ volume: Map<string, number>; priceThen: Map<string, number> }> {
+): Promise<{ volume: Map<string, number>; traders: Map<string, number>; priceThen: Map<string, number> }> {
   const volume = new Map<string, number>();
+  const traders = new Map<string, number>();
   const priceThen = new Map<string, number>();
-  if (ids.length === 0) return { volume, priceThen };
+  if (ids.length === 0) return { volume, traders, priceThen };
   const list = [...ids];
 
   const volumes = await database
-    .select({ marketId: trades.marketId, total: sql<string>`coalesce(sum(${trades.amountMicro}), 0)` })
+    .select({ marketId: trades.marketId, total: sql<string>`coalesce(sum(${trades.amountMicro}), 0)`, people: sql<number>`count(distinct ${trades.userId})::int` })
     .from(trades)
     .where(inArray(trades.marketId, list))
     .groupBy(trades.marketId);
-  for (const row of volumes) volume.set(row.marketId, Number(row.total));
+  for (const row of volumes) { volume.set(row.marketId, Number(row.total)); traders.set(row.marketId, Number(row.people)); }
 
   const before = await database
     .selectDistinctOn([priceHistory.marketId], { marketId: priceHistory.marketId, yesBp: priceHistory.yesPriceBp })
@@ -410,11 +536,11 @@ async function readMarketInformation<Q extends PgQueryResultHKT>(
     for (const row of first) priceThen.set(row.marketId, row.yesBp);
   }
 
-  return { volume, priceThen };
+  return { volume, traders, priceThen };
 }
 
 /** Full recorded price history for a few markets, oldest first. */
-async function readSeries<Q extends PgQueryResultHKT>(
+export async function readSeries<Q extends PgQueryResultHKT>(
   database: Database<Q>,
   ids: readonly string[],
 ): Promise<Map<string, PricePoint[]>> {
@@ -520,4 +646,29 @@ export async function readEventCounts<Q extends PgQueryResultHKT>(
     counts.set(row.marketId, entry);
   }
   return counts;
+}
+
+/**
+ * Trade Coins traded on a market per day, and per hour for the last two days, for
+ * the chart's volume bars (2026-10-19). Sums only: never a single trade's size.
+ */
+export async function readVolumeBuckets<Q extends PgQueryResultHKT>(
+  database: Database<Q>,
+  marketId: string,
+  now: Date = new Date(),
+): Promise<{ at: Date; micro: number; hourly: boolean }[]> {
+  if (!isUuid(marketId)) return [];
+  const daily = await database
+    .select({ at: sql<string>`date_trunc('day', ${trades.createdAt})`, micro: sql<string>`sum(${trades.amountMicro})` })
+    .from(trades).where(eq(trades.marketId, marketId))
+    .groupBy(sql`date_trunc('day', ${trades.createdAt})`);
+  const since = new Date(now.getTime() - 48 * 3_600_000);
+  const hourly = await database
+    .select({ at: sql<string>`date_trunc('hour', ${trades.createdAt})`, micro: sql<string>`sum(${trades.amountMicro})` })
+    .from(trades).where(and(eq(trades.marketId, marketId), gte(trades.createdAt, since)))
+    .groupBy(sql`date_trunc('hour', ${trades.createdAt})`);
+  return [
+    ...daily.map((row) => ({ at: new Date(row.at), micro: Number(row.micro), hourly: false })),
+    ...hourly.map((row) => ({ at: new Date(row.at), micro: Number(row.micro), hourly: true })),
+  ];
 }

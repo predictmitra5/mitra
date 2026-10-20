@@ -1,105 +1,62 @@
 import { describe, expect, it } from "vitest";
-import {
-  browse, DEFAULT_FILTERS, FEED_TABS, filtersToSearch, isFeedTab, isNarrowed, matchesSearch, queryWords, readFilters,
-  type Browsable, type BrowseFilters,
-} from "./browse";
+import { browse, DEFAULT_FILTERS, filtersToSearch, isNarrowed, matchesSearch, queryWords, readFilters, type Browsable } from "./browse";
 
-const now = new Date("2026-10-08T16:00:00Z");
-const card = (over: Partial<Browsable> & { id: string }): Browsable & { id: string } => ({
-  question: "Will something happen?", category: "events", venueName: "The Oval", venueSlug: "the-oval", eventTitle: null,
-  deadlineAt: "2026-12-01T04:59:59Z", tradingOpen: true, status: "open", ...over,
+const now = new Date("2026-10-19T12:00:00Z");
+const DAY = 86_400_000;
+
+const card = (over: Partial<Browsable> & { id?: string } = {}): Browsable & { id: string } => ({
+  id: "m", question: "Will Lumenly reach 100,000 verified monthly active users by December 31, 2027?", shortQuestion: "Will Lumenly reach 100K users?",
+  startupName: "Lumenly", startupTagline: "AI Study Companion", founderName: "Ari Vale", industry: "edtech", milestoneKind: "adoption",
+  deadlineAt: new Date(now.getTime() + 400 * DAY).toISOString(), approvedAt: new Date(now.getTime() - 30 * DAY).toISOString(),
+  volumeMicro: 1_000_000_000, tradingOpen: true, status: "open", ...over,
 });
 
-const cards = [
-  card({ id: "bar", category: "nightlife", question: "Will Midway on High sell more than 1,000 qualifying drinks?", venueName: "Midway on High", venueSlug: "midway-on-high", eventTitle: "Friday night", deadlineAt: "2026-10-09T01:00:00Z" }),
-  card({ id: "donuts", category: "food", question: "Will Buckeye Donuts sell more than 1,200 donuts?", venueName: "Buckeye Donuts", venueSlug: "buckeye-donuts", deadlineAt: "2026-10-14T02:00:00Z" }),
-  card({ id: "film", category: "entertainment", question: "Will the 7 PM screening sell more than 120 paid admissions?", venueName: "Gateway Film Center", venueSlug: "gateway-film-center", deadlineAt: "2026-11-01T23:00:00Z" }),
-  card({ id: "café", category: "food", question: "Will the café run out of croissants?", venueName: "Café Zoë", venueSlug: "cafe-zoe", deadlineAt: "2026-12-20T04:59:59Z" }),
-  card({ id: "closed", category: "nightlife", question: "Will Midway on High fill up?", venueName: "Midway on High", venueSlug: "midway-on-high", deadlineAt: "2026-10-01T01:00:00Z", tradingOpen: false, status: "closed" }),
-  card({ id: "resolved", category: "food", deadlineAt: "2026-09-20T01:00:00Z", tradingOpen: false, status: "settled" }),
-  card({ id: "void", category: "events", deadlineAt: "2026-09-21T01:00:00Z", tradingOpen: false, status: "cancelled" }),
-];
-const ids = (list: { id: string }[]) => list.map((c) => c.id);
-const show = (over: Partial<BrowseFilters> = {}) => ids(browse(cards, { ...DEFAULT_FILTERS, ...over }, now));
+const params = (query: string) => new URLSearchParams(query);
 
-describe("category tabs", () => {
-  it("are All and the five event categories", () => {
-    expect(FEED_TABS.map((tab) => tab.label)).toEqual(["All", "Nightlife", "Food", "Events", "Entertainment", "Campus"]);
-    expect(isFeedTab("food")).toBe(true);
-    expect(isFeedTab("academics")).toBe(false);
-    expect(isFeedTab(undefined)).toBe(false);
+describe("filters in the address", () => {
+  it("reads known values and falls back for unknown ones", () => {
+    expect(readFilters(params(""))).toEqual(DEFAULT_FILTERS);
+    expect(readFilters(params("sort=closing&industry=ai&status=resolved&q=robots"))).toEqual({ sort: "closing", industry: "ai", query: "robots", status: "resolved" });
+    expect(readFilters(params("sort=random&industry=nightlife&status=nope"))).toEqual(DEFAULT_FILTERS);
   });
-
-  it("show every open market under All, in the order given", () => {
-    expect(show()).toEqual(["bar", "donuts", "film", "café"]);
-  });
-
-  it("narrow to one category", () => {
-    expect(show({ tab: "food" })).toEqual(["donuts", "café"]);
-    expect(show({ tab: "campus" })).toEqual([]);
-  });
-});
-
-describe("filters", () => {
-  it("narrow to one venue", () => {
-    expect(show({ venue: "midway-on-high" })).toEqual(["bar"]);
-    expect(show({ venue: "midway-on-high", status: "all" })).toEqual(["bar", "closed"]);
-  });
-
-  it("show closed, resolved and void markets only when asked", () => {
-    expect(show({ status: "closed" })).toEqual(["closed"]);
-    expect(show({ status: "resolved" })).toEqual(["resolved"]);
-    expect(show({ status: "void" })).toEqual(["void"]);
-    expect(show({ status: "all" })).toHaveLength(cards.length);
-  });
-
-  it("keep markets closing within the chosen span, soonest first, and never ones already past their cutoff", () => {
-    expect(show({ closing: "today" })).toEqual(["bar"]);
-    expect(show({ closing: "week" })).toEqual(["bar", "donuts"]);
-    expect(show({ closing: "month" })).toEqual(["bar", "donuts", "film"]);
-    expect(show({ closing: "week", status: "all" })).toEqual(["bar", "donuts"]);
-  });
-
-  it("combine with each other and with search", () => {
-    expect(show({ tab: "food", closing: "week" })).toEqual(["donuts"]);
-    expect(show({ tab: "nightlife", query: "drinks" })).toEqual(["bar"]);
-  });
-});
-
-describe("the address", () => {
-  it("reads filters back, ignoring anything unknown", () => {
-    const params = new URLSearchParams("cat=food&venue=buckeye-donuts&status=resolved&closes=week&q=donuts");
-    expect(readFilters(params)).toEqual({ tab: "food", venue: "buckeye-donuts", status: "resolved", closing: "week", query: "donuts" });
-    expect(readFilters(new URLSearchParams("cat=academics&venue=Bad Slug!&status=nope&closes=year"))).toEqual(DEFAULT_FILTERS);
-    // An address from before the pivot still opens the feed.
-    expect(readFilters(new URLSearchParams("tab=competitions"))).toEqual(DEFAULT_FILTERS);
-  });
-
-  it("writes only what differs from the default, so the plain feed stays /", () => {
+  it("writes only what differs from the default", () => {
     expect(filtersToSearch(DEFAULT_FILTERS)).toBe("");
     expect(isNarrowed(DEFAULT_FILTERS)).toBe(false);
-    expect(filtersToSearch({ ...DEFAULT_FILTERS, tab: "food", closing: "week" })).toBe("cat=food&closes=week");
-    expect(isNarrowed({ ...DEFAULT_FILTERS, status: "all" })).toBe(true);
+    expect(filtersToSearch({ ...DEFAULT_FILTERS, sort: "new", industry: "gaming" })).toBe("sort=new&industry=gaming");
   });
 });
 
 describe("search", () => {
-  it("matches the question, the venue, the event and the category", () => {
-    expect(show({ query: "qualifying" })).toEqual(["bar"]);
-    expect(show({ query: "gateway" })).toEqual(["film"]);
-    expect(show({ query: "friday night" })).toEqual(["bar"]);
-    expect(show({ query: "entertainment" })).toEqual(["film"]);
+  it("matches the startup, founder, tagline, industry and milestone", () => {
+    expect(matchesSearch(card(), "ari")).toBe(true);
+    expect(matchesSearch(card(), "study companion")).toBe(true);
+    expect(matchesSearch(card(), "#EdTech")).toBe(true);
+    expect(matchesSearch(card(), "adoption lumenly")).toBe(true);
+    expect(matchesSearch(card(), "robotics")).toBe(false);
   });
-
-  it("needs every word, in any order, and ignores case and accents", () => {
-    expect(show({ query: "DONUTS buckeye" })).toEqual(["donuts"]);
-    expect(show({ query: "cafe zoe" })).toEqual(["café"]);
-    expect(show({ query: "donuts midway" })).toEqual([]);
+  it("drops # and caps the words", () => {
+    expect(queryWords("#AI  robots")).toEqual(["ai", "robots"]);
+    expect(queryWords("a b c d e f g h i j")).toHaveLength(8);
   });
+});
 
-  it("treats an empty or blank query as no search", () => {
-    expect(matchesSearch(cards[0], "   ")).toBe(true);
-    expect(queryWords("  a  b ")).toEqual(["a", "b"]);
-    expect(queryWords("1 2 3 4 5 6 7 8 9 10")).toHaveLength(8);
+describe("browse", () => {
+  const a = card({ id: "a", industry: "ai", volumeMicro: 5, approvedAt: new Date(now.getTime() - 50 * DAY).toISOString(), deadlineAt: new Date(now.getTime() + 20 * DAY).toISOString() });
+  const b = card({ id: "b", industry: "gaming", volumeMicro: 50, approvedAt: new Date(now.getTime() - 5 * DAY).toISOString(), deadlineAt: new Date(now.getTime() + 2 * DAY).toISOString() });
+  const c = card({ id: "c", industry: "ai", volumeMicro: 20, approvedAt: new Date(now.getTime() - 10 * DAY).toISOString(), status: "settled", tradingOpen: false });
+  const all = [a, b, c];
+  const ids = (list: { id: string }[]) => list.map((x) => x.id);
+
+  it("keeps the server's order for Trending and shows open markets by default", () => {
+    expect(ids(browse(all, DEFAULT_FILTERS, now))).toEqual(["a", "b"]);
+  });
+  it("orders New, Most active and Closing soon", () => {
+    expect(ids(browse(all, { ...DEFAULT_FILTERS, sort: "new", status: "all" }, now))).toEqual(["b", "c", "a"]);
+    expect(ids(browse(all, { ...DEFAULT_FILTERS, sort: "active", status: "all" }, now))).toEqual(["b", "c", "a"]);
+    expect(ids(browse(all, { ...DEFAULT_FILTERS, sort: "closing" }, now))).toEqual(["b", "a"]);
+  });
+  it("narrows by industry and status", () => {
+    expect(ids(browse(all, { ...DEFAULT_FILTERS, industry: "ai", status: "all" }, now))).toEqual(["a", "c"]);
+    expect(ids(browse(all, { ...DEFAULT_FILTERS, status: "resolved" }, now))).toEqual(["c"]);
   });
 });

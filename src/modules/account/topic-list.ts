@@ -1,18 +1,15 @@
+import { INDUSTRIES } from "@/modules/startups/labels";
+
 /*
- * Topics a person follows, picked during onboarding (decided 2026-10-05). They
- * are stored and nothing more: changing what the feed shows from them waits for
- * the discovery decision (D08, D09). Safe to import in the browser.
+ * Topics a person follows, picked during onboarding (decided 2026-10-05). Since
+ * 2026-10-19 they are the startup industries, and they give a new member's
+ * feed its first leaning before they have watched anything (topics.ts). Safe
+ * to import in the browser.
  */
 
-// The event-market categories since 2026-10-08. Topics saved before then
-// (academics, clubs and so on) are simply no longer offered.
-export const TOPICS = [
-  { key: "nightlife", label: "Nightlife" },
-  { key: "food", label: "Food" },
-  { key: "events", label: "Events" },
-  { key: "entertainment", label: "Entertainment" },
-  { key: "campus", label: "Campus" },
-] as const;
+// Event categories saved before 2026-10-19, and goal topics before 2026-10-08,
+// are simply no longer offered.
+export const TOPICS = INDUSTRIES.filter((entry) => entry.key !== "other").map(({ key, label }) => ({ key, label }));
 
 export type TopicKey = (typeof TOPICS)[number]["key"];
 

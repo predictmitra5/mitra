@@ -4,9 +4,15 @@ import type { NextConfig } from "next";
 // request bodies over 4.5 MB, so files go from the browser straight to storage
 // and actions carry only small requests. Next.js's default 1 MB limit applies.
 const nextConfig: NextConfig = {
-  // Goal markets ended on 2026-10-08; an old "Post a goal" link lands on suggestions.
+  // Old addresses (2026-10-08 and 2026-10-19): goal and event pages land on
+  // their startup-era equivalents.
   async redirects() {
-    return [{ source: "/goals/new", destination: "/suggest", permanent: false }];
+    return [
+      { source: "/goals/new", destination: "/create", permanent: false },
+      { source: "/suggest", destination: "/create", permanent: false },
+      { source: "/venues/:slug*", destination: "/markets", permanent: false },
+      { source: "/positions", destination: "/portfolio", permanent: false },
+    ];
   },
 };
 

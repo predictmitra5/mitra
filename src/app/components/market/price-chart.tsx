@@ -23,6 +23,8 @@ import { changeLabel } from "@/modules/discovery/present";
  */
 
 export type ChartPoint = { at: string; yesBp: number };
+/** Trade Coins traded in one hour or one day, summed on the server: never a single trade. */
+export type VolumeBucket = { at: string; micro: number; hourly: boolean };
 
 const Y_TICKS = [100, 75, 50, 25, 0];
 const DAY_MS = 24 * 3_600_000;
@@ -30,7 +32,9 @@ const RANGES = [
   { key: "1D", label: "1D", ms: DAY_MS, words: "today" },
   { key: "1W", label: "1W", ms: 7 * DAY_MS, words: "past week" },
   { key: "1M", label: "1M", ms: 30 * DAY_MS, words: "past month" },
-  { key: "ALL", label: "All", ms: Infinity, words: "since it opened" },
+  { key: "3M", label: "3M", ms: 92 * DAY_MS, words: "past three months" },
+  { key: "1Y", label: "1Y", ms: 365 * DAY_MS, words: "past year" },
+  { key: "ALL", label: "ALL", ms: Infinity, words: "since it opened" },
 ] as const;
 export type RangeKey = (typeof RANGES)[number]["key"];
 
@@ -73,25 +77,44 @@ export function stepPath(data: Datum[]): string {
   return line;
 }
 
+/** Volume bars for the range: hourly for a day, otherwise daily, merged to at most 60 bars. */
+export function volumeBars(buckets: readonly VolumeBucket[], t0: number, t1: number, hourly: boolean): { x: number; w: number; v: number }[] {
+  const span = Math.max(1, t1 - t0);
+  const inside = buckets.filter((b) => b.hourly === hourly).map((b) => ({ t: new Date(b.at).getTime(), v: b.micro })).filter((b) => b.t >= t0 - (hourly ? 3_600_000 : DAY_MS) && b.t <= t1);
+  if (!inside.length) return [];
+  const slots = 60;
+  const width = span / slots;
+  const sums = new Array<number>(slots).fill(0);
+  for (const b of inside) sums[Math.min(slots - 1, Math.max(0, Math.floor((b.t - t0) / width)))] += b.v;
+  const max = Math.max(...sums);
+  if (max <= 0) return [];
+  return sums.map((v, i) => ({ x: (i / slots) * 100, w: 100 / slots, v: v / max })).filter((bar) => bar.v > 0);
+}
+
 export function PriceChart({
-  points, variant = "page", initialRange = "ALL", label = "Chance of Yes",
+  points, variant = "page", initialRange = "ALL", label = "Chance of Yes", volumes, headline = true,
 }: {
   points: ChartPoint[];
   /** "page": the chance headline, the change and the range buttons. "card": the line alone. */
   variant?: "page" | "card";
   initialRange?: RangeKey;
   label?: string;
+  /** Optional volume bars along the bottom (2026-10-19), with a switch to hide them. */
+  volumes?: VolumeBucket[];
+  /** False when the page already shows the chance large above the chart: only the change is shown. */
+  headline?: boolean;
 }) {
   const area = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<number | null>(null);
   const [range, setRange] = useState<RangeKey>(initialRange);
+  const [showVolume, setShowVolume] = useState(true);
   const titleId = useId();
 
   const all = useMemo(
     () => points.map((p) => ({ t: new Date(p.at).getTime(), v: p.yesBp })).sort((a, b) => a.t - b.t),
     [points],
   );
-  const chosen = RANGES.find((r) => r.key === range) ?? RANGES[3];
+  const chosen = RANGES.find((r) => r.key === range) ?? RANGES[RANGES.length - 1];
   const data = useMemo(() => windowed(all, chosen.ms), [all, chosen.ms]);
 
   if (all.length < 2) {
@@ -111,6 +134,7 @@ export function PriceChart({
 
   const t0 = data[0].t;
   const span = Math.max(1, data[data.length - 1].t - t0);
+  const bars = variant === "page" && showVolume && volumes ? volumeBars(volumes, t0, t0 + span, chosen.key === "1D") : [];
   const xPct = (t: number) => ((t - t0) / span) * 100;
   const yPct = (v: number) => (1 - v / 10_000) * 100;
 
@@ -169,12 +193,16 @@ export function PriceChart({
       {variant === "page" && (
         <div className="chart-head">
           <div className="chart-now" aria-live="polite">
-            <strong className="chart-pct">{pct(shown ? shown.v : last.v)}<span> chance</span></strong>
+            {(headline || shown) && <strong className="chart-pct">{pct(shown ? shown.v : last.v)}<span> {shown ? moment.format(shown.t) : "chance"}</span></strong>}
             <span className={`chart-delta chart-delta-${trend}`}>
               {trend === "flat" ? "0.0" : <><span aria-hidden="true">{trend === "up" ? "▲" : "▼"}</span> {move.text}</>}
               {" "}<span className="chart-delta-range">{chosen.words}</span>
             </span>
           </div>
+          <div className="chart-tools">
+          {volumes && volumes.length > 0 && (
+            <label className="chart-volume-toggle"><input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} />Volume</label>
+          )}
           <div className="chart-ranges" role="group" aria-label="Time range">
             {RANGES.map((option) => (
               <button key={option.key} type="button" aria-pressed={range === option.key}
@@ -182,6 +210,7 @@ export function PriceChart({
                 {option.label}
               </button>
             ))}
+          </div>
           </div>
         </div>
       )}
@@ -204,6 +233,11 @@ export function PriceChart({
               <span className="chart-tick chart-tick-y">{tick}%</span>
             </div>
           ))}
+          {bars.length > 0 && (
+            <div className="chart-volume" aria-hidden="true">
+              {bars.map((bar, i) => <span key={i} style={{ left: `${bar.x}%`, width: `${bar.w}%`, height: `${Math.max(4, bar.v * 100)}%` }} />)}
+            </div>
+          )}
           <svg className="chart-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
             <path className="chart-line chart-line-no" d={stepPath(data.map((p) => ({ t: p.t, v: 10_000 - p.v })))} vectorEffect="non-scaling-stroke" />
             <path className="chart-line chart-line-yes" d={stepPath(data)} vectorEffect="non-scaling-stroke" />

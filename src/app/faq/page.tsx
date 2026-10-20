@@ -4,18 +4,18 @@ import { InfoPage } from "@/app/components/info-page";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "How Mitra works, who can join, and how campus event markets are made and resolved.",
+  description: "How Mitra works: founder videos, startup markets, Trade Coins, and how markets are made and settled.",
 };
 
 export default function FaqPage() {
   const questions = [
     {
       question: "What is Mitra?",
-      answer: "A campus prediction market for things that happen around you: a venue’s busy night, a screening’s turnout, an event’s attendance. You use Trade Coins to forecast whether each one happens. Visitors can choose Ohio State or Illinois to browse; trading and suggesting markets need a verified university email.",
+      answer: "A place to discover founders before they are famous. You watch short videos from founders about what they are building, follow the ones you like, and predict their startups' milestones on Yes or No markets with Trade Coins. Anyone can watch and browse; trading, following and commenting need an account.",
     },
     {
-      question: "Is Mitra affiliated with a university or the venues?",
-      answer: "No. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university. Unless a market says its source is connected, Mitra has no partnership with the venue it is about.",
+      question: "How does the For you feed pick videos?",
+      answer: "From what you watch, how far you watch, what you like, save, share and skip, the industries you pick when you join, and the founders you follow, plus some videos from new founders and from outside your usual industries so unknown founders get seen. It never uses market prices, trading or anyone's positions, so it cannot be used to push a market up or down.",
     },
     {
       question: "How do Trade Coins work?",
@@ -26,24 +26,36 @@ export default function FaqPage() {
       answer: "Coins are intended for digital items such as the Campus Original badge. The shop previews possible Coin bundles and their Trade Coin bonus, but checkout is disabled: no payment is taken and no Coins are issued.",
     },
     {
-      question: "What are sample markets?",
-      answer: "Markets marked Sample are hypothetical demonstrations. Their sources are placeholders and their early price history is demonstration data. You can trade them with Trade Coins; when they are retired they are voided and everyone is refunded their held cost.",
+      question: "What does a price mean?",
+      answer: "A Yes price of 42¢ means traders put the chance at about 42%. Each contract pays 1 Trade Coin if its side wins and 0 if it loses, so buying Yes at 42¢ makes 58¢ per contract if Yes happens. Prices move as people trade against Mitra's automated market maker.",
+    },
+    {
+      question: "What are demo startups?",
+      answer: "Startups, founders, videos and markets marked Demo are fictional, made to show how Mitra works. Their price history comes from simulated trades by fictional demo traders. You can trade them with Trade Coins; when they are retired they are voided and everyone is refunded what they paid.",
     },
     {
       question: "How does a market get made?",
-      answer: "Anyone with an account can suggest one. Suggestions are private to you and the Mitra owner. The owner either turns it down with a reason you can read, or publishes it with exact Yes and No conditions, an event window, a trading cutoff, a results deadline, and a named source. New markets start at 50/50, and wording is frozen once trading opens.",
+      answer: "Only the Mitra owner opens markets, each on a measurable milestone of an approved startup: a user count checked by an audit, a public listing, a named competition result, a date. Every market states exactly when it resolves Yes and No, its deadline, how the number is measured, its source, and what happens if the source is missing or sources disagree. Founders can suggest a market; they cannot open, change or settle one.",
+    },
+    {
+      question: "Can founders trade their own markets?",
+      answer: "No. Founders, and anyone who manages a startup's profile, are blocked from trading that startup's markets. Anyone recorded as deciding an outcome is blocked too.",
     },
     {
       question: "How is the outcome decided?",
-      answer: "Each market names the source of its number, such as a venue’s point-of-sale count or a ticketing report, and says whether that source is connected or still a placeholder. After the event window ends, the owner checks the source and records the outcome with an explanation. A 24-hour objection period follows before payout.",
+      answer: "After trading closes, the owner checks the market's named source and records the outcome with an explanation. A 24-hour objection period follows before payout.",
     },
     {
       question: "What if the result never comes in?",
       answer: "Missing data is not a No. If the source has not reported by the published results deadline, the owner can void the market and refund each participant’s held cost. A market that turns out to be broken is handled the same way.",
     },
     {
-      question: "Are there things I shouldn’t do?",
-      answer: "Don’t buy, or ask anyone to buy, at a venue to move a market, and don’t trade a market about a place where you work or that you own. Anyone recorded as deciding a market’s outcome is blocked from trading it.",
+      question: "What does \"verified\" mean on a profile?",
+      answer: "Claims carry one of four labels: unverified (nobody has checked), founder-reported (the founder says so), independently verified (checked against a source outside the company), or disputed (sources disagree). Demo numbers are never presented as verified facts about real companies.",
+    },
+    {
+      question: "Is Mitra affiliated with a university or the startups?",
+      answer: "No. Mitra is independent and is not affiliated with, endorsed by, or sponsored by any university. A startup appearing on Mitra does not mean Mitra endorses it.",
     },
   ];
   return (

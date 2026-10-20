@@ -10,6 +10,8 @@
 
 export { categoryLabel } from "@/modules/events/categories";
 
+const credits = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
 function clip(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max - 1);
@@ -19,9 +21,18 @@ function clip(text: string, max: number): string {
 
 const TICKER_MAX = 30;
 
-/** The ticker's label: the venue's name, or the start of the question when there is none. */
-export function tickerLabel(question: string, venueName: string | null): string {
-  return clip((venueName ?? question).trim() || "Market", TICKER_MAX);
+/** The ticker's label: the startup's name, or the start of the question when there is none. */
+export function tickerLabel(question: string, name: string | null): string {
+  return clip((name ?? question).trim() || "Market", TICKER_MAX);
+}
+
+/**
+ * What a card, a list row or the ticker's hover shows (2026-10-09): the market's
+ * short title when it has one, else the full question. The market page always
+ * shows the full question.
+ */
+export function cardTitle(market: { question: string; shortQuestion?: string | null }): string {
+  return market.shortQuestion?.trim() || market.question;
 }
 
 /** One or two letters for an avatar, from a display name. */
@@ -33,17 +44,15 @@ export function initials(displayName: string): string {
   return (first + last).toUpperCase();
 }
 
-const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
-
-/** Points traded, as "4,138 pts traded". Micro-units in. */
+/** Trade Coins traded, as "4,138 Trade Coins traded" (DECISIONS.md 2026-10-12). Micro-units in. */
 export function volumeLabel(volumeMicro: number): string {
-  const points = Math.max(0, volumeMicro) / 1_000_000;
-  if (points === 0) return "No trades yet";
-  if (points < 1) return "<1 pt traded";
-  return `${whole.format(points)} pts traded`;
+  const amount = Math.max(0, volumeMicro) / 1_000_000;
+  if (amount === 0) return "No trades yet";
+  if (amount < 1) return "<1 Trade Coin traded";
+  return `${credits.format(amount)} Trade Coins traded`;
 }
 
-/** Points to one decimal, as "47.1". Micro-units in. */
+/** Trade Coins to one decimal, as "47.1". Micro-units in. */
 export function pointsText(micro: number, digits = 1): string {
   return (micro / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }

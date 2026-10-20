@@ -4,7 +4,9 @@ import { zonedTimeToUtc } from "./time";
 
 /*
  * The three Ohio State sample markets the owner's brief asked for (2026-10-08).
- * Every one is hypothetical: Mitra has no partnership with these venues and
+ * On 2026-10-09 the owner replaced the Gateway Film Center screening with
+ * Brutus Buckeye visiting Smith-Steeb Hall, and gave each a short title for
+ * its card. Every one is hypothetical: Mitra has no partnership with these venues and
  * receives no data from them, so each is published with isSample, a
  * placeholder source and rules that say so. The owner decided they are live and
  * tradeable, and are voided with refunds when real markets replace them.
@@ -58,8 +60,8 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
   const midwayEnd = at(friDate, 1, 2);
   const donutStart = at(friDate, 0, 22);
   const donutEnd = at(friDate, 1, 4);
-  const filmStart = at(friDate, 1, 19);
-  const filmEnd = at(friDate, 1, 21, 30);
+  const brutusStart = at(friDate, 1, 8);
+  const brutusEnd = at(friDate, 1, 23, 59);
 
   return [
     {
@@ -68,6 +70,7 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
       venue: { name: "Midway on High", area: "North High Street", description: "Bar on North High Street near campus." },
       eventTitle: `Friday night, ${friLabel}`,
       question: `Will Midway on High sell more than 1,000 qualifying drinks between 9 PM and 2 AM on Friday, ${friLabel}?`,
+      shortQuestion: "Will Midway on High sell more than 1,000 drinks?",
       windowStartAt: midwayStart, windowEndAt: midwayEnd, tradingCutoffAt: midwayStart, resultsDueAt: new Date(midwayEnd.getTime() + 3 * DAY),
       yesCondition: "Midway on High’s point-of-sale report shows more than 1,000 qualifying drinks sold between 9:00 PM Friday and 2:00 AM Saturday, Eastern time.",
       noCondition: "The report shows 1,000 or fewer qualifying drinks during the stated window.",
@@ -83,6 +86,7 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
       venue: { name: "Buckeye Donuts", area: "North High Street", description: "Late-night donut shop on North High Street." },
       eventTitle: `Friday overnight, ${friLabel}–${satLabel.split(" ").at(-1)}`,
       question: `Will Buckeye Donuts sell more than 1,200 donuts between 10 PM Friday, ${friLabel} and 4 AM Saturday?`,
+      shortQuestion: "Will Buckeye Donuts sell more than 1,200 donuts?",
       windowStartAt: donutStart, windowEndAt: donutEnd, tradingCutoffAt: donutStart, resultsDueAt: new Date(donutEnd.getTime() + 3 * DAY),
       yesCondition: "Buckeye Donuts’ point-of-sale report shows more than 1,200 donuts sold between 10:00 PM Friday and 4:00 AM Saturday, Eastern time.",
       noCondition: "The report shows 1,200 or fewer donuts during the stated window.",
@@ -92,19 +96,20 @@ export function osuSampleMarkets(now: Date): SampleMarket[] {
         method: "Donut units sold during the window from the shop’s point-of-sale system, shared by the shop. No agreement exists yet: this is a placeholder." },
     },
     {
-      slug: "gateway-film-center",
-      campus: "osu", category: "entertainment", isSample: true, timeZone: ZONE,
-      venue: { name: "Gateway Film Center", area: "North High Street", description: "Independent cinema on North High Street near campus." },
-      eventTitle: `Saturday 7:00 PM screening, ${satLabel}`,
-      question: `Will Gateway Film Center’s 7:00 PM screening on Saturday, ${satLabel} sell more than 120 paid admissions?`,
-      windowStartAt: filmStart, windowEndAt: filmEnd, tradingCutoffAt: filmStart, resultsDueAt: new Date(filmEnd.getTime() + 3 * DAY),
-      yesCondition: "Gateway Film Center’s ticketing report shows more than 120 paid admissions for its 7:00 PM screening that Saturday.",
-      noCondition: "The report shows 120 or fewer paid admissions for the stated screening.",
-      rules: "The screening is the first one listed on Gateway Film Center’s published schedule with a 7:00 PM Eastern start that Saturday. "
-        + "If no screening starts at 7:00 PM, the market is void and everyone is refunded. Paid admissions are tickets sold for that screening; "
-        + `complimentary tickets, passes and refunds don’t count. ${FAIR_PLAY} ${SAMPLE_NOTE}`,
-      source: { name: "Gateway Film Center ticketing report (placeholder)", operational: false,
-        method: "Paid admissions for the screening from the cinema’s ticketing system, shared by the cinema. No agreement exists yet: this is a placeholder." },
+      slug: "smith-steeb-hall",
+      campus: "osu", category: "campus", isSample: true, timeZone: ZONE,
+      venue: { name: "Smith-Steeb Hall", area: "North Campus", description: "Residence hall on North Campus." },
+      eventTitle: `Saturday, ${satLabel}`,
+      question: `Will Brutus Buckeye visit Smith-Steeb Hall between 8 AM and midnight on Saturday, ${satLabel}?`,
+      shortQuestion: "Will Brutus visit Smith-Steeb Hall?",
+      windowStartAt: brutusStart, windowEndAt: brutusEnd, tradingCutoffAt: brutusStart, resultsDueAt: new Date(brutusEnd.getTime() + 3 * DAY),
+      yesCondition: "A dated photo or video posted by an official Ohio State or Brutus Buckeye account shows Brutus, in costume, inside Smith-Steeb Hall or at its entrance between 8:00 AM and 11:59 PM that Saturday, Eastern time.",
+      noCondition: "No such post shows Brutus at Smith-Steeb Hall during the window.",
+      rules: "Brutus counts only in person and in costume, inside Smith-Steeb Hall or at its front entrance. Brutus elsewhere on North Campus, a cutout, a mural or an older photo reposted doesn’t count. "
+        + "Don’t invite or arrange a visit to move this market. If you work in Ohio State’s spirit program or on Smith-Steeb Hall’s residence staff, don’t trade it. "
+        + SAMPLE_NOTE,
+      source: { name: "Official Ohio State and Brutus Buckeye posts (placeholder)", operational: false,
+        method: "The owner checks official Ohio State and Brutus Buckeye social accounts for a dated photo or video of Brutus at Smith-Steeb Hall during the window. No agreement or integration exists: this is a placeholder." },
     },
   ];
 }

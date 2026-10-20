@@ -3,8 +3,12 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { EMPTY_POSITION } from "@/modules/market/position";
+import type { UploadIntentKind } from "@/modules/uploads/intents";
 
-const { profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, uploadIntents, marketProposals } = schema;
+const {
+  profiles, markets, positions, wallets, ledgerEntries, adminActions, evidence, uploadIntents, marketProposals,
+  founders, startups, videos, videoEvents, videoLikes, videoSaves, founderFollows, startupFollows, viewerInterests,
+} = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -20,7 +24,7 @@ export class WithdrawalError extends Error {
 export type WithdrawalObjects = {
   photoPath: string | null;
   evidencePaths: string[];
-  uploadPaths: { kind: "photo" | "evidence"; path: string }[];
+  uploadPaths: { kind: UploadIntentKind; path: string }[];
 };
 
 /** External object deletion is injected so the database behavior can be tested independently. */
@@ -156,6 +160,25 @@ async function finishWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q
     // stays, pointing at the anonymized profile.
     await db.delete(marketProposals)
       .where(and(eq(marketProposals.proposerUserId, userId), inArray(marketProposals.status, ["pending", "rejected"])));
+    // Founder content (2026-10-19): the member's founder profile leaves every
+    // page, and anything they submitted that was never approved goes with it.
+    // An approved startup is company information with markets other people
+    // hold, so it stays until the owner decides; it is no longer theirs to manage.
+    await db.update(founders).set({ status: "suspended", reviewReason: "The member deleted their account.", userId: null, portraitUrl: null })
+      .where(eq(founders.userId, userId));
+    await db.update(startups).set({ status: "suspended", reviewReason: "The member deleted their account." })
+      .where(and(eq(startups.createdBy, userId), inArray(startups.status, ["pending", "rejected"])));
+    await db.update(startups).set({ createdBy: null }).where(eq(startups.createdBy, userId));
+    await db.update(videos).set({ status: "suspended", reviewReason: "The member deleted their account." })
+      .where(and(eq(videos.uploadedBy, userId), inArray(videos.status, ["pending", "rejected"])));
+    // What they liked, saved, followed and watched is personal; counts of
+    // views stay, without anything tying them to the person.
+    await db.delete(videoLikes).where(eq(videoLikes.userId, userId));
+    await db.delete(videoSaves).where(eq(videoSaves.userId, userId));
+    await db.delete(founderFollows).where(eq(founderFollows.userId, userId));
+    await db.delete(startupFollows).where(eq(startupFollows.userId, userId));
+    await db.delete(viewerInterests).where(eq(viewerInterests.viewerKey, `u:${userId}`));
+    await db.update(videoEvents).set({ userId: null, viewerKey: "deleted" }).where(eq(videoEvents.userId, userId));
     await db.update(profiles).set({
       handle: `deleted_${userId.replaceAll("-", "").slice(0, 12)}`,
       displayName: "Deleted member",

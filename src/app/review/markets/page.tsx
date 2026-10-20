@@ -6,6 +6,7 @@ import { LifecycleError, listLifecycleMarkets, readObjections } from "@/modules/
 import { formatMoment } from "@/modules/events/time";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { OwnerControls } from "./owner-controls";
+import { PauseForm } from "../admin-forms";
 import { readViewerOrNull } from "@/modules/account/viewer";
 
 export const metadata = { title: "Manage outcomes", robots: { index: false } };
@@ -30,16 +31,17 @@ export default async function ManageMarketsPage() {
     objections: await readObjections(getDb(), identity.id, row.market.id),
   })));
   return <div className="market-shell"><MarketHeader viewer={viewer} /><main className="account-main review-main">
-    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review suggestions</Link></div>
-    <section className="account-welcome"><h1>Settle every market.</h1><p>Close trading, read each market’s source once its window ends, and explain the outcome. Missing source data is not a No: if the source has not reported by the results deadline, void the market and refund held costs. Rulings stay open to objections for 24 hours before payout becomes final.</p></section>
-    {!items.length && <section className="account-card"><h2>No live markets to manage.</h2><Link href="/review">Publish one</Link></section>}
-    {items.map(({ market, venueName, sourceName, sourceUrl, objections }) => {
+    <div className="account-topline"><span className="eyebrow">OWNER OUTCOMES</span><Link className="text-button" href="/review">Review queue</Link></div>
+    <section className="account-welcome"><h1>Settle every market.</h1><p>Pause trading while you check something, close it early once an outcome is public, read each market’s source once trading closes, and explain the outcome. Missing source data is not a No: if nothing can be verified by the results deadline, void the market and refund held costs. Rulings stay open to objections for 24 hours before payout becomes final. Founders never settle their own markets.</p></section>
+    {!items.length && <section className="account-card"><h2>No live markets to manage.</h2><Link href="/review/markets/new">Create one</Link></section>}
+    {items.map(({ market, venueName, startupName, sourceName, sourceUrl, objections }) => {
       const zone = market.timeZone ?? FALLBACK_ZONE;
       return <article className="review-card" key={market.id}>
         <div className="review-meta">
           <span className={`status-pill status-${market.status}`}>{market.status}</span>
-          <span>{venueName ?? "Earlier goal market"}</span>
-          {market.isSample && <span className="sample-tag">Sample</span>}
+          <span>{startupName ?? venueName ?? "Earlier goal market"}</span>
+          {market.isSample && <span className="sample-tag">Demo</span>}
+          {market.pausedAt && <span className="status-pill">Paused</span>}
         </div>
         <h2><Link href={`/markets/${market.id}`}>{market.question} ↗︎</Link></h2>
         {market.yesCondition && <p className="market-criteria"><strong>Yes if:</strong> {market.yesCondition}</p>}
@@ -52,6 +54,7 @@ export default async function ManageMarketsPage() {
         {sourceName && <p className="field-hint">Source: {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noopener noreferrer nofollow">{sourceName}</a> : sourceName}</p>}
         {market.ruledOutcome && <section className="ruling-box"><h3>Current ruling: {market.ruledOutcome.toUpperCase()} · version {market.rulingVersion}</h3><p className="market-criteria">{market.rulingReason}</p><p className="field-hint">Objections until {market.contestEndsAt && formatMoment(market.contestEndsAt, zone)}</p></section>}
         {!!objections.length && <section className="private-objections"><h3>Private objections ({objections.length})</h3>{objections.map((objection) => <article key={objection.id}><p className="field-hint">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="market-criteria">{objection.reason}</p></article>)}</section>}
+        {market.status === "open" && <PauseForm marketId={market.id} paused={!!market.pausedAt} />}
         <OwnerControls marketId={market.id} version={market.rulingVersion} canClose={market.status === "open"}
           canRule={market.rulingAvailable} isRevision={market.status === "ruled"}
           resultsDue={formatMoment(market.evidenceDeadlineAt, zone)} />

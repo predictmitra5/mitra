@@ -26,13 +26,15 @@ function watchPhone(onChange: () => void) {
 }
 
 export function TradeDock({
-  marketId, title, name, photo, yesPrice, liquidity, access, balanceMicro, allowanceMicro,
-  heldYesMicro, heldNoMicro, initialSide, openInitially, tradingOpen, position,
+  marketId, title, name, photo, mark, yesPrice, liquidity, access, balanceMicro, allowanceMicro,
+  heldYesMicro, heldNoMicro, heldYesCostMicro = 0, heldNoCostMicro = 0, initialSide, openInitially, tradingOpen, position,
 }: {
   marketId: string;
   title: string;
   name: string;
   photo: string | null;
+  /** The startup's mark, drawn instead of initials when given. */
+  mark?: ReactNode;
   yesPrice: number;
   liquidity: number;
   access: TradeAccess;
@@ -40,6 +42,8 @@ export function TradeDock({
   allowanceMicro: number | null;
   heldYesMicro: number;
   heldNoMicro: number;
+  heldYesCostMicro?: number;
+  heldNoCostMicro?: number;
   initialSide: Side;
   openInitially: boolean;
   tradingOpen: boolean;
@@ -93,17 +97,17 @@ export function TradeDock({
     <>
       <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this market">
         <button type="button" className="dock-backdrop" tabIndex={-1} aria-hidden="true" onClick={() => setOpen(false)} />
-        <div className="dock-sheet" ref={sheet} tabIndex={-1}
+        <div className="dock-sheet rise" ref={sheet} tabIndex={-1}
           role={modal ? "dialog" : undefined} aria-modal={modal ? true : undefined} aria-labelledby={`trade-title-${marketId}`}>
           <span className="dock-grip" aria-hidden="true" />
           <div className="trade-head">
-            <Avatar name={name} photo={photo} size={32} shape="square" />
+            {mark ?? <Avatar name={name} photo={photo} size={32} shape="square" />}
             <h2 id={`trade-title-${marketId}`}>{title}</h2>
             <button type="button" className="dock-close" onClick={() => setOpen(false)}>Close</button>
           </div>
           <TradePanel marketId={marketId} yesPrice={price} liquidity={liquidity} access={access}
             balanceMicro={balanceMicro} allowanceMicro={allowanceMicro} heldYesMicro={heldYesMicro} heldNoMicro={heldNoMicro}
-            side={side} onSide={setSide} />
+            heldYesCostMicro={heldYesCostMicro} heldNoCostMicro={heldNoCostMicro} side={side} onSide={setSide} />
         </div>
         {position}
       </aside>

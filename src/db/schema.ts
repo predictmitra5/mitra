@@ -42,7 +42,8 @@ export const proposalStatus = pgEnum("proposal_status", [
   "rejected", // turned down, with a reason the proposer can read
 ]);
 export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
-export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence"]);
+/** Direct-upload grants (2026-10-07); founder images and videos since 2026-10-19. */
+export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence", "media_image", "media_video"]);
 export const evidenceKind = pgEnum("evidence_kind", ["file", "link"]);
 export const evidenceStatus = pgEnum("evidence_status", [
   "submitted", // waiting for the owner; visible only to the owner and the sender
@@ -79,7 +80,44 @@ export const adminActionKind = pgEnum("admin_action_kind", [
   "withdraw_account",
   "create_qr_campaign",
   "manage_qr_campaign",
+  // Startups, founders and videos, decided 2026-10-19. The target is in details.
+  "approve_founder",
+  "reject_founder",
+  "approve_startup",
+  "reject_startup",
+  "approve_video",
+  "reject_video",
+  "edit_market",
+  "pause",
+  "resume",
+  "review_claim",
+  "resolve_report",
+  "remove_comment",
 ]);
+
+/*
+ * Startup markets, decided 2026-10-19 (DECISIONS.md): founders and their
+ * startups, their videos, what viewers do with those videos, follows,
+ * comments, reports and verification claims.
+ */
+export const industry = pgEnum("industry", [
+  "ai", "robotics", "edtech", "healthcare", "devtools", "gaming", "climate", "consumer", "fintech", "hardware", "other",
+]);
+/** Founders, startups and videos wait for the owner before anyone else sees them. */
+export const reviewStatus = pgEnum("review_status", ["pending", "approved", "rejected", "suspended"]);
+/** What a startup market measures. Financial milestones are demonstration only (legal review before any real money). */
+export const milestoneKind = pgEnum("milestone_kind", [
+  "adoption", "accelerator", "competition", "award", "financial", "launch", "ranking", "performance", "other",
+]);
+/** The brief's four kinds of evidence, kept apart so simulated or self-reported facts never read as verified. */
+export const verificationLevel = pgEnum("verification_level", ["unverified", "founder_reported", "independently_verified", "disputed"]);
+export const videoEventKind = pgEnum("video_event_kind", [
+  "impression", "watch", "complete", "rewatch", "skip", "like", "unlike", "save", "unsave", "share", "comment",
+  "follow_founder", "follow_startup", "not_interested", "report", "open_market",
+]);
+export const commentTarget = pgEnum("comment_target", ["market", "video", "startup"]);
+export const reportTarget = pgEnum("report_target", ["video", "comment", "startup", "founder", "market"]);
+export const reportStatus = pgEnum("report_status", ["open", "resolved", "dismissed"]);
 
 export const profiles = pgTable(
   "profiles",
@@ -102,6 +140,11 @@ export const profiles = pgTable(
     // Topics picked during onboarding, decided 2026-10-05. Stored only: nothing
     // uses them to change the feed until the discovery decision (D08, D09).
     topics: text("topics").array(),
+    /**
+     * A fictional demonstration trader or commenter (2026-10-19), with no sign-in
+     * of its own. Labelled wherever it appears and left out of the owner's people list.
+     */
+    isDemo: boolean("is_demo").notNull().default(false),
   },
   (table) => [uniqueIndex("profiles_handle_key").on(table.handle)],
 );
@@ -196,6 +239,316 @@ export const resolutionSources = pgTable("resolution_sources", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * A founder (2026-10-19): a person viewers can follow apart from any company,
+ * and who can be linked to several startups over time. userId is the member
+ * who manages the profile; the founder is barred from trading the markets of
+ * any startup they are linked to.
+ */
+export const founders = pgTable(
+  "founders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    handle: text("handle").notNull(),
+    name: text("name").notNull(),
+    /** One line under the name: "Building AI study tools for college students". */
+    headline: text("headline").notNull(),
+    bio: text("bio").notNull(),
+    /** Professional background, in a few sentences. */
+    background: text("background"),
+    location: text("location"),
+    /** A photo, when there is one; otherwise the composite draws initials. */
+    portraitUrl: text("portrait_url"),
+    /** Hue for the initials circle, 0 to 359, so placeholders differ. */
+    hue: integer("hue").notNull().default(205),
+    accomplishments: text("accomplishments").array().notNull().default(sql`'{}'::text[]`),
+    websiteUrl: text("website_url"),
+    userId: uuid("user_id").references(() => profiles.id),
+    status: reviewStatus("status").notNull().default("pending"),
+    reviewReason: text("review_reason"),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: uuid("approved_by").references(() => profiles.id),
+  },
+  (table) => [
+    uniqueIndex("founders_handle_key").on(table.handle),
+    index("founders_user_idx").on(table.userId),
+    index("founders_status_idx").on(table.status),
+  ],
+);
+
+/**
+ * A startup (2026-10-19). Without its own thumbnail, the app draws one from the
+ * founder's portrait or initials, the logo or glyph, and the product features.
+ */
+export const startups = pgTable(
+  "startups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    /** A few words: "AI study companion". */
+    tagline: text("tagline").notNull(),
+    /** The card's title: "Building the future of studying". */
+    headline: text("headline").notNull(),
+    description: text("description").notNull(),
+    industry: industry("industry").notNull(),
+    tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+    foundedOn: timestamp("founded_on", { withTimezone: true }),
+    /** Idea, Pre-seed, Seed, Series A, ... as the startup describes itself. */
+    stage: text("stage").notNull(),
+    headquarters: text("headquarters"),
+    websiteUrl: text("website_url"),
+    logoUrl: text("logo_url"),
+    /** A named icon drawn when there is no logo file: "sparkles", "robot", "gamepad", ... */
+    glyph: text("glyph").notNull().default("sparkles"),
+    hue: integer("hue").notNull().default(210),
+    /** What the product does, in a paragraph. */
+    productDetails: text("product_details").notNull(),
+    /** Three short features for the thumbnail's product panel. */
+    productFeatures: text("product_features").array().notNull().default(sql`'{}'::text[]`),
+    productImageUrl: text("product_image_url"),
+    thumbnailUrl: text("thumbnail_url"),
+    screenshotUrls: text("screenshot_urls").array().notNull().default(sql`'{}'::text[]`),
+    /** The overall standing of what the startup says about itself. */
+    verification: verificationLevel("verification").notNull().default("unverified"),
+    status: reviewStatus("status").notNull().default("pending"),
+    reviewReason: text("review_reason"),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdBy: uuid("created_by").references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: uuid("approved_by").references(() => profiles.id),
+  },
+  (table) => [
+    uniqueIndex("startups_slug_key").on(table.slug),
+    index("startups_industry_idx").on(table.industry),
+    index("startups_status_idx").on(table.status),
+    index("startups_created_by_idx").on(table.createdBy),
+  ],
+);
+
+export const startupFounders = pgTable(
+  "startup_founders",
+  {
+    startupId: uuid("startup_id").notNull().references(() => startups.id),
+    founderId: uuid("founder_id").notNull().references(() => founders.id),
+    /** "Founder / CEO" */
+    role: text("role").notNull(),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.startupId, table.founderId] }), index("startup_founders_founder_idx").on(table.founderId)],
+);
+
+/** A caption line: seconds from the start, and the words. */
+export type CaptionCue = { at: number; text: string };
+
+/**
+ * A video about a startup (2026-10-19). Without a file, the player runs over
+ * the thumbnail with the captions, as a working placeholder, and still records
+ * watch time.
+ */
+export const videos = pgTable(
+  "videos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    startupId: uuid("startup_id").notNull().references(() => startups.id),
+    founderId: uuid("founder_id").references(() => founders.id),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    /** pitch, demo, update or interview */
+    kind: text("kind").notNull().default("pitch"),
+    videoUrl: text("video_url"),
+    thumbnailUrl: text("thumbnail_url"),
+    durationSeconds: integer("duration_seconds").notNull(),
+    captions: jsonb("captions").$type<CaptionCue[]>().notNull().default(sql`'[]'::jsonb`),
+    status: reviewStatus("status").notNull().default("pending"),
+    reviewReason: text("review_reason"),
+    isDemo: boolean("is_demo").notNull().default(false),
+    uploadedBy: uuid("uploaded_by").references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("videos_startup_idx").on(table.startupId),
+    index("videos_founder_idx").on(table.founderId),
+    index("videos_status_published_idx").on(table.status, table.publishedAt),
+    check("videos_duration_positive", sql`${table.durationSeconds} > 0 and ${table.durationSeconds} <= 3600`),
+  ],
+);
+
+/**
+ * What viewers do with videos, for the recommendation (2026-10-19). A viewer is
+ * "u:<account id>" when signed in, or "v:<random cookie>" for a visitor; no
+ * address, device or personal detail is stored. Never read by the market engine.
+ */
+export const videoEvents = pgTable(
+  "video_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    videoId: uuid("video_id").notNull().references(() => videos.id),
+    viewerKey: text("viewer_key").notNull(),
+    userId: uuid("user_id").references(() => profiles.id),
+    kind: videoEventKind("kind").notNull(),
+    /** Watch events: milliseconds watched in this stretch. */
+    watchMs: integer("watch_ms").notNull().default(0),
+    /** Furthest point reached, in basis points of the duration. */
+    progressBp: integer("progress_bp").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("video_events_video_time_idx").on(table.videoId, table.createdAt),
+    index("video_events_viewer_time_idx").on(table.viewerKey, table.createdAt),
+  ],
+);
+
+export const videoLikes = pgTable(
+  "video_likes",
+  {
+    videoId: uuid("video_id").notNull().references(() => videos.id),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.videoId, table.userId] }), index("video_likes_user_idx").on(table.userId)],
+);
+
+export const videoSaves = pgTable(
+  "video_saves",
+  {
+    videoId: uuid("video_id").notNull().references(() => videos.id),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.videoId, table.userId] }), index("video_saves_user_idx").on(table.userId)],
+);
+
+export const founderFollows = pgTable(
+  "founder_follows",
+  {
+    founderId: uuid("founder_id").notNull().references(() => founders.id),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.founderId, table.userId] }), index("founder_follows_user_idx").on(table.userId)],
+);
+
+export const startupFollows = pgTable(
+  "startup_follows",
+  {
+    startupId: uuid("startup_id").notNull().references(() => startups.id),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.startupId, table.userId] }), index("startup_follows_user_idx").on(table.userId)],
+);
+
+/**
+ * A viewer's leaning towards each industry, kept up to date as they watch,
+ * like, skip and follow (2026-10-19). Decays over time; the ranking reads it.
+ */
+export const viewerInterests = pgTable(
+  "viewer_interests",
+  {
+    viewerKey: text("viewer_key").notNull(),
+    industry: industry("industry").notNull(),
+    score: integer("score").notNull().default(0), // thousandths
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.viewerKey, table.industry] })],
+);
+
+/** A startup's progress update or a founder's milestone, on their timelines. */
+export const startupUpdates = pgTable(
+  "startup_updates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    startupId: uuid("startup_id").references(() => startups.id),
+    founderId: uuid("founder_id").references(() => founders.id),
+    /** update or milestone */
+    kind: text("kind").notNull().default("update"),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    happenedAt: timestamp("happened_at", { withTimezone: true }).notNull(),
+    verification: verificationLevel("verification").notNull().default("founder_reported"),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdBy: uuid("created_by").references(() => profiles.id),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("startup_updates_startup_idx").on(table.startupId, table.happenedAt),
+    index("startup_updates_founder_idx").on(table.founderId, table.happenedAt),
+    check("startup_updates_has_owner", sql`${table.startupId} is not null or ${table.founderId} is not null`),
+  ],
+);
+
+/**
+ * A claim about a startup and how far it has been checked (2026-10-19): the
+ * brief's unverified, founder-reported, independently verified and disputed.
+ */
+export const verificationClaims = pgTable(
+  "verification_claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    startupId: uuid("startup_id").notNull().references(() => startups.id),
+    marketId: uuid("market_id"),
+    statement: text("statement").notNull(),
+    level: verificationLevel("level").notNull().default("unverified"),
+    sourceName: text("source_name"),
+    sourceUrl: text("source_url"),
+    /** The owner's note on the review. Public once reviewed. */
+    reviewNote: text("review_note"),
+    submittedBy: uuid("submitted_by").references(() => profiles.id),
+    reviewedBy: uuid("reviewed_by").references(() => profiles.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("verification_claims_startup_idx").on(table.startupId, table.createdAt)],
+);
+
+/** Discussion on a market, a video or a startup (2026-10-19). Removed comments stay as an audit record. */
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    target: commentTarget("target").notNull(),
+    targetId: uuid("target_id").notNull(),
+    userId: uuid("user_id").notNull().references(() => profiles.id),
+    parentId: uuid("parent_id"),
+    body: text("body").notNull(),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    removedBy: uuid("removed_by").references(() => profiles.id),
+    removedReason: text("removed_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("comments_target_idx").on(table.target, table.targetId, table.createdAt),
+    index("comments_user_idx").on(table.userId),
+    check("comments_body_length", sql`char_length(${table.body}) between 1 and 1000`),
+  ],
+);
+
+/** Something a viewer reported for the owner to look at (2026-10-19). */
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    target: reportTarget("target").notNull(),
+    targetId: uuid("target_id").notNull(),
+    reporterUserId: uuid("reporter_user_id").references(() => profiles.id),
+    reason: text("reason").notNull(),
+    status: reportStatus("status").notNull().default("open"),
+    resolvedBy: uuid("resolved_by").references(() => profiles.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolution: text("resolution"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("reports_status_idx").on(table.status, table.createdAt)],
+);
+
 export const markets = pgTable(
   "markets",
   {
@@ -206,6 +559,12 @@ export const markets = pgTable(
 
     // Frozen once trading opens. A broken market is cancelled and republished, never edited.
     question: text("question").notNull(),
+    /**
+     * The card's few words (2026-10-09): "Will Midway on High sell more than
+     * 1,000 drinks?" on the feed, the full question once someone opens it.
+     * Display only: the question, rules and conditions are what trade.
+     */
+    shortQuestion: text("short_question"),
     resolutionCriteria: text("resolution_criteria").notNull(),
     goalType: text("goal_type"), // goal markets only: gpa, club, internship, launch, gym, other
 
@@ -223,6 +582,14 @@ export const markets = pgTable(
     noCondition: text("no_condition"),
     /** Hypothetical demonstration market, labelled as such everywhere it appears. */
     isSample: boolean("is_sample").notNull().default(false),
+
+    // Startup markets (2026-10-19): a measurable milestone of one startup. The
+    // Yes/No conditions, the time zone and the resolution source above apply too.
+    startupId: uuid("startup_id").references(() => startups.id),
+    milestoneKind: milestoneKind("milestone_kind"),
+    /** Set while the owner has paused trading; nobody can trade until it is cleared. */
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
+    pausedReason: text("paused_reason"),
 
     /** The trading cutoff. */
     deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
@@ -275,14 +642,18 @@ export const markets = pgTable(
     ),
     check("markets_evidence_after_deadline", sql`${table.evidenceDeadlineAt} >= ${table.deadlineAt}`),
     index("markets_venue_idx").on(table.venueId),
-    // A market is a legacy goal (a subject) or a fully specified event market.
+    index("markets_startup_idx").on(table.startupId),
+    // A market is a legacy goal (a subject), a fully specified event market, or
+    // (2026-10-19) a fully specified startup market.
     check(
-      "markets_goal_or_event",
+      "markets_has_subject",
       sql`${table.subjectUserId} is not null or (${table.venueId} is not null and ${table.campus} is not null
         and ${table.category} is not null and ${table.resolutionSourceId} is not null
         and ${table.windowStartAt} is not null and ${table.windowEndAt} is not null and ${table.windowEndAt} > ${table.windowStartAt}
         and ${table.timeZone} is not null and ${table.yesCondition} is not null and ${table.noCondition} is not null
-        and ${table.evidenceDeadlineAt} >= ${table.windowEndAt})`,
+        and ${table.evidenceDeadlineAt} >= ${table.windowEndAt})
+        or (${table.startupId} is not null and ${table.milestoneKind} is not null and ${table.resolutionSourceId} is not null
+        and ${table.timeZone} is not null and ${table.yesCondition} is not null and ${table.noCondition} is not null)`,
     ),
   ],
 );
@@ -300,13 +671,17 @@ export const marketProposals = pgTable(
     proposerUserId: uuid("proposer_user_id")
       .notNull()
       .references(() => profiles.id),
-    campus: text("campus").notNull(),
+    // Event suggestions (2026-10-08) carry a campus, category, venue and window;
+    // a startup suggestion (2026-10-19) carries its startup and a suggested close.
+    campus: text("campus"),
     question: text("question").notNull(),
-    category: marketCategory("category").notNull(),
+    category: marketCategory("category"),
     /** As the proposer typed it; venueId is set only when they picked a known venue. */
-    venueName: text("venue_name").notNull(),
+    venueName: text("venue_name"),
     venueId: uuid("venue_id").references(() => venues.id),
-    windowStartAt: timestamp("window_start_at", { withTimezone: true }).notNull(),
+    startupId: uuid("startup_id").references(() => startups.id),
+    suggestedCloseAt: timestamp("suggested_close_at", { withTimezone: true }),
+    windowStartAt: timestamp("window_start_at", { withTimezone: true }),
     windowEndAt: timestamp("window_end_at", { withTimezone: true }),
     /** How the proposer thinks it could be checked. */
     resolutionNote: text("resolution_note").notNull(),
@@ -318,6 +693,8 @@ export const marketProposals = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    check("market_proposals_about_something", sql`(${table.venueName} is not null and ${table.campus} is not null
+      and ${table.category} is not null and ${table.windowStartAt} is not null) or ${table.startupId} is not null`),
     index("market_proposals_status_idx").on(table.status, table.createdAt),
     index("market_proposals_proposer_idx").on(table.proposerUserId, table.createdAt),
   ],

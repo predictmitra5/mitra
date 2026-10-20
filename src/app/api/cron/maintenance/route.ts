@@ -1,5 +1,6 @@
 import { getDb } from "@/db/client";
 import { pruneFeedEventBuckets } from "@/modules/discovery/feed";
+import { pruneVisitorActivity } from "@/modules/recommend/events";
 import { cleanupExpiredUploads } from "@/modules/uploads/cleanup";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
     const database = getDb();
     const uploads = await cleanupExpiredUploads(database);
     await pruneFeedEventBuckets(database);
-    return Response.json({ uploads, feedActivity: "pruned" });
+    await pruneVisitorActivity(database);
+    return Response.json({ uploads, feedActivity: "pruned", visitorActivity: "pruned" });
   } catch {
     return Response.json({ error: "Maintenance did not complete." }, { status: 500 });
   }

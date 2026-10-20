@@ -59,6 +59,20 @@ export function quoteBuy(state: MarketMakerState, side: Side, spendMicro: number
   };
 }
 
+/**
+ * Quote buying exactly `sharesMicro` micro-shares of `side` (2026-10-19: the
+ * trade panel's contract quantity). The cost rounds up, in the market maker's favour.
+ */
+export function quoteBuyShares(state: MarketMakerState, side: Side, sharesMicro: number): BuyQuote {
+  assertMarketMakerState(state);
+  assertPositiveMicro(sharesMicro, "sharesMicro");
+  const lmsr = toLmsr(state);
+  const costMicro = roundedBuyCost(lmsr, side, sharesMicro);
+  if (!Number.isSafeInteger(costMicro) || costMicro <= 0) throw new RangeError("these shares cannot be priced");
+  const stateAfter = withShares(state, side, sharesMicro);
+  return { side, sharesMicro, costMicro, priceBefore: price(lmsr, side), priceAfter: price(toLmsr(stateAfter), side), stateAfter };
+}
+
 /** Quote returning `sharesMicro` micro-shares of `side` to the market maker. */
 export function quoteSell(state: MarketMakerState, side: Side, sharesMicro: number): SellQuote {
   assertMarketMakerState(state);

@@ -1,5 +1,7 @@
 # Roadmap
 
+> **2026-10-19:** the product pivoted to founder videos and startup markets (DECISIONS.md), rebuilt the same day on top of the 2026-10-12 and 10-13 work (Trade Coins, Coins, QR campaigns, security bounds). Built locally on the branch `startup-pivot`: the video feed with recommendations, startup and founder profiles, startup markets with contract buys and pausing, creator and owner tools, the demo catalog and the go-live script. Next: the owner's go-ahead to go live, founder uploads, real startups replacing the demo, and tuning the feed with real data.
+
 > **2026-10-08:** the product pivoted to campus event markets (DECISIONS.md). Built: venues, events, sources, suggestions, owner publishing, category/venue/status/closing filters, venue pages, trade history and three Ohio State samples. Live the same day. Next: real markets with sources that actually report, and retiring the samples.
 
 Status: proposed implementation sequence, conditional on user decisions. No milestones, dates or final P0 scope approved.
