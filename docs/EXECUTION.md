@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-21: the website on phones, and only example markets that are hard to fake** (DECISIONS.md 2026-10-21, "The website shows only milestones that are hard to fake"; builds on 2026-10-20, "Mitra's own website"). In `site/` only; the app is not touched. (1) Examples: Pulsewell's FDA 510(k) clearance market replaces Stackwise's GitHub stars on the cards, the rules card and the FAQ's example; Northstar's Steam release and Lumenly's 100,000 monthly users give way to Lumenly's Y Combinator acceptance and Nexa Robotics' 2027 Open Automation Prize (fictional), all from the app's demo catalog and labelled Demo; the walkthrough plays Nexa's market from Noah's video line about the prize; the markets intro names those kinds of milestone. (2) Phones: hover effects only where something can hover, no grey tap flash, press feedback, 44 px tap targets, safe-area insets, tighter section spacing, the card footer and the walkthrough card sized for narrow screens, in How it works the card before the steps with only the step in play opened, and the scroll-linked sinking and the opening's drift kept to mouse screens (touch keeps the scrim). Then the site's type check, lint and build, phone and desktop checks in headless Edge, and the docs; pushed only once the owner has seen it.
+
+Not Claude Code: the verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 

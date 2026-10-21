@@ -738,3 +738,11 @@ The owner first requested nine current markets, then clarified a few per categor
 
 **Assumptions made to finish it (the owner can change any of them):** the app's own address for sign-in and password-reset emails (`APP_URL`) and Supabase's allowed sign-in addresses move to `https://app.mitra.market` once it answers over HTTPS, so emails link to the new address; `mitra-gamma-ten.vercel.app` and `mitra-site-ten.vercel.app` keep working and stay on Supabase's list, so old links and current sessions are not broken.
 
+## 2026-10-21 - The website shows only milestones that are hard to fake
+
+**User instruction** (the owner): "Need to optimize website for mobile. also remove any of the lines that cna be aeaislt maniupalted, liek reviews or github stars or releases. put the example isntead ofg gtihub stars put fda clearance on our website. for the launch page" (spelling as written).
+
+**Decision:** the website (`site/`, https://mitra.market) shows no example market whose answer the founder, or anyone with a little money, can easily move: no counts that can be padded (stars, reviews, ratings, sign-ups, downloads, user counts) and no events the founder alone controls (a release or launch date). Pulsewell's FDA 510(k) clearance market takes the place of Stackwise's GitHub stars, on the cards, the rules card and the FAQ's example. The other examples are milestones someone else decides: Lumenly's acceptance into Y Combinator and Nexa Robotics' 2027 Open Automation Prize (a fictional prize). All three come from the app's demo catalog and stay labelled Demo. The site is also reworked for phones.
+
+**Assumptions (the owner can change any of them):** the "lines" are the site's example markets and "the launch page" is the website's one page; a monthly-user count counts as easy to pad, so Lumenly's 100,000 monthly users goes too; this covers the website only. The app's demo catalog still has such markets (among them Stackwise's GitHub stars, Northstar's Steam release and beta sign-ups and Orbit Kitchen's downloads); whether the app drops them is the owner's call.
+
