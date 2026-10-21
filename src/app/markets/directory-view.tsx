@@ -54,10 +54,10 @@ function Featured({ market, live }: { market: FeaturedData; live: ReadonlyMap<st
         )}
         <p className="featured-odds">
           <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{card.hasPrice ? `${percent(card.yesPrice)}%` : "—"}</strong>
-          <span className="featured-chance">Yes probability</span>
+          <span className="featured-chance">Last trade</span>
           <span className="featured-change"><Change bp={card.change24hBp} when="today" /> <span aria-hidden="true">today</span></span>
         </p>
-        <PriceButtons id={market.id} yesPrice={card.yesPrice} size="large" />
+        {card.tradingOpen && <PriceButtons id={market.id} yesAskCents={card.yesAskCents} noAskCents={card.noAskCents} size="large" />}
         <p className="featured-meta">{activityLine(card)} &middot; Closes {closeDate(market)}</p>
       </div>
       <PriceChart key={market.id} variant="card" points={withLivePoint(market.series, quote)} initialRange={market.moving ? "1D" : "3M"} />
@@ -67,7 +67,7 @@ function Featured({ market, live }: { market: FeaturedData; live: ReadonlyMap<st
 
 /** The chart ends at the live price once a poll brings a newer one. */
 function withLivePoint(series: ChartPoint[], quote: LiveQuote | undefined): ChartPoint[] {
-  if (!quote) return series;
+  if (!quote?.hasPrice) return series;
   const last = series.at(-1);
   if (last && last.yesBp === quote.yesBp) return series;
   return [...series, { at: new Date(quote.at).toISOString(), yesBp: quote.yesBp }];

@@ -7,7 +7,7 @@ import type { FormState } from "@/modules/auth/policy";
 export function DeleteAccountForm() {
   const [state, action, pending] = useActionState(deleteAccount, {} as FormState);
   return <div className="delete-account-panel">
-    <p>This permanently removes your login, profile photo, any earlier proof files, and suggestions that were never published. Settled trades and the Trade Coin ledger remain as an accounting record.</p>
+    <p>This permanently removes your login, profile photo, any earlier proof files, and suggestions that were never published. Financial history remains as an accounting record. Open orders, holdings and funds must be resolved first.</p>
     <form action={action} className="delete-account-form" aria-busy={pending}>
       <div className="field">
         <label htmlFor="delete-confirmation">Type DELETE to confirm</label>

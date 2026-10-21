@@ -169,7 +169,7 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
           </p>
           {market && <Odds market={market} />}
           <p className="yt-stats">
-            {highlight && <><strong>Moving most today</strong><span aria-hidden="true"> · </span></>}
+            {highlight && <><strong>{market?.hasPrice && market.change24hBp !== 0 ? "Moving most today" : "Featured startup"}</strong><span aria-hidden="true"> · </span></>}
             {market ? <>{traded(market)}{!highlight && <><span aria-hidden="true"> · </span>
               <span title={`Closes ${closeDate(market)}`}>{market.tradingOpen ? timeLeft(new Date(market.deadlineAt), now) : market.paused ? "trading paused" : "trading closed"}</span></>}</>
               : ago(card.publishedAt, now)}

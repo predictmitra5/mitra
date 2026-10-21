@@ -1,5 +1,7 @@
 # Exchange replacement checkpoint — 2026-10-20
 
+**Historical paused snapshot. Superseded by `docs/EXCHANGE_STATUS.md` and the latest `docs/EXECUTION.md`. The owner resumed the task; migrations 0019 and 0020 are now applied. Do not follow the paused resume steps below as current instructions.**
+
 Status: **paused at the user's explicit request. This is unfinished source work, not a release candidate. Do not deploy it or apply migration 0019 yet.**
 
 ## Authoritative checkout and scope

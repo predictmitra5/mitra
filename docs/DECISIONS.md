@@ -723,3 +723,10 @@ The owner requested Mitra branding and Ohio State/Illinois accents on verificati
 - **Founders.** The section is built now. Until the owner sends names, roles, photos and bios it shows labelled empty places only on the owner's machine (`next dev`) and is left out of the published site, so nothing is invented.
 - **Type and colour.** Geist at 400, 500 and 600, as in the app (AGENTS.md); black, white and a light grey, with green for Yes and red for No in market pictures.
 - **Going live** follows the 2026-10-08 rule: built and checked locally; nothing is pushed or deployed until the owner says so.
+
+**Owner's go-ahead, 2026-10-20 (evening):** "go", in answer to "To put it online, say go and I'll push. Then you'd create a second Vercel project from this repo with Root Directory set to `site`, and pick its web address."
+
+# Current catalog follow-up — 2026-10-20
+
+The owner first requested nine current markets, then clarified a few per category rather than exactly nine. Keep two existing open markets per startup industry (20 across ten industries) in the existing video-first UI despite empty liquidity. Keep both Yes/No inspection controls, honest No offer/zero-volume states, and closed customer execution. Other definitions are hidden reversibly, not deleted. “Codex funding/credits running out” refers to coding-agent usage, not authorization to enable app funding.
+

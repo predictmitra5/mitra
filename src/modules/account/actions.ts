@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { createAuthClient, currentIdentity } from "@/modules/auth/server";
 import { deleteAuthIdentity } from "@/modules/auth/admin";
-import type { FormState } from "@/modules/auth/policy";
+import { safeReturnTo, type FormState } from "@/modules/auth/policy";
 import { AccountError, provisionAccount } from "./provision";
 import { saveTopics } from "./topics";
 import { WithdrawalError, withdrawAccount } from "./withdrawal";
@@ -27,7 +27,8 @@ export async function completeProfile(_state: FormState, form: FormData): Promis
   }
   revalidatePath("/", "layout");
   // Onboarding continues with the photo (decided 2026-10-05).
-  redirect("/welcome?step=photo");
+  const next = safeReturnTo(form.get("next"));
+  redirect(`/welcome?step=photo${next ? `&next=${encodeURIComponent(next)}` : ""}`);
 }
 
 /** Onboarding: the topics they want to follow. Choosing none is fine. */
@@ -39,7 +40,8 @@ export async function saveOnboardingTopics(_state: FormState, form: FormData): P
   } catch {
     return { error: "We couldn’t save your topics. Please try again shortly." };
   }
-  redirect("/welcome?step=how");
+  const next = safeReturnTo(form.get("next"));
+  redirect(`/welcome?step=how${next ? `&next=${encodeURIComponent(next)}` : ""}`);
 }
 
 export async function deleteAccount(_state: FormState, form: FormData): Promise<FormState> {

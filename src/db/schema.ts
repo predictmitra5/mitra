@@ -568,6 +568,8 @@ export const markets = pgTable(
   "markets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /** Reversible public-catalog visibility; never changes frozen contract terms. */
+    listed: boolean("listed").notNull().default(true),
     // Goal markets only (before 2026-10-08). Event markets have no subject.
     subjectUserId: uuid("subject_user_id").references(() => profiles.id),
     status: marketStatus("status").notNull().default("draft"),

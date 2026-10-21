@@ -9,14 +9,14 @@ import { readPublicMarket, readTrader } from "@/modules/market/service";
 import { readCards, readPriceSeries, readTicker, readVolumeBuckets, recordClick } from "@/modules/discovery/feed";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { readViewerOrNull } from "@/modules/account/viewer";
-import { cardTitle, closesInWords, pointsText } from "@/modules/discovery/present";
+import { cardTitle, closesInWords } from "@/modules/discovery/present";
 import { statusLine } from "@/modules/events/status";
 import { formatMoment } from "@/modules/events/time";
 import { industryLabel, milestoneLabel, monthYear, verificationLabel, VERIFICATION, type VerificationKey } from "@/modules/startups/labels";
 import { readMarketStartup } from "@/modules/startups/read";
 import { followState, listComments } from "@/modules/social/service";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
-import { Gain, SampleTag, type CardData } from "@/app/components/market/market-card";
+import { SampleTag, type CardData } from "@/app/components/market/market-card";
 import { toCardData } from "@/app/components/market/card-data";
 import { Ticker } from "@/app/components/market/ticker";
 import { FounderFace, StartupMark, StartupThumb } from "@/app/components/startup/thumb";
@@ -146,7 +146,8 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
       imageUrl={video?.thumbnailUrl} durationSeconds={video?.durationSeconds} />
   ) : null;
   const statsCreated = longDate(market.approvedAt ?? market.createdAt, zone);
-  const openedAt = market.approvedAt ? `${longDate(market.approvedAt, zone)} at ${Math.round((market.openingProbabilityBp ?? 5000) / 100)}%` : null;
+  const openedAt = market.approvedAt ? longDate(market.approvedAt, zone) : null;
+  const legacyTerms = /Trade Coins|market resolves No|held costs/i.test(market.resolutionCriteria) || /cannot be verified|can.t be verified/i.test(market.noCondition ?? "");
 
   return <div className="market-shell goal-shell">
     <MarketHeader viewer={viewer} active="markets" />
@@ -277,20 +278,20 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         {/* 7. Exactly how it resolves. (6, trading, is beside the page or in the phone's sheet.) */}
         <section className="goal-section rise" aria-labelledby="rules-title">
           <h2 id="rules-title">Resolution criteria</h2>
-          {market.yesCondition && market.noCondition && (
+          {!legacyTerms && market.yesCondition && market.noCondition && (
             <div className="outcomes">
               <div className="outcome outcome-yes"><h3>Resolves Yes if</h3><p>{market.yesCondition}</p></div>
               <div className="outcome outcome-no"><h3>Resolves No if</h3><p>{market.noCondition}</p></div>
             </div>
           )}
-          <p className="goal-rules">{market.resolutionCriteria}</p>
+          {legacyTerms ? <p className="rule-note">These legacy terms need owner review and republication before any funded contract could open. Missing or unavailable source data is never treated as No. No orders can be executed.</p> : <p className="goal-rules">{market.resolutionCriteria}</p>}
           <dl className="goal-facts">
             <div><dt>Trading closes</dt><dd>{formatMoment(market.deadlineAt, zone)}</dd></div>
             <div><dt>Results due</dt><dd>{formatMoment(market.evidenceDeadlineAt, zone)}</dd></div>
             {market.sourceName && <div><dt>Verification source</dt><dd>{market.sourceName}{market.sourceUrl && <> · <a className="source-link" href={market.sourceUrl} target="_blank" rel="noopener noreferrer nofollow">link</a></>}</dd></div>}
-            {openedAt && <div><dt>Opened</dt><dd>{openedAt}, set by the owner</dd></div>}
-            <div><dt>If no result arrives</dt><dd>Void and held costs refunded</dd></div>
-            <div><dt>If voided</dt><dd>Contracts refunded at what you paid</dd></div>
+            {openedAt && <div><dt>Opened</dt><dd>{openedAt}</dd></div>}
+            <div><dt>If no result arrives</dt><dd>Review against the published deadline; missing data never determines No</dd></div>
+            <div><dt>If voided</dt><dd>Open orders cancelled; $0.50 per fully collateralized contract</dd></div>
           </dl>
           <p className="muted goal-small">Only the Mitra owner settles markets, from the source above. Founders cannot trade, settle or change their own markets. Each ruling has a 24-hour window for objections before payout.</p>
         </section>

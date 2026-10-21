@@ -1,7 +1,6 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
-import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { CONTEST_WINDOW_MS } from "@/modules/market/lifecycle";
 import { DEMO_STARTUPS, type DemoMarket, type DemoStartup } from "./catalog";
 type Random = () => number;
@@ -14,10 +13,8 @@ function seeded(initial:number):Random {let n=initial>>>0;return ()=>{n=(Math.im
  *
  * - Founders, startups, videos, updates and claims arrive approved, as if the
  *   owner had reviewed them, and each approval is in admin_actions.
- * - Markets open at their opening price at their "opened" date; fictional
- *   demo traders then trade them through simulate.ts, so prices, volume,
- *   trader counts, positions and wallets agree. Finished demo markets are
- *   closed, ruled and paid out exactly as lifecycle.ts would.
+ * - Markets carry fictional milestone terms, but no seeded money, orders,
+ *   fills, holdings, volume or price history.
  * - Viewing, likes, saves, follows and comments come from fictional viewers,
  *   so the feed's ranking has something to rank on from the first visit.
  *
@@ -62,7 +59,7 @@ export function demoRules(startup: DemoStartup, market: DemoMarket): string {
     `Source: ${market.source}.`,
     "If that source is unavailable at the deadline, the owner checks the company's own public announcement and at least one independent report. If sources conflict, the more conservative figure counts. If nothing can be verified within 14 days after the deadline, the market is void; missing data never determines No.",
     `${startup.name}'s founders and anyone who manages its profile cannot trade this market. Only the Mitra owner settles it.`,
-    `Demo market: ${startup.name}, its founders and every number here are fictional, for demonstrating Mitra. Trades use Trade Coins, which have no cash value.`,
+    `Demo market: ${startup.name}, its founders and every number here are fictional, for demonstrating Mitra. No financial activity is simulated or funded.`,
   ].join("\n\n");
 }
 
@@ -70,7 +67,7 @@ const BULLISH = [
   "The {name} update this month is the real signal. Holding Yes.",
   "Retention matters more than sign-ups, and {name}'s retention looks good.",
   "{founder} keeps shipping every few weeks. That's usually how these go.",
-  "Bought Yes at {price}¢. The demo video sold me.",
+  "The product demo makes the milestone easier to understand.",
   "Watched the founder video twice. {name} knows exactly who they're building for.",
   "If they keep this pace, Yes looks cheap.",
 ];
@@ -78,7 +75,7 @@ const BEARISH = [
   "This threshold is high. Most startups never get there on this timeline.",
   "Verified numbers are a much higher bar than self-reported ones. Leaning No.",
   "Love the product, but the deadline is tight.",
-  "Took No at {price}¢. Happy to be wrong.",
+  "Leaning No on this threshold. Happy to be wrong.",
   "Competition in this space is brutal. I'd want to see another quarter first.",
 ];
 const NEUTRAL = [
@@ -189,14 +186,13 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
     // ---------------------------------------------------------------- markets
     let marketCount = 0;
     const liquidityMicro = 0;
-    const marketIds = new Map<string, { id: string; startup: DemoStartup; market: DemoMarket; yesBp: number }>();
+    const marketIds = new Map<string, { id: string; startup: DemoStartup; market: DemoMarket }>();
     for (const startup of DEMO_STARTUPS) {
       for (const market of startup.markets) {
         const id = newId();
         marketCount += 1;
         const deadline = new Date(market.closes);
         const openedAt = new Date(now.getTime() - market.openedDaysAgo * DAY);
-        const finished = market.resolved ? deadline.getTime() <= now.getTime() : false;
         const [source] = await tx.insert(resolutionSources).values({ name: market.source, method: market.method, operational: false, createdAt: openedAt }).returning();
         const ruledAt = market.resolved ? new Date(Math.max(deadline.getTime() + HOUR, now.getTime() - market.resolved.daysAgo * DAY)) : null;
         const settledAt = ruledAt ? new Date(ruledAt.getTime() + CONTEST_WINDOW_MS) : null;
@@ -218,7 +214,7 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
         audit.push({ marketId: id, actorUserId: ownerId, kind: "approve", reason: "Demo market seeded for demonstration.",
           details: { question: market.question, openingProbabilityBp: 5000, isSample: true, demo: true }, createdAt: openedAt });
 
-        marketIds.set(market.key,{id,startup,market,yesBp:market.finalBp});
+        marketIds.set(market.key,{id,startup,market});
       }
     }
 
@@ -271,15 +267,14 @@ export async function seedDemo<Q extends PgQueryResultHKT>(
     await chunked(follows.startups, (part) => tx.insert(startupFollows).values(part));
     await chunked(follows.founders, (part) => tx.insert(founderFollows).values(part));
 
-    for (const { id, startup, market, yesBp } of marketIds.values()) {
+    for (const { id, startup, market } of marketIds.values()) {
       const opened = now.getTime() - market.openedDaysAgo * DAY;
       const count = 2 + Math.floor(random() * 4);
       for (let c = 0; c < count; c += 1) {
         const mood = random();
         const pool = mood < 0.45 ? BULLISH : mood < 0.85 ? BEARISH : NEUTRAL;
-        const priceText = String(pool === BEARISH ? 100 - Math.round(yesBp / 100) : Math.round(yesBp / 100));
         commentRows.push({ target: "market", targetId: id, userId: pickFrom(traderIds, random),
-          body: fill(pickFrom(pool, random), { name: startup.name, founder: startup.founders[0].founder.name.split(" ")[0], price: priceText }),
+          body: fill(pickFrom(pool, random), { name: startup.name, founder: startup.founders[0].founder.name.split(" ")[0] }),
           createdAt: new Date(opened + random() * (now.getTime() - opened)) });
       }
     }

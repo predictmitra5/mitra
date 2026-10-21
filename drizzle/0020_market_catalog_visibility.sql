@@ -1,0 +1,1 @@
+ALTER TABLE "markets" ADD COLUMN "listed" boolean DEFAULT true NOT NULL;

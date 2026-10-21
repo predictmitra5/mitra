@@ -58,19 +58,24 @@ describe("PKCE callback", () => {
     expect(mocks.createAuthClient).not.toHaveBeenCalled();
   });
 
-  it("rejects exchanged sessions with non-university, unconfirmed or alias identities", async () => {
+  it("rejects unconfirmed and anonymous identities", async () => {
     for (const invalidUser of [
-      { ...user, email: "outsider@example.com" },
       { ...user, email_confirmed_at: undefined },
-      { ...user, email: "student.123@buckeyemail.osu.edu" },
       { ...user, is_anonymous: true },
     ]) {
       mocks.auth.getUser.mockResolvedValue({ data: { user: invalidUser }, error: null });
       const response = await completeAuthCallback(request("code=test-code"), "/account");
       expect(response.headers.get("location")).toBe("https://goals.example.test/sign-in?notice=link-expired");
     }
-    expect(mocks.auth.signOut).toHaveBeenCalledTimes(4);
+    expect(mocks.auth.signOut).toHaveBeenCalledTimes(2);
     expect(mocks.auth.signOut).toHaveBeenLastCalledWith({ scope: "local" });
+  });
+
+  it.each(["outsider@example.com", "student.123@buckeyemail.osu.edu"])("accepts an independently verified ordinary email: %s", async (email) => {
+    mocks.auth.getUser.mockResolvedValue({ data: { user: { ...user, email } }, error: null });
+    const response = await completeAuthCallback(request("code=test-code"), "/account");
+    expect(response.headers.get("location")).toBe("https://goals.example.test/account");
+    expect(mocks.auth.signOut).not.toHaveBeenCalled();
   });
 
   it("fails closed when getUser reports an error despite containing a valid user", async () => {
