@@ -89,10 +89,6 @@ html[data-theme="light"] {
 
 /* The school's name beside the logo. Scarlet and orange are lightened on black
    and darkened on white so the name stays readable on both. */
-html[data-campus="osu"] { --school: #ff6b86; }
-html[data-campus="uiuc"] { --school: #ff7a2e; }
-html[data-theme="light"][data-campus="osu"] { --school: #ba0c2f; }
-html[data-theme="light"][data-campus="uiuc"] { --school: #c84113; }
 
 body {
   margin: 0;
@@ -106,8 +102,6 @@ body {
 b, strong { font-weight: 600; }
 
 .campus-only { display: none; }
-html[data-campus="osu"] .campus-osu,
-html[data-campus="uiuc"] .campus-uiuc { display: var(--campus-display, inline); }
 
 /* Hover and press feedback, shared by every control (decided 2026-10-05): quick
    colour changes on mouse-over, a slight press, nothing for touch-only hover,
@@ -225,7 +219,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .form-switch a { font-weight: 600; }
 .rule-note { padding: 0.75rem 0.9rem; border-radius: 8px; background: var(--raised); color: var(--ink-soft); font-size: 0.88rem; line-height: 1.45; }
 
-/* Brand actions use the active campus accent. */
+/* Brand actions use the neutral Mitra accent. */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; font: inherit; font-size: 14.5px; font-weight: 600; white-space: nowrap; cursor: pointer; text-decoration: none; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-quiet { border-color: transparent; background: var(--raised); color: var(--ink); }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db/client";
+import { safeReturnTo } from "@/modules/auth/policy";
 import { currentIdentity } from "@/modules/auth/server";
 import { photoUrl } from "@/modules/account/photo-url";
 import { isInactive } from "@/modules/account/standing";
@@ -14,7 +15,7 @@ import { TopicsStep } from "./topics-step";
 /*
  * Onboarding after sign-up, in Kalshi's shape (decided 2026-10-05): name and
  * @username, 18 or older, profile photo (skippable), topics, how Mitra works.
- * The first two create the profile with zero Trade Coins; the rest are steps in
+ * The first two create the profile with zero monetary balance; the rest are steps in
  * the address (?step=photo, topics, how) so a refresh keeps the place.
  */
 
@@ -39,29 +40,32 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
     );
   }
 
-  if (!profile?.adultConfirmedAt) return <ProfileSteps />;
+  const params = await searchParams;
+  const next = safeReturnTo(params.next);
+  const stepHref = (step: string) => `/welcome?step=${step}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
+  if (!profile?.adultConfirmedAt) return <ProfileSteps next={next} />;
   if (isInactive(profile)) redirect("/account");
 
-  const requested = (await searchParams).step;
+  const requested = params.step;
   const step = STEPS.find((name) => name === requested) as Step | undefined;
-  if (!step) redirect("/");
+  if (!step) redirect(next ?? "/");
 
   if (step === "photo") {
     return (
       <StepFrame fills={[100, 100, 100, 0]} label="Set up, step 3 of 5">
-        <PhotoStep name={profile.displayName} photo={photoUrl(profile.handle, profile.photoUpdatedAt)} />
+        <PhotoStep next={next} name={profile.displayName} photo={photoUrl(profile.handle, profile.photoUpdatedAt)} />
       </StepFrame>
     );
   }
   if (step === "topics") {
     return (
-      <StepFrame fills={[100, 100, 100, 50]} label="Set up, step 4 of 5" back={<BackLink href="/welcome?step=photo" label="Back" />}>
-        <TopicsStep initial={profile.topics ?? []} />
+      <StepFrame fills={[100, 100, 100, 50]} label="Set up, step 4 of 5" back={<BackLink href={stepHref("photo")} label="Back" />}>
+        <TopicsStep next={next} initial={profile.topics ?? []} />
       </StepFrame>
     );
   }
   return (
-    <StepFrame fills={[100, 100, 100, 100]} label="Set up, step 5 of 5" back={<BackLink href="/welcome?step=topics" label="Back" />}>
+    <StepFrame fills={[100, 100, 100, 100]} label="Set up, step 5 of 5" back={<BackLink href={stepHref("topics")} label="Back" />}>
       <div className="step-form">
         <h1>How Mitra works</h1>
         <ol className="how-list">
@@ -70,7 +74,7 @@ export default async function Welcome({ searchParams }: PageProps<"/welcome">) {
           <li><span>3</span><p><strong>A named source settles it</strong><small>Each market says exactly what counts and where the number comes from. Only the Mitra owner settles markets.</small></p></li>
           <li><span>4</span><p><strong>Fair play</strong><small>Prices and fills depend on resting orders. Founders can&rsquo;t trade their own startup&rsquo;s markets.</small></p></li>
         </ol>
-        <Link className="primary-button" href="/" prefetch={false}>Start exploring</Link>
+        <Link className="primary-button" href={next ?? "/"} prefetch={false}>Start exploring</Link>
       </div>
     </StepFrame>
   );

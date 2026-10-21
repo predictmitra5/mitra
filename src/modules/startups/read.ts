@@ -85,7 +85,7 @@ export async function flagshipMarkets<Q extends PgQueryResultHKT>(database: Data
   const out = new Map<string, FeedCard>();
   if (!startupIds.length) return out;
   const rows = await database.select({ id: markets.id, startupId: markets.startupId, status: markets.status })
-    .from(markets).where(and(inArray(markets.startupId, [...startupIds]), sql`${markets.approvedAt} is not null`,
+    .from(markets).where(and(eq(markets.listed, true), inArray(markets.startupId, [...startupIds]), sql`${markets.approvedAt} is not null`,
       inArray(markets.status, ["open", "closed", "ruled", "settled"])))
     .orderBy(sql`case when ${markets.status} = 'open' then 0 else 1 end`, asc(markets.approvedAt));
   const pick = new Map<string, string>();

@@ -114,7 +114,7 @@ export default async function ReviewPage() {
     {queue.drafts.length > 0 && <section className="review-group" aria-labelledby="q-drafts">
       <h2 id="q-drafts">Draft markets ({queue.drafts.length})</h2>
       {queue.drafts.map(({ market, startupName }) => <article className="review-card" key={market.id}>
-        <div className="review-meta"><span>{startupName}</span><span>closes {day(market.deadlineAt)}</span><span>opens at 50%</span>{market.isSample && <span className="sample-tag">Demo</span>}</div>
+        <div className="review-meta"><span>{startupName}</span><span>closes {day(market.deadlineAt)}</span><span>Starts with an empty order book</span>{market.isSample && <span className="sample-tag">Demo</span>}</div>
         <h3>{market.question}</h3>
         <div className="review-buttons"><Link className="btn btn-quiet" href={`/review/markets/new?draft=${market.id}`}>Edit the rules</Link><OpenDraftForm id={market.id} /></div>
       </article>)}

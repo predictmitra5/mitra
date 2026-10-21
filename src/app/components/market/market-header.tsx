@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Bell, Bookmark, Bot, BriefcaseBusiness, ChartLine, ClipboardCheck, Code, Compass, Cpu, Gamepad2, Gavel, GraduationCap, House, Leaf, Plus,
-  QrCode, ScrollText, Search, Settings, ShoppingBag, Sparkles, SquarePlay, SquarePlus, Stethoscope, Store, UserRound, Users, Wallet, type LucideIcon,
+  ScrollText, Search, Settings, ShoppingBag, Sparkles, SquarePlay, SquarePlus, Stethoscope, UserRound, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { getDb } from "@/db/client";
 import type { Viewer } from "@/modules/account/viewer";
@@ -193,7 +193,7 @@ function Guide({ viewer, active, follows, persistent }: { viewer: Viewer | null;
       )}
       <footer className="yt-guide-foot">
         <nav aria-label="Information"><Link href="/faq">FAQ</Link><Link href="/privacy">Privacy</Link><Link href="/markets">All markets</Link></nav>
-        <p>Startups, founders and markets marked Demo are fictional. USD and Coins have no cash value. Mitra is independent and not affiliated with any university.</p>
+        <p>Startups, founders and markets marked Demo are fictional. Account funding and trading are not available yet.</p>
       </footer>
     </nav>
   );
@@ -244,14 +244,14 @@ export function MarketFooter({ brandMode = "app" }: { brandMode?: "app" | "neutr
     <footer className={`market-footer${brandMode === "neutral" ? " market-footer-entry" : ""}`}>
       <div className="footer-brand">
         <span className="footer-edition">Mitra</span>
-        <span>Discover founders early. Predict with USD, which have no cash value.</span>
+        <span>Discover founders early. Follow what comes next.</span>
       </div>
       <nav className="footer-links" aria-label="Information">
         <Link href="/markets">Markets</Link>
         <Link href="/faq">FAQ</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>
-      <p className="footer-disclaimer">Startups, founders and markets marked Demo are fictional, for demonstration. USD and Coins have no cash value and can’t be withdrawn or redeemed. Mitra is an independent platform and is not affiliated with, endorsed by, or sponsored by any university.</p>
+      <p className="footer-disclaimer">Startups, founders and markets marked Demo are fictional, for demonstration. Deposits, withdrawals and trading are not available yet. Mitra is an independent platform.</p>
     </footer>
   );
 }

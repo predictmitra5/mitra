@@ -10,7 +10,7 @@ const check = (
 );
 
 /** Onboarding: industries to follow (2026-10-05; startup industries since 2026-10-19). They start the feed's leaning; see topics.ts. */
-export function TopicsStep({ initial }: { initial: readonly string[] }) {
+export function TopicsStep({ initial, next }: { initial: readonly string[]; next: string | null }) {
   const [chosen, setChosen] = useState(() => new Set(initial));
   const [state, action, pending] = useActionState(saveOnboardingTopics, {} as FormState);
 
@@ -24,6 +24,7 @@ export function TopicsStep({ initial }: { initial: readonly string[] }) {
 
   return (
     <form action={action} className="step-form" aria-busy={pending}>
+      <input type="hidden" name="next" value={next ?? ""} />
       <h1>What are you curious about?</h1>
       <p className="step-sub">Pick the industries you want to see founders from. Your feed starts there and learns from what you watch.</p>
       <fieldset className="topics">

@@ -1,5 +1,7 @@
 # Markets
 
+> Historical rules below are superseded by [EXCHANGE_STATUS.md](EXCHANGE_STATUS.md). Active execution is closed; no AMM, coins or signup grants remain. The current core uses limit orders, $1-backed pairs and independent executable offers. Do not rebuild retired rules from this history.
+
 Status (event markets since 2026-10-08; latest currency and campus changes 2026-10-12): campus event markets, transactional buy/sell execution, rulings, payouts/refunds and account withdrawal are built. Gold Trade Coins are nonredeemable trading collateral; new accounts start at zero. Silver Coins and cosmetic badge offers are separate from trading. Checkout is disabled until a payment provider is connected. Owner-configured QR campaigns may award Gold after server-side location validation; claimant coordinates are not persisted. Signed-out visitors may switch between OSU and UIUC to browse, but cannot trade. Deployed background scheduling and payment processing remain unimplemented.
 
 ## Confirmed direction - 2026-09-15

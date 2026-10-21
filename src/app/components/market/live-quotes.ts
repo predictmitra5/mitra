@@ -109,7 +109,7 @@ type Priced = { id: string; yesPrice: number; change24hBp: number; volumeMicro: 
 export function withQuote<T extends Priced>(card: T, live: ReadonlyMap<string, LiveQuote>): T {
   const quote = live.get(card.id);
   if (!quote) return card;
-  return { ...card, yesPrice: quote.yesBp / 10_000, change24hBp: quote.change24hBp, volumeMicro: quote.volumeMicro, tradingOpen: quote.tradingOpen };
+  return { ...card, hasPrice: quote.hasPrice, yesAskCents: quote.yesAskCents, noAskCents: quote.noAskCents, yesPrice: quote.yesBp / 10_000, change24hBp: quote.change24hBp, volumeMicro: quote.volumeMicro, tradingOpen: quote.tradingOpen };
 }
 
 /**

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
@@ -32,13 +32,6 @@ export type WithdrawalObjects = {
 export type WithdrawalStorage = {
   remove: (userId: string, objects: WithdrawalObjects) => Promise<void>;
 };
-
-function safeAmount(value: number) {
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new WithdrawalError("UNAVAILABLE", "Account balances need review before this account can be deleted.");
-  }
-  return value;
-}
 
 async function beginWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, now: Date) {
   return database.transaction(async (tx) => {

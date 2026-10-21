@@ -27,8 +27,6 @@ export interface AccountInput {
   displayName: string;
   handle: string;
   adultConfirmed: boolean;
-  /** Set only by the server after matching the verified owner mailbox. */
-  isOwner?: boolean;
 }
 
 export interface ProvisionedAccount {
@@ -62,7 +60,7 @@ function validateInput(userId: string, input: AccountInput) {
   if (!/^[a-z0-9_]{3,24}$/.test(handle)) {
     throw new AccountError("INVALID_PROFILE", "Use 3 to 24 letters, numbers or underscores for your handle.");
   }
-  return { displayName, handle, isOwner: input.isOwner === true };
+  return { displayName, handle };
 }
 
 function isHandleConflict(error: unknown): boolean {
@@ -96,7 +94,7 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
   input: AccountInput,
   now: Date = new Date(),
 ): Promise<ProvisionedAccount> {
-  const { displayName, handle, isOwner } = validateInput(userId, input);
+  const { displayName, handle } = validateInput(userId, input);
   if (!(now instanceof Date) || !Number.isFinite(now.getTime())) {
     throw new AccountError("ACCOUNT_UNAVAILABLE", "Account setup is temporarily unavailable. Please try again.");
   }
@@ -110,7 +108,7 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
           id: userId,
           displayName,
           handle,
-          isOwner: isOwner ? 1 : 0,
+          isOwner: 0,
           adultConfirmedAt: now,
         }).onConflictDoNothing({ target: profiles.id }).returning();
 
@@ -129,10 +127,6 @@ export async function provisionAccount<Q extends PgQueryResultHKT>(
       }
       if (profile.bannedAt) {
         throw new AccountError("ACCOUNT_BANNED", "This account has been banned.");
-      }
-
-      if (isOwner && profile.isOwner !== 1) {
-        [profile] = await tx.update(profiles).set({ isOwner: 1 }).where(eq(profiles.id, userId)).returning();
       }
 
       if (profile.adultConfirmedAt === null) {

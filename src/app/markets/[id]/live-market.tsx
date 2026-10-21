@@ -37,11 +37,10 @@ export function LivePrice({ id, yesPrice, status, hasPrice=false, yesAskCents=nu
 }
 
 /** Market statistics (2026-10-19): prices, volume, traders, close, creation and status. */
-export function LiveStats({ id, yesPrice, volumeMicro, traders, closes, created, status }: {
+export function LiveStats({ id, volumeMicro, traders, closes, created, status }: {
   id: string; yesPrice: number; volumeMicro: number; traders: number; closes: string; created: string; status: string;
 }) {
   const quote = useLiveQuotes([id]).get(id);
-  const yes = percent(quote ? quote.yesBp / 10_000 : yesPrice);
   const volume = (quote ? quote.volumeMicro : volumeMicro) / 1_000_000;
   return (
     <dl className="market-stats">

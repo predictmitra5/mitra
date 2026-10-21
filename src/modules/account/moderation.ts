@@ -1,27 +1,13 @@
-import { randomUUID } from "node:crypto";
-import { and, asc, count, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
-import { applyOwnerCommand } from "@/modules/market/lifecycle";
 import { declineSuggestion } from "@/modules/startups/admin";
 import { isInactive } from "./standing";
 
-/*
- * The owner's people tools, decided 2026-09-24 (DECISIONS.md).
- *
- * A ban locks the person out of everything, and their market suggestions that
- * are still waiting are turned down (2026-10-08). Their positions in event
- * markets finish and settle normally.
- *
- * Goal markets about people were retired on 2026-10-08. If a ban ever reaches
- * one still waiting on its subject's proof, it is cancelled with refunds through
- * the owner's own cancel command, the same locked, retry-safe path as any other
- * cancellation. Each step is its own transaction: if one fails, the ban still
- * stands and running the ban again finishes the rest.
- */
+/** Bans remove write access and reject pending startup suggestions; financial history is preserved. */
 
-const { profiles, markets, adminActions, marketProposals } = schema;
+const { profiles, adminActions, marketProposals } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -61,12 +47,6 @@ function cleanReason(value: unknown): string {
     throw new ModerationError("INVALID_INPUT", "Write a private reason of 3 to 500 characters.");
   }
   return reason;
-}
-
-/** Retired goal markets about this person still waiting on their proof: open, or closed and not yet ruled. */
-async function goalsToCancel<Q extends PgQueryResultHKT>(database: Database<Q>, subjectUserId: string) {
-  return database.select({ id: markets.id, version: markets.rulingVersion }).from(markets)
-    .where(and(eq(markets.subjectUserId, subjectUserId), inArray(markets.status, ["open", "closed"]), isNull(markets.ruledOutcome)));
 }
 
 export async function banPerson<Q extends PgQueryResultHKT>(
@@ -109,16 +89,6 @@ export async function banPerson<Q extends PgQueryResultHKT>(
     }
   }
 
-  for (const goal of await goalsToCancel(database, targetId)) {
-    try {
-      await applyOwnerCommand(database, ownerId, {
-        marketId: goal.id, requestId: randomUUID(), action: "cancel", reason: BAN_CANCEL_REASON, expectedVersion: goal.version,
-      }, clock);
-      result.cancelled += 1;
-    } catch {
-      result.remaining += 1;
-    }
-  }
   return result;
 }
 
@@ -172,14 +142,11 @@ export async function listPeople<Q extends PgQueryResultHKT>(database: Database<
   const rows = await database.select().from(profiles).orderBy(sql`${profiles.createdAt} desc`, asc(profiles.handle)).limit(1000);
   const suggestions = await database.select({ proposer: marketProposals.proposerUserId, total: count() }).from(marketProposals)
     .where(eq(marketProposals.status, "pending")).groupBy(marketProposals.proposerUserId);
-  const pending = await database.select({ subject: markets.subjectUserId, total: count() }).from(markets)
-    .where(and(inArray(markets.status, ["open", "closed"]), isNull(markets.ruledOutcome))).groupBy(markets.subjectUserId);
   const suggestionsBy = new Map(suggestions.map((row) => [row.proposer, row.total]));
-  const pendingBy = new Map(pending.map((row) => [row.subject, row.total]));
   return rows.map((row) => ({
     id: row.id, displayName: row.displayName, handle: row.handle, joinedAt: row.createdAt, isOwner: row.isOwner === 1,
     photoUpdatedAt: row.photoUpdatedAt, bannedAt: row.bannedAt, banReason: row.banReason, withdrawn: !!row.withdrawnAt,
     pendingSuggestions: suggestionsBy.get(row.id) ?? 0,
-    pendingCancellations: row.bannedAt ? (pendingBy.get(row.id) ?? 0) : 0,
+    pendingCancellations: 0,
   }));
 }

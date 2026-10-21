@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  categoryLabel,
   changeLabel,
   closesInWords,
   initials,
@@ -32,16 +31,6 @@ describe("ticker labels", () => {
   });
 });
 
-describe("categories", () => {
-  it("names each event category, and calls anything else a market", () => {
-    expect(categoryLabel("nightlife")).toBe("Nightlife");
-    expect(categoryLabel("entertainment")).toBe("Entertainment");
-    expect(categoryLabel("campus")).toBe("Campus");
-    expect(categoryLabel(null)).toBe("Market");
-    expect(categoryLabel("gpa")).toBe("Market");
-  });
-});
-
 describe("initials", () => {
   it("takes the first and last initial", () => {
     expect(initials("Maya")).toBe("M");
@@ -51,12 +40,12 @@ describe("initials", () => {
   });
 });
 
-describe("points", () => {
-  it("reads volume as whole Trade Coins traded", () => {
+describe("numeric presentation", () => {
+  it("reads volume as whole contracts traded", () => {
     expect(volumeLabel(0)).toBe("No trades yet");
-    expect(volumeLabel(400_000)).toBe("<1 Trade Coin traded");
-    expect(volumeLabel(45_000_000)).toBe("45 Trade Coins traded");
-    expect(volumeLabel(4_138_400_000)).toBe("4,138 Trade Coins traded");
+    expect(volumeLabel(400_000)).toBe("<1 contract traded");
+    expect(volumeLabel(45_000_000)).toBe("45 contracts traded");
+    expect(volumeLabel(4_138_400_000)).toBe("4,138 contracts traded");
   });
 
   it("shows other amounts to one decimal", () => {

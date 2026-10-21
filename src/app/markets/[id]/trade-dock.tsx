@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Side } from "@/modules/exchange/format";
-import { percent } from "@/modules/discovery/present";
 import { Avatar } from "@/app/components/market/market-card";
 import { useLiveQuotes } from "@/app/components/market/live-quotes";
 import { TradePanel, type TradeAccess } from "./trade-panel";
@@ -26,8 +25,8 @@ function watchPhone(onChange: () => void) {
 }
 
 export function TradeDock({
-  marketId, title, name, photo, mark, yesPrice, yesAskCents = null, noAskCents = null, access, balanceMicro,
-  heldYesMicro, heldNoMicro, heldYesCostMicro = 0, heldNoCostMicro = 0, initialSide, openInitially, tradingOpen, position,
+  marketId, title, name, photo, mark, yesAskCents = null, noAskCents = null, access, balanceMicro,
+  initialSide, openInitially, tradingOpen, position,
 }: {
   marketId: string;
   title: string;
@@ -53,7 +52,6 @@ export function TradeDock({
 }) {
   const live = useLiveQuotes([marketId]);
   const quote = live.get(marketId);
-  const price = quote ? quote.yesBp / 10_000 : yesPrice;
   const [side, setSide] = useState<Side>(initialSide);
   const [open, setOpen] = useState(openInitially);
   const phone = useSyncExternalStore(watchPhone, () => window.matchMedia(PHONE).matches, () => false);
@@ -87,14 +85,21 @@ export function TradeDock({
     };
   }, [modal]);
 
+  function selectSide(next: Side) {
+    setSide(next);
+    const address = new URL(window.location.href);
+    address.searchParams.set("side", next.toLowerCase());
+    window.history.replaceState(null, "", address.pathname + address.search);
+  }
+
   function openWith(next: Side, button: HTMLButtonElement) {
     opener.current = button;
-    setSide(next);
+    selectSide(next);
     setOpen(true);
   }
 
-  const yes = quote?.yesAskCents ?? yesAskCents;
-  const no = quote?.noAskCents ?? noAskCents;
+  const yes = quote ? quote.yesAskCents : yesAskCents;
+  const no = quote ? quote.noAskCents : noAskCents;
   return (
     <>
       <aside className={`dock${open ? " is-open" : ""}`} aria-label="Trade this market">
@@ -107,7 +112,7 @@ export function TradeDock({
             <h2 id={`trade-title-${marketId}`}>{title}</h2>
             <button type="button" className="dock-close" onClick={() => setOpen(false)}>Close</button>
           </div>
-          <TradePanel marketId={marketId} yesAskCents={yes} noAskCents={no} access={access} balanceMicro={balanceMicro} side={side} onSide={setSide} />
+          <TradePanel marketId={marketId} yesAskCents={yes} noAskCents={no} access={access} balanceMicro={balanceMicro} side={side} onSide={selectSide} />
         </div>
         {position}
       </aside>

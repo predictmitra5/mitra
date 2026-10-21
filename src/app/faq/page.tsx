@@ -4,7 +4,7 @@ import { InfoPage } from "@/app/components/info-page";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "How Mitra works: founder videos, startup markets, Trade Coins, and how markets are made and settled.",
+  description: "How Mitra works: founder videos, startup order books, and how markets are made and settled.",
 };
 
 export default function FaqPage() {

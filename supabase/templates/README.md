@@ -10,12 +10,10 @@ For both **Confirm signup** and **Magic link or OTP**:
 These are hosted Auth settings: pushing this file does not automatically publish
 the email template. SMTP credentials and provider settings stay unchanged.
 
-The app passes its validated `osu` / `uiuc` selection in signup metadata. The
-template uses `.Data.campus` only for presentation, never access control. Existing
-owner mailboxes without campus metadata use the Ohio State variant; unknown
-campus values get neutral Mitra branding. Existing users without metadata may
-also receive the neutral variant. Do not put passwords or tokens in this file.
+The template uses neutral Mitra branding for every verified email address.
+It does not use university domains or user-editable metadata for access control
+or presentation. Do not put passwords or real tokens in this file.
 
 Keep `{{ .Token }}` intact. The code length is controlled by Supabase Auth
-settings, not by the template. Real inbox delivery and campus-specific rendering
+settings, not by the template. Real inbox delivery and responsive rendering
 should be checked before inviting new members.

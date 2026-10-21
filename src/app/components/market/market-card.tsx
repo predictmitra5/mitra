@@ -196,7 +196,7 @@ export function ClosingRow({ card, now, flash = null }: { card: CardData; now: D
           <span className="closing-left">{timeLeft(new Date(card.deadlineAt), now)}{card.isSample && <> <SampleTag /></>}</span>
         </span>
         <span className="closing-value">
-          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{percent(card.yesPrice)}%</strong>
+          <strong key={card.yesPrice} className={flash ? `flash flash-${flash}` : undefined}>{card.hasPrice ? `${percent(card.yesPrice)}%` : "—"}</strong>
           <Change bp={card.change24hBp} when="today" />
         </span>
       </Link>

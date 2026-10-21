@@ -8,11 +8,11 @@ import { StepFrame, arrowLeft } from "@/app/components/step-frame";
 /*
  * Onboarding, first two screens (decided 2026-10-05): name and @username, then
  * the 18+ confirmation. Nothing is saved until the second screen, which creates
- * the profile and the 1,000-point grant in one transaction (provisionAccount).
+ * the profile without allocating any funds (provisionAccount).
  * If the server refuses (a taken username, say), the person lands back on the
  * first screen with the reason.
  */
-export function ProfileSteps() {
+export function ProfileSteps({ next }: { next: string | null }) {
   const [step, setStep] = useState<"name" | "age">("name");
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
@@ -51,6 +51,7 @@ export function ProfileSteps() {
         </form>
       ) : (
         <form action={action} className="step-form" aria-busy={pending}>
+          <input type="hidden" name="next" value={next ?? ""} />
           <input type="hidden" name="displayName" value={displayName} />
           <input type="hidden" name="handle" value={handle} />
           <h1>Are you 18 or older?</h1>

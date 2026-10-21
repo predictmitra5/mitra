@@ -99,7 +99,6 @@ export const TICKER_COUNT = 20;
 /** A chart wider than this many points is visually identical; keep payloads small. */
 const MAX_SERIES_POINTS = 120;
 const SPARK_POINTS = 40;
-const SPARK_SPAN_MS = 92 * 24 * 3_600_000;
 
 const SIGNAL_WINDOW_HOURS = 24;
 /** An upper bound on one page of the directory, so a busy app cannot render forever. */
@@ -287,7 +286,7 @@ export async function readCards<Q extends PgQueryResultHKT>(
   if (list.length === 0) return [];
   const rows = await database.select(cardColumns).from(markets)
     .innerJoin(startups, eq(startups.id, markets.startupId))
-    .where(and(inArray(markets.id, list), isNotNull(markets.approvedAt), eq(startups.status, "approved"),
+    .where(and(eq(markets.listed, true), inArray(markets.id, list), isNotNull(markets.approvedAt), eq(startups.status, "approved"),
       inArray(markets.status, ["open", "closed", "ruled", "settled", "cancelled"])));
   const byId = new Map(rows.filter(priced).map((row) => [row.id, toCard(toSignals(row), "quiet", now)]));
   const cards = list.map((id) => byId.get(id)).filter((card): card is FeedCard => !!card);
@@ -297,7 +296,7 @@ export async function readCards<Q extends PgQueryResultHKT>(
 
 function inScope(scope: FeedScope) {
   // Only approved startups' markets are public.
-  const visible = eq(startups.status, "approved");
+  const visible = and(eq(startups.status, "approved"), eq(markets.listed, true));
   if ("startupId" in scope) return and(visible, eq(markets.startupId, scope.startupId));
   if ("ids" in scope) return and(visible, scope.ids.length ? inArray(markets.id, [...scope.ids]) : sql`false`);
   return visible;
@@ -373,7 +372,7 @@ async function readPastCards<Q extends PgQueryResultHKT>(
 async function fillInformation<Q extends PgQueryResultHKT>(database: Database<Q>, cards: FeedCard[], now: Date) {
  if (!cards.length) return;
  const [state,people]=await Promise.all([readExchange(database),readPrimaryFounders(database,[...new Set(cards.map(c=>c.startupId))])]);
- for(const card of cards){const q=quotes(state,card.id),fills=state.fills.filter(f=>f.marketId===card.id),then=[...fills].reverse().find(f=>f.at<=now.getTime()-86_400_000);
+ for(const card of cards){const q=quotes(state,card.id,now.getTime()),fills=state.fills.filter(f=>f.marketId===card.id),then=[...fills].reverse().find(f=>f.at<=now.getTime()-86_400_000);
  card.yesPrice=q.lastYes===null?0.5:q.lastYes/100;card.hasPrice=q.lastYes!==null;card.yesAskCents=q.yes?.price??null;card.noAskCents=q.no?.price??null;
  card.volumeMicro=q.volumeContracts*1_000_000;card.traders=q.traders;card.change24hBp=then&&q.lastYes!==null?q.lastYes*100-(then.outcome==='yes'?then.price:100-then.price)*100:0;
  card.spark=thinSeries(fills.map(f=>({at:new Date(f.at),yesBp:(f.outcome==='yes'?f.price:100-f.price)*100})),SPARK_POINTS);
@@ -402,7 +401,6 @@ export type Quote = { id: string; hasPrice: boolean; yesAskCents: number | null;
 
 /** One request refreshes at most a full feed page. */
 export const MAX_QUOTES = MAX_CARDS;
-const QUOTABLE = ["open", "closed", "ruled", "settled", "cancelled"] as const;
 
 /**
  * Live prices for markets a page is already showing (decided 2026-09-24: prices

@@ -1,5 +1,7 @@
 # Technical foundation
 
+> Current stack: Next.js/React/TypeScript, Supabase Auth/Storage/Postgres and Drizzle, plus the internal USD-cent order-book/journal core. Funding/customer execution are closed. The unused Anthropic SDK, QR dependency, preview impersonation and old go-live scripts were removed in the 2026-10-20 replacement; conflicting implementation descriptions below are historical. See [EXCHANGE_STATUS.md](EXCHANGE_STATUS.md).
+
 Selected: 2026-09-15, under the user's explicit delegation of technical choices. Scaffolded the same day (see Implemented foundation). Hosting: Vercel, chosen by the owner on 2026-09-24, private behind Vercel Authentication at first; functions run in `yul1` (Montréal), the same AWS region as the Supabase database (ca-central-1). See README.md, Deploying on Vercel.
 
 ## Selected components

@@ -1,5 +1,7 @@
 # Product
 
+> Historical product record below. Current direction is video-first startup discovery and a USD-cent binary order book, with funding and customer execution closed. See [EXCHANGE_STATUS.md](EXCHANGE_STATUS.md) and the latest DECISIONS/EXECUTION entries. Campus eligibility, virtual currencies, grants and LMSR instructions below are superseded.
+
 > **2026-10-19: pivot to founder videos and startup markets.** Mitra is a video-first place to discover early founders and their startups, with Yes/No markets on measurable startup milestones traded with Trade Coins. A viewer watches a founder's video, learns about the startup, reads its market's price history, takes a position and follows the founder. Three systems stay separate: discovery (the personalised feed), information (profiles, videos, updates, verification) and prediction (markets). What follows about events and goals describes earlier versions. See DECISIONS.md, 2026-10-19, and MARKETS.md, Startup markets.
 
 > **2026-10-12: current implementation direction.** Mitra is a campus event-market prototype. New accounts and retained owner accounts start with zero Gold Trade Coins. The app has separate Silver Coin balances and badge offers, but purchases fail closed until a payment provider is connected; no money is accepted. Owners can configure location-checked campus QR campaigns for free Gold awards. Signed-out visitors can choose OSU or UIUC to browse; they cannot trade. These mechanics do not establish legal compliance or a safe harbor. See DECISIONS.md and MARKETS.md.

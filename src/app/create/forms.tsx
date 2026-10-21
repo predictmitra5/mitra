@@ -154,7 +154,7 @@ export function SuggestForm({ startupId }: { startupId: string }) {
       <div className="field"><label htmlFor={`m-q-${startupId}`}>Question</label><input id={`m-q-${startupId}`} name="question" maxLength={240} required placeholder="Will we reach 10,000 paying users by June 30, 2027?" /></div>
       <div className="field"><label htmlFor={`m-h-${startupId}`}>How anyone could check it</label><textarea id={`m-h-${startupId}`} name="howToCheck" rows={2} maxLength={600} required /></div>
       <div className="field"><label htmlFor={`m-c-${startupId}`}>Suggested close date</label><input id={`m-c-${startupId}`} name="closesOn" type="date" /></div>
-      <p className="field-hint">The owner writes the exact rules and opening price, and settles it. You and your team cannot trade your own startup&rsquo;s markets.</p>
+      <p className="field-hint">The owner publishes the exact rules and resolution source. Prices require actual orders and executions. You and your team cannot trade your own startup&rsquo;s markets.</p>
       <Message state={state} />
       <button className="btn btn-quiet" type="submit" disabled={pending}>Suggest market</button>
     </form>

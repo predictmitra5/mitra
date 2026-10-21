@@ -3,26 +3,153 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { sql } from "drizzle-orm";
-import { beforeAll,afterAll,it,expect } from "vitest";
+import { beforeAll, afterAll, it, expect } from "vitest";
 import * as schema from "@/db/schema";
-import { exchangeTransaction,readExchange,submitOrder } from "./store";
-import { placeOrder,cancelOrder,funds,reconcile,quotes } from "./engine";
+import { exchangeTransaction, readExchange, submitOrder } from "./store";
+import { placeOrder, cancelOrder, funds, reconcile, quotes } from "./engine";
 import { provisionAccount } from "@/modules/account/provision";
 import { readCards } from "@/modules/discovery/feed";
-import { insertStartup,openStartupMarket } from "@/test/markets";
+import { insertStartup, openStartupMarket } from "@/test/markets";
+import { readPublicMarket } from "@/modules/market/service";
+import { flagshipMarkets } from "@/modules/startups/read";
 import { POST as deposit } from "@/app/api/exchange/deposits/route";
 import { POST as withdraw } from "@/app/api/exchange/withdrawals/route";
-const memory=new PGlite(),db=drizzle(memory,{schema}),a=randomUUID(),b=randomUUID();
-beforeAll(async()=>{for(const migration of readMigrationFiles({migrationsFolder:"./drizzle"}))for(const statement of migration.sql)await db.execute(sql.raw(statement));await provisionAccount(db,a,{displayName:"Alice",handle:"alice",adultConfirmed:true});await provisionAccount(db,b,{displayName:"Bob",handle:"bob",adultConfirmed:true});},30000);
-afterAll(()=>memory.close());
-it("starts accounts with no financial allocation or legacy grants",async()=>{expect(funds(await readExchange(db),a)).toEqual({available:0,reserved:0});expect(await db.select().from(schema.wallets)).toHaveLength(0);expect(await db.select().from(schema.ledgerEntries)).toHaveLength(0);});
-it("rejects deposit/withdrawal direct calls and customer execution",async()=>{expect((await deposit()).status).toBe(409);expect((await withdraw()).status).toBe(409);await expect(submitOrder(db,a,{balance:100000,authorized:true})).rejects.toThrow(/funding is closed/);});
-it("serializes concurrent cross-market spending and preserves the journal after PostgreSQL JSON normalization",async()=>{
- await exchangeTransaction(db,async(state)=>{state.markets.m={id:"m",cutoff:10000,resultsDeadline:20000,source:"https://example.test/report",yes:"100+ units",no:"under 100 units",status:"open",insiders:[]};state.journal.push({id:"isolated-verified-custody-fixture",kind:"test-fixture",at:0,postings:[{account:"custody:settled",cents:-100},{account:`user:${a}:available`,cents:100}]});return {state,result:true};});
- const results=await Promise.allSettled([1,2].map(n=>exchangeTransaction(db,async(state)=>({state:placeOrder(state,a,{id:`order-${n}`,marketId:"m",outcome:"yes",direction:"buy",price:60,quantity:1},1),result:true}))));
- expect(results.filter(r=>r.status==="fulfilled")).toHaveLength(1);expect(funds(await readExchange(db),a)).toEqual({available:40,reserved:60});
- const state=await readExchange(db);const order=state.orders[0];await exchangeTransaction(db,async(state)=>({state:cancelOrder(state,a,order.id,"cancel",2),result:true}));expect(funds(await readExchange(db),a)).toEqual({available:100,reserved:0});expect(reconcile(await readExchange(db))).toBe(true);
- await expect(submitOrder(db,a,{marketId:"m",price:1,quantity:1})).rejects.toThrow(/funding is closed/);
+const memory = new PGlite(),
+  db = drizzle(memory, { schema }),
+  a = randomUUID(),
+  b = randomUUID();
+beforeAll(async () => {
+  for (const migration of readMigrationFiles({ migrationsFolder: "./drizzle" }))
+    for (const statement of migration.sql) await db.execute(sql.raw(statement));
+  await provisionAccount(db, a, {
+    displayName: "Alice",
+    handle: "alice",
+    adultConfirmed: true,
+  });
+  await provisionAccount(db, b, {
+    displayName: "Bob",
+    handle: "bob",
+    adultConfirmed: true,
+  });
+}, 30000);
+afterAll(() => memory.close());
+it("starts accounts with no financial allocation or legacy grants", async () => {
+  expect(funds(await readExchange(db), a)).toEqual({
+    available: 0,
+    reserved: 0,
+  });
+  expect(await db.select().from(schema.wallets)).toHaveLength(0);
+  expect(await db.select().from(schema.ledgerEntries)).toHaveLength(0);
 });
-it("enforces journal immutability and freezes retired mutation paths in the database",async()=>{await expect(db.execute(sql`update exchange_journal set entry='{}'::jsonb`)).rejects.toThrow();await expect(db.insert(schema.wallets).values({userId:a,balanceMicro:1000})).rejects.toThrow();});
-it("keeps startup content and reports an honest empty book with zero executed volume",async()=>{await db.update(schema.profiles).set({isOwner:1}).where(sql`${schema.profiles.id}=${b}`);const now=new Date("2026-10-20T12:00:00Z"),content=await insertStartup(db,now);const market=await openStartupMarket(db,b,now,{startupId:content.startup.id,closesOn:"2027-12-31"});const [card]=await readCards(db,[market.id],now);expect(card).toMatchObject({hasPrice:false,yesAskCents:null,noAskCents:null,volumeMicro:0,traders:0,spark:[]});expect(quotes(await readExchange(db),market.id).lastYes).toBeNull();});
+it("rejects deposit/withdrawal direct calls and customer execution", async () => {
+  expect((await deposit()).status).toBe(409);
+  expect((await withdraw()).status).toBe(409);
+  await expect(
+    submitOrder(db, a, { balance: 100000, authorized: true }),
+  ).rejects.toThrow(/funding is closed/);
+});
+it("serializes concurrent cross-market spending and preserves the journal after PostgreSQL JSON normalization", async () => {
+  await exchangeTransaction(db, async (state) => {
+    state.markets.m = {
+      id: "m",
+      cutoff: 10000,
+      resultsDeadline: 20000,
+      source: "https://example.test/report",
+      yes: "100+ units",
+      no: "under 100 units",
+      status: "open",
+      insiders: [],
+    };
+    state.journal.push({
+      id: "isolated-verified-custody-fixture",
+      kind: "test-fixture",
+      at: 0,
+      postings: [
+        { account: "custody:settled", cents: -100 },
+        { account: `user:${a}:available`, cents: 100 },
+      ],
+    });
+    return { state, result: true };
+  });
+  const results = await Promise.allSettled(
+    [1, 2].map((n) =>
+      exchangeTransaction(db, async (state) => ({
+        state: placeOrder(
+          state,
+          a,
+          {
+            id: `order-${n}`,
+            marketId: "m",
+            outcome: "yes",
+            direction: "buy",
+            price: 60,
+            quantity: 1,
+          },
+          1,
+        ),
+        result: true,
+      })),
+    ),
+  );
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(funds(await readExchange(db), a)).toEqual({
+    available: 40,
+    reserved: 60,
+  });
+  const state = await readExchange(db);
+  const order = state.orders[0];
+  await exchangeTransaction(db, async (state) => ({
+    state: cancelOrder(state, a, order.id, "cancel", 2),
+    result: true,
+  }));
+  expect(funds(await readExchange(db), a)).toEqual({
+    available: 100,
+    reserved: 0,
+  });
+  expect(reconcile(await readExchange(db))).toBe(true);
+  await expect(
+    submitOrder(db, a, { marketId: "m", price: 1, quantity: 1 }),
+  ).rejects.toThrow(/funding is closed/);
+});
+it("enforces journal immutability and freezes retired mutation paths in the database", async () => {
+  await expect(
+    db.execute(sql`update exchange_journal set entry='{}'::jsonb`),
+  ).rejects.toThrow();
+  await expect(
+    db.insert(schema.wallets).values({ userId: a, balanceMicro: 1000 }),
+  ).rejects.toThrow();
+});
+it("keeps startup content and reports an honest empty book with zero executed volume", async () => {
+  await db
+    .update(schema.profiles)
+    .set({ isOwner: 1 })
+    .where(sql`${schema.profiles.id}=${b}`);
+  const now = new Date("2026-10-20T12:00:00Z"),
+    content = await insertStartup(db, now);
+  const market = await openStartupMarket(db, b, now, {
+    startupId: content.startup.id,
+    closesOn: "2027-12-31",
+  });
+  const [card] = await readCards(db, [market.id], now);
+  expect(card).toMatchObject({
+    hasPrice: false,
+    yesAskCents: null,
+    noAskCents: null,
+    volumeMicro: 0,
+    traders: 0,
+    spark: [],
+  });
+  expect(quotes(await readExchange(db), market.id).lastYes).toBeNull();
+});
+
+it("hides unlisted definitions consistently and picks a listed flagship without deleting content", async () => {
+  const now = new Date("2026-10-20T12:00:00Z");
+  const content = await insertStartup(db, now);
+  const hidden = await openStartupMarket(db, b, now, { startupId: content.startup.id });
+  const listed = await openStartupMarket(db, b, now, { startupId: content.startup.id });
+  await db.update(schema.markets).set({ listed: false }).where(sql`${schema.markets.id}=${hidden.id}`);
+  expect((await readCards(db, [hidden.id, listed.id], now)).map(c => c.id)).toEqual([listed.id]);
+  expect(await readPublicMarket(db, hidden.id)).toBeNull();
+  expect((await flagshipMarkets(db, [content.startup.id], now)).get(content.startup.id)?.id).toBe(listed.id);
+  expect((await db.select().from(schema.markets).where(sql`${schema.markets.id}=${hidden.id}`))).toHaveLength(1);
+});

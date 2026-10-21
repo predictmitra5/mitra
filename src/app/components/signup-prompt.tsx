@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { safeReturnTo } from "@/modules/auth/policy";
 import { NEEDS_ACCOUNT_EVENT } from "./feed/needs-account";
 
 /*
@@ -31,11 +32,12 @@ function rememberDismissed() {
 
 export function SignupPrompt() {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
-    const open = () => { if (!element.open) element.showModal(); };
+    const open = () => { setReturnTo(safeReturnTo(window.location.pathname + window.location.search)); if (!element.open) element.showModal(); };
 
     const timer = wasDismissed() ? undefined : window.setTimeout(open, OPEN_AFTER_MS);
 
@@ -77,8 +79,8 @@ export function SignupPrompt() {
         </button>
         <h2 id="signup-prompt-title">Create your account</h2>
         <p className="signup-prompt-sub">Follow founders, save videos and predict where their startups go. Sign up in a minute.</p>
-        <Link className="primary-button" href="/sign-up">Continue with email</Link>
-        <p className="signup-prompt-login">Already have an account? <Link href="/sign-in" prefetch={false}>Log in</Link></p>
+        <Link className="primary-button" href={`/sign-up${returnTo ? `?next=${encodeURIComponent(returnTo)}` : ""}`}>Continue with email</Link>
+        <p className="signup-prompt-login">Already have an account? <Link href={`/sign-in${returnTo ? `?next=${encodeURIComponent(returnTo)}` : ""}`} prefetch={false}>Log in</Link></p>
         <p className="signup-prompt-fine">Account funding and trading are not available yet. See the <Link href="/faq">FAQ</Link> and <Link href="/privacy">Privacy</Link> page.</p>
       </div>
     </dialog>

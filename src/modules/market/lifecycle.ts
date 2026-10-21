@@ -110,13 +110,8 @@ function final(market: Market, now: Date) {
     (market.status === "ruled" && !!market.contestEndsAt && market.contestEndsAt <= now);
 }
 
-function safeAmount(value: number) {
-  if (!Number.isSafeInteger(value) || value < 0) throw new LifecycleError("ACCOUNTING_ERROR", "Accounting needs review before this market can be finalized.");
-  return value;
-}
-
-/** Caller holds the market lock. Wallets are locked by user id across all markets. */
-async function creditPositions<Q extends PgQueryResultHKT>(tx:Database<Q>,market:Market,kind:'settlement'|'cancellation_refund',now:Date){await settleMarket(tx,market.id,kind==='cancellation_refund'?'void':market.ruledOutcome!, 'final:'+market.id,now);return {participants:0,totalMicro:0};}
+/** Caller holds the market lock; the exchange serializes financial mutations. */
+async function creditPositions<Q extends PgQueryResultHKT>(tx:Database<Q>,market:Market,kind:'settlement'|'cancellation_refund',now:Date){return settleMarket(tx,market.id,kind==='cancellation_refund'?'void':market.ruledOutcome!, 'final:'+market.id,now);}
 
 async function closeAtDeadline<Q extends PgQueryResultHKT>(tx: Database<Q>, market: Market, now: Date): Promise<Market> {
   if (market.status !== "open" || market.deadlineAt > now) return market;
@@ -163,7 +158,7 @@ export async function applyOwnerCommand<Q extends PgQueryResultHKT>(database: Da
     if (market.rulingVersion !== command.expectedVersion) throw new LifecycleError("STALE_RULING", "The ruling changed since you opened this form. Reload and review it first.");
     const before = { status: market.status, outcome: market.ruledOutcome, rulingVersion: market.rulingVersion };
     let kind: typeof adminActions.$inferInsert.kind;
-    let totals: { participants: number; totalMicro: number } | undefined;
+    let totals: { participants: number; totalCents: number } | undefined;
     if (command.action === "close") {
       if (market.status !== "open" || market.deadlineAt <= now) throw new LifecycleError("CLOSED", "Trading is already closed. Reload the market.");
       await tx.update(markets).set({ status: "closed", tradingClosedAt: now }).where(eq(markets.id, market.id));

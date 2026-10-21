@@ -15,7 +15,9 @@ CREATE TABLE "exchange_snapshot" (
 );
 --> statement-breakpoint
 ALTER TABLE exchange_snapshot ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
 ALTER TABLE exchange_journal ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
 REVOKE ALL ON exchange_snapshot, exchange_journal FROM PUBLIC;
 --> statement-breakpoint
 DO $$ BEGIN
@@ -24,6 +26,7 @@ DO $$ BEGIN
 END $$;
 --> statement-breakpoint
 CREATE SCHEMA IF NOT EXISTS exchange_internal;
+--> statement-breakpoint
 REVOKE ALL ON SCHEMA exchange_internal FROM PUBLIC;
 --> statement-breakpoint
 CREATE FUNCTION exchange_internal.journal_guard() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
@@ -39,15 +42,17 @@ BEGIN
  IF total <> 0 THEN RAISE EXCEPTION 'Unbalanced financial journal'; END IF;
  RETURN NEW;
 END $$;
+--> statement-breakpoint
 REVOKE ALL ON FUNCTION exchange_internal.journal_guard() FROM PUBLIC;
 --> statement-breakpoint
 CREATE TRIGGER exchange_journal_immutable BEFORE INSERT OR UPDATE OR DELETE ON exchange_journal FOR EACH ROW EXECUTE FUNCTION exchange_internal.journal_guard();
 --> statement-breakpoint
 CREATE FUNCTION exchange_internal.retired_mutation_closed() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$ BEGIN RAISE EXCEPTION 'This retired economy no longer accepts mutations'; END $$;
+--> statement-breakpoint
 REVOKE ALL ON FUNCTION exchange_internal.retired_mutation_closed() FROM PUBLIC;
 --> statement-breakpoint
 DO $$ DECLARE t text; BEGIN
- FOREACH t IN ARRAY ARRAY['wallets','ledger_entries','trades','positions','price_history','silver_wallets','silver_ledger_entries','badge_products','purchase_orders','user_badges','campus_qr_campaigns','campus_qr_claims','startup_orderbook_sandbox','startup_orderbook_sandbox_events'] LOOP
+ FOREACH t IN ARRAY ARRAY['wallets','ledger_entries','trades','positions','price_history','silver_wallets','silver_ledger_entries','badge_products','purchase_orders','user_badges','campus_qr_campaigns','campus_qr_claims','startup_orderbook_sandbox','startup_orderbook_sandbox_events','sandbox_states','sandbox_journal'] LOOP
   IF to_regclass('public.'||t) IS NOT NULL THEN EXECUTE format('CREATE TRIGGER retired_mutations_closed BEFORE INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION exchange_internal.retired_mutation_closed()',t); END IF;
  END LOOP;
 END $$;

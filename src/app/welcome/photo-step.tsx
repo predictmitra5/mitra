@@ -10,8 +10,9 @@ import { usePhotoUpload } from "@/app/account/use-photo-upload";
  * Onboarding: the profile photo (decided 2026-10-05). It can be skipped here;
  * since goal markets ended on 2026-10-08 nothing requires one.
  */
-export function PhotoStep({ name, photo }: { name: string; photo: string | null }) {
+export function PhotoStep({ name, photo, next }: { name: string; photo: string | null; next: string | null }) {
   const router = useRouter();
+  const destination = `/welcome?step=topics${next ? `&next=${encodeURIComponent(next)}` : ""}`;
   const { state, uploading, upload } = usePhotoUpload();
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -20,7 +21,7 @@ export function PhotoStep({ name, photo }: { name: string; photo: string | null 
 
   return (
     <form className="step-form" aria-busy={uploading}
-      action={(form) => upload(form.get("photo"), () => router.push("/welcome?step=topics"))}>
+      action={(form) => upload(form.get("photo"), () => router.push(destination))}>
       <h1>Add a profile photo</h1>
       <p className="step-sub">It shows on your account. You can add or change it any time.</p>
       <label className="photo-drop">
@@ -42,7 +43,7 @@ export function PhotoStep({ name, photo }: { name: string; photo: string | null 
       <p className="field-hint photo-drop-hint">JPEG, PNG or WebP, up to 8 MB. A real photo of you: images labelled as AI-generated are turned away.</p>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       <button className="primary-button" type="submit" disabled={uploading || !preview}>{uploading ? "Saving…" : "Upload photo"}</button>
-      <Link className="text-button step-skip" href="/welcome?step=topics" prefetch={false}>{photo ? "Keep this photo" : "Skip for now"}</Link>
+      <Link className="text-button step-skip" href={destination} prefetch={false}>{photo ? "Keep this photo" : "Skip for now"}</Link>
     </form>
   );
 }

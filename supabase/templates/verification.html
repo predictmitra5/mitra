@@ -6,8 +6,6 @@
   <title>Your Mitra verification code</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Helvetica,Arial,sans-serif;color:#14181d;">
-  {{ $illinois := eq .Data.campus "uiuc" }}
-  {{ $ohio := or (eq .Data.campus "osu") (eq .Email "murugan.23@osu.edu") (eq .Email "predictmitra@gmail.com") }}
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your verification code is ready. Enter it in Mitra to continue.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f1f5f9;">
     <tr><td align="center" style="padding:40px 16px;">
@@ -17,16 +15,8 @@
           <div style="margin-top:8px;font-size:13px;line-height:20px;color:#b5c0cc;">Trade on what happens here.</div>
         </td></tr>
         <tr><td style="padding:32px;background-color:#ffffff;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 16px 16px;">
-          {{ if $illinois }}
-          <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#b33d00;">ILLINOIS COMMUNITY</div>
-          <div style="height:3px;width:36px;background-color:#ff5f05;margin-top:10px;"></div>
-          {{ else if $ohio }}
-          <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#ba0c2f;">OHIO STATE COMMUNITY</div>
-          <div style="height:3px;width:36px;background-color:#ba0c2f;margin-top:10px;"></div>
-          {{ else }}
-          <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#315c75;">YOUR MITRA COMMUNITY</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#315c75;">DISCOVER WHAT’S NEXT</div>
           <div style="height:3px;width:36px;background-color:#87ceeb;margin-top:10px;"></div>
-          {{ end }}
           <h1 style="margin:24px 0 12px;font-size:28px;line-height:36px;font-weight:700;letter-spacing:-0.6px;">You’re one step away.</h1>
           <p style="margin:0;font-size:16px;line-height:26px;color:#526070;">Return to Mitra and enter this verification code to continue.</p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;">
@@ -39,7 +29,7 @@
           <p style="margin:12px 0 0;font-size:14px;line-height:23px;color:#526070;">Didn’t request this? You can safely ignore this email. Never share this code with anyone.</p>
         </td></tr>
         <tr><td align="center" style="padding:24px 20px 0;">
-          <p style="margin:0;font-size:12px;line-height:20px;color:#64748b;">Mitra is an independent platform, not affiliated with, endorsed by, or sponsored by any university.</p>
+          <p style="margin:0;font-size:12px;line-height:20px;color:#64748b;">Mitra · Founder stories and startup milestones.</p>
         </td></tr>
       </table>
     </td></tr>

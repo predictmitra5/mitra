@@ -5,10 +5,8 @@
  *
  * Since 2026-09-24 the look follows Kalshi's (docs/DESIGN.md, section 9): the
  * chance as the headline number, today's change to one decimal, time left in
- * words, and play-point volume.
+ * words, and executed-contract volume.
  */
-
-export { categoryLabel } from "@/modules/events/categories";
 
 const credits = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
@@ -44,15 +42,15 @@ export function initials(displayName: string): string {
   return (first + last).toUpperCase();
 }
 
-/** Trade Coins traded, as "4,138 Trade Coins traded" (DECISIONS.md 2026-10-12). Micro-units in. */
+/** Executed contracts, counted once per match; legacy projection scales by 1e6. */
 export function volumeLabel(volumeMicro: number): string {
   const amount = Math.max(0, volumeMicro) / 1_000_000;
   if (amount === 0) return "No trades yet";
-  if (amount < 1) return "<1 Trade Coin traded";
-  return `${credits.format(amount)} Trade Coins traded`;
+  if (amount < 1) return "<1 contract traded";
+  return `${credits.format(amount)} contracts traded`;
 }
 
-/** Trade Coins to one decimal, as "47.1". Micro-units in. */
+/** Legacy numeric projection helper. Not a monetary balance or executable quote. */
 export function pointsText(micro: number, digits = 1): string {
   return (micro / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
