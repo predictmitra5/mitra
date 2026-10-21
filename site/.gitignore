@@ -1,0 +1,9 @@
+# The website's own packages and build output (the app's .gitignore covers the repository root only).
+/node_modules
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+.env*
+!.env.example

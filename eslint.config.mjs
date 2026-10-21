@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Mitra's website is its own project with its own lint (site/eslint.config.mjs).
+    "site/**",
   ]),
 ]);
 

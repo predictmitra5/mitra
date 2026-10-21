@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Mitra's website (site/) is its own project; keep its class names out of the app's styles. */
+@source not "../../site";
 
 /*
  * App styles. Mobile-first where it matters: phone rules sit in max-width
