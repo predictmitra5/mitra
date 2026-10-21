@@ -746,3 +746,5 @@ The owner first requested nine current markets, then clarified a few per categor
 
 **Assumptions (the owner can change any of them):** the "lines" are the site's example markets and "the launch page" is the website's one page; a monthly-user count counts as easy to pad, so Lumenly's 100,000 monthly users goes too; this covers the website only. The app's demo catalog still has such markets (among them Stackwise's GitHub stars, Northstar's Steam release and beta sign-ups and Orbit Kitchen's downloads); whether the app drops them is the owner's call.
 
+**Follow-up answers, same day:** to "Push them to mitra.market now?" the owner chose "Push it live". To "The app (app.mitra.market) still has demo markets on GitHub stars, a Steam release date and download counts. Apply the same rule there too?" the owner chose "Yes, the app too", on the understanding that the markets the live app shows are checked first and the plan for hiding or replacing them is agreed with the owner before anything changes.
+
