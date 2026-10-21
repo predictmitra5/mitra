@@ -730,3 +730,11 @@ The owner requested Mitra branding and Ohio State/Illinois accents on verificati
 
 The owner first requested nine current markets, then clarified a few per category rather than exactly nine. Keep two existing open markets per startup industry (20 across ten industries) in the existing video-first UI despite empty liquidity. Keep both Yes/No inspection controls, honest No offer/zero-volume states, and closed customer execution. Other definitions are hidden reversibly, not deleted. “Codex funding/credits running out” refers to coding-agent usage, not authorization to enable app funding.
 
+## 2026-10-21 - mitra.market: the website at the root, the app at app.mitra.market
+
+**User instruction** (the owner, after asking where Open Mitra would go once the site had a domain and being told the usual setup is one domain with the site at its root and the app on an `app.` subdomain): "im buuing it thru cloudfare. do i get the sub domain for free", then "mitra.market i boguht it this is my domain help me out and finish it" (spelling as written).
+
+**Decision:** the website is served at `mitra.market`, with `www.mitra.market` redirecting to it; the app at `app.mitra.market`. The site's Open Mitra and its other app links go to `https://app.mitra.market`. The domain was bought through Cloudflare, so its DNS stays at Cloudflare, with the records Vercel asks for set to DNS only (no Cloudflare proxy), as Vercel requires.
+
+**Assumptions made to finish it (the owner can change any of them):** the app's own address for sign-in and password-reset emails (`APP_URL`) and Supabase's allowed sign-in addresses move to `https://app.mitra.market` once it answers over HTTPS, so emails link to the new address; `mitra-gamma-ten.vercel.app` and `mitra-site-ten.vercel.app` keep working and stay on Supabase's list, so old links and current sessions are not broken.
+

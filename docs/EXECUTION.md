@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None. The verified non-destructive release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+- **2026-10-21 - mitra.market (Claude Code), being set up.** Per DECISIONS.md 2026-10-21: in Vercel, `mitra.market` and `www.mitra.market` (redirecting to it) on the `mitra-site` project and `app.mitra.market` on the app's `mitra` project; in Cloudflare, the DNS records Vercel names, DNS only. Once `https://app.mitra.market` serves the app: add it to Supabase Auth's redirect allow list and Site URL (keeping the vercel.app addresses allowed), set the app's Production `APP_URL` to it and redeploy the app; then change `site/src/lib/links.ts` so the site's app links default to `https://app.mitra.market`, and push. Checks: both addresses over HTTPS, www redirecting, Open Mitra landing on the app, the app's sign-in page loading on the new address. Done through the Vercel, Cloudflare and Supabase dashboards in the browser pane with the owner signed in; no secrets handled. Nothing else in the app changes.
+
+The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
