@@ -720,6 +720,11 @@ export const DEMO_STARTUPS: DemoStartup[] = [
         kind: "ranking", yes: "An archived chart shows Tidepool in the top 10 of the US App Store's free Games chart on any day from November 12 to November 26, 2026.",
         no: "It never reaches the top 10 in that window, or it does not launch by November 26, 2026.", method: "The US iPhone top free Games chart, as archived by a third-party rank tracker.",
         source: "Third-party App Store rank tracker archive", closes: "2026-11-12T00:00:00-05:00", openedDaysAgo: 30 },
+      // Added 2026-10-21 at the owner's choice: decided by Apple's jury, not the founder (DECISIONS.md 2026-10-21).
+      { key: "pixel-harbor-ada", question: "Will Tidepool be named a finalist or winner of Apple's 2027 Apple Design Awards by June 30, 2027?", short: "Will Tidepool be an Apple Design Award finalist in 2027?",
+        kind: "award", yes: "Apple lists Tidepool among the finalists or winners of its 2027 Apple Design Awards on or before June 30, 2027.",
+        no: "Tidepool is not listed, or Apple names no 2027 finalists or winners by then.", method: "Finalists and winners as published on Apple's Apple Design Awards page; other App Store features and editorial picks do not count.",
+        source: "Apple Design Awards page", closes: MID_2027, openedDaysAgo: 1 },
     ],
   },
   {
@@ -802,6 +807,11 @@ export const DEMO_STARTUPS: DemoStartup[] = [
         kind: "launch", yes: "Loop Closet's app lets anyone in a US metro area other than Los Angeles complete a rental on or before June 30, 2027.",
         no: "Rentals are still available only in Los Angeles on that date.", method: "The owner completes or observes a test rental in the new metro area.",
         source: "Loop Closet app availability, checked by the owner", closes: MID_2027, openedDaysAgo: 90 },
+      // Added 2026-10-21 at the owner's choice: decided by investors, not the founder (DECISIONS.md 2026-10-21).
+      { key: "loop-closet-seed", question: "Will Loop Closet publicly announce a seed round of at least $2 million by December 31, 2027?", short: "Will Loop Closet raise a $2M+ seed round by 2027?",
+        kind: "financial", yes: "Loop Closet or its lead investor publicly announces a seed round of at least $2,000,000 on or before December 31, 2027.",
+        no: "No such announcement by then.", method: "A public announcement by the company or its lead investor; priced equity or SAFEs count, loans and grants do not. Demonstration market: financial milestones need legal review before any real-money use.",
+        source: "Company or lead investor announcement", closes: END_2027, openedDaysAgo: 1 },
     ],
   },
   {
