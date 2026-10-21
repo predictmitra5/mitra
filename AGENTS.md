@@ -36,7 +36,7 @@ Set by the owner on 2026-10-09, following XO Market and Kalshi (replacing the 20
 - `src/app`: Next.js App Router pages.
 - `src/modules/exchange`: exact-cent matching, double-entry journal and fail-closed funding/launch boundaries. Keep financial, information and discovery logic separate.
 - `src/modules/market`: published startup-market reads and owner lifecycle; no AMM or currency execution. Historical migrations must remain intact.
-- `site/`: Mitra's own website (DECISIONS.md 2026-10-20, "Mitra's own website"), a separate Next.js project with its own packages: `npm --prefix site run dev` (port 3100), `typecheck`, `lint` and `build` likewise. The app's type check, lint and Tailwind scan skip it. Its words stay currency-neutral; see DESIGN.md section 18. It is live at https://mitra-site-ten.vercel.app (Vercel project `mitra-site`, team `mitra25`, Root Directory `site`), and every push to `main` rebuilds it.
+- `site/`: Mitra's own website (DECISIONS.md 2026-10-20, "Mitra's own website"), a separate Next.js project with its own packages: `npm --prefix site run dev` (port 3100), `typecheck`, `lint` and `build` likewise. The app's type check, lint and Tailwind scan skip it. Its words stay currency-neutral; see DESIGN.md section 18. It is live at https://mitra.market (Vercel project `mitra-site`, team `mitra25`, Root Directory `site`; DNS at Cloudflare, DNS only), the app at https://app.mitra.market, and every push to `main` rebuilds both.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
