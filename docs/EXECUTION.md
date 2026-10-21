@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. Waiting on the owner: new hard-to-fake demo markets for the industries left with few (drafts put to them on 2026-10-21; nothing is inserted until they approve wording). The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-21: two new demo markets the owner chose** (DECISIONS.md 2026-10-21, "New demo markets, chosen the same day"): Loop Closet's $2M+ seed round and Tidepool as a 2027 Apple Design Award finalist. Added to `src/modules/startups/demo/catalog.ts` (so seeds and previews have them) and inserted into the live database by `scripts/demo-markets-2026-10-21.sql`, built like the demo seed's own markets (a resolution source, the market open at the seed's 50% opening with no shares, approved by the owner, listed, with the seed's demo rules text and an owner approval entry), in one transaction that aborts unless the two startups exist, neither question does yet and the 40 existing markets are unchanged; 25 listed after. Read-only dry run first; the app's tests, type check and lint before; the live pages after.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
