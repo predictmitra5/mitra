@@ -392,3 +392,31 @@ YouTube's left column (`Guide` in `market-header.tsx`): Home and Markets; Follow
 ### Phone
 
 Below 800 px: the logo, the theme switch, search and the bell on top; full-width videos with square corners; the bar along the bottom: Home, Markets, Create (a round +), Following and You (the avatar).
+
+## 18. Mitra's own website (2026-10-20)
+
+The owner: "i want the vibe to be more of vela, but the animations and stuff for xo.market", with screenshots of velaenergy.ai's Company page and xo.market's home; a separate website, the lotus animated on the opening, a founders section, and currency-neutral words (DECISIONS.md, 2026-10-20). Both sites were read in a browser on 2026-10-20, code included, for their motion and timings. It lives in `site/` (TECH_STACK.md) and is one page.
+
+### Look (Vela)
+
+- Black (`#0b0b0c`), white and a light grey (`#f2f2f3`); colour only in market pictures (green Yes, red No) and the focus ring (the app's baby blue). Geist at 400, 500 and 600, as in the app; headlines are 600 and set tight (−0.05 to −0.056em), up to 152 px for the statement.
+- A floating rounded menu bar 62 px tall, 14 px from the top: dark glass over black sections, white over light ones, switching as each section passes under it, with the section in view marked (`site-header.tsx`). The Open Mitra pill is white on dark and black on light. Below 1000 px the links fold into a menu panel.
+- Thin vertical rules down the content edges of white sections, small-capital tags in solid chips, pill buttons with an arrow that nudges on hover, a black footer with a huge faint wordmark.
+
+### Motion (XO Market, `motion-root.tsx`)
+
+- Smooth scrolling (Lenis, lerp 0.1) driven by GSAP's ticker.
+- Every section after the opening is a sheet with 32 px rounded top corners (24 px on phones) overlapping the one before by that much; as it slides up, the covered section's content sinks by 18% of the window and a 24% black scrim fades in over it (XO's numbers).
+- Headlines rise line by line from behind a mask (SplitText; 1.15 s, expo out, 80 ms apart) and then return to plain text so no letter is ever clipped. Copy and pictures rise 34 px and fade in; the example cards come in from a 6 px blur, 90 ms apart.
+- The opening: the lotus, the owner's logo drawn as hairline outlines of its strokes (`lotus-art.tsx`, from `public/brand/mitra-lotus.svg`), draws itself in over 3.4 s, a faint fill settles under it, it breathes on an 8 s cycle and a light runs along its lines every 8 s; behind it a canvas of faint lines wanders and drifts left like price histories, one brightening now and then with a dot where it is "now" (`hero-field.tsx`; decoration with no data). The art drifts down and fades as the page scrolls away. A round pause button, as on Vela, stops all of it.
+- How it works: four steps beside a card that plays them through by itself (a founder's video with captions, the market's rules, a cursor picking Yes, how it settles), with dashes counting the steps; the steps list marks the one in play and jumps to any step picked; it plays only on screen and has its own pause (`how-story.tsx`).
+- The rules card's lines arrive one by one, its track fills to Open and the locked-wording note pops in, once (`rules-card.tsx`). The closing lotus draws itself in with the scroll.
+- On screens at least 768 px wide whose footer fits, the footer waits pinned under the page and the last sheet lifts off it (`footer-shell.tsx`); its wordmark's light passes three times once the end is in view.
+
+### Sections and words
+
+The opening ("Watch founders build. Call what happens next.", Open Mitra and How it works); example markets ("What founders say they'll do next.", three demo cards from the app's catalog with the drawn founder thumbnail, industry and startup, the question, the close date and Yes/No, no prices, volumes or trader counts, and the note that they are fictional); the statement "A pitch is easy. A milestone is proof." in corner brackets, then how it works; how markets settle (a demo market's written rules, word for word from the catalog, and three facts: locked wording, named sources, labelled facts); for founders (post videos, markets on your milestones, hands off your own markets); the team (Vela's layout: heading, group photo, each founder, an optional backgrounds grid), built from `site/src/content/team.ts` and shown only on `next dev` with labelled empty places until the owner sends details; questions; "Get to know Mitra."; the footer. No currency is named anywhere (the owner's answer of 2026-10-20). Every link to the app uses `NEXT_PUBLIC_APP_URL`.
+
+### Phone and reduced motion
+
+At 375 px nothing scrolls sideways: the headline wraps freely, the lotus sits behind it, the cards scroll sideways in their own row, grids become one column and the footer is not pinned. For people who ask their device to reduce motion: no smooth scrolling, sheets, line reveals or drifting; the lotus is drawn and still, the walkthrough waits on its step, and the pause buttons are hidden. Without JavaScript the page shows everything; with it, anything that will animate in waits unseen until the motion starts, or three seconds at most.

@@ -56,6 +56,10 @@ Uploads never pass through the app's own server (since 2026-09-24). Vercel refus
 
 Do not assume hosted request handlers support indefinitely running jobs or persistent connections. Select that infrastructure only when verification rechecks, asynchronous review or other concrete requirements justify it.
 
+## Mitra's website (2026-10-20)
+
+`site/` is its own Next.js 16.3.5 project (React 19.2.8, TypeScript, ESLint with `eslint-config-next`), so it can be deployed and changed apart from the app: a second Vercel project with Root Directory `site`. `next.config.ts` sets Turbopack's and file tracing's root to that folder, because the app's lockfile one folder up would otherwise be taken as the workspace. Its motion uses `gsap` 3.15.0 (ScrollTrigger and SplitText, free since 3.13) and `lenis` 1.3.26 (1.3.27 was five days old when installed); icons are `lucide-react` 1.48.0, as in the app; Geist comes through `next/font`. It is plain CSS (`site/src/app/globals.css`), no Tailwind. The page is prerendered as static HTML. `NEXT_PUBLIC_APP_URL` points its links at the app (default https://mitra-gamma-ten.vercel.app). Nothing in it reads the database or any secret.
+
 ## Not decided by this document
 
 Market mechanics, economy parameters, subject consent, outcome resolution, evidence retention, ranking formula, data schemas and reviewer autonomy remain product choices. The user has accepted public and private evidence categories; they have not approved a particular file-retention policy or external AI processing of that evidence.
