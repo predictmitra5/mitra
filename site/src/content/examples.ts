@@ -2,11 +2,15 @@
  * Example markets, copied from the app's fictional demo catalog
  * (src/modules/startups/demo/catalog.ts at the repository root). Per the
  * owner's 2026-10-20 answer they carry the Demo label and no prices, chances,
- * volumes or trader counts (DECISIONS.md, "Mitra's own website").
+ * volumes or trader counts (DECISIONS.md, "Mitra's own website"). Per the
+ * owner's 2026-10-21 instruction each is a milestone someone other than the
+ * founder decides, so none can be padded or timed by the founder: no stars,
+ * reviews, user counts or release dates (DECISIONS.md, "The website shows only
+ * milestones that are hard to fake").
  */
 
-export type FeatureIcon = "check" | "book" | "bot" | "swords" | "repeat" | "wrench" | "file-text" | "shield" | "plug";
-export type StartupGlyph = "sparkles" | "gamepad" | "code";
+export type FeatureIcon = "check" | "book" | "bot" | "activity" | "bell" | "stethoscope" | "hand" | "wand" | "gauge";
+export type StartupGlyph = "sparkles" | "heart" | "robot";
 
 export type Example = {
   key: string;
@@ -19,60 +23,62 @@ export type Example = {
   video: string;
 };
 
-export const EXAMPLES: Example[] = [
-  {
-    key: "lumenly",
-    startup: {
-      name: "Lumenly", tagline: "AI Study Companion", glyph: "sparkles", hue: 210, industry: "EdTech",
-      features: [{ icon: "check", label: "Study plans" }, { icon: "book", label: "Course notes" }, { icon: "bot", label: "AI tutoring" }],
-    },
-    founder: { name: "Ari Vale", role: "Founder / CEO", hue: 205 },
-    question: "Will Lumenly reach 100K verified monthly users by Dec 2027?",
-    closes: "Dec 31, 2027",
-    video: "2:24",
+const PULSEWELL: Example = {
+  key: "pulsewell",
+  startup: {
+    name: "Pulsewell", tagline: "Heart monitoring patch", glyph: "heart", hue: 350, industry: "Healthcare",
+    features: [{ icon: "activity", label: "14-day patch" }, { icon: "bell", label: "AFib alerts" }, { icon: "stethoscope", label: "Clinician portal" }],
   },
-  {
-    key: "northstar",
-    startup: {
-      name: "Northstar Games", tagline: "Indie multiplayer studio", glyph: "gamepad", hue: 265, industry: "Gaming",
-      features: [{ icon: "swords", label: "Co-op raids" }, { icon: "repeat", label: "Cross-play" }, { icon: "wrench", label: "Mod tools" }],
-    },
-    founder: { name: "Maya Chen", role: "Founder / Game director", hue: 330 },
-    question: "Will Driftlight release on Steam by June 30, 2027?",
-    closes: "Jun 30, 2027",
-    video: "1:58",
-  },
-  {
-    key: "stackwise",
-    startup: {
-      name: "Stackwise", tagline: "Code review that explains itself", glyph: "code", hue: 230, industry: "Developer tools",
-      features: [{ icon: "file-text", label: "PR summaries" }, { icon: "shield", label: "Risk scores" }, { icon: "plug", label: "CI plugin" }],
-    },
-    founder: { name: "Lena Fischer", role: "Founder / Maintainer", hue: 255 },
-    question: "Will Stackwise reach 10,000 GitHub stars by 2027?",
-    closes: "Dec 31, 2027",
-    video: "2:05",
-  },
-];
+  founder: { name: "Samuel Okoye", role: "Founder / CEO", hue: 15 },
+  question: "Will Pulsewell get FDA clearance by end of 2027?",
+  closes: "Dec 31, 2027",
+  video: "2:08",
+};
 
-/** The market the walkthrough card plays through (Lumenly's, from the same catalog). */
+const LUMENLY: Example = {
+  key: "lumenly",
+  startup: {
+    name: "Lumenly", tagline: "AI Study Companion", glyph: "sparkles", hue: 210, industry: "EdTech",
+    features: [{ icon: "check", label: "Study plans" }, { icon: "book", label: "Course notes" }, { icon: "bot", label: "AI tutoring" }],
+  },
+  founder: { name: "Ari Vale", role: "Founder / CEO", hue: 205 },
+  question: "Will Lumenly get into Y Combinator by mid-2027?",
+  closes: "Jun 30, 2027",
+  video: "2:24",
+};
+
+const NEXA: Example = {
+  key: "nexa",
+  startup: {
+    name: "Nexa Robotics", tagline: "Robots for small factories", glyph: "robot", hue: 190, industry: "Robotics",
+    features: [{ icon: "hand", label: "Pick and place" }, { icon: "wand", label: "No-code setup" }, { icon: "gauge", label: "Fleet dashboard" }],
+  },
+  founder: { name: "Noah Reed", role: "Founder / CEO", hue: 25 },
+  question: "Will Nexa Robotics win the 2027 Open Automation Prize?",
+  closes: "Dec 31, 2027",
+  video: "2:16",
+};
+
+export const EXAMPLES: Example[] = [PULSEWELL, LUMENLY, NEXA];
+
+/** The market the walkthrough card plays through (Nexa's, from the same catalog, its rules shortened to fit). */
 export const WALKTHROUGH = {
-  example: EXAMPLES[0],
-  videoTitle: "Why I'm building Lumenly",
-  videoDescription: "Ari explains the problem with cramming and what Lumenly does about it.",
-  caption: "Our goal is a hundred thousand verified monthly users by the end of 2027.",
-  yes: "At least 100,000 verified monthly active users in any month through December 2027.",
-  no: "No month through December 2027 reaches 100,000 verified monthly active users.",
-  source: "An independent analytics audit",
+  example: NEXA,
+  videoTitle: "Why small factories get left behind",
+  videoDescription: "Noah on the gap between big and small manufacturers.",
+  caption: "We're entering the Open Automation Prize next year. Wish us luck.",
+  yes: "The prize's organizers name Nexa Robotics overall winner on or before December 31, 2027.",
+  no: "Another entrant wins, or no winner is announced by December 31, 2027.",
+  source: "The prize organizers' published results",
   closes: "December 31, 2027, 11:59 PM ET",
 };
 
-/** The market on the rules card (Stackwise's, word for word from the catalog). */
+/** The market on the rules card (Pulsewell's, word for word from the catalog). */
 export const RULES_EXAMPLE = {
-  label: "Developer tools · Stackwise",
-  question: "Will the Stackwise GitHub repository have 10,000 stars by December 31, 2027?",
-  yes: "The star count shown on the Stackwise repository's GitHub page is 10,000 or more at any check on or before December 31, 2027.",
-  no: "It stays below 10,000 through December 31, 2027.",
-  source: "GitHub repository page, archived snapshot",
+  label: "Healthcare · Pulsewell",
+  question: "Will Pulsewell's patch receive FDA 510(k) clearance by December 31, 2027?",
+  yes: "The FDA's 510(k) database lists a clearance for Pulsewell's heart-rhythm patch with a decision date on or before December 31, 2027.",
+  no: "No such clearance is listed with a decision date by then.",
+  source: "FDA 510(k) premarket notification database",
   closes: "December 31, 2027, 11:59 PM ET",
 };

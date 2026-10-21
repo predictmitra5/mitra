@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { BadgeCheck, Check, Clock3, Lock, MousePointer2, Pause, Play, Search } from "lucide-react";
 import { WALKTHROUGH } from "@/content/examples";
-import { Thumb } from "./thumb";
+import { Thumb, initials } from "./thumb";
 
 /*
  * How it works, after XO Market's "Create a Conviction" card: four steps
@@ -12,7 +12,8 @@ import { Thumb } from "./thumb";
  * step in play is marked in the list; a step can be picked to jump there. It
  * plays only while on screen, stops with its pause button, and stays on the
  * picked step for people who ask their device to reduce motion. The card is a
- * picture: screen readers get the list.
+ * picture: screen readers get the list. On narrow screens the card comes
+ * before the list, and the list opens only the step in play.
  */
 
 const PHASES = [
@@ -48,21 +49,22 @@ export function HowStory({ children }: { children: React.ReactNode }) {
     <div className="story how-story" data-running={running} style={style}>
       <div className="story-copy">
         {children}
-        <ol className="steps" data-reveal>
-          {PHASES.map((item, index) => (
-            <li key={item.key} className="step" data-active={index === phase}>
-              <button type="button" onClick={() => setPhase(index)} aria-current={index === phase ? "step" : undefined}>
-                <span className="step-num label">Step {index + 1}</span>
-                <span className="step-text">
-                  <span className="step-title">{item.title}</span>
-                  <span className="step-body">{item.body}</span>
-                </span>
-                {index === phase && <i className="step-progress" aria-hidden="true" />}
-              </button>
-            </li>
-          ))}
-        </ol>
       </div>
+
+      <ol className="steps" data-reveal>
+        {PHASES.map((item, index) => (
+          <li key={item.key} className="step" data-active={index === phase}>
+            <button type="button" onClick={() => setPhase(index)} aria-current={index === phase ? "step" : undefined}>
+              <span className="step-num label">Step {index + 1}</span>
+              <span className="step-text">
+                <span className="step-title">{item.title}</span>
+                <span className="step-more"><span className="step-body">{item.body}</span></span>
+              </span>
+              {index === phase && <i className="step-progress" aria-hidden="true" />}
+            </button>
+          </li>
+        ))}
+      </ol>
 
       <div className="story-art" data-reveal>
       <div ref={card} className="demo" data-phase={current.key}>
@@ -86,7 +88,7 @@ export function HowStory({ children }: { children: React.ReactNode }) {
               <span className="demo-progress"><b /></span>
             </div>
             <div className="demo-founder">
-              <span className="demo-avatar" style={{ "--face-hue": example.founder.hue } as CSSProperties}>AV</span>
+              <span className="demo-avatar" style={{ "--face-hue": example.founder.hue } as CSSProperties}>{initials(example.founder.name)}</span>
               <span className="demo-founder-text">
                 <strong>{WALKTHROUGH.videoTitle}</strong>
                 <span>{example.founder.name} · {example.startup.name}</span>

@@ -64,14 +64,14 @@ export default function Home() {
                 <h2 className="heading" data-split>What founders say they&rsquo;ll do next.</h2>
               </div>
               <div className="section-side" data-reveal>
-                <p className="body">Each market turns one milestone into a Yes/No question with a date: a launch, a user count, a place in an accelerator.</p>
+                <p className="body">Each market turns one milestone into a Yes/No question with a date: an FDA clearance, a place in an accelerator, a prize.</p>
                 <a className="link" href={app("/markets")}>See every market<ArrowUpRight aria-hidden="true" strokeWidth={2} /></a>
               </div>
             </div>
             <ul className="cards">
               {EXAMPLES.map((example) => <MarketCard key={example.key} example={example} href={app("/markets")} />)}
             </ul>
-            <p className="fineprint" data-reveal>Examples from Mitra&rsquo;s demo catalog. These startups and founders are fictional.</p>
+            <p className="fineprint" data-reveal>Examples from Mitra&rsquo;s demo catalog. These startups, their founders and the Open Automation Prize are fictional.</p>
           </div>
         </section>
 

@@ -26,9 +26,17 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
  * None of it runs for people who ask their device to reduce motion: the
  * inline script in layout.tsx marks <html data-motion="reduce"> and the page
  * simply stays put.
+ *
+ * On touch screens the browser scrolls the page ahead of any script, and
+ * smooth scrolling leaves touch alone, so something moved with the scroll
+ * would trail it by a frame and shake. There the covered sections and the
+ * opening's art stay put and only fade; the sheets still slide over them.
  */
 
 const OUT = "expo.out";
+
+/** A mouse or trackpad, which the smooth scroller drives in step with the animations. */
+const steadyScroll = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 export function MotionRoot() {
   useEffect(() => {
@@ -128,11 +136,12 @@ function playOpening() {
   const art = hero.querySelector("[data-hero-art]");
   if (art) {
     gsap.timeline({ scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 0.25 } })
-      .to(art, { yPercent: 12, opacity: 0.35, ease: "none" }, 0);
+      .to(art, { ...(steadyScroll() && { yPercent: 12 }), opacity: 0.35, ease: "none" }, 0);
   }
 }
 
 function stackChapters() {
+  const sink = steadyScroll();
   const scrims: HTMLElement[] = [];
   for (const chapter of document.querySelectorAll<HTMLElement>("[data-chapter]")) {
     const covered = chapter.previousElementSibling;
@@ -146,7 +155,7 @@ function stackChapters() {
     const timeline = gsap.timeline({
       scrollTrigger: { trigger: chapter, start: "top bottom", end: "top top", scrub: true, invalidateOnRefresh: true },
     });
-    if (content) timeline.fromTo(content, { y: 0 }, { y: () => window.innerHeight * 0.18, ease: "none" }, 0);
+    if (content && sink) timeline.fromTo(content, { y: 0 }, { y: () => window.innerHeight * 0.18, ease: "none" }, 0);
     timeline.fromTo(scrim, { opacity: 0 }, { opacity: 1, ease: "power2.in" }, 0);
   }
   return () => scrims.forEach((scrim) => scrim.remove());

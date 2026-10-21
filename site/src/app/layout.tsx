@@ -16,7 +16,10 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#0b0b0c" };
+// The page runs edge to edge on phones (under a notch held sideways, or the
+// system bars where the browser allows it); globals.css pads the menu, the
+// content and the footer's small print back out with the safe-area insets.
+export const viewport: Viewport = { themeColor: "#0b0b0c", viewportFit: "cover" };
 
 // Runs before the first paint: whether this visitor gets the full motion. With
 // it, what will animate in starts hidden instead of flashing; without it (or

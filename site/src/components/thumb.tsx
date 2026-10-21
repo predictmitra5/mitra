@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import {
-  BookOpen, Bot, CircleCheck, CirclePlay, Code, FileText, Gamepad2, Plug, Repeat, Shield, Sparkles, Swords, Wrench, type LucideIcon,
+  Activity, Bell, BookOpen, Bot, CircleCheck, CirclePlay, Gauge, Hand, Heart, Sparkles, Stethoscope, WandSparkles, type LucideIcon,
 } from "lucide-react";
 import type { Example, FeatureIcon, StartupGlyph } from "@/content/examples";
 
@@ -12,12 +12,13 @@ import type { Example, FeatureIcon, StartupGlyph } from "@/content/examples";
  * is sharp at any size and needs no image file.
  */
 
-const GLYPHS: Record<StartupGlyph, LucideIcon> = { sparkles: Sparkles, gamepad: Gamepad2, code: Code };
+// The same icons the app draws for these names (src/app/components/startup/glyph.tsx).
+const GLYPHS: Record<StartupGlyph, LucideIcon> = { sparkles: Sparkles, heart: Heart, robot: Bot };
 const FEATURES: Record<FeatureIcon, LucideIcon> = {
-  check: CircleCheck, book: BookOpen, bot: Bot, swords: Swords, repeat: Repeat, wrench: Wrench, "file-text": FileText, shield: Shield, plug: Plug,
+  check: CircleCheck, book: BookOpen, bot: Bot, activity: Activity, bell: Bell, stethoscope: Stethoscope, hand: Hand, wand: WandSparkles, gauge: Gauge,
 };
 
-function initials(name: string) {
+export function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
 }
 

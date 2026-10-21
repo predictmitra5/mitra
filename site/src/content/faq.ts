@@ -10,7 +10,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "What's a market on Mitra?",
-    a: "A Yes/No question about one milestone, like “Will Stackwise reach 10,000 GitHub stars by 2027?”, with written rules for what counts as Yes and what counts as No, a named source and a close date.",
+    a: "A Yes/No question about one milestone, like “Will Pulsewell get FDA clearance by end of 2027?”, with written rules for what counts as Yes and what counts as No, a named source and a close date.",
   },
   {
     q: "Who decides how a market ends?",
