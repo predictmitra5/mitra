@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-- **PAUSED at user request, 2026-10-20 — startup exchange replacement, funding closed.** Work is incomplete and not deployment-ready. See `docs/EXCHANGE_CHECKPOINT.md` for source changes, exact test failures, retained Auth UUIDs, hosted inventory, reset/backup blockers and ordered resume steps. The current blueprint supersedes campus/dual-currency/LMSR and fake-funds directions while preserving the video-first design at 9dd7982. No hosted changes, reset, push or deployment occurred. Deposits, withdrawals and customer execution must stay closed. Resume only on a subsequent user request; do not treat the local WIP checkpoint as a verified release.
+- **RESUMED at user request, 2026-10-20 — startup exchange replacement, funding closed.** Continue from 7f359f2, now on clean local main tracking origin/main. Fix migration execution, validate the complete replacement, repair integration and meaningful regression tests, then inspect hosted state and finish only safe, recoverable reset/release operations. Preserve the video-first design and the two specified owner identities. Deposits, withdrawals and customer execution stay closed. A current recoverable export and restore verification remain mandatory before any production deletion; no such export has yet been verified. See `docs/EXCHANGE_CHECKPOINT.md`; its paused-branch description is historical.
 
 ## Deferred, to come back to
 
