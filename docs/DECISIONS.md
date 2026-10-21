@@ -711,5 +711,5 @@ The owner requested Mitra branding and Ohio State/Illinois accents on verificati
 - **The market page is Mitra's watch page.** A card opens its market (video first, then the market). `/following` shows the same grid for followed founders; `/watch/<id>` opens that video's market.
 # Current catalog follow-up — 2026-10-20
 
-The owner requested retaining nine current markets in the existing video-first UI despite empty liquidity. Keep both Yes/No inspection controls, honest No offer/zero-volume states, and closed customer execution. Default selection may cover different startup categories. Other definitions are hidden reversibly, not deleted. “Codex funding/credits running out” refers to coding-agent usage, not authorization to enable app funding.
+The owner first requested nine current markets, then clarified a few per category rather than exactly nine. Keep two existing open markets per startup industry (20 across ten industries) in the existing video-first UI despite empty liquidity. Keep both Yes/No inspection controls, honest No offer/zero-volume states, and closed customer execution. Other definitions are hidden reversibly, not deleted. “Codex funding/credits running out” refers to coding-agent usage, not authorization to enable app funding.
 
