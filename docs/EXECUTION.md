@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-22: making @mughil an owner** (DECISIONS.md 2026-10-22, "@mughil is an owner"). One guarded update on the live database: `profiles.is_owner = 1` for id 330fbf16-9f90-4f19-b919-8873844d36fb only where its handle is `mughil` and it is not yet an owner, inside a transaction that must change exactly one row, with an `admin_actions` entry if the table accepts one; then read back all owners.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 

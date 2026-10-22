@@ -818,3 +818,11 @@ The owner first requested nine current markets, then clarified a few per categor
 - A video counts as a Short when its link is a `youtube.com/shorts/…` link, or when YouTube's own description of the video (oEmbed, already asked when a video is added) says it is taller than it is wide, which catches a Short pasted as an ordinary link. Checked on 2026-10-22: a Short is reported 113 wide by 200 high, an ordinary video 200 by 150. If YouTube can't be asked, only the link decides.
 - "Upload" means choosing an image file, so image uploads are switched on for founders: the video thumbnail, and therefore also the startup's logo, cover picture and screenshots, which until now could only be pasted as links. Images are re-encoded to WebP (stripping location and camera data) as built on 2026-10-19, at unguessable addresses. Video uploads stay off: videos are YouTube links.
 - Rejecting or suspending a video deletes the thumbnail uploaded for it.
+
+## 2026-10-22 - @mughil is an owner
+
+**User instruction** (the owner): "whose the owner accounts." Told they are @ducky (murugan.23@osu.edu) and @mitrapredict (predictmitra@gmail.com), the owner said: "make @mughil the owner".
+
+**Decision:** the member @mughil (Mughil Murugan, signed up 2026-10-21) gets owner powers: the review queue, approving founders, startups and videos, writing, opening, pausing and settling markets, moderation and the audit record.
+
+**Reading taken (the owner can correct it):** "the owner" adds @mughil as a third owner; @ducky and @mitrapredict stay owners, since taking owner powers away from an account can lock the owner out and was not asked for. As for every owner, @mughil can no longer trade any market (the 2026-10-07 rule) and can't delete their own account while an owner. Their founder profile, waiting for review, stays as it is; as an owner they can approve it at `/review`.
