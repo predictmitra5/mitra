@@ -12,6 +12,7 @@ import { MarketCard, SampleTag } from "@/app/components/market/market-card";
 import { toCardData } from "@/app/components/market/card-data";
 import { FounderFace, StartupMark, StartupThumb } from "@/app/components/startup/thumb";
 import { Claims, Timeline, VerificationBadge, VideoGrid } from "@/app/components/startup/profile-parts";
+import { VideoPlayer } from "@/app/components/startup/video-player";
 import { FollowButton } from "@/app/components/social/follow-button";
 import { SignupPrompt } from "@/app/components/signup-prompt";
 
@@ -20,6 +21,10 @@ import { SignupPrompt } from "@/app/components/signup-prompt";
  * industry and tags, Follow with the follower count, what it does and the
  * product, its founders, videos, progress timeline and updates, claims with
  * their verification, open markets, resolved markets and how they went.
+ *
+ * The hero plays the startup's video in place (2026-10-22): its latest, or
+ * the one a link chose with ?v=. A startup with no market has no watch page,
+ * so /watch/<id> opens its video here.
  */
 export const dynamic = "force-dynamic";
 
@@ -28,8 +33,9 @@ export async function generateMetadata({ params }: PageProps<"/startups/[slug]">
   return { title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) };
 }
 
-export default async function StartupPage({ params }: PageProps<"/startups/[slug]">) {
+export default async function StartupPage({ params, searchParams }: PageProps<"/startups/[slug]">) {
   const { slug } = await params;
+  const { v } = await searchParams;
   let identity = null;
   try { identity = await currentIdentity(); } catch { /* a visitor */ }
   const now = new Date();
@@ -41,6 +47,7 @@ export default async function StartupPage({ params }: PageProps<"/startups/[slug
   const resolved = page.past.filter((m) => m.status === "settled");
   const yesShare = resolved.length ? Math.round((resolved.filter((m) => m.ruledOutcome === "yes").length / resolved.length) * 100) : null;
   const thumbFounder = lead ? { name: lead.name, portraitUrl: lead.portraitUrl, hue: lead.hue, role: lead.role } : null;
+  const shown = page.videos.find((video) => video.id === v) ?? page.videos[0] ?? null;
 
   return (
     <div className="market-shell">
@@ -48,10 +55,11 @@ export default async function StartupPage({ params }: PageProps<"/startups/[slug
       <main className="profile">
         {page.preview && <p className="sample-note profile-preview"><strong>Waiting for review.</strong> Only you and the owner can see this page until it is approved.</p>}
         <section className="profile-hero rise">
-          {page.videos[0] ? (
-            <Link className="profile-hero-media" href={`/watch/${page.videos[0].id}`} prefetch={false} aria-label={`Watch ${page.videos[0].title}`}>
-              <StartupThumb priority startup={startup} founder={thumbFounder} durationSeconds={page.videos[0].durationSeconds} imageUrl={page.videos[0].thumbnailUrl} label="Latest video" />
-            </Link>
+          {shown ? (
+            <div className="profile-hero-media">
+              <VideoPlayer video={{ ...shown }} poster={<StartupThumb priority startup={startup} founder={thumbFounder} durationSeconds={shown.durationSeconds}
+                imageUrl={shown.thumbnailUrl} label={shown === page.videos[0] ? "Latest video" : undefined} />} />
+            </div>
           ) : <StartupThumb priority startup={startup} founder={thumbFounder} bar={false} className="profile-hero-media" />}
           <div className="profile-head">
             <StartupMark startup={startup} size={56} />
