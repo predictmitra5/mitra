@@ -181,7 +181,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
               </div>
             </div>
           ) : (
-            <p className="muted goal-archived">{market.venueName ? `${market.venueName} · an earlier campus event market` : "An earlier Mitra market."}</p>
+            <p className="muted goal-archived">{market.venueName ? `${market.venueName} · an earlier event market` : "An earlier Mitra market."}</p>
           )}
           <h1>{market.question}</h1>
           {market.isSample && startup && (

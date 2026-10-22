@@ -21,7 +21,7 @@ export function AuthForm({ mode, returnTo }: { mode: FormMode; returnTo?: string
       {mode !== "reset-password" && (
         <div className="field">
           <label htmlFor="email">Email address</label>
-          <input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="name@osu.edu or netid@illinois.edu"
+          <input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com"
             maxLength={254} required autoFocus aria-describedby="email-hint" />
           <p id="email-hint" className="field-hint">Use the email you verified for Mitra.</p>
         </div>
