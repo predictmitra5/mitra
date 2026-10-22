@@ -24,7 +24,14 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-22: the owner's pages hanging, and YouTube videos on the review page** (owner: "the review is so laggy. figure this out and debug it. also, idk if the youtube video works"). Found by measuring against the live database (read-only):
+
+- **Hangs.** Through Supabase's transaction pooler (`DATABASE_URL`, port 6543), postgres.js pipelining makes a batch of concurrent queries hang when it mixes a query without parameters with parameterized ones (the parameterized ones go out in two halves, describe then execute). The owner's waiting count (`reviewQueueCount`, six counts at once, one without parameters) runs in the top bar of every page the owner opens, `/review` included, and hung in about a third of calls; the stuck query sits "active, ClientRead" on the database until the pooler drops it. Reproduced: the mixed batch hung in 6 of 6 trials with the default pipelining and never in 30 calls with `max_pipeline: 0`; the real owner functions 8 hangs in 32 calls by default, 0 in 48 with pipelining off; the session pooler never hung. Fix: `max_pipeline: 0` in `src/db/client.ts` (no configuration change in Vercel needed); a `loading.tsx` for `/review` so a click answers at once.
+- **YouTube.** The review page plays every video with a plain `<video>` element, which can't play a YouTube link, so the owner sees a broken player for the one real founder video waiting (YLslsZuEaNE, embeddable). Fix: the review card uses `VideoPlayer` (YouTube's player) without reporting views, with a link to YouTube. Also: a title YouTube filled in is replaced when the founder swaps to another link, unless they edited it (the waiting video kept the first link's title).
+
+Then tests, typecheck, lint, build; local check of the review card's player; the temporary timing test removed before committing.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
