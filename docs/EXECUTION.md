@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-22: founder videos that never play.** The owner: "for some reason the youtube part is not working. as in the videos do not play on the site". Found on the live site: the one approved founder video (YLslsZuEaNE, startup "Mughil", which has no market) is shown only as a thumbnail linking to `/watch/<id>`, and `/watch` sends a video whose startup has no market back to the startup page, so the link loops and no page ever plays it (the market page is the only public page with a player). Plan: the startup page plays its video in place in the hero (YouTube's player through `VideoPlayer`, as the market page does), and `/watch/<id>` for a startup without a market opens `/startups/<slug>?v=<id>` so a tile on a founder or startup page plays that video there. Relies on DECISIONS 2026-10-20 (the market page is the watch page; a video whose startup has no market opens the startup) and 2026-10-21 (YouTube links, played in YouTube's player). Then push and check the live site.
 
 ## Deferred, to come back to
 
