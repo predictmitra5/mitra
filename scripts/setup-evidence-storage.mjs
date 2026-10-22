@@ -10,9 +10,9 @@
 //                                kept only until checked and re-encoded
 //   media-uploads       private  founder photos, logos and thumbnails as uploaded
 //                                (2026-10-19), kept only until re-encoded
-//   startup-media       public   the re-encoded images and the founder videos
-//                                (2026-10-19); the app shows them only once the
-//                                owner approves, under unguessable paths
+//   startup-media       public   the re-encoded founder images (2026-10-19; images
+//                                only since 2026-10-22, videos are YouTube links),
+//                                under unguessable paths
 //   founder-files       private  founders' resumes as checked PDFs (2026-10-22),
 //                                opened only through short-lived signed links
 //
@@ -26,8 +26,8 @@
 // an "evidence-public" bucket; if your project still has one it is unused and
 // can be removed in the Supabase dashboard.
 //
-// Founder uploads stay off until this has run and STARTUP_MEDIA_UPLOADS=on is
-// set in the environment.
+// Founder image uploads work once this has created media-uploads and
+// startup-media (2026-10-22); STARTUP_MEDIA_UPLOADS=off switches them off.
 //
 // Safe to run repeatedly. It never deletes a bucket or anything inside one, and
 // it refuses to continue if the bucket has the wrong privacy.
@@ -77,10 +77,10 @@ const wanted = [
   {
     id: "startup-media",
     public: true,
-    // Only the WebP images the app wrote itself, and founder videos.
-    allowedMimeTypes: ["image/webp", "video/mp4", "video/webm"],
-    fileSizeLimit: 50 * 1024 * 1024,
-    why: "founder videos and startup images are shown to visitors who are not signed in",
+    // Only the WebP images the app wrote itself; videos are YouTube links (2026-10-22).
+    allowedMimeTypes: ["image/webp"],
+    fileSizeLimit: 5 * 1024 * 1024,
+    why: "startup images and video thumbnails are shown to visitors who are not signed in",
   },
   {
     id: "founder-files",

@@ -168,7 +168,12 @@ export function VideoFlow({ startups, initialStartup, uploads, first, face }: {
       input: (p) => <Choices {...p} label="Kind of video" options={VIDEO_KINDS.map((k) => ({ key: k, label: videoKindLabel(k) }))} /> },
     { key: "description", label: "Description", title: "What's it about?", sub: "A sentence or two shown with the video.",
       check: lengthCheck(10, 500, "The description"), input: (p) => <LongText {...p} label="Description" minLength={10} maxLength={500} rows={4} /> },
-    { key: "thumbnailUrl", label: "Thumbnail", optional: true, title: "Use a different thumbnail?", sub: "Without one, the video's YouTube thumbnail is used.",
+    { key: "thumbnailUrl", label: "Thumbnail", title: "Use a different thumbnail?",
+      // A Short's tall YouTube thumbnail is cut to a strip on Mitra's wide cards, so it needs a wide one (2026-10-22).
+      optional: (v) => v._short !== "1", heading: (v) => v._short === "1" ? "Add a wide thumbnail" : "Use a different thumbnail?",
+      sub: (v) => v._short === "1"
+        ? "This is a YouTube Short. Its tall thumbnail gets cut off on Mitra's wide cards, so upload a wide (landscape) picture to show instead."
+        : "Without one, the video's YouTube thumbnail is used.",
       check: httpsLink, show: picture(false), input: (p) => <ImageInput {...p} uploads={uploads} label="the thumbnail" /> },
   ];
   return (

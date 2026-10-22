@@ -23,10 +23,13 @@ export type StepDef = {
   /** The answer this screen asks for. */
   key: string;
   title: string;
-  sub?: ReactNode;
+  sub?: ReactNode | ((values: Values) => ReactNode);
   /** The answer's name on the review screen. */
   label: string;
-  optional?: boolean;
+  /** Whether Skip is offered; it may depend on other answers (a Short's thumbnail, 2026-10-22). */
+  optional?: boolean | ((values: Values) => boolean);
+  /** The title, if it depends on other answers. */
+  heading?: (values: Values) => string;
   input: (props: InputProps) => ReactNode;
   /** Why the answer can't be used yet, if it can't. */
   check?: (value: string, values: Values) => string | null;
@@ -37,6 +40,8 @@ export type StepDef = {
 };
 
 const REVIEW = "review";
+
+const isOptional = (step: StepDef, values: Values) => typeof step.optional === "function" ? step.optional(values) : !!step.optional;
 
 export function StepFlow({ steps, initial, draftKey, reviewTitle, reviewSub, submitLabel, submit, onDone, exitHref, exitLabel = "Back" }: {
   steps: readonly StepDef[];
@@ -96,7 +101,7 @@ export function StepFlow({ steps, initial, draftKey, reviewTitle, reviewSub, sub
     event.preventDefault();
     if (!step) return;
     const value = (values[step.key] ?? "").trim();
-    const reason = !value && !step.optional ? "Please answer this one to continue." : step.check?.(value, values) ?? null;
+    const reason = !value && !isOptional(step, values) ? "Please answer this one to continue." : step.check?.(value, values) ?? null;
     if (reason) { setProblem({ message: reason, step: step.key }); return; }
     setProblem(null);
     go(editing || index === steps.length - 1 ? REVIEW : steps[index + 1].key);
@@ -150,7 +155,7 @@ export function StepFlow({ steps, initial, draftKey, reviewTitle, reviewSub, sub
               return (
                 <div key={s.key} className="step-review-row">
                   <dt>{s.label}</dt>
-                  <dd>{value ? (s.show ? s.show(value, values) : value) : <span className="muted">{s.optional ? "Skipped" : "Not answered yet"}</span>}</dd>
+                  <dd>{value ? (s.show ? s.show(value, values) : value) : <span className="muted">{isOptional(s, values) ? "Skipped" : "Not answered yet"}</span>}</dd>
                   <button type="button" className="text-button step-review-edit" onClick={() => go(s.key, true)} aria-label={`Edit ${s.label.toLowerCase()}`}>Edit</button>
                 </div>
               );
@@ -167,12 +172,12 @@ export function StepFlow({ steps, initial, draftKey, reviewTitle, reviewSub, sub
   return (
     <StepFrame fills={fills} label={`Step ${index + 1} of ${total}`} back={back} closeHref={exitHref}>
       <form className="step-form" onSubmit={advance} noValidate key={step.key}>
-        <h1 id={`${id}-title`}>{step.title}</h1>
-        {step.sub && <p className="step-sub">{step.sub}</p>}
+        <h1 id={`${id}-title`}>{step.heading ? step.heading(values) : step.title}</h1>
+        {step.sub && <p className="step-sub">{typeof step.sub === "function" ? step.sub(values) : step.sub}</p>}
         {step.input({ id: `${id}-${step.key}`, value: values[step.key] ?? "", set: set(step.key), values, patch })}
         {message && <p className="form-error" role="alert">{message}</p>}
         <button className="primary-button" type="submit">{editing ? "Save and review" : index === steps.length - 1 ? "Review" : "Continue"}</button>
-        {step.optional && <button className="text-button step-skip" type="button" onClick={skip}>Skip for now</button>}
+        {isOptional(step, values) && <button className="text-button step-skip" type="button" onClick={skip}>Skip for now</button>}
       </form>
     </StepFrame>
   );

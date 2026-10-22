@@ -8,7 +8,7 @@ import * as schema from "@/db/schema";
 import { provisionAccount } from "@/modules/account/provision";
 import { addUpdate, addVideo, checkFounderHandle, registerStartup, saveFounderProfile, suggestFounderHandle } from "./creator";
 import { readFounderPage } from "./read";
-import type { YoutubeCheck } from "./youtube";
+import type { YoutubeInfo } from "./youtube";
 
 const { founders, startups, videos } = schema;
 const memory = new PGlite(), db = drizzle(memory, { schema });
@@ -55,7 +55,8 @@ async function founderWithStartup() {
   return startup;
 }
 
-const ok = async (): Promise<YoutubeCheck> => "ok";
+const ok = async (): Promise<YoutubeInfo> => ({ status: "ok", vertical: false });
+const answer = (status: YoutubeInfo["status"], vertical: boolean | null = null) => async (): Promise<YoutubeInfo> => ({ status, vertical });
 const videoInput = (videoUrl: string, extra: Record<string, unknown> = {}) => ({
   title: "Tidepool launch trailer", description: "Ravi introduces Tidepool before launch.", kind: "pitch", videoUrl, durationSeconds: "70", ...extra,
 });
@@ -160,10 +161,20 @@ describe("founder videos are YouTube links", () => {
 
   it("refuse a video YouTube says is private or can't be embedded, and accept one when YouTube can't be asked", async () => {
     const startup = await founderWithStartup();
-    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, async () => "not_embeddable")).rejects.toMatchObject({ field: "videoUrl" });
-    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, async () => "missing")).rejects.toMatchObject({ field: "videoUrl" });
-    const row = await addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, async () => "unknown");
+    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, answer("not_embeddable"))).rejects.toMatchObject({ field: "videoUrl" });
+    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, answer("missing"))).rejects.toMatchObject({ field: "videoUrl" });
+    const row = await addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, answer("unknown"));
     expect(row.videoUrl).toContain("dQw4w9WgXcQ");
+  });
+
+  it("that are YouTube Shorts need a thumbnail of the founder's own (2026-10-22)", async () => {
+    const startup = await founderWithStartup();
+    await expect(addVideo(db, member, startup.id, videoInput("https://www.youtube.com/shorts/6yX9tINzYf0"), now, answer("ok", null))).rejects.toMatchObject({ field: "thumbnailUrl" });
+    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/6yX9tINzYf0"), now, answer("ok", true))).rejects.toMatchObject({ field: "thumbnailUrl" });
+    const row = await addVideo(db, member, startup.id, videoInput("https://youtu.be/6yX9tINzYf0", { thumbnailUrl: "https://cdn.example/wide.webp" }), now, answer("ok", true));
+    expect(row.thumbnailUrl).toBe("https://cdn.example/wide.webp");
+    const plain = await addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, answer("unknown"));
+    expect(plain.thumbnailUrl).toContain("i.ytimg.com");
   });
 
   it("keep videos between 5 seconds and 2 minutes", async () => {

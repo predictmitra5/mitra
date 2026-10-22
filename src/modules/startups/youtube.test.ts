@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkYoutubeVideo, youtubeId, youtubeThumbnail, youtubeUrl } from "./youtube";
+import { describeYoutubeVideo, isShortsLink, youtubeId, youtubeThumbnail, youtubeUrl } from "./youtube";
 
 describe("reading a YouTube link", () => {
   it("finds the video id in every link a founder is likely to paste", () => {
@@ -32,26 +32,43 @@ describe("reading a YouTube link", () => {
   });
 });
 
-describe("asking YouTube whether a video can be embedded", () => {
-  const answer = (status: number) => (async () => new Response("{}", { status })) as unknown as typeof fetch;
+describe("asking YouTube about a video", () => {
+  const answer = (status: number, body: object = {}) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
 
-  it("reads oEmbed's answers", async () => {
-    expect(await checkYoutubeVideo("dQw4w9WgXcQ", answer(200))).toBe("ok");
-    expect(await checkYoutubeVideo("dQw4w9WgXcQ", answer(401))).toBe("not_embeddable");
-    expect(await checkYoutubeVideo("dQw4w9WgXcQ", answer(404))).toBe("missing");
-    expect(await checkYoutubeVideo("dQw4w9WgXcQ", answer(500))).toBe("unknown");
+  it("reads whether it can be embedded", async () => {
+    expect((await describeYoutubeVideo("dQw4w9WgXcQ", answer(200, { width: 200, height: 150 }))).status).toBe("ok");
+    expect((await describeYoutubeVideo("dQw4w9WgXcQ", answer(401))).status).toBe("not_embeddable");
+    expect((await describeYoutubeVideo("dQw4w9WgXcQ", answer(404))).status).toBe("missing");
+    expect((await describeYoutubeVideo("dQw4w9WgXcQ", answer(500))).status).toBe("unknown");
+  });
+
+  it("tells a Short by its tall shape", async () => {
+    expect(await describeYoutubeVideo("6yX9tINzYf0", answer(200, { width: 113, height: 200 }))).toEqual({ status: "ok", vertical: true });
+    expect(await describeYoutubeVideo("dQw4w9WgXcQ", answer(200, { width: 200, height: 150 }))).toEqual({ status: "ok", vertical: false });
+    expect(await describeYoutubeVideo("dQw4w9WgXcQ", answer(200, {}))).toEqual({ status: "ok", vertical: null });
   });
 
   it("treats a network failure as unknown, so YouTube being down never blocks a founder", async () => {
     const failing = (async () => { throw new Error("offline"); }) as unknown as typeof fetch;
-    expect(await checkYoutubeVideo("dQw4w9WgXcQ", failing)).toBe("unknown");
+    expect(await describeYoutubeVideo("dQw4w9WgXcQ", failing)).toEqual({ status: "unknown", vertical: null });
   });
 
-  it("only ever asks YouTube's own address", async () => {
+  it("only ever asks YouTube's own address, about the video's Shorts address", async () => {
     let asked = "";
     const spy = (async (url: string) => { asked = url; return new Response("{}", { status: 200 }); }) as unknown as typeof fetch;
-    await checkYoutubeVideo("dQw4w9WgXcQ", spy);
+    await describeYoutubeVideo("dQw4w9WgXcQ", spy);
     expect(new URL(asked).origin).toBe("https://www.youtube.com");
-    expect(await checkYoutubeVideo("../../evil", spy)).toBe("missing");
+    expect(new URL(asked).searchParams.get("url")).toBe("https://www.youtube.com/shorts/dQw4w9WgXcQ");
+    expect((await describeYoutubeVideo("../../evil", spy)).status).toBe("missing");
+  });
+});
+
+describe("a Shorts link", () => {
+  it("is told apart from other YouTube links", () => {
+    expect(isShortsLink("https://www.youtube.com/shorts/6yX9tINzYf0")).toBe(true);
+    expect(isShortsLink("youtube.com/shorts/6yX9tINzYf0?feature=share")).toBe(true);
+    expect(isShortsLink("https://youtu.be/6yX9tINzYf0")).toBe(false);
+    expect(isShortsLink("https://www.youtube.com/watch?v=6yX9tINzYf0")).toBe(false);
+    expect(isShortsLink("https://evil.example/shorts/6yX9tINzYf0")).toBe(false);
   });
 });

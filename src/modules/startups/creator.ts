@@ -6,8 +6,7 @@ import { isInactive } from "@/modules/account/standing";
 import { photoUrl } from "@/modules/account/photo-url";
 import { isEducationLevel, isIndustry, VIDEO_KINDS, type IndustryKey } from "./labels";
 import { linkedinProfileUrl } from "./links";
-import { MEDIA_BUCKET } from "./media-buckets";
-import { checkYoutubeVideo, MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail, youtubeUrl, type YoutubeCheck } from "./youtube";
+import { describeYoutubeVideo, isShortsLink, MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail, youtubeUrl, type YoutubeCheck, type YoutubeInfo } from "./youtube";
 
 /*
  * Creator tools (2026-10-19): a member makes a founder profile, registers
@@ -317,19 +316,16 @@ export function parseCaptions(value: unknown, durationSeconds: number): { at: nu
 
 /**
  * The video a founder adds (2026-10-21): a YouTube link, stored in its one
- * canonical form, or, only while Mitra's own uploads are on, a file this
- * member uploaded to Mitra's media bucket. Links to files anywhere else are
- * refused.
+ * canonical form. Video files are never uploaded to Mitra (2026-10-22).
  */
-export function videoLink(value: unknown, userId: string): { url: string; youtube: string | null } {
+export function videoLink(value: unknown): { url: string; youtube: string } {
   const id = youtubeId(value);
   if (id) return { url: youtubeUrl(id), youtube: id };
-  const own = process.env.STARTUP_MEDIA_UPLOADS === "on" && process.env.NEXT_PUBLIC_SUPABASE_URL
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${userId}/` : null;
-  const url = typeof value === "string" ? value.trim() : "";
-  if (own && url.startsWith(own) && /^[0-9a-f-]{36}\.(mp4|webm)$/.test(url.slice(own.length))) return { url, youtube: null };
   throw new CreatorError("INVALID_INPUT", "Paste the YouTube link to your video, like youtube.com/watch?v=… or youtu.be/…", "videoUrl");
 }
+
+/** A Short's tall YouTube thumbnail is cut to a strip on Mitra's wide cards, so it needs one of the founder's own (2026-10-22). */
+export const SHORT_NEEDS_THUMBNAIL = "This is a YouTube Short. Its tall YouTube thumbnail gets cut off on Mitra's wide cards, so upload a wide picture to show instead.";
 
 const YOUTUBE_REFUSAL: Partial<Record<YoutubeCheck, string>> = {
   not_embeddable: "YouTube says this video can't be played on other sites. In YouTube Studio, open the video's details, choose Show more and turn on Allow embedding.",
@@ -337,12 +333,12 @@ const YOUTUBE_REFUSAL: Partial<Record<YoutubeCheck, string>> = {
 };
 
 export async function addVideo<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, startupId: unknown, input: VideoInput, now: Date = new Date(),
-  checkYoutube: (id: string) => Promise<YoutubeCheck> = checkYoutubeVideo) {
+  describeYoutube: (id: string) => Promise<YoutubeInfo> = describeYoutubeVideo) {
   const startup = await requireManager(database, userId, startupId);
   const kind = typeof input.kind === "string" && (VIDEO_KINDS as readonly string[]).includes(input.kind) ? input.kind : "pitch";
   const seconds = Number(input.durationSeconds);
   if (!Number.isInteger(seconds) || seconds < MIN_VIDEO_SECONDS || seconds > MAX_VIDEO_SECONDS) throw new CreatorError("INVALID_INPUT", "Videos can be 5 seconds to 2 minutes long.", "durationSeconds");
-  const link = videoLink(input.videoUrl, userId);
+  const link = videoLink(input.videoUrl);
   const title = at("title", () => text(input.title, "Title", 4, 100));
   const description = at("description", () => text(input.description, "Description", 10, 500));
   const thumbnail = at("thumbnailUrl", () => mediaUrl(input.thumbnailUrl, "Thumbnail"));
@@ -355,16 +351,16 @@ export async function addVideo<Q extends PgQueryResultHKT>(database: Database<Q>
     if (!poster || !face) throw new CreatorError("INVALID_INPUT", "Add a photo of your face before posting a video.", "portraitUrl");
     await database.update(founders).set({ portraitUrl: face }).where(eq(founders.id, poster.id));
   }
-  if (link.youtube) {
-    const refusal = YOUTUBE_REFUSAL[await checkYoutube(link.youtube)];
-    if (refusal) throw new CreatorError("INVALID_INPUT", refusal, "videoUrl");
-  }
+  const youtube = await describeYoutube(link.youtube);
+  const refusal = YOUTUBE_REFUSAL[youtube.status];
+  if (refusal) throw new CreatorError("INVALID_INPUT", refusal, "videoUrl");
+  if (!thumbnail && (isShortsLink(input.videoUrl) || youtube.vertical === true)) throw new CreatorError("INVALID_INPUT", SHORT_NEEDS_THUMBNAIL, "thumbnailUrl");
   const pending = await database.$count(videos, and(eq(videos.uploadedBy, userId), eq(videos.status, "pending")));
   if (pending >= MAX_PENDING_VIDEOS) throw new CreatorError("LIMIT", `You have ${MAX_PENDING_VIDEOS} videos waiting for review. Wait for those first.`);
   const [founder] = await database.select({ id: founders.id }).from(founders).where(eq(founders.userId, userId)).limit(1);
   const [row] = await database.insert(videos).values({
     startupId: startup.id, founderId: founder?.id ?? null, title, description,
-    kind, videoUrl: link.url, thumbnailUrl: thumbnail ?? (link.youtube ? youtubeThumbnail(link.youtube) : null), durationSeconds: seconds, captions,
+    kind, videoUrl: link.url, thumbnailUrl: thumbnail ?? youtubeThumbnail(link.youtube), durationSeconds: seconds, captions,
     status: "pending", uploadedBy: userId, createdAt: now,
   }).returning();
   return row;

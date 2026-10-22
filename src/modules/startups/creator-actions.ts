@@ -7,6 +7,7 @@ import { currentIdentity } from "@/modules/auth/server";
 import { LIMITS, RATE_LIMITED_MESSAGE, RateLimited } from "@/modules/security/rate-limit";
 import { limit, within } from "@/modules/security/request";
 import { removeResume } from "./resume";
+import { describeYoutubeVideo, isShortsLink, youtubeId } from "./youtube";
 import {
   addClaim, addUpdate, addVideo, checkFounderHandle, CreatorError, registerStartup, saveFounderProfile, suggestMarket, updateStartup,
 } from "./creator";
@@ -63,6 +64,16 @@ export async function checkHandleAction(handle: string): Promise<{ handle: strin
   if (!identity) return null;
   if (!(await within(LIMITS.handleCheck, `user:${identity.id}`))) return null;
   try { return await checkFounderHandle(getDb(), identity.id, handle); } catch { return null; }
+}
+
+/** Whether a pasted YouTube link is a Short, so the video steps can ask for a wide thumbnail (2026-10-22). */
+export async function inspectVideoAction(link: string): Promise<{ short: boolean } | null> {
+  const identity = await currentIdentity().catch(() => null);
+  const id = youtubeId(link);
+  if (!identity || !id) return null;
+  if (isShortsLink(link)) return { short: true };
+  if (!(await within(LIMITS.handleCheck, `user:${identity.id}`))) return null;
+  return { short: (await describeYoutubeVideo(id)).vertical === true };
 }
 
 export async function saveFounderStepsAction(input: unknown): Promise<StepResult> {

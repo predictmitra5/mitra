@@ -5,6 +5,7 @@ import { MICRO_PER_UNIT } from "@/modules/market/units";
 import { isUuid } from "@/modules/market/input";
 import { isInactive } from "@/modules/account/standing";
 import { isMilestone, VERIFICATION, type MilestoneKey } from "./labels";
+import { removeUploadedImage, uploadedImagePath } from "./media";
 
 /*
  * The owner's tools for startups (2026-10-19): approving founders, startups and
@@ -165,6 +166,11 @@ export async function reviewVideo<Q extends PgQueryResultHKT>(database: Database
     .where(eq(videos.id, videoId)).returning();
   if (!row) throw new AdminError("NOT_FOUND", "That video isn't here.");
   await audit(database, ownerId, d === "approve" ? "approve_video" : "reject_video", why, { target: videoId, decision: d }, null, now);
+  // A thumbnail the founder uploaded for a video turned down or suspended is deleted (2026-10-22).
+  if (d !== "approve" && uploadedImagePath(row.thumbnailUrl) && await removeUploadedImage(row.thumbnailUrl).catch(() => false)) {
+    await database.update(videos).set({ thumbnailUrl: null }).where(eq(videos.id, row.id));
+    return { ...row, thumbnailUrl: null };
+  }
   return row;
 }
 

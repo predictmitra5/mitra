@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { checkHandleAction } from "@/modules/startups/creator-actions";
+import { checkHandleAction, inspectVideoAction } from "@/modules/startups/creator-actions";
 import { finishMediaUpload, finishResumeUploadAction, startMediaUpload, startResumeUpload } from "@/modules/startups/media-actions";
-import { MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail } from "@/modules/startups/youtube";
+import { isShortsLink, MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail } from "@/modules/startups/youtube";
 import { duration } from "@/modules/startups/labels";
 import { putToSignedUrl } from "@/app/components/direct-upload";
 import { usePhotoUpload } from "@/app/account/use-photo-upload";
@@ -124,7 +124,14 @@ export function YouTubeInput({ id, value, set, values, patch }: InputProps) {
     if (video === last.current) return;
     last.current = video;
     setUnknownLength(false);
-    if (!video) patch({ durationSeconds: "" });
+    if (!video) { patch({ durationSeconds: "", _short: "" }); return; }
+    // Is it a Short? Then the thumbnail screen asks for a wide picture (2026-10-22). A Shorts link
+    // says so itself; for any other link, YouTube is asked about the video's shape.
+    if (isShortsLink(value)) { patch({ _short: "1" }); return; }
+    patch({ _short: "" });
+    let stale = false;
+    inspectVideoAction(value).then((answer) => { if (!stale && answer) patch({ _short: answer.short ? "1" : "" }); }).catch(() => undefined);
+    return () => { stale = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video]);
 
@@ -148,6 +155,7 @@ export function YouTubeInput({ id, value, set, values, patch }: InputProps) {
               else setUnknownLength(true);
             }} />
           {values.durationSeconds && !unknownLength && <p className="field-hint">Length {duration(Number(values.durationSeconds))}, read from YouTube.</p>}
+          {values._short === "1" && <p className="field-hint step-note" role="status">This is a YouTube Short, so you&rsquo;ll add a wide thumbnail for it in a moment.</p>}
         </div>
       )}
       {video && unknownLength && (

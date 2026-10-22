@@ -11,24 +11,22 @@ import { releaseUploadIntent, reserveUploadIntent } from "@/modules/uploads/inte
 import { MEDIA_BUCKET, MEDIA_STAGING_BUCKET } from "./media-buckets";
 
 /*
- * Founders' media uploads (2026-10-19): videos, thumbnails, logos, portraits
- * and screenshots, from the browser straight to storage through one-time
- * signed links (Vercel refuses request bodies over 4.5 MB), as profile photos
- * already do.
- *
- * - Images go first to a private staging bucket; the server reads each one,
- *   re-encodes it as WebP at most 1,600 pixels wide (which drops every piece
- *   of metadata, including a phone's location) and publishes only that copy.
- * - Videos go straight to the public bucket under the uploader's own folder,
- *   because a server cannot re-encode video cheaply; they stay unlisted until
- *   the owner approves the video that uses them.
+ * Founders' image uploads (2026-10-19; switched on 2026-10-22): video
+ * thumbnails, logos, cover pictures and screenshots, from the browser straight
+ * to storage through one-time signed links (Vercel refuses request bodies over
+ * 4.5 MB), as profile photos already do. Each image goes first to a private
+ * staging bucket; the server reads it, re-encodes it as WebP at most 1,600
+ * pixels wide (which drops every piece of metadata, including a phone's
+ * location) and publishes only that copy, at an unguessable address. Videos
+ * are YouTube links and are never uploaded (2026-10-22).
  *
  * Every link is first reserved as an upload intent (the 2026-10-07 guard): a
- * few pending uploads per person, expiring after 48 hours, after which the daily
- * maintenance route deletes whatever no video uses.
+ * few pending uploads per person, expiring after 48 hours, after which the
+ * daily maintenance route deletes staged originals nobody finished.
  *
- * Off until the owner creates the buckets (scripts/setup-evidence-storage.mjs)
- * and sets STARTUP_MEDIA_UPLOADS=on; until then founders paste links instead.
+ * On wherever the Supabase server keys are set, once the buckets exist
+ * (scripts/setup-evidence-storage.mjs media-uploads startup-media);
+ * STARTUP_MEDIA_UPLOADS=off switches it off.
  */
 
 const { profiles } = schema;
@@ -36,16 +34,14 @@ type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export { MEDIA_BUCKET, MEDIA_STAGING_BUCKET };
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const VIDEO_TYPES: Record<string, string> = { "video/mp4": "mp4", "video/webm": "webm" };
 
 export class MediaError extends Error {
   constructor(public readonly code: "OFF" | "PROFILE_REQUIRED" | "INVALID_FILE" | "UNAVAILABLE", message: string) { super(message); this.name = "MediaError"; }
 }
 
 export function mediaUploadsEnabled(): boolean {
-  return process.env.STARTUP_MEDIA_UPLOADS === "on" && !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SECRET_KEY;
+  return process.env.STARTUP_MEDIA_UPLOADS !== "off" && !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SECRET_KEY;
 }
 
 let client: SupabaseClient | undefined;
@@ -57,6 +53,23 @@ function storage(): SupabaseClient {
 
 function publicUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`;
+}
+
+/** The path inside the public bucket of an image Mitra re-encoded, or null for any other address. */
+export function uploadedImagePath(url: string | null | undefined): string | null {
+  if (!url || !process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
+  const prefix = publicUrl("");
+  if (!url.startsWith(prefix)) return null;
+  const path = url.slice(prefix.length);
+  return /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/.test(path) ? path : null;
+}
+
+/** Deletes an image a founder uploaded, when what used it is turned down or suspended (2026-10-22). */
+export async function removeUploadedImage(url: string | null | undefined): Promise<boolean> {
+  const path = uploadedImagePath(url);
+  if (!path || !mediaUploadsEnabled()) return false;
+  const { error } = await storage().storage.from(MEDIA_BUCKET).remove([path]);
+  return !error;
 }
 
 async function requireMember<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string) {
@@ -73,23 +86,10 @@ async function reserve<Q extends PgQueryResultHKT>(database: Database<Q>, input:
 
 /** Step 1: a one-time link to upload to, and for a video the address it will have. */
 export async function beginMediaUpload<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, file: { kind: unknown; contentType: unknown; bytes: unknown }, now = new Date()) {
+  if (file.kind !== "image") throw new MediaError("INVALID_FILE", "Videos are YouTube links: paste the link instead.");
   await requireMember(database, userId);
   const bytes = typeof file.bytes === "number" && Number.isFinite(file.bytes) ? file.bytes : 0;
   const uploadId = randomUUID();
-  if (file.kind === "video") {
-    const ext = typeof file.contentType === "string" ? VIDEO_TYPES[file.contentType] : undefined;
-    if (!ext) throw new MediaError("INVALID_FILE", "Use an MP4 or WebM video.");
-    if (bytes <= 0 || bytes > MAX_VIDEO_BYTES) throw new MediaError("INVALID_FILE", "Videos can be up to 50 MB.");
-    const path = `${userId}/${uploadId}.${ext}`;
-    const bucket = storage();
-    await reserve(database, { id: uploadId, userId, kind: "media_video", objectPath: path }, now);
-    const { data, error } = await bucket.storage.from(MEDIA_BUCKET).createSignedUploadUrl(path, { upsert: false });
-    if (error || !data) {
-      await releaseUploadIntent(database, { id: uploadId, userId, kind: "media_video" });
-      throw new MediaError("UNAVAILABLE", "The upload couldn't start. Please try again.");
-    }
-    return { uploadId, url: data.signedUrl, publicUrl: publicUrl(path) };
-  }
   if (typeof file.contentType !== "string" || !IMAGE_TYPES.includes(file.contentType)) throw new MediaError("INVALID_FILE", "Use a JPEG, PNG or WebP image.");
   if (bytes <= 0 || bytes > MAX_IMAGE_BYTES) throw new MediaError("INVALID_FILE", "Images can be up to 10 MB.");
   const bucket = storage();

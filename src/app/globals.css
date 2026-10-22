@@ -194,6 +194,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 /* Becoming a founder, one question per screen (2026-10-21). */
 .step-form .field textarea { min-height: 140px; padding: 14px 16px; border-radius: 12px; font-size: 17px; line-height: 1.5; background: var(--card); }
 .step-count { text-align: right; font-variant-numeric: tabular-nums; }
+.step-note { color: var(--ink); font-weight: 500; }
 .step-list { display: flex; flex-direction: column; gap: 10px; }
 .step-handle-status { min-height: 1.5em; }
 .step-ok { color: var(--yes, var(--accent)); font-weight: 500; }

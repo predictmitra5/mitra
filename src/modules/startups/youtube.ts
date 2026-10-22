@@ -43,24 +43,39 @@ export function youtubeThumbnail(id: string): string {
 }
 
 export type YoutubeCheck = "ok" | "not_embeddable" | "missing" | "unknown";
+/** What YouTube says about a video: whether it can be shown, and whether it is tall (a Short); null when YouTube didn't say. */
+export type YoutubeInfo = { status: YoutubeCheck; vertical: boolean | null };
+
+/** A youtube.com/shorts/… link (2026-10-22). A Short pasted as an ordinary link needs YouTube's answer instead. */
+export function isShortsLink(value: unknown): boolean {
+  if (typeof value !== "string" || !youtubeId(value)) return false;
+  try { return /^\/shorts\//.test(new URL(/^[a-z]+:\/\//i.test(value.trim()) ? value.trim() : `https://${value.trim()}`).pathname); } catch { return false; }
+}
 
 /**
- * Asks YouTube's oEmbed endpoint (no key needed) whether the video exists and
- * may be embedded: 200 yes, 401 or 403 embedding is off, 400 or 404 private or
- * gone. Anything else, including a network failure, is "unknown", which the
- * caller accepts so an outage at YouTube never blocks a founder.
+ * Asks YouTube's oEmbed endpoint (no key needed) about a video: 200 it exists
+ * and may be embedded, 401 or 403 embedding is off, 400 or 404 private or gone;
+ * anything else, including a network failure, is "unknown", which the caller
+ * accepts so an outage at YouTube never blocks a founder. It asks with the
+ * video's Shorts address, because only then does YouTube report a Short's own
+ * shape (checked 2026-10-22: a Short 113 wide by 200 high, an ordinary video
+ * 200 by 150; asked with the ordinary address, a Short is reported wide).
  */
-export async function checkYoutubeVideo(id: string, fetcher: typeof fetch = fetch): Promise<YoutubeCheck> {
-  if (!ID.test(id)) return "missing";
+export async function describeYoutubeVideo(id: string, fetcher: typeof fetch = fetch): Promise<YoutubeInfo> {
+  if (!ID.test(id)) return { status: "missing", vertical: null };
   try {
-    const response = await fetcher(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(youtubeUrl(id))}`, {
+    const response = await fetcher(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/shorts/${id}`)}`, {
       signal: AbortSignal.timeout(4000), cache: "no-store", redirect: "error",
     });
-    if (response.ok) return "ok";
-    if (response.status === 401 || response.status === 403) return "not_embeddable";
-    if (response.status === 400 || response.status === 404) return "missing";
-    return "unknown";
+    if (response.ok) {
+      const body = await response.json().catch(() => null) as { width?: unknown; height?: unknown } | null;
+      const width = Number(body?.width), height = Number(body?.height);
+      return { status: "ok", vertical: width > 0 && height > 0 ? height > width : null };
+    }
+    if (response.status === 401 || response.status === 403) return { status: "not_embeddable", vertical: null };
+    if (response.status === 400 || response.status === 404) return { status: "missing", vertical: null };
+    return { status: "unknown", vertical: null };
   } catch {
-    return "unknown";
+    return { status: "unknown", vertical: null };
   }
 }
