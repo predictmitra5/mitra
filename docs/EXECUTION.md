@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The 2026-10-21 YouTube videos, founder onboarding, @handles, security review and request limits are built and committed locally but not pushed; going live is item 0b of Next actions. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
+**Claude Code, 2026-10-21: putting the YouTube videos, founder onboarding, @handles, security fixes and request limits live**, on the owner's "ye" to "Want me to do that now?" (add the request-limit table to the live database, push, check the live site). Steps (Next actions 0b): read `drizzle.__drizzle_migrations` on the live database and confirm 0020 is the last record and `origin/main` has no newer migration; apply 0021 with Drizzle's migrator over the session pooler; confirm `rate_limits` exists with row-level security and that `anon`/`authenticated` hold no table grants in `public`; push `main` (authored as predictmitra@gmail.com); check app.mitra.market and mitra.market for the new headers, `/@ravishah`, `/create` redirecting to sign-in, home and Markets answering, and `rate_limits` counting. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
 
 ## Deferred, to come back to
 
