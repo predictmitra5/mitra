@@ -151,8 +151,11 @@ export function YouTubeInput({ id, value, set, values, patch }: InputProps) {
             // eslint-disable-next-line @next/next/no-img-element
             poster={<img className="thumb-image" src={youtubeThumbnail(video)} alt="" referrerPolicy="no-referrer" />}
             onDetails={({ durationSeconds, title }) => {
-              if (durationSeconds > 0) { patch({ durationSeconds: String(durationSeconds), ...(values.title || !title ? {} : { title: title.slice(0, 100) }) }); setTyped(duration(durationSeconds)); }
-              else setUnknownLength(true);
+              // A title YouTube filled in follows the link if it is swapped; one the founder wrote stays (2026-10-22).
+              const fresh = title ? title.slice(0, 100) : null;
+              const written = !!values.title && values.title !== values._ytTitle;
+              patch({ ...(durationSeconds > 0 ? { durationSeconds: String(durationSeconds) } : {}), ...(fresh && !written ? { title: fresh, _ytTitle: fresh } : {}) });
+              if (durationSeconds > 0) setTyped(duration(durationSeconds)); else setUnknownLength(true);
             }} />
           {values.durationSeconds && !unknownLength && <p className="field-hint">Length {duration(Number(values.durationSeconds))}, read from YouTube.</p>}
           {values._short === "1" && <p className="field-hint step-note" role="status">This is a YouTube Short, so you&rsquo;ll add a wide thumbnail for it in a moment.</p>}

@@ -7,6 +7,8 @@ import { AdminError, readReviewQueue } from "@/modules/startups/admin";
 import { duration, industryLabel, verificationLabel, videoKindLabel } from "@/modules/startups/labels";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { StartupThumb } from "@/app/components/startup/thumb";
+import { VideoPlayer } from "@/app/components/startup/video-player";
+import { youtubeId } from "@/modules/startups/youtube";
 import { ClaimForm, DeclineSuggestionForm, OpenDraftForm, ReportForm, ReviewForm } from "./admin-forms";
 
 export const metadata = { title: "Review queue", robots: { index: false } };
@@ -77,8 +79,13 @@ export default async function ReviewPage() {
         <div className="review-meta"><span className="status-pill">{videoKindLabel(video.kind)}</span><span>{startupName}{startupStatus !== "approved" ? ` (startup ${startupStatus})` : ""}</span><span>{duration(video.durationSeconds)}</span></div>
         <h3>{video.title}</h3>
         <p className="review-criteria">{video.description}</p>
-        {video.videoUrl ? <video className="review-video" src={video.videoUrl} controls preload="metadata" /> : <p className="field-hint">No file: plays as a captioned placeholder.</p>}
-        {video.thumbnailUrl && <StartupThumb startup={{ name: startupName, tagline: "", glyph: "sparkles", hue: 210, logoUrl: null, productFeatures: [] }} founder={null} imageUrl={video.thumbnailUrl} bar={false} className="review-thumb" />}
+        {/* Founders' videos are YouTube links (2026-10-21), so they play in YouTube's player here too; watching to review records no views. */}
+        {video.videoUrl ? <div className="review-player"><VideoPlayer track={false}
+            video={{ id: video.id, title: video.title, durationSeconds: video.durationSeconds, videoUrl: video.videoUrl, thumbnailUrl: video.thumbnailUrl, captions: video.captions, isDemo: video.isDemo }}
+            poster={<StartupThumb startup={{ name: startupName, tagline: "", glyph: "sparkles", hue: 210, logoUrl: null, productFeatures: [] }} founder={null} imageUrl={video.thumbnailUrl} bar={false} />} /></div>
+          : <p className="field-hint">No file: plays as a captioned placeholder.</p>}
+        {youtubeId(video.videoUrl) && <p className="field-hint"><a href={video.videoUrl!} target="_blank" rel="noopener noreferrer">Open on YouTube ↗︎</a></p>}
+        {video.thumbnailUrl && <><p className="field-hint">Card thumbnail</p><StartupThumb startup={{ name: startupName, tagline: "", glyph: "sparkles", hue: 210, logoUrl: null, productFeatures: [] }} founder={null} imageUrl={video.thumbnailUrl} bar={false} className="review-thumb" /></>}
         {video.captions.length > 0 && <details><summary>Captions ({video.captions.length})</summary><ol className="review-captions">{video.captions.map((c, i) => <li key={i}><span className="muted">{duration(c.at)}</span> {c.text}</li>)}</ol></details>}
         <ReviewForm what="video" id={video.id} />
       </article>)}

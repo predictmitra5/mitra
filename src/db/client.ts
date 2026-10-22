@@ -7,6 +7,14 @@ import * as schema from "./schema";
  * Server-only database client. Supabase's transaction pooler keeps no session
  * state, so prepared statements are disabled as its connection guide requires.
  * Never import this from a client component.
+ *
+ * Pipelining is off (max_pipeline 0, 2026-10-22). postgres.js otherwise sends
+ * a further query down a connection before the last has finished, and through
+ * the transaction pooler a batch that mixes a query without parameters with
+ * parameterized ones (which go out in two halves) can then hang for good: the
+ * owner's waiting count in the top bar hung in about a third of page loads.
+ * Measured on the live database: 0 hangs in 48 calls with it off, 8 in 32
+ * with it on. Queries still run side by side on up to five connections.
  */
 let database: PostgresJsDatabase<typeof schema> | undefined;
 
@@ -27,9 +35,9 @@ export function resolveDatabaseConnectionString(
 export function getDb() {
   if (database) return database;
   const connectionString = resolveDatabaseConnectionString();
-  const client = postgres(connectionString, {
-    prepare: false, ssl: "require", max: 5, idle_timeout: 20, connect_timeout: 10,
-  });
+  // max_pipeline is a postgres.js option its type definitions leave out, so it is passed in a variable.
+  const options = { prepare: false, ssl: "require", max: 5, idle_timeout: 20, connect_timeout: 10, max_pipeline: 0 } as const;
+  const client = postgres(connectionString, options);
   database = drizzle(client, { schema });
   return database;
 }
