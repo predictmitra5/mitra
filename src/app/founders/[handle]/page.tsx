@@ -34,9 +34,12 @@ export default async function FounderPage({ params }: PageProps<"/founders/[hand
   let identity = null;
   try { identity = await currentIdentity(); } catch { /* a visitor */ }
   const now = new Date();
-  const page = await readFounderPage(getDb(), handle, identity?.id ?? null, now).catch(() => null);
+  // The page and the top bar load side by side (2026-10-22); readViewerOrNull never throws.
+  const [page, viewer] = await Promise.all([
+    readFounderPage(getDb(), handle, identity?.id ?? null, now).catch(() => null),
+    identity ? readViewerOrNull(getDb(), identity.id) : null,
+  ]);
   if (!page) notFound();
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
   const { founder, companies } = page;
   const byId = new Map(companies.map((c) => [c.id, c]));
   const first = founder.name.split(" ")[0];

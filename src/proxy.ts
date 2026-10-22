@@ -36,7 +36,13 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await client.auth.getUser();
+  // getClaims refreshes an expired session just as getUser did, but checks the
+  // token's signature locally when Supabase signs it with an asymmetric key,
+  // instead of a network call to Supabase Auth on every page (2026-10-22).
+  // With a shared-secret key it falls back to getUser by itself. The proxy
+  // authorizes nothing: each page and action still checks the user with
+  // getUser (currentIdentity) before showing or changing anything private.
+  await client.auth.getClaims();
   return response;
 }
 

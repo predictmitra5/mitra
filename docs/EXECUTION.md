@@ -1,6 +1,6 @@
 # Execution record
 
-Last updated: 2026-10-21
+Last updated: 2026-10-22
 
 ## Read this first
 
@@ -24,12 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-**2026-10-22, Claude Code, branch `claude/project-thread-wd3rxr`: bundle independent page reads so pages load faster.** The owner: "can we also work on packaging requests together, the website is very slow and laggy right now". Technical only (TECH_STACK.md delegation); no product rule, price, balance, market or exchange behaviour changes. Plan:
-
-1. Run genuinely independent read-only queries side by side (`Promise.all`, each optional piece failing on its own) instead of one after another: home (`components/home/load.ts`: the top bar alongside the feed), market detail (identity alongside the market; the trader, objections, price series, volume, card, ticker, startup, comments and follow state together), the shared top bar (`readViewer`: profile, funds and owner count together; a failed balance shows no balance, never a made-up one), `readTrader`, and the startup and founder pages (`readStartupPage`, `readFounderPage`, `readMarketStartup`). Authorization order stays: a not-yet-approved startup or founder is still checked before anything else about it is read; `advanceMarket` (the due-close/payout write) still runs before the market is read; no write, lock or transaction is parallelized.
-2. The proxy (refresh only, authorizes nothing) uses `auth.getClaims()` instead of `auth.getUser()`, which still refreshes an expired session but skips the extra network call to Supabase Auth when the project signs tokens with asymmetric keys. `currentIdentity` keeps `getUser()`, so every page's own sign-in check is unchanged.
-3. Safe timing diagnostics: a small `timed()` helper that logs a step's name and milliseconds (no ids, no user data) to the server log when it is slow, or always when `MITRA_TIMING=1`.
-4. Tests for the parallel helpers and that failures stay isolated; then tests, typecheck, lint, build. Push the branch, open a PR, ask before merging to main.
+None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
@@ -42,6 +37,7 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 ## Current state
 
+- **On the branch `claude/project-thread-wd3rxr` since 2026-10-22, not yet on `main`: pages bundle their independent reads.** The top bar (`readViewer`), home, market detail (and its trader panel), startup and founder pages, Markets, search and activity run their independent read-only queries side by side instead of one after another; a failed extra (chart, ticker, comments, owner count) empties only itself, and a failed balance shows no balance, never a made-up one. Approval checks for unapproved startups and founders still run before anything else about them is read; `advanceMarket` still runs before a market is read; no write, lock or transaction runs in parallel. The proxy refreshes sessions with `auth.getClaims()`; pages still check sign-in with `getUser()`. `src/modules/diagnostics/timing.ts` logs `[timing] <step> <ms>` for slow steps (750 ms or more), or every step with `MITRA_TIMING=1`.
 - **Live since 2026-10-22: no campus wording left in the app's copy.** The sign-in email placeholder is `you@example.com`, sign-in errors say "verified email", founder onboarding examples are school-neutral, and archived markets say "an earlier event market". Sign-up accepts any verified email (`src/modules/auth/policy.ts` has no domain rule). The website (`site/`) had none. Unused campus CSS selectors remain in `globals.css`; they render nothing.
 - **Live since 2026-10-22: founder videos play on the startup page.** A startup's page plays its latest video in place in the hero (YouTube's player through `VideoPlayer`, as on the market page), or the video a link chose with `?v=<id>`; `/watch/<id>` for a startup with no market opens `/startups/<slug>?v=<id>` instead of looping back to a page with no player. 235 tests, typecheck and lint pass; a real mouse click in headless Edge played the live video YLslsZuEaNE with sound.
 - **Live since 2026-10-22 (pushed as 61d8bec on the owner's "Push it live and check the live site."): the owner's pages no longer hang, and the review page plays YouTube videos.** `src/db/client.ts` turns postgres.js pipelining off (`max_pipeline: 0`; TECH_STACK.md), which ended the owner's top-bar count hanging in about a third of page loads (25 of 25 owner page loads through the app's own client afterwards); `/review` has a loading screen; the review card plays a founder's YouTube video in YouTube's player (it used a plain `<video>`, which can't play YouTube links) with an "Open on YouTube" link; a title YouTube filled in now follows a swapped link. 235 tests, typecheck, lint and the webpack build pass.
@@ -243,6 +239,16 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-22 - Pages bundle their independent reads (Claude Code)
+
+The owner: "can we also work on packaging requests together, the website is very slow and laggy right now". Plan committed first (154e8b0). Technical only; no product, price, balance or exchange rule changed.
+
+Found: most pages ran a dozen or more database queries strictly one after another (the market page about 20 before its top bar, the startup page 12), and the top bar ran its profile, funds and owner count in sequence. The database itself is not slow: `pg_stat_statements` on the live project (read-only) shows the app's own queries averaging under 10 ms, nothing stuck in `pg_stat_activity` (12 connections of 60), and functions already run in `yul1` beside the database. Each signed-in page also made two calls to Supabase Auth (the proxy's refresh and the page's own check).
+
+Changed: `Promise.all` for independent reads in `readViewer`, `readTrader` and `insidersFor` (`market/service.ts`, used only by the market page), `readStartupPage`, `readFounderPage` and `readMarketStartup` (`startups/read.ts`), `components/home/load.ts`, and the market, startup, founder, Markets, search and activity pages; the proxy uses `getClaims()`; new `src/modules/diagnostics/timing.ts` (`timed`, `optional`). The DB pool (`max: 5`, `max_pipeline: 0`) is unchanged: pipelining stays off, so the extra concurrency uses separate connections, which was measured safe on 2026-10-22.
+
+Measured, in `src/modules/startups/page-reads.test.ts` with every query delayed 15 ms (a stand-in for the network, not the live site): startup page 196 to 108 ms (12 queries), founder page 137 to 87 ms, market startup panel 83 to 36 ms, trader panel 99 to 37 ms, top bar 70 to 37 ms. Checked: 252 tests, typecheck, lint, `next build --webpack`. Not checked: real page loads on app.mitra.market (this session's network cannot reach it and has no database credentials), whether Supabase signs tokens with an asymmetric key (only then does `getClaims()` save the Auth call), and browser-side lag such as video players. After deploying, set `MITRA_TIMING=1` in Vercel for a while to read each step's time in the runtime logs.
 
 ### 2026-10-22 - Leftover campus wording removed (Claude Code)
 

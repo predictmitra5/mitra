@@ -63,11 +63,13 @@ function Row({ item }: { item: ActivityItem }) {
 export default async function ActivityPage() {
   let identity = null;
   try { identity = await currentIdentity(); } catch { /* a visitor */ }
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
+  // The top bar and the activity load side by side (2026-10-22); readViewerOrNull never throws.
+  const viewerRead = identity ? readViewerOrNull(getDb(), identity.id) : Promise.resolve(null);
   let items: ActivityItem[] = [];
   let personal = false;
   let failed = false;
   try { ({ items, personal } = await readActivity(getDb(), identity?.id ?? null)); } catch { failed = true; }
+  const viewer = await viewerRead;
   return (
     <div className="market-shell">
       <MarketHeader viewer={viewer} active="activity" />

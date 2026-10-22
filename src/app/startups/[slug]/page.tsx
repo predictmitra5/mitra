@@ -39,9 +39,12 @@ export default async function StartupPage({ params, searchParams }: PageProps<"/
   let identity = null;
   try { identity = await currentIdentity(); } catch { /* a visitor */ }
   const now = new Date();
-  const page = await readStartupPage(getDb(), slug, identity?.id ?? null, now).catch(() => null);
+  // The page and the top bar load side by side (2026-10-22); readViewerOrNull never throws.
+  const [page, viewer] = await Promise.all([
+    readStartupPage(getDb(), slug, identity?.id ?? null, now).catch(() => null),
+    identity ? readViewerOrNull(getDb(), identity.id) : null,
+  ]);
   if (!page) notFound();
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
   const { startup, team } = page;
   const lead = team[0] ?? null;
   const resolved = page.past.filter((m) => m.status === "settled");

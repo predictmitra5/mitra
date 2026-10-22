@@ -173,14 +173,18 @@ export async function readStartupPage<Q extends PgQueryResultHKT>(database: Data
     .where(eq(startupFounders.startupId, row.id)).orderBy(desc(startupFounders.isPrimary), asc(startupFounders.createdAt));
   const preview = row.status !== "approved";
   if (preview && !(await canPreview(database, viewerUserId, [row.createdBy, ...team.map((t) => t.userId)]))) return null;
-  const videoRows = await database.select(videoColumns).from(videos).where(and(eq(videos.startupId, row.id), eq(videos.status, "approved"))).orderBy(desc(videos.publishedAt)).limit(24);
-  const updates = await database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt, verification: startupUpdates.verification, isDemo: startupUpdates.isDemo })
-    .from(startupUpdates).where(and(eq(startupUpdates.startupId, row.id), isNull(startupUpdates.removedAt))).orderBy(desc(startupUpdates.happenedAt)).limit(40);
-  const claims = await database.select({ id: verificationClaims.id, statement: verificationClaims.statement, level: verificationClaims.level, sourceName: verificationClaims.sourceName, sourceUrl: verificationClaims.sourceUrl, reviewNote: verificationClaims.reviewNote, reviewedAt: verificationClaims.reviewedAt, isDemo: verificationClaims.isDemo })
-    .from(verificationClaims).where(eq(verificationClaims.startupId, row.id)).orderBy(desc(verificationClaims.createdAt));
-  const feed = preview ? null : await readFeed(database, now, { startupId: row.id }, null);
-  const [followers] = await database.select({ n: sql<number>`count(*)::int` }).from(startupFollows).where(eq(startupFollows.startupId, row.id));
-  const following = viewerUserId && isUuid(viewerUserId) ? (await database.select().from(startupFollows).where(and(eq(startupFollows.startupId, row.id), eq(startupFollows.userId, viewerUserId)))).length > 0 : false;
+  // Past the approval check, the rest are independent reads: side by side (2026-10-22).
+  const me = viewerUserId && isUuid(viewerUserId) ? viewerUserId : null;
+  const [videoRows, updates, claims, feed, [followers], following] = await Promise.all([
+    database.select(videoColumns).from(videos).where(and(eq(videos.startupId, row.id), eq(videos.status, "approved"))).orderBy(desc(videos.publishedAt)).limit(24),
+    database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt, verification: startupUpdates.verification, isDemo: startupUpdates.isDemo })
+    .from(startupUpdates).where(and(eq(startupUpdates.startupId, row.id), isNull(startupUpdates.removedAt))).orderBy(desc(startupUpdates.happenedAt)).limit(40),
+    database.select({ id: verificationClaims.id, statement: verificationClaims.statement, level: verificationClaims.level, sourceName: verificationClaims.sourceName, sourceUrl: verificationClaims.sourceUrl, reviewNote: verificationClaims.reviewNote, reviewedAt: verificationClaims.reviewedAt, isDemo: verificationClaims.isDemo })
+    .from(verificationClaims).where(eq(verificationClaims.startupId, row.id)).orderBy(desc(verificationClaims.createdAt)),
+    preview ? null : readFeed(database, now, { startupId: row.id }, null),
+    database.select({ n: sql<number>`count(*)::int` }).from(startupFollows).where(eq(startupFollows.startupId, row.id)),
+    me ? database.select().from(startupFollows).where(and(eq(startupFollows.startupId, row.id), eq(startupFollows.userId, me))).then((rows) => rows.length > 0) : false,
+  ]);
   const { createdBy, ...startup } = row;
   void createdBy;
   return {
@@ -209,26 +213,37 @@ export async function readFounderPage<Q extends PgQueryResultHKT>(database: Data
   if (!row || row.status === "rejected") return null;
   const preview = row.status !== "approved";
   if (preview && !(await canPreview(database, viewerUserId, [row.userId]))) return null;
-  const companies = await database.select({ ...startupColumns, role: startupFounders.role, status: startups.status, foundedOn: startups.foundedOn })
+  // Past the approval check, the rest are independent reads: side by side
+  // (2026-10-22). The market cards follow the companies they belong to.
+  const me = viewerUserId && isUuid(viewerUserId) ? viewerUserId : null;
+  const companiesRead = database.select({ ...startupColumns, role: startupFounders.role, status: startups.status, foundedOn: startups.foundedOn })
     .from(startupFounders).innerJoin(startups, eq(startups.id, startupFounders.startupId))
     .where(and(eq(startupFounders.founderId, row.id), or(eq(startups.status, "approved"), sql`${preview}`)))
-    .orderBy(desc(startups.foundedOn));
-  const companyIds = companies.map((c) => c.id);
-  const videoRows = await database.select(videoColumns).from(videos).innerJoin(startups, eq(startups.id, videos.startupId))
-    .where(and(eq(videos.founderId, row.id), eq(videos.status, "approved"), eq(startups.status, "approved"))).orderBy(desc(videos.publishedAt)).limit(24);
-  const updates = await database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt,
+    .orderBy(desc(startups.foundedOn))
+    // execute() runs the query once; a bare query builder would run again for each .then().
+    .execute();
+  const marketsRead = companiesRead.then(async (companies) => {
+    const companyIds = companies.map((c) => c.id);
+    const marketIds = companyIds.length ? (await database.select({ id: markets.id }).from(markets)
+      .where(and(inArray(markets.startupId, companyIds), sql`${markets.approvedAt} is not null`, inArray(markets.status, ["open", "closed", "ruled", "settled"])))
+      .orderBy(sql`case when ${markets.status} = 'open' then 0 else 1 end`, asc(markets.deadlineAt))).map((m) => m.id) : [];
+    return readCards(database, marketIds, now);
+  });
+  const [companies, marketCards, videoRows, updates, [followers], following] = await Promise.all([
+    companiesRead,
+    marketsRead,
+    database.select(videoColumns).from(videos).innerJoin(startups, eq(startups.id, videos.startupId))
+    .where(and(eq(videos.founderId, row.id), eq(videos.status, "approved"), eq(startups.status, "approved"))).orderBy(desc(videos.publishedAt)).limit(24),
+    database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt,
     verification: startupUpdates.verification, isDemo: startupUpdates.isDemo, startupSlug: startups.slug, startupName: startups.name })
     .from(startupUpdates).leftJoin(startups, eq(startups.id, startupUpdates.startupId))
     // Only updates about approved startups (or none), as on the activity page: a pending or suspended
     // startup stays unseen until the owner approves it (security review, 2026-10-21).
     .where(and(eq(startupUpdates.founderId, row.id), isNull(startupUpdates.removedAt), or(isNull(startupUpdates.startupId), eq(startups.status, "approved"), sql`${preview}`)))
-    .orderBy(desc(startupUpdates.happenedAt)).limit(40);
-  const marketIds = companyIds.length ? (await database.select({ id: markets.id }).from(markets)
-    .where(and(inArray(markets.startupId, companyIds), sql`${markets.approvedAt} is not null`, inArray(markets.status, ["open", "closed", "ruled", "settled"])))
-    .orderBy(sql`case when ${markets.status} = 'open' then 0 else 1 end`, asc(markets.deadlineAt))).map((m) => m.id) : [];
-  const marketCards = await readCards(database, marketIds, now);
-  const [followers] = await database.select({ n: sql<number>`count(*)::int` }).from(founderFollows).where(eq(founderFollows.founderId, row.id));
-  const following = viewerUserId && isUuid(viewerUserId) ? (await database.select().from(founderFollows).where(and(eq(founderFollows.founderId, row.id), eq(founderFollows.userId, viewerUserId)))).length > 0 : false;
+    .orderBy(desc(startupUpdates.happenedAt)).limit(40),
+    database.select({ n: sql<number>`count(*)::int` }).from(founderFollows).where(eq(founderFollows.founderId, row.id)),
+    me ? database.select().from(founderFollows).where(and(eq(founderFollows.founderId, row.id), eq(founderFollows.userId, me))).then((rows) => rows.length > 0) : false,
+  ]);
   const { userId, status, ...founder } = row;
   void userId; void status;
   return {
@@ -251,15 +266,18 @@ export async function readMarketStartup<Q extends PgQueryResultHKT>(database: Da
   const [row] = await database.select({ ...startupColumns, foundedOn: startups.foundedOn, headquarters: startups.headquarters, websiteUrl: startups.websiteUrl,
     productDetails: startups.productDetails, status: startups.status }).from(startups).where(eq(startups.id, startupId));
   if (!row || row.status !== "approved") return null;
-  const team = await database.select({ ...founderColumns, role: startupFounders.role, background: founders.background })
+  // Past the approval check, four independent reads side by side (2026-10-22).
+  const [team, [video], updates, claims] = await Promise.all([
+    database.select({ ...founderColumns, role: startupFounders.role, background: founders.background })
     .from(startupFounders).innerJoin(founders, eq(founders.id, startupFounders.founderId))
-    .where(and(eq(startupFounders.startupId, startupId), eq(founders.status, "approved"))).orderBy(desc(startupFounders.isPrimary), asc(startupFounders.createdAt));
-  const [video] = await database.select(videoColumns).from(videos).where(and(eq(videos.startupId, startupId), eq(videos.status, "approved")))
-    .orderBy(sql`case when ${videos.kind} = 'pitch' then 0 else 1 end`, desc(videos.publishedAt)).limit(1);
-  const updates = await database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt, verification: startupUpdates.verification, isDemo: startupUpdates.isDemo })
-    .from(startupUpdates).where(and(eq(startupUpdates.startupId, startupId), isNull(startupUpdates.removedAt))).orderBy(desc(startupUpdates.happenedAt)).limit(5);
-  const claims = await database.select({ id: verificationClaims.id, statement: verificationClaims.statement, level: verificationClaims.level, sourceName: verificationClaims.sourceName, sourceUrl: verificationClaims.sourceUrl, reviewNote: verificationClaims.reviewNote, reviewedAt: verificationClaims.reviewedAt, isDemo: verificationClaims.isDemo })
-    .from(verificationClaims).where(eq(verificationClaims.startupId, startupId)).orderBy(desc(verificationClaims.createdAt)).limit(6);
+    .where(and(eq(startupFounders.startupId, startupId), eq(founders.status, "approved"))).orderBy(desc(startupFounders.isPrimary), asc(startupFounders.createdAt)),
+    database.select(videoColumns).from(videos).where(and(eq(videos.startupId, startupId), eq(videos.status, "approved")))
+    .orderBy(sql`case when ${videos.kind} = 'pitch' then 0 else 1 end`, desc(videos.publishedAt)).limit(1),
+    database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt, verification: startupUpdates.verification, isDemo: startupUpdates.isDemo })
+    .from(startupUpdates).where(and(eq(startupUpdates.startupId, startupId), isNull(startupUpdates.removedAt))).orderBy(desc(startupUpdates.happenedAt)).limit(5),
+    database.select({ id: verificationClaims.id, statement: verificationClaims.statement, level: verificationClaims.level, sourceName: verificationClaims.sourceName, sourceUrl: verificationClaims.sourceUrl, reviewNote: verificationClaims.reviewNote, reviewedAt: verificationClaims.reviewedAt, isDemo: verificationClaims.isDemo })
+    .from(verificationClaims).where(eq(verificationClaims.startupId, startupId)).orderBy(desc(verificationClaims.createdAt)).limit(6),
+  ]);
   const { status, ...startup } = row;
   void status;
   return {
