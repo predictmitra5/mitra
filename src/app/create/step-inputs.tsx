@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { checkHandleAction } from "@/modules/startups/creator-actions";
-import { finishMediaUpload, startMediaUpload } from "@/modules/startups/media-actions";
-import { youtubeId, youtubeThumbnail } from "@/modules/startups/youtube";
+import { finishMediaUpload, finishResumeUploadAction, startMediaUpload, startResumeUpload } from "@/modules/startups/media-actions";
+import { MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail } from "@/modules/startups/youtube";
 import { duration } from "@/modules/startups/labels";
 import { putToSignedUrl } from "@/app/components/direct-upload";
+import { usePhotoUpload } from "@/app/account/use-photo-upload";
 import { YouTubePlayer } from "@/app/components/startup/youtube-player";
 import { withHttps, type InputProps } from "./step-flow";
 
@@ -164,6 +165,95 @@ export function youtubeCheck(value: string, values: Record<string, string>): str
   if (!youtubeId(value)) return "Paste the link to your video on YouTube.";
   const length = Number(values.durationSeconds);
   if (!values.durationSeconds) return "Wait a moment for the preview to load, or type the video's length.";
-  if (!Number.isInteger(length) || length < 5 || length > 600) return "Videos can be 5 seconds to 10 minutes long.";
+  if (!Number.isInteger(length) || length < MIN_VIDEO_SECONDS || length > MAX_VIDEO_SECONDS) return `Videos can be up to 2 minutes long. This one is ${duration(length)}: trim it on YouTube, or use a shorter one.`;
   return null;
+}
+
+/**
+ * A photo of the founder's face (2026-10-22): their Mitra profile photo,
+ * uploaded through the profile-photo upload (re-encoded, AI-labelled images
+ * turned away). The answer becomes the photo's address on Mitra.
+ */
+export function FacePhotoInput({ id, value, set, memberHandle, name }: InputProps & { memberHandle: string; name: string }) {
+  const { state, uploading, upload } = usePhotoUpload();
+  const [preview, setPreview] = useState<string | null>(null);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  const shown = preview ?? (value || null);
+
+  return (
+    <div className="step-image">
+      <label className="photo-drop" htmlFor={id}>
+        {shown
+          // The photo just chosen (a local preview) or the one saved on Mitra.
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img className="photo-drop-image" src={shown} alt={`${name}'s photo`} />
+          : <span className="photo-drop-empty" aria-hidden="true">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+            </span>}
+        <span className="photo-drop-label">{uploading ? "Uploading…" : shown ? "Choose a different photo" : "Choose a photo of your face"}</span>
+        <input id={id} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            setPreview(URL.createObjectURL(file));
+            upload(file, () => set(`/photos/${memberHandle}?v=${Date.now()}`));
+          }} />
+      </label>
+      <p className="field-hint photo-drop-hint">JPEG, PNG or WebP, up to 8 MB. A real photo of you: images labelled as AI-generated are turned away. It&rsquo;s also your profile photo.</p>
+      {state.error && <p className="form-error" role="alert">{state.error}</p>}
+      {!state.error && value && preview && !uploading && <p className="field-hint step-ok" role="status">Saved.</p>}
+    </div>
+  );
+}
+
+/** A resume as a PDF (2026-10-22), checked on the server; the answer is where the checked copy is kept. */
+export function ResumeInput({ id, value, set, viewHref }: InputProps & { viewHref: string | null }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function upload(file: File) {
+    setBusy(true);
+    setStatus("Uploading…");
+    try {
+      if (file.type !== "application/pdf") { setStatus("Use a PDF of your resume."); return; }
+      const start = await startResumeUpload({ contentType: file.type, bytes: file.size });
+      if (!start.ok) { setStatus(start.error); return; }
+      if (!(await putToSignedUrl(start.value.url, file, file.type))) { setStatus("The upload didn't go through. Please try again."); return; }
+      const done = await finishResumeUploadAction(start.value.uploadId);
+      if (done.ok) { set(done.value.path); setStatus(`${file.name} uploaded.`); } else setStatus(done.error);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="step-image">
+      <label className="media-upload" htmlFor={id}>
+        <input id={id} type="file" accept="application/pdf" disabled={busy}
+          onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void upload(file); }} />
+        <span className="secondary-button">{busy ? "Uploading…" : value ? "Replace your resume" : "Choose a PDF"}</span>
+      </label>
+      <p className="field-hint" role="status">
+        {status ?? (value ? "Your resume is uploaded." : "A PDF up to 5 MB. Visitors can open it once your profile is approved.")}
+        {value && viewHref && !status && <> <a href={viewHref} target="_blank" rel="noopener noreferrer">Open it</a></>}
+      </p>
+      {value && <button type="button" className="text-button step-inline" onClick={() => { set(""); setStatus("Removed. Save to delete it."); }}>Remove resume</button>}
+    </div>
+  );
+}
+
+/** A password box with Show, for the co-founder join password. */
+export function PasswordInput({ id, value, set, label, autoComplete = "new-password" }: InputProps & { label: string; autoComplete?: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="field">
+      <label className="sr-only" htmlFor={id}>{label}</label>
+      <div className="handle-input">
+        <input id={id} type={visible ? "text" : "password"} value={value} onChange={(e) => set(e.target.value)} maxLength={72}
+          autoComplete={autoComplete} autoCapitalize="none" spellCheck={false} autoFocus />
+        <button type="button" className="text-button step-show" onClick={() => setVisible((v) => !v)} aria-pressed={visible}>{visible ? "Hide" : "Show"}</button>
+      </div>
+    </div>
+  );
 }

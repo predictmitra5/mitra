@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getDb, schema } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { isInactive } from "@/modules/account/standing";
+import { photoUrl } from "@/modules/account/photo-url";
 import { managedStartupIds } from "@/modules/startups/creator";
 import { mediaUploadsEnabled } from "@/modules/startups/media";
 import { VideoFlow } from "../flows";
@@ -30,5 +31,10 @@ export default async function VideoSetup({ searchParams }: PageProps<"/create/vi
   const params = await searchParams;
   const asked = typeof params.startup === "string" ? startups.find((s) => s.id === params.startup) : undefined;
   const choices = asked ? [asked] : startups;
-  return <VideoFlow startups={choices} initialStartup={choices.length === 1 ? choices[0].id : ""} uploads={mediaUploadsEnabled()} first={params.first === "1"} />;
+  // A founder with no picture and no profile photo adds one before the video (2026-10-22).
+  const [founder] = await database.select({ name: schema.founders.name, portraitUrl: schema.founders.portraitUrl }).from(schema.founders)
+    .where(eq(schema.founders.userId, identity.id)).limit(1);
+  if (!founder) redirect("/create/founder");
+  const face = founder.portraitUrl || photoUrl(profile.handle, profile.photoUpdatedAt) ? null : { memberHandle: profile.handle, name: founder.name };
+  return <VideoFlow startups={choices} initialStartup={choices.length === 1 ? choices[0].id : ""} uploads={mediaUploadsEnabled()} first={params.first === "1"} face={face} />;
 }

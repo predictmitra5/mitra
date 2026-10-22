@@ -202,7 +202,9 @@ export type StartupPage = NonNullable<Awaited<ReturnType<typeof readStartupPage>
 export async function readFounderPage<Q extends PgQueryResultHKT>(database: Database<Q>, handle: string, viewerUserId: string | null, now: Date = new Date()) {
   if (typeof handle !== "string" || !/^[a-z0-9_]{2,30}$/.test(handle)) return null;
   const [row] = await database.select({ ...founderColumns, background: founders.background, location: founders.location, accomplishments: founders.accomplishments,
-    websiteUrl: founders.websiteUrl, status: founders.status, userId: founders.userId, isDemo: founders.isDemo, approvedAt: founders.approvedAt })
+    websiteUrl: founders.websiteUrl, status: founders.status, userId: founders.userId, isDemo: founders.isDemo, approvedAt: founders.approvedAt,
+    // Since 2026-10-22; the resume itself is only ever reached through /founders/<handle>/resume.
+    educationLevel: founders.educationLevel, school: founders.school, linkedinUrl: founders.linkedinUrl, hasResume: sql<boolean>`${founders.resumePath} is not null` })
     .from(founders).where(eq(founders.handle, handle));
   if (!row || row.status === "rejected") return null;
   const preview = row.status !== "approved";

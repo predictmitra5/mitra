@@ -9,7 +9,9 @@ import { duration, industryLabel, videoKindLabel } from "@/modules/startups/labe
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { FounderFace, StartupMark } from "@/app/components/startup/thumb";
 import { VerificationBadge } from "@/app/components/startup/profile-parts";
+import { listInvites } from "@/modules/startups/invites";
 import { ClaimForm, SuggestForm, UpdateForm } from "./forms";
+import { CancelInvite } from "./cancel-invite";
 
 /*
  * Create (2026-10-19): the creator hub. Since 2026-10-21 the founder profile,
@@ -30,6 +32,11 @@ const SAVED: Record<string, string> = {
   profile: "Founder profile saved.",
   startup: "Startup saved. The owner reviews new startups before they appear anywhere.",
   video: "Video sent for review. It appears in feeds once the owner approves it.",
+  joined: "You joined the team. Your founder profile still needs the owner's approval before others see it.",
+};
+
+const INVITE_STATE: Record<string, string> = {
+  waiting: "Waiting", unlocked: "Password matched, making their profile", joined: "Joined", expired: "Expired", locked: "Locked after wrong passwords", cancelled: "Cancelled",
 };
 
 export default async function CreatePage({ searchParams }: PageProps<"/create">) {
@@ -49,6 +56,8 @@ export default async function CreatePage({ searchParams }: PageProps<"/create">)
   const saved = (await searchParams).saved;
   const notice = typeof saved === "string" ? SAVED[saved] : undefined;
   const live = home?.startups.filter((s) => s.status === "approved" || s.status === "pending") ?? [];
+  const canInvite = !!founder && founder.status !== "suspended" && founder.status !== "rejected";
+  const invites = new Map(await Promise.all(live.map(async (s) => [s.id, await listInvites(database, identity.id, s.id).catch(() => [])] as const)));
 
   return (
     <div className="market-shell">
@@ -104,7 +113,18 @@ export default async function CreatePage({ searchParams }: PageProps<"/create">)
                     <div className="create-actions">
                       <Link className="btn btn-primary" href={`/create/video?startup=${startup.id}`}>Add a video</Link>
                       <Link className="btn btn-quiet" href={`/create/startup?id=${startup.id}`}>Edit details</Link>
+                      {canInvite && <Link className="btn btn-quiet" href={`/create/invite?startup=${startup.id}`}>Invite a co-founder</Link>}
                     </div>
+                    {(invites.get(startup.id)?.length ?? 0) > 0 && (
+                      <ul className="invite-list" aria-label={`Co-founder invites for ${startup.name}`}>
+                        {invites.get(startup.id)!.map((invite) => (
+                          <li key={invite.id}>
+                            <span><strong>{invite.role}</strong> <span className="muted">· {INVITE_STATE[invite.state]}{invite.joinedHandle ? ` · @${invite.joinedHandle}` : ""} · made {day(invite.createdAt)}</span></span>
+                            {(invite.state === "waiting" || invite.state === "unlocked") && <CancelInvite id={invite.id} />}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <details><summary>Post an update or milestone</summary><UpdateForm startupId={startup.id} /></details>
                     <details><summary>Send a claim for verification</summary><ClaimForm startupId={startup.id} /></details>
                     {startup.status === "approved" && <details><summary>Suggest a market</summary><SuggestForm startupId={startup.id} /></details>}

@@ -3,9 +3,11 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { isInactive } from "@/modules/account/standing";
-import { isIndustry, VIDEO_KINDS, type IndustryKey } from "./labels";
+import { photoUrl } from "@/modules/account/photo-url";
+import { isEducationLevel, isIndustry, VIDEO_KINDS, type IndustryKey } from "./labels";
+import { linkedinProfileUrl } from "./links";
 import { MEDIA_BUCKET } from "./media-buckets";
-import { checkYoutubeVideo, youtubeId, youtubeThumbnail, youtubeUrl, type YoutubeCheck } from "./youtube";
+import { checkYoutubeVideo, MAX_VIDEO_SECONDS, MIN_VIDEO_SECONDS, youtubeId, youtubeThumbnail, youtubeUrl, type YoutubeCheck } from "./youtube";
 
 /*
  * Creator tools (2026-10-19): a member makes a founder profile, registers
@@ -20,7 +22,7 @@ import { checkYoutubeVideo, youtubeId, youtubeThumbnail, youtubeUrl, type Youtub
  * registrant, or the member behind one of its founders.
  */
 
-const { profiles, founders, startups, startupFounders, videos, startupUpdates, verificationClaims, marketProposals, videoEvents, videoLikes, startupFollows, founderFollows } = schema;
+const { profiles, founders, startups, startupFounders, startupInvites, videos, startupUpdates, verificationClaims, marketProposals, videoEvents, videoLikes, startupFollows, founderFollows } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export class CreatorError extends Error {
@@ -154,25 +156,75 @@ export async function checkFounderHandle<Q extends PgQueryResultHKT>(database: D
 export type FounderInput = {
   handle: unknown; name: unknown; headline: unknown; bio: unknown; background?: unknown; location?: unknown;
   portraitUrl?: unknown; websiteUrl?: unknown; accomplishments?: unknown;
+  educationLevel?: unknown; school?: unknown; linkedinUrl?: unknown; resumePath?: unknown;
 };
+
+/**
+ * The founder's picture (2026-10-22): their own Mitra profile photo, uploaded
+ * and checked through the profile-photo upload. A link pasted before then is
+ * kept while it is unchanged; nothing else is accepted.
+ */
+function portrait(value: unknown, member: { handle: string; photoUpdatedAt: Date | null }, current: string | null | undefined): string | null {
+  const clean = typeof value === "string" ? value.trim() : "";
+  if (!clean) return null;
+  if (current && clean === current) return current;
+  const own = /^\/photos\/([a-z0-9_]{3,24})(?:\?v=\d+)?$/.exec(clean);
+  if (own && own[1] === member.handle) {
+    const url = photoUrl(member.handle, member.photoUpdatedAt);
+    if (url) return url;
+    throw new CreatorError("INVALID_INPUT", "Upload a photo of your face first.", "portraitUrl");
+  }
+  throw new CreatorError("INVALID_INPUT", "Upload a photo of your face.", "portraitUrl");
+}
+
+/** The checked resume this member uploaded, kept as it was, or none. */
+function resume(value: unknown, userId: string, current: string | null | undefined): string | null {
+  const clean = typeof value === "string" ? value.trim() : "";
+  if (!clean) return null;
+  if (current && clean === current) return current;
+  if (new RegExp(`^resumes/${userId}/[0-9a-f-]{36}\\.pdf$`).test(clean)) return clean;
+  throw new CreatorError("INVALID_INPUT", "Upload your resume again.", "resumePath");
+}
+
+/**
+ * Co-founder invites this member unlocked with the right password (2026-10-22)
+ * join them to those startups' teams once they have a founder profile.
+ */
+async function joinClaimedInvites<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, founderId: string, now: Date) {
+  const claimed = await database.select().from(startupInvites)
+    .where(and(eq(startupInvites.claimedBy, userId), isNull(startupInvites.acceptedAt), isNull(startupInvites.revokedAt)));
+  for (const invite of claimed) {
+    await database.insert(startupFounders).values({ startupId: invite.startupId, founderId, role: invite.role, isPrimary: false, createdAt: now }).onConflictDoNothing();
+    await database.update(startupInvites).set({ acceptedAt: now }).where(eq(startupInvites.id, invite.id));
+  }
+}
 
 /** Creates this member's founder profile (waiting for review) or updates it. */
 export async function saveFounderProfile<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, input: FounderInput, now: Date = new Date()) {
-  await requireMember(database, userId);
+  const member = await requireMember(database, userId);
   const handle = normalizeHandle(input.handle);
   if (!HANDLE.test(handle)) throw new CreatorError("INVALID_INPUT", "Handle: 3 to 24 letters, numbers or underscores.", "handle");
+  const [existing] = await database.select().from(founders).where(eq(founders.userId, userId)).limit(1);
+  if (!isEducationLevel(input.educationLevel)) throw new CreatorError("INVALID_INPUT", "Pick your education level.", "educationLevel");
+  const linkedinUrl = typeof input.linkedinUrl === "string" && input.linkedinUrl.trim() ? linkedinProfileUrl(input.linkedinUrl) : null;
+  if (typeof input.linkedinUrl === "string" && input.linkedinUrl.trim() && !linkedinUrl) {
+    throw new CreatorError("INVALID_INPUT", "Use the link to your LinkedIn profile, like linkedin.com/in/yourname.", "linkedinUrl");
+  }
   const values = {
     handle,
     name: at("name", () => text(input.name, "Name", 2, 80)),
     headline: at("headline", () => text(input.headline, "Headline", 6, 120)),
     bio: at("bio", () => text(input.bio, "Bio", 20, 600)),
     background: at("background", () => optionalText(input.background, "Background", 800)),
-    location: at("location", () => optionalText(input.location, "Location", 80)),
-    portraitUrl: at("portraitUrl", () => mediaUrl(input.portraitUrl, "Photo")),
+    location: at("location", () => text(input.location, "Where you're based", 2, 80)),
+    portraitUrl: portrait(input.portraitUrl, member, existing?.portraitUrl),
     websiteUrl: at("websiteUrl", () => mediaUrl(input.websiteUrl, "Website")),
     accomplishments: at("accomplishments", () => lines(input.accomplishments, "Accomplishments", 6, 160)),
+    educationLevel: input.educationLevel,
+    school: at("school", () => optionalText(input.school, "School", 120)),
+    linkedinUrl,
+    resumePath: resume(input.resumePath, userId, existing?.resumePath),
   };
-  const [existing] = await database.select().from(founders).where(eq(founders.userId, userId)).limit(1);
   // A founder keeps the handle they already have; a new or changed one must be free.
   if (existing?.handle !== handle && !(await founderHandleFree(database, handle, userId))) {
     throw new CreatorError("TAKEN", `@${handle} is taken. Try @${await suggestFounderHandle(database, handle, userId)}.`, "handle");
@@ -180,10 +232,12 @@ export async function saveFounderProfile<Q extends PgQueryResultHKT>(database: D
   if (existing) {
     if (existing.status === "suspended") throw new CreatorError("NOT_ALLOWED", "This profile is suspended. Contact the owner.");
     const [row] = await database.update(founders).set(values).where(eq(founders.id, existing.id)).returning();
+    if (existing.status !== "rejected") await joinClaimedInvites(database, userId, row.id, now);
     return row;
   }
   const hue = Math.abs([...handle].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)) % 360;
   const [row] = await database.insert(founders).values({ ...values, hue, userId, status: "pending", createdAt: now }).returning();
+  await joinClaimedInvites(database, userId, row.id, now);
   return row;
 }
 
@@ -287,12 +341,20 @@ export async function addVideo<Q extends PgQueryResultHKT>(database: Database<Q>
   const startup = await requireManager(database, userId, startupId);
   const kind = typeof input.kind === "string" && (VIDEO_KINDS as readonly string[]).includes(input.kind) ? input.kind : "pitch";
   const seconds = Number(input.durationSeconds);
-  if (!Number.isInteger(seconds) || seconds < 5 || seconds > 600) throw new CreatorError("INVALID_INPUT", "Videos can be 5 seconds to 10 minutes long.", "durationSeconds");
+  if (!Number.isInteger(seconds) || seconds < MIN_VIDEO_SECONDS || seconds > MAX_VIDEO_SECONDS) throw new CreatorError("INVALID_INPUT", "Videos can be 5 seconds to 2 minutes long.", "durationSeconds");
   const link = videoLink(input.videoUrl, userId);
   const title = at("title", () => text(input.title, "Title", 4, 100));
   const description = at("description", () => text(input.description, "Description", 10, 500));
   const thumbnail = at("thumbnailUrl", () => mediaUrl(input.thumbnailUrl, "Thumbnail"));
   const captions = parseCaptions(input.captions, seconds);
+  // A photo of the founder's face comes before any video (2026-10-22): their profile photo, if the founder picture is missing.
+  const [poster] = await database.select({ id: founders.id, portraitUrl: founders.portraitUrl }).from(founders).where(eq(founders.userId, userId)).limit(1);
+  if (!poster?.portraitUrl) {
+    const [member] = await database.select({ handle: profiles.handle, photoUpdatedAt: profiles.photoUpdatedAt }).from(profiles).where(eq(profiles.id, userId));
+    const face = member ? photoUrl(member.handle, member.photoUpdatedAt) : null;
+    if (!poster || !face) throw new CreatorError("INVALID_INPUT", "Add a photo of your face before posting a video.", "portraitUrl");
+    await database.update(founders).set({ portraitUrl: face }).where(eq(founders.id, poster.id));
+  }
   if (link.youtube) {
     const refusal = YOUTUBE_REFUSAL[await checkYoutube(link.youtube)];
     if (refusal) throw new CreatorError("INVALID_INPUT", refusal, "videoUrl");

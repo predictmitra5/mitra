@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
@@ -7,7 +7,7 @@ import { funds } from "@/modules/exchange/engine";
 import type { UploadIntentKind } from "@/modules/uploads/intents";
 
 const {
-  profiles, adminActions, evidence, uploadIntents, marketProposals,
+  profiles, adminActions, startupInvites, evidence, uploadIntents, marketProposals,
   founders, startups, videos, videoEvents, videoLikes, videoSaves, founderFollows, startupFollows, viewerInterests,
 } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
@@ -24,6 +24,8 @@ export class WithdrawalError extends Error {
 
 export type WithdrawalObjects = {
   photoPath: string | null;
+  /** The founder resume, if any (2026-10-22). */
+  resumePath: string | null;
   evidencePaths: string[];
   uploadPaths: { kind: UploadIntentKind; path: string }[];
 };
@@ -62,8 +64,10 @@ async function objectsFor<Q extends PgQueryResultHKT>(database: Database<Q>, use
     .where(and(eq(evidence.submittedBy, userId), isNotNull(evidence.originalPath)));
   const pending = await database.select({ kind: uploadIntents.kind, path: uploadIntents.objectPath }).from(uploadIntents)
     .where(eq(uploadIntents.userId, userId));
+  const [founder] = await database.select({ resumePath: founders.resumePath }).from(founders).where(eq(founders.userId, userId));
   return {
     photoPath: profile?.photoPath ?? null,
+    resumePath: founder?.resumePath ?? null,
     evidencePaths: files.flatMap((row) => row.path ? [row.path] : []),
     uploadPaths: pending,
   };
@@ -95,8 +99,12 @@ async function finishWithdrawal<Q extends PgQueryResultHKT>(database: Database<Q
     // page, and anything they submitted that was never approved goes with it.
     // An approved startup is company information with markets other people
     // hold, so it stays until the owner decides; it is no longer theirs to manage.
-    await db.update(founders).set({ status: "suspended", reviewReason: "The member deleted their account.", userId: null, portraitUrl: null })
+    await db.update(founders).set({ status: "suspended", reviewReason: "The member deleted their account.", userId: null, portraitUrl: null,
+      educationLevel: null, school: null, linkedinUrl: null, resumePath: null })
       .where(eq(founders.userId, userId));
+    // Co-founder invites they made or unlocked and that nobody has used stop working (2026-10-22).
+    await db.update(startupInvites).set({ revokedAt: now })
+      .where(and(isNull(startupInvites.acceptedAt), isNull(startupInvites.revokedAt), or(eq(startupInvites.invitedBy, userId), eq(startupInvites.claimedBy, userId))));
     await db.update(startups).set({ status: "suspended", reviewReason: "The member deleted their account." })
       .where(and(eq(startups.createdBy, userId), inArray(startups.status, ["pending", "rejected"])));
     await db.update(startups).set({ createdBy: null }).where(eq(startups.createdBy, userId));

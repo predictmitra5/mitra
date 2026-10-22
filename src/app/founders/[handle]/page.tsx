@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, FileText, GraduationCap, MapPin } from "lucide-react";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readViewerOrNull } from "@/modules/account/viewer";
@@ -20,7 +20,8 @@ import { SignupPrompt } from "@/app/components/signup-prompt";
  * companies, because Mitra is about finding people early. Portrait, name,
  * biography and background, the companies they founded, their videos,
  * accomplishments, milestone timeline, the markets on their startups, and
- * followers.
+ * followers. Since 2026-10-22 also where they are based, their education and
+ * school, LinkedIn and resume.
  */
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,6 @@ export default async function FounderPage({ params }: PageProps<"/founders/[hand
                 <h3 className="about-sub">Accomplishments</h3>
                 <ul className="accomplishments">{founder.accomplishments.map((a) => <li key={a}>{a}</li>)}</ul>
               </>}
-              {founder.websiteUrl && <p className="about-links"><a href={founder.websiteUrl} target="_blank" rel="noopener noreferrer nofollow">Website <ExternalLink size={13} aria-hidden="true" /></a></p>}
             </section>
 
             <section className="goal-section rise" aria-labelledby="videos">
@@ -91,6 +91,20 @@ export default async function FounderPage({ params }: PageProps<"/founders/[hand
           </div>
 
           <aside className="profile-side">
+            <section className="side-card founder-facts" aria-labelledby="facts">
+              <h2 id="facts">Profile</h2>
+              <dl>
+                {founder.location && <div><dt><MapPin size={15} aria-hidden="true" /> Based in</dt><dd>{founder.location}</dd></div>}
+                {founder.educationLevel && <div><dt><GraduationCap size={15} aria-hidden="true" /> Education</dt><dd>{founder.educationLevel}{founder.school ? <><br />{founder.school}</> : null}</dd></div>}
+              </dl>
+              {(founder.linkedinUrl || founder.websiteUrl || founder.hasResume) && (
+                <p className="founder-links">
+                  {founder.linkedinUrl && <a className="btn btn-quiet" href={founder.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow">LinkedIn <ExternalLink size={13} aria-hidden="true" /></a>}
+                  {founder.hasResume && <a className="btn btn-quiet" href={`/founders/${founder.handle}/resume`} target="_blank" rel="noopener noreferrer"><FileText size={14} aria-hidden="true" /> Resume (PDF)</a>}
+                  {founder.websiteUrl && <a className="btn btn-quiet" href={founder.websiteUrl} target="_blank" rel="noopener noreferrer nofollow">Website <ExternalLink size={13} aria-hidden="true" /></a>}
+                </p>
+              )}
+            </section>
             <section className="side-card">
               <h2>Companies</h2>
               <ul className="team">

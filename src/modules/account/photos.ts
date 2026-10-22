@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, like } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import sharp from "sharp";
@@ -8,6 +8,7 @@ import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { findAiLabels } from "./photo-check";
 import { isInactive } from "./standing";
+import { photoUrl } from "./photo-url";
 import { releaseUploadIntent, reserveUploadIntent } from "@/modules/uploads/intents";
 
 /*
@@ -190,6 +191,9 @@ export async function setProfilePhoto<Q extends PgQueryResultHKT>(
   if (error) throw new PhotoError("UNAVAILABLE", "Your photo could not be saved. Please try again.");
   try {
     await database.update(profiles).set({ photoPath: path, photoUpdatedAt: now }).where(eq(profiles.id, userId));
+    // A founder whose picture is this photo (2026-10-22) shows the new one.
+    await database.update(schema.founders).set({ portraitUrl: photoUrl(profile.handle, now) })
+      .where(and(eq(schema.founders.userId, userId), like(schema.founders.portraitUrl, "/photos/%")));
   } catch {
     await removeObject(path);
     throw new PhotoError("UNAVAILABLE", "Your photo could not be saved. Please try again.");
@@ -216,6 +220,9 @@ export async function removeProfilePhoto<Q extends PgQueryResultHKT>(
   if (!target) throw new PhotoError("NOT_ALLOWED", "This is not available.");
   if (!target.photoPath) return;
   await database.update(profiles).set({ photoPath: null, photoUpdatedAt: null }).where(eq(profiles.id, targetId));
+  // Their founder picture was this photo, so it goes too (2026-10-22).
+  await database.update(schema.founders).set({ portraitUrl: null })
+    .where(and(eq(schema.founders.userId, targetId), like(schema.founders.portraitUrl, "/photos/%")));
   if (byOwner) {
     await database.insert(adminActions).values({ actorUserId: actorId, kind: "remove_photo", reason: "Photo removed by the owner.", details: { targetUserId: targetId }, createdAt: now });
   }

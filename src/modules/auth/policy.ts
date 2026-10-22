@@ -5,8 +5,9 @@ export function normalizeEmail(value: unknown): string | null {
   return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) ? email : null;
 }
 export function safeReturnTo(value: unknown): string | null {
+  // A co-founder invite (2026-10-22) returns to /join/ and its 43-character code.
   return typeof value === "string" &&
-    /^\/(?:markets(?:\/[0-9a-f-]{36}(?:\?side=(?:yes|no))?)?|portfolio|account)$/.test(
+    /^\/(?:markets(?:\/[0-9a-f-]{36}(?:\?side=(?:yes|no))?)?|portfolio|account|join\/[A-Za-z0-9_-]{43})$/.test(
       value,
     )
     ? value

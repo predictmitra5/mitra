@@ -10,8 +10,8 @@ const MAX_PENDING_EVIDENCE_PER_MARKET = 10;
 
 export type UploadIntentKind = (typeof schema.uploadIntentKind.enumValues)[number];
 
-/** Pending (unfinished, unexpired) grants one person may hold of each kind. Founder media since 2026-10-19. */
-const MAX_PENDING: Record<UploadIntentKind, number> = { photo: 2, evidence: 5, media_image: 6, media_video: 2 };
+/** Pending (unfinished, unexpired) grants one person may hold of each kind. Founder media since 2026-10-19; resumes since 2026-10-22. */
+const MAX_PENDING: Record<UploadIntentKind, number> = { photo: 2, evidence: 5, media_image: 6, media_video: 2, resume: 2 };
 
 export type UploadIntent = {
   id: string;

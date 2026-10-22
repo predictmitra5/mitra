@@ -13,6 +13,11 @@
 //   startup-media       public   the re-encoded images and the founder videos
 //                                (2026-10-19); the app shows them only once the
 //                                owner approves, under unguessable paths
+//   founder-files       private  founders' resumes as checked PDFs (2026-10-22),
+//                                opened only through short-lived signed links
+//
+// Name buckets to create only those, for example:
+//   node --env-file=.env.local scripts/setup-evidence-storage.mjs founder-files
 //
 // startup-media is the only public bucket, and it holds only what founders
 // chose to publish about their startup. No uploaded document is ever published:
@@ -77,13 +82,25 @@ const wanted = [
     fileSizeLimit: 50 * 1024 * 1024,
     why: "founder videos and startup images are shown to visitors who are not signed in",
   },
+  {
+    id: "founder-files",
+    public: false,
+    // Resumes: the browser uploads to staging/, the app checks the PDF and
+    // keeps its own copy under resumes/ (src/modules/startups/resume.ts).
+    allowedMimeTypes: ["application/pdf"],
+    fileSizeLimit: 5 * 1024 * 1024,
+    why: "holds founders' resumes, opened only through links that expire after five minutes",
+  },
 ];
 
 const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
 let failed = false;
 
-for (const bucket of wanted) {
+const only = process.argv.slice(2);
+for (const name of only) if (!wanted.some((bucket) => bucket.id === name)) { console.error(`No bucket called ${name} here.`); process.exit(1); }
+
+for (const bucket of wanted.filter((b) => !only.length || only.includes(b.id))) {
   const { data: existing } = await supabase.storage.getBucket(bucket.id);
 
   if (!existing) {

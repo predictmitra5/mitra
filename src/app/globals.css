@@ -217,6 +217,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .step-review-image.round { width: 64px; height: 64px; aspect-ratio: 1; border-radius: 999px; }
 .step-review-video { display: inline-flex; align-items: center; gap: 10px; }
 .step-review-video img { width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; }
+/* The join password box and its Show button; the invite link (2026-10-22). */
+.handle-input input[type="password"], .handle-input input[type="text"]:not([autocomplete="username"]) { padding-left: 16px; }
+.step-form .handle-input .step-show { flex: none; min-height: 44px; padding: 0 16px; font-weight: 600; }
+/* The box around the input shows the focus ring, not the input inside it. */
+.step-form .handle-input input:focus, .step-form .handle-input input:focus-visible { box-shadow: none; outline: none; }
+.invite-link { padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card); }
+.invite-link code { display: block; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; user-select: all; }
 .how-list { display: flex; flex-direction: column; margin: 0 0 8px; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .how-list li { display: flex; gap: 14px; padding: 16px; border-top: 1px solid var(--line); }
 .how-list li:first-child { border-top: 0; }
@@ -1446,6 +1453,16 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
 .create-next { border-color: var(--accent); }
 .create-next .btn { align-self: flex-start; }
 a.create-new { color: var(--ink); font-weight: 600; text-decoration: none; }
+.invite-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.invite-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.invite-cancel { display: inline-flex; align-items: center; gap: 8px; }
+.invite-cancel .text-button { min-height: 36px; padding: 0 4px; font-weight: 600; }
+/* A founder's profile facts (2026-10-22). */
+.founder-facts dl { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.founder-facts dt { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.founder-facts dd { margin: 4px 0 0; font-size: 15px; line-height: 1.45; }
+.founder-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+.founder-links .btn { display: inline-flex; align-items: center; gap: 6px; }
 .create-card-head > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 14px; }
 .create-card details { border-top: 1px solid var(--line); padding-top: 12px; }
 .create-card summary { font-weight: 600; cursor: pointer; }

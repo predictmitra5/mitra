@@ -11,6 +11,10 @@ const HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "music
 
 export const YOUTUBE_PLAYER_HOST = "https://www.youtube-nocookie.com";
 
+/** Founder videos are 5 seconds to two minutes long (2026-10-22). */
+export const MIN_VIDEO_SECONDS = 5;
+export const MAX_VIDEO_SECONDS = 120;
+
 /** The 11-character video id in a YouTube link, or null if it isn't one. */
 export function youtubeId(value: unknown): string | null {
   if (typeof value !== "string") return null;

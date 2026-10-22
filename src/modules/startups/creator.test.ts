@@ -34,7 +34,14 @@ async function account(handle: string) {
   return id;
 }
 
-const profile = (handle: string) => ({ handle, name: "Ravi Shah", headline: "Building calm games", bio: "I make games where nothing is urgent, for phones." });
+const profile = (handle: string) => ({
+  handle, name: "Ravi Shah", headline: "Building calm games", bio: "I make games where nothing is urgent, for phones.", location: "Columbus, Ohio", educationLevel: "Bachelor's",
+});
+
+/** The member's profile photo, as the profile-photo upload leaves it. */
+async function givePhoto(userId: string, at = now) {
+  await db.update(schema.profiles).set({ photoPath: `${userId}/photo.webp`, photoUpdatedAt: at }).where(eq(schema.profiles.id, userId));
+}
 
 const startupInput = {
   name: "Pixel Harbor", tagline: "Cozy fishing game", headline: "Games without timers", description: "A cozy pixel-art fishing game for phones with no ads and no timers at all.",
@@ -42,6 +49,7 @@ const startupInput = {
 };
 
 async function founderWithStartup() {
+  await givePhoto(member);
   await saveFounderProfile(db, member, profile("ravi"), now);
   const startup = await registerStartup(db, member, startupInput, now);
   return startup;
@@ -83,7 +91,51 @@ describe("founder @handles", () => {
   });
 });
 
+describe("founder details (2026-10-22)", () => {
+  it("need an education level and where they're based; the school is optional", async () => {
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), educationLevel: "Wizard school" }, now)).rejects.toMatchObject({ field: "educationLevel" });
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), location: "" }, now)).rejects.toMatchObject({ field: "location" });
+    const row = await saveFounderProfile(db, member, { ...profile("ravi"), school: "The Ohio State University" }, now);
+    expect([row.educationLevel, row.school, row.location]).toEqual(["Bachelor's", "The Ohio State University", "Columbus, Ohio"]);
+  });
+
+  it("keep a LinkedIn profile link in one form, and refuse other links", async () => {
+    const row = await saveFounderProfile(db, member, { ...profile("ravi"), linkedinUrl: "linkedin.com/in/ravi-shah" }, now);
+    expect(row.linkedinUrl).toBe("https://www.linkedin.com/in/ravi-shah/");
+    for (const link of ["https://linkedin.com/company/mitra", "https://evil.example/in/ravi", "https://linkedin.com.evil.example/in/ravi"]) {
+      await expect(saveFounderProfile(db, member, { ...profile("ravi"), linkedinUrl: link }, now)).rejects.toMatchObject({ field: "linkedinUrl" });
+    }
+  });
+
+  it("take the picture only from the member's own profile photo", async () => {
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), portraitUrl: "https://cdn.example/face.png" }, now)).rejects.toMatchObject({ field: "portraitUrl" });
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), portraitUrl: "/photos/ravi?v=1" }, now)).rejects.toMatchObject({ field: "portraitUrl" });
+    await givePhoto(member);
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), portraitUrl: "/photos/sam?v=1" }, now)).rejects.toMatchObject({ field: "portraitUrl" });
+    const row = await saveFounderProfile(db, member, { ...profile("ravi"), portraitUrl: "/photos/ravi?v=1" }, now);
+    expect(row.portraitUrl).toBe(`/photos/ravi?v=${now.getTime()}`);
+  });
+
+  it("accept only a resume this member uploaded and Mitra checked", async () => {
+    const own = `resumes/${member}/${randomUUID()}.pdf`;
+    expect((await saveFounderProfile(db, member, { ...profile("ravi"), resumePath: own }, now)).resumePath).toBe(own);
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), resumePath: `resumes/${other}/${randomUUID()}.pdf` }, now)).rejects.toMatchObject({ field: "resumePath" });
+    await expect(saveFounderProfile(db, member, { ...profile("ravi"), resumePath: `staging/${member}/${randomUUID()}.pdf` }, now)).rejects.toMatchObject({ field: "resumePath" });
+    expect((await saveFounderProfile(db, member, { ...profile("ravi"), resumePath: "" }, now)).resumePath).toBeNull();
+  });
+});
+
 describe("founder videos are YouTube links", () => {
+  it("need a photo of the founder's face first, taken from their profile photo", async () => {
+    await saveFounderProfile(db, member, profile("ravi"), now);
+    const startup = await registerStartup(db, member, startupInput, now);
+    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, ok)).rejects.toMatchObject({ field: "portraitUrl" });
+    await givePhoto(member);
+    await addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ"), now, ok);
+    const [row] = await db.select({ portraitUrl: founders.portraitUrl }).from(founders).where(eq(founders.userId, member));
+    expect(row.portraitUrl).toBe(`/photos/ravi?v=${now.getTime()}`);
+  });
+
   it("store the canonical link and YouTube's thumbnail", async () => {
     const startup = await founderWithStartup();
     const row = await addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ?si=share"), now, ok);
@@ -114,9 +166,9 @@ describe("founder videos are YouTube links", () => {
     expect(row.videoUrl).toContain("dQw4w9WgXcQ");
   });
 
-  it("keep videos between 5 seconds and 10 minutes", async () => {
+  it("keep videos between 5 seconds and 2 minutes", async () => {
     const startup = await founderWithStartup();
-    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ", { durationSeconds: "601" }), now, ok)).rejects.toMatchObject({ field: "durationSeconds" });
+    await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ", { durationSeconds: "121" }), now, ok)).rejects.toMatchObject({ field: "durationSeconds" });
     await expect(addVideo(db, member, startup.id, videoInput("https://youtu.be/dQw4w9WgXcQ", { durationSeconds: "" }), now, ok)).rejects.toMatchObject({ field: "durationSeconds" });
   });
 

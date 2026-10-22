@@ -1,4 +1,4 @@
-import { and, asc, count, eq, sql } from "drizzle-orm";
+import { and, asc, count, eq, isNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
@@ -7,7 +7,7 @@ import { isInactive } from "./standing";
 
 /** Bans remove write access and reject pending startup suggestions; financial history is preserved. */
 
-const { profiles, adminActions, marketProposals } = schema;
+const { profiles, adminActions, marketProposals, startupInvites } = schema;
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 type Clock = () => Date;
 
@@ -70,6 +70,9 @@ export async function banPerson<Q extends PgQueryResultHKT>(
       const now = clock();
       await db.update(profiles).set({ bannedAt: now, bannedBy: ownerId, banReason: reason }).where(eq(profiles.id, targetId));
       await db.insert(adminActions).values({ actorUserId: ownerId, kind: "ban", reason, details: { targetUserId: targetId }, createdAt: now });
+      // Co-founder invites they made or unlocked and nobody has used stop working, as on account deletion (2026-10-22).
+      await db.update(startupInvites).set({ revokedAt: now })
+        .where(and(isNull(startupInvites.acceptedAt), isNull(startupInvites.revokedAt), or(eq(startupInvites.invitedBy, targetId), eq(startupInvites.claimedBy, targetId))));
     });
   } catch (error) {
     if (error instanceof ModerationError) throw error;

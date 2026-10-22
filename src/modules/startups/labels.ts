@@ -102,3 +102,10 @@ export function monthYear(date: Date | string | null): string {
   if (!date) return "";
   return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(date));
 }
+
+/** A founder's education level (2026-10-22), as the founder steps offer it. */
+export const EDUCATION_LEVELS = ["High school", "In college now", "Some college", "Associate's", "Bachelor's", "Master's", "MBA", "PhD", "Other"] as const;
+
+export function isEducationLevel(value: unknown): value is (typeof EDUCATION_LEVELS)[number] {
+  return typeof value === "string" && (EDUCATION_LEVELS as readonly string[]).includes(value);
+}

@@ -1,10 +1,12 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getDb } from "@/db/client";
+import { getDb, schema } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { LIMITS, RATE_LIMITED_MESSAGE, RateLimited } from "@/modules/security/rate-limit";
 import { limit, within } from "@/modules/security/request";
+import { removeResume } from "./resume";
 import {
   addClaim, addUpdate, addVideo, checkFounderHandle, CreatorError, registerStartup, saveFounderProfile, suggestMarket, updateStartup,
 } from "./creator";
@@ -49,7 +51,8 @@ const pick = (input: unknown, keys: readonly string[]): Fields => {
   return Object.fromEntries(keys.map((key) => [key, typeof source[key] === "string" ? source[key] : undefined]));
 };
 
-const FOUNDER_FIELDS = ["handle", "name", "headline", "bio", "background", "location", "portraitUrl", "websiteUrl", "accomplishments"] as const;
+const FOUNDER_FIELDS = ["handle", "name", "headline", "bio", "background", "location", "portraitUrl", "websiteUrl", "accomplishments",
+  "educationLevel", "school", "linkedinUrl", "resumePath"] as const;
 const STARTUP_FIELDS = ["name", "tagline", "headline", "description", "industry", "tags", "stage", "foundedOn", "headquarters", "websiteUrl",
   "logoUrl", "thumbnailUrl", "productImageUrl", "productDetails", "features", "screenshots", "role"] as const;
 const VIDEO_FIELDS = ["title", "description", "kind", "videoUrl", "thumbnailUrl", "durationSeconds"] as const;
@@ -64,7 +67,10 @@ export async function checkHandleAction(handle: string): Promise<{ handle: strin
 
 export async function saveFounderStepsAction(input: unknown): Promise<StepResult> {
   return run(async (userId) => {
+    const [before] = await getDb().select({ resumePath: schema.founders.resumePath }).from(schema.founders).where(eq(schema.founders.userId, userId)).limit(1);
     const row = await saveFounderProfile(getDb(), userId, pick(input, FOUNDER_FIELDS) as Parameters<typeof saveFounderProfile>[2]);
+    // A replaced or removed resume is deleted (2026-10-22).
+    if (before?.resumePath && before.resumePath !== row.resumePath) await removeResume(before.resumePath);
     revalidatePath(`/founders/${row.handle}`);
   }, "Founder profile saved. A new profile is visible to others once the owner approves it.");
 }

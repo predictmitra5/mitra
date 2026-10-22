@@ -61,6 +61,12 @@ export default async function ReviewPage() {
         <h3><Link href={`/founders/${founder.handle}`}>{founder.name} ↗︎</Link></h3>
         <p className="review-criteria">{founder.headline}. {founder.bio}</p>
         {founder.background && <p className="field-hint">{founder.background}</p>}
+        <p className="field-hint">
+          {[founder.location, founder.educationLevel, founder.school].filter(Boolean).join(" · ") || "No location or education given"}
+          {founder.portraitUrl ? " · has a photo" : " · no photo yet"}
+          {founder.linkedinUrl && <> · <a href={founder.linkedinUrl} target="_blank" rel="noopener noreferrer nofollow">LinkedIn ↗︎</a></>}
+          {founder.resumePath && <> · <a href={`/founders/${founder.handle}/resume`} target="_blank" rel="noopener noreferrer">Resume (PDF) ↗︎</a></>}
+        </p>
         <ReviewForm what="founder" id={founder.id} />
       </article>)}
     </section>}

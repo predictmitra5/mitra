@@ -58,7 +58,7 @@ export const proposalStatus = pgEnum("proposal_status", [
 ]);
 export const feedEventKind = pgEnum("feed_event_kind", ["exposure", "click"]);
 /** Direct-upload grants (2026-10-07); founder images and videos since 2026-10-19. */
-export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence", "media_image", "media_video"]);
+export const uploadIntentKind = pgEnum("upload_intent_kind", ["photo", "evidence", "media_image", "media_video", "resume"]);
 export const evidenceKind = pgEnum("evidence_kind", ["file", "link"]);
 export const evidenceStatus = pgEnum("evidence_status", [
   "submitted", // waiting for the owner; visible only to the owner and the sender
@@ -278,6 +278,13 @@ export const founders = pgTable(
     hue: integer("hue").notNull().default(205),
     accomplishments: text("accomplishments").array().notNull().default(sql`'{}'::text[]`),
     websiteUrl: text("website_url"),
+    /** Since 2026-10-22: "Bachelor's", "In college now", ... (DECISIONS.md), and the college or school, if any. */
+    educationLevel: text("education_level"),
+    school: text("school"),
+    /** https://www.linkedin.com/in/<name>/ */
+    linkedinUrl: text("linkedin_url"),
+    /** The checked PDF in the private founder-files bucket: resumes/<user id>/<upload id>.pdf. */
+    resumePath: text("resume_path"),
     userId: uuid("user_id").references(() => profiles.id),
     status: reviewStatus("status").notNull().default("pending"),
     reviewReason: text("review_reason"),
@@ -1080,4 +1087,33 @@ export const rateLimits = pgTable("rate_limits", {
 }, (table) => [
   primaryKey({ columns: [table.bucket, table.subject, table.windowStart] }),
   index("rate_limits_window_idx").on(table.windowStart),
+]);
+
+/**
+ * Co-founder invites (2026-10-22). A startup's founder makes a private link and
+ * a join password; whoever opens the link, signs in and types the password
+ * joins the startup's team. Only hashes are stored: SHA-256 of the link's
+ * random code and a salted scrypt hash of the password. One person per invite;
+ * it expires, locks after too many wrong passwords and can be cancelled.
+ */
+export const startupInvites = pgTable("startup_invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  startupId: uuid("startup_id").notNull().references(() => startups.id),
+  invitedBy: uuid("invited_by").notNull().references(() => profiles.id),
+  role: text("role").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  /** The account that typed the right password; it joins once it has a founder profile. */
+  claimedBy: uuid("claimed_by").references(() => profiles.id),
+  claimedAt: timestamp("claimed_at", { withTimezone: true }),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("startup_invites_token_hash_key").on(table.tokenHash),
+  index("startup_invites_startup_idx").on(table.startupId, table.createdAt),
+  index("startup_invites_claimed_idx").on(table.claimedBy),
 ]);

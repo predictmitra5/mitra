@@ -31,6 +31,8 @@ export const LIMITS = {
   onboarding: { name: "onboarding", max: 30, windowSeconds: minutes(60) },
   creatorWrite: { name: "creator-write", max: 40, windowSeconds: minutes(60) },
   handleCheck: { name: "handle-check", max: 120, windowSeconds: minutes(10) },
+  // Join passwords for co-founder invites (2026-10-22), on top of each invite's own five tries.
+  join: { name: "join", max: 10, windowSeconds: minutes(10) },
   upload: { name: "upload", max: 30, windowSeconds: minutes(60) },
   social: { name: "social", max: 300, windowSeconds: minutes(60) },
   report: { name: "report", max: 20, windowSeconds: minutes(60) },
