@@ -32,11 +32,12 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 | Item | Why it is waiting | What it needs first |
 | --- | --- | --- |
-| Custom email delivery | Sign-up sends a six-digit code from Supabase (email sign-in since 2026-10-05). The owner configured Gmail custom SMTP and the email provider/OTP settings in the Supabase dashboard on 2026-10-05, but delivery to arbitrary OSU/UIUC inboxes and the hosted template contents have not been verified from the app | Confirm `{{ .Token }}` is present in both Confirm signup and Magic Link templates, then complete one real OSU and one real UIUC sign-up before inviting users |
+| Custom email delivery | Sign-up sends a six-digit code from Supabase (email sign-in since 2026-10-05). The owner configured Gmail custom SMTP and the email provider/OTP settings in the Supabase dashboard on 2026-10-05, but delivery to arbitrary inboxes and the hosted template contents have not been verified from the app | Confirm `{{ .Token }}` is present in both Confirm signup and Magic Link templates, then complete one real sign-up from an outside address before inviting users |
 | University directory lookup | Retired by the 2026-10-20 startup-exchange direction; no university eligibility or directory lookup is operative | Not planned; retain the old request as historical context only |
 
 ## Current state
 
+- **Live since 2026-10-22: no campus wording left in the app's copy.** The sign-in email placeholder is `you@example.com`, sign-in errors say "verified email", founder onboarding examples are school-neutral, and archived markets say "an earlier event market". Sign-up accepts any verified email (`src/modules/auth/policy.ts` has no domain rule). The website (`site/`) had none. Unused campus CSS selectors remain in `globals.css`; they render nothing.
 - **Live since 2026-10-22: founder videos play on the startup page.** A startup's page plays its latest video in place in the hero (YouTube's player through `VideoPlayer`, as on the market page), or the video a link chose with `?v=<id>`; `/watch/<id>` for a startup with no market opens `/startups/<slug>?v=<id>` instead of looping back to a page with no player. 235 tests, typecheck and lint pass; a real mouse click in headless Edge played the live video YLslsZuEaNE with sound.
 - **Live since 2026-10-22 (pushed as 61d8bec on the owner's "Push it live and check the live site."): the owner's pages no longer hang, and the review page plays YouTube videos.** `src/db/client.ts` turns postgres.js pipelining off (`max_pipeline: 0`; TECH_STACK.md), which ended the owner's top-bar count hanging in about a third of page loads (25 of 25 owner page loads through the app's own client afterwards); `/review` has a loading screen; the review card plays a founder's YouTube video in YouTube's player (it used a plain `<video>`, which can't play YouTube links) with an "Open on YouTube" link; a title YouTube filled in now follows a swapped link. 235 tests, typecheck, lint and the webpack build pass.
 - **Owners since 2026-10-22: @mughil (mughilmurugan20@gmail.com) and @mitrapredict (predictmitra@gmail.com)** (DECISIONS.md 2026-10-22, "@mitrapredict is an owner again"). Earlier the same day @mughil was the only owner: @mughil was made an owner, then @ducky (murugan.23@osu.edu) and @mitrapredict lost owner powers; @mitrapredict was then restored at the owner's request. @ducky remains an ordinary member. Each change was a guarded transaction on `profiles.is_owner`; there is no audit kind for owner changes, so this record stands in for one. No code grants owner powers by email. (Older wording follows.)
@@ -242,6 +243,10 @@ Operational notes for whoever works on this next:
 ### 2026-10-22 - @mitrapredict an owner again (Claude Code)
 
 On the owner's "make @mitrapredict have owner powers" (plan committed first, dd946a3). Read first: @mitrapredict (predictmitra@gmail.com, id 6b64e355-…) was a member, not banned or withdrawn. One statement set `is_owner = 1` for that id and handle with those conditions, one row changed; read back: owners are @mitrapredict and @mughil. No code, schema or other profile changed.
+
+### 2026-10-22 - Leftover campus wording removed (Claude Code)
+
+The owner: "fix any issues like uiuc osu mentions sitll being there, also why does everything say no offer and every market is unavaialble". Changed five strings in `auth-form.tsx`, `lifecycle-actions.ts`, `create/flows.tsx` and `markets/[id]/page.tsx`; no schema, rule or exchange change. Explained, not changed: on 2026-10-22 the database had 34 open markets and zero `exchange_journal` rows, so every book is empty ("No offer"), and `readiness.execution` is false ("Trading unavailable"); both are by design. Checked: 235 tests, typecheck, lint. Pushed to `main` on the owner's "yes push it live".
 
 ### 2026-10-22 - Founder videos that never played (Claude Code)
 
