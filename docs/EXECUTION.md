@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**2026-10-22, planned: make @mitrapredict (predictmitra@gmail.com) an owner again, alongside @mughil.** The owner asked "make @mitrapredict have owner powers". One guarded transaction on the live database sets `profiles.is_owner = 1` for that profile only if it matches by id and handle, is not banned or withdrawn, and exactly one row changes; read back afterwards. No code change. Relies on DECISIONS.md 2026-10-22 ("@mughil is an owner" and follow-up), the retained predictmitra@gmail.com identity in the 2026-10-20 blueprint note, and the owner's explicit request. Owner trading and self-deletion rules apply as for any owner.
+
+Otherwise none by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
