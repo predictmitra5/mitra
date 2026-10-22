@@ -828,3 +828,9 @@ The owner first requested nine current markets, then clarified a few per categor
 **Reading taken (the owner can correct it):** "the owner" adds @mughil as a third owner; @ducky and @mitrapredict stay owners, since taking owner powers away from an account can lock the owner out and was not asked for. As for every owner, @mughil can no longer trade any market (the 2026-10-07 rule) and can't delete their own account while an owner. Their founder profile, waiting for review, stays as it is; as an owner they can approve it at `/review`.
 
 **Follow-up, same day.** Asked "Keep @ducky and @mitrapredict as owners too?", the owner chose: "Remove owner powers from @ducky and @mitrapredict so @mughil is the only owner." **Decision:** @mughil is the only owner. @ducky (murugan.23@osu.edu) and @mitrapredict (predictmitra@gmail.com) become ordinary members; their accounts, profiles and past owner actions in the audit record stay as they are.
+
+## 2026-10-22 - @mitrapredict is an owner again
+
+**User instruction** (the owner): "make @mitrapredict have owner powers".
+
+**Decision:** @mitrapredict (predictmitra@gmail.com) gets owner powers again, alongside @mughil, who stays an owner. @ducky (murugan.23@osu.edu) stays an ordinary member. The 2026-10-22 "only owner" decision above is superseded as to @mitrapredict. As for every owner, @mitrapredict can't trade any market and can't delete their own account while an owner.
