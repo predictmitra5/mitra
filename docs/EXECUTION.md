@@ -24,7 +24,12 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**2026-10-22, Claude Code, branch `claude/project-thread-wd3rxr`: bundle independent page reads so pages load faster.** The owner: "can we also work on packaging requests together, the website is very slow and laggy right now". Technical only (TECH_STACK.md delegation); no product rule, price, balance, market or exchange behaviour changes. Plan:
+
+1. Run genuinely independent read-only queries side by side (`Promise.all`, each optional piece failing on its own) instead of one after another: home (`components/home/load.ts`: the top bar alongside the feed), market detail (identity alongside the market; the trader, objections, price series, volume, card, ticker, startup, comments and follow state together), the shared top bar (`readViewer`: profile, funds and owner count together; a failed balance shows no balance, never a made-up one), `readTrader`, and the startup and founder pages (`readStartupPage`, `readFounderPage`, `readMarketStartup`). Authorization order stays: a not-yet-approved startup or founder is still checked before anything else about it is read; `advanceMarket` (the due-close/payout write) still runs before the market is read; no write, lock or transaction is parallelized.
+2. The proxy (refresh only, authorizes nothing) uses `auth.getClaims()` instead of `auth.getUser()`, which still refreshes an expired session but skips the extra network call to Supabase Auth when the project signs tokens with asymmetric keys. `currentIdentity` keeps `getUser()`, so every page's own sign-in check is unchanged.
+3. Safe timing diagnostics: a small `timed()` helper that logs a step's name and milliseconds (no ids, no user data) to the server log when it is slow, or always when `MITRA_TIMING=1`.
+4. Tests for the parallel helpers and that failures stay isolated; then tests, typecheck, lint, build. Push the branch, open a PR, ask before merging to main.
 
 ## Deferred, to come back to
 
