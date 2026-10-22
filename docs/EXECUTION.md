@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The 2026-10-22 founder details, two-minute videos, face photos, resumes and co-founder invites are built and committed locally but not pushed; going live is item 0c of Next actions (the migration must come before the push). The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
+**Claude Code, 2026-10-22: putting the founder details, resumes, two-minute videos, face photos and co-founder invites live**, on the owner's "Push it live: apply migration 0022, create the founder-files bucket, push main, and check the live site." In this order (Next actions 0c): confirm `drizzle.__drizzle_migrations` ends at 0021 and `origin/main` has nothing newer; apply 0022 with Drizzle's migrator over the session pooler and check `startup_invites` has row-level security and no browser grants and `founders` has the four new columns; run `scripts/setup-evidence-storage.mjs founder-files` (private, PDF only, 5 MB) and confirm it is private; push `main`; check the live founder page, `/join/<code>`, `/create/invite` and the resume route answer as expected. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
 
 ## Deferred, to come back to
 
