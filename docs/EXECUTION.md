@@ -24,7 +24,15 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-22: YouTube Shorts need their own wide thumbnail; image uploads on** (DECISIONS.md 2026-10-22, "YouTube Shorts need their own wide thumbnail"). Local until the owner says to push.
+
+1. `youtube.ts`: `checkYoutubeVideo` also reports whether oEmbed describes the video as taller than wide; `isShortsLink`. `addVideo` refuses a Short without a thumbnail of the founder's own (field `thumbnailUrl`).
+2. A rate-limited server action tells the video steps whether a pasted link is a Short; the thumbnail screen becomes required for a Short, explaining why (`StepDef.optional` may depend on the answers).
+3. Image uploads on without `STARTUP_MEDIA_UPLOADS` (it can still switch them off with `off`); video uploads removed from `media.ts` and `videoLink`; `startup-media` limited to WebP in the setup script. Go-live creates the `media-uploads` (private) and `startup-media` (public) buckets.
+4. Rejecting or suspending a video deletes a thumbnail it uploaded to `startup-media`.
+5. Tests; typecheck, lint, build; the screens checked through a temporary local preview page.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 

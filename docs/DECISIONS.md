@@ -806,3 +806,15 @@ The owner first requested nine current markets, then clarified a few per categor
 - Security: the link carries a 256-bit random code stored only as a hash; the join password is at least 8 characters and stored only as a salted scrypt hash, compared in constant time; an invite works for one person, expires after 7 days, and locks after 5 wrong passwords (the founder makes a new one); the founder can cancel an invite; a startup has at most 5 invites waiting; tries count against request limits by address and account; the join page sends no referrer.
 - The founder picks the co-founder's role when inviting (for example "Co-founder / CTO"). A co-founder needs their own founder profile: if they have none, the link takes them through the founder steps after the password, and they join once the profile is saved. Their founder profile still waits for the owner's approval before it is public, as every founder's does, and like every founder they cannot trade their startup's markets.
 - A co-founder can do what the startup's founder can (post videos and updates, edit details, invite others); nobody can remove a teammate except the owner (not built: the owner can suspend a founder).
+
+## 2026-10-22 - YouTube Shorts need their own wide thumbnail
+
+**User instruction** (the owner), after being told that a Short's tall YouTube thumbnail is cut to a thin middle strip on Mitra's wide cards: "can we detect shorts in the link, and ask them to upload a different value for the thumbnail use?" (spelling tidied).
+
+**Decision:** when a founder adds a video that is a YouTube Short, the video steps say so and ask them to upload a wide picture to use as its thumbnail; a Short can't be sent without one. Ordinary videos keep YouTube's thumbnail, with a different one still optional.
+
+**Assumptions made to keep building (the owner can change any of them):**
+
+- A video counts as a Short when its link is a `youtube.com/shorts/…` link, or when YouTube's own description of the video (oEmbed, already asked when a video is added) says it is taller than it is wide, which catches a Short pasted as an ordinary link. Checked on 2026-10-22: a Short is reported 113 wide by 200 high, an ordinary video 200 by 150. If YouTube can't be asked, only the link decides.
+- "Upload" means choosing an image file, so image uploads are switched on for founders: the video thumbnail, and therefore also the startup's logo, cover picture and screenshots, which until now could only be pasted as links. Images are re-encoded to WebP (stripping location and camera data) as built on 2026-10-19, at unguessable addresses. Video uploads stay off: videos are YouTube links.
+- Rejecting or suspending a video deletes the thumbnail uploaded for it.
