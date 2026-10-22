@@ -774,3 +774,35 @@ The owner first requested nine current markets, then clarified a few per categor
 - A video YouTube reports as private, missing or not allowed to be embedded is refused with a message saying how to fix it in YouTube Studio; if YouTube cannot be reached, the video is accepted and the owner's review catches it.
 - Founder photos, logos and thumbnails stay pasted links until uploads are switched on (Next actions); every step that asks for one can be skipped.
 - Request limits are counted per address and per account in Mitra's own database. Addresses are stored only as one-way keyed hashes and deleted within a day. Someone over a limit is told to wait a few minutes; nothing else changes for them.
+
+## 2026-10-22 - More on a founder's profile: education, where they're based, LinkedIn, a resume; videos up to two minutes; a face photo before any video
+
+**User instruction** (the owner): "add founder education level and college or whatever, where they're based in. say limit youtube videos to two minutes. say add pfp of your face mandatory if you upload a video. say connect linkedin as a site. say add resume as a pdf option. display all these options in founder profile" (spelling tidied).
+
+**Decision:**
+
+- **Education.** The founder steps ask for the founder's education level (one of High school, In college now, Some college, Associate's, Bachelor's, Master's, MBA, PhD, Other) and then the college or school, if any.
+- **Where they're based** is now a required question (it was optional).
+- **Videos are at most two minutes long** (it was ten), on the server and on the video screens.
+- **A photo of the founder's face is required before posting a video.** It is uploaded through Mitra's existing profile-photo upload, which already re-encodes photos and turns away images labelled as AI-generated; the founder's profile picture is that photo. Founder steps can still skip it, saying it is needed before a video; the video steps ask for it first when it is missing.
+- **LinkedIn** is its own question: a link to the founder's LinkedIn profile (`linkedin.com/in/…`), shown as a LinkedIn link.
+- **Resume as a PDF**, optional, up to 5 MB, uploaded in the founder steps.
+- **The founder's page shows all of it**: based in, education and school, LinkedIn, resume and website.
+
+**Assumptions made to keep building (the owner can change any of them):**
+
+- Education level is required; the school is optional (Skip), so founders without one aren't stuck.
+- "Connect LinkedIn" means adding the founder's LinkedIn profile link. Proving the account is theirs (signing in with LinkedIn) would need a LinkedIn developer app the owner creates; not built.
+- The resume is kept in a private storage area. It opens for visitors only once the owner has approved the founder (the owner and the founder can open it before then), through a link that works for a few minutes, so a suspended founder's resume stops opening. Files must be real PDFs; PDFs with scripts, launch actions or embedded files are turned away. Replacing or removing the resume deletes the old file; deleting the account deletes it too.
+- A founder whose pasted portrait link predates this keeps it; new photos come only from the upload. Changing the member's profile photo changes the founder picture too, and removing it removes the picture.
+
+**Co-founders, the same day.** The owner added: "and add cofounder accounts. so say invite cofounders to startups. then they would get an invite link to mitra, saying your cofounder asked you to join. and then the main ceo or whatever makes password, if it matches then the cofounder can get in, implement good security for this" (spelling tidied).
+
+**Decision:** a founder can invite co-founders to a startup they manage. Inviting makes a private link to Mitra and asks the founder to choose a join password. The link opens a page saying the founder ("your co-founder") asked them to join that startup on Mitra; the co-founder signs up or logs in with their own account and types the join password; if it matches, they join the startup's team and can manage it as the founder does.
+
+**Assumptions made to keep building (the owner can change any of them):**
+
+- The founder sends the link themselves (copy, or the phone's share sheet). Mitra sending it by email would need an email service the owner sets up; not built. The founder is told to give the password separately (in person or by text), never in the same message as the link, so a forwarded link alone gets nobody in.
+- Security: the link carries a 256-bit random code stored only as a hash; the join password is at least 8 characters and stored only as a salted scrypt hash, compared in constant time; an invite works for one person, expires after 7 days, and locks after 5 wrong passwords (the founder makes a new one); the founder can cancel an invite; a startup has at most 5 invites waiting; tries count against request limits by address and account; the join page sends no referrer.
+- The founder picks the co-founder's role when inviting (for example "Co-founder / CTO"). A co-founder needs their own founder profile: if they have none, the link takes them through the founder steps after the password, and they join once the profile is saved. Their founder profile still waits for the owner's approval before it is public, as every founder's does, and like every founder they cannot trade their startup's markets.
+- A co-founder can do what the startup's founder can (post videos and updates, edit details, invite others); nobody can remove a teammate except the owner (not built: the owner can suspend a founder).

@@ -24,7 +24,17 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-10-22: founder education, LinkedIn and resume; two-minute videos; a face photo before videos; co-founder invites** (DECISIONS.md 2026-10-22, both parts). Local until the owner says to push.
+
+1. **Migration 0022:** `founders` gains `education_level`, `school`, `linkedin_url` and `resume_path`; `upload_intent_kind` gains `resume`; new `startup_invites` (startup, inviter, role, `token_hash` unique, `password_hash`, attempts, `expires_at`, `claimed_by`/`claimed_at`, `accepted_at`, `revoked_at`, `locked_at`, `created_at`) with row-level security and no browser grants.
+2. **Founder fields** in `creator.ts` and the founder steps: education level (required choice), school (optional), based in (now required), LinkedIn (`linkedin.com/in/…`, normalized). Owner review page and founder page show them.
+3. **Videos ≤ 120 seconds** in `addVideo`, the video steps' check and their wording.
+4. **Face photo:** the founder steps' photo screen uses the existing profile-photo upload (`usePhotoUpload`), and the founder's `portrait_url` becomes the member's `/photos/<handle>?v=…` address (only their own); `addVideo` refuses without a portrait (filling it from the member's photo if there is one), and the video steps ask for the photo first when it is missing; replacing or removing the profile photo updates or clears that portrait.
+5. **Resume:** private bucket `founder-files` (PDF only, 5 MB; added to `scripts/setup-evidence-storage.mjs`, which gains a bucket-name filter so only it is created at go-live); upload through a signed link to `staging/<user>/<id>.pdf`, checked server-side (size, `%PDF-` header, no `/JavaScript`, `/JS`, `/Launch`, `/EmbeddedFile`, `/RichMedia`) and copied to `resumes/<user>/<id>.pdf`; served by `/founders/<handle>/resume` as a 302 to a 5-minute signed link only for an approved founder (or the founder or owner); replaced files deleted; daily cleanup and account deletion cover it.
+6. **Co-founder invites:** `src/modules/startups/invites.ts` (create with role and join password, list, revoke, read by link, claim with the password, link the claimed invite when the co-founder's founder profile is saved), actions with request limits, `/create/invite?startup=` (one question per screen, then the link with Copy/Share), invites listed with Cancel on the hub, `/join/<code>` (no referrer; sign up or log in returning there; then the password), `safeReturnTo` allowing `/join/<code>`.
+7. Tests (founder fields, video limit, photo requirement, PDF checks, invites: hashing, wrong passwords and lockout, expiry, single use, revocation, permissions, linking on profile save), typecheck, lint, build; the screens checked through a temporary, uncommitted local preview page.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
