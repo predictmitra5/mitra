@@ -24,9 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-**Claude Code, 2026-10-22: leftover campus wording.** The owner asked to remove the OSU/UIUC mentions still in the app. Plan: change user-facing copy only, relying on the 2026-10-20 exchange blueprint that retired campus editions and opened sign-up to any verified email (`src/modules/auth/policy.ts` has no domain rule). (1) Sign-in email placeholder `name@osu.edu or netid@illinois.edu` becomes `you@example.com`. (2) Lifecycle errors "Sign in with your verified university email" become "your verified email". (3) Founder onboarding placeholders "The Ohio State University" and "Won the campus pitch competition" become neutral. (4) The archived-market line "an earlier campus event market" becomes "an earlier event market". No schema, migration, market rule or exchange change; historical documents keep their names. Status: built and committed on `claude/project-thread-25ggdi`; 235 tests, typecheck and lint pass; waiting for the owner's go-ahead to push. Order books stay empty and execution stays closed; "No offer" and "Trading unavailable" are correct (exchange_journal has 0 rows, 34 open markets).
-
-Otherwise: the verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
@@ -34,11 +32,12 @@ Things the owner has asked for and consciously postponed. Each needs its own dec
 
 | Item | Why it is waiting | What it needs first |
 | --- | --- | --- |
-| Custom email delivery | Sign-up sends a six-digit code from Supabase (email sign-in since 2026-10-05). The owner configured Gmail custom SMTP and the email provider/OTP settings in the Supabase dashboard on 2026-10-05, but delivery to arbitrary OSU/UIUC inboxes and the hosted template contents have not been verified from the app | Confirm `{{ .Token }}` is present in both Confirm signup and Magic Link templates, then complete one real OSU and one real UIUC sign-up before inviting users |
+| Custom email delivery | Sign-up sends a six-digit code from Supabase (email sign-in since 2026-10-05). The owner configured Gmail custom SMTP and the email provider/OTP settings in the Supabase dashboard on 2026-10-05, but delivery to arbitrary inboxes and the hosted template contents have not been verified from the app | Confirm `{{ .Token }}` is present in both Confirm signup and Magic Link templates, then complete one real sign-up from an outside address before inviting users |
 | University directory lookup | Retired by the 2026-10-20 startup-exchange direction; no university eligibility or directory lookup is operative | Not planned; retain the old request as historical context only |
 
 ## Current state
 
+- **Live since 2026-10-22: no campus wording left in the app's copy.** The sign-in email placeholder is `you@example.com`, sign-in errors say "verified email", founder onboarding examples are school-neutral, and archived markets say "an earlier event market". Sign-up accepts any verified email (`src/modules/auth/policy.ts` has no domain rule). The website (`site/`) had none. Unused campus CSS selectors remain in `globals.css`; they render nothing.
 - **Live since 2026-10-22: founder videos play on the startup page.** A startup's page plays its latest video in place in the hero (YouTube's player through `VideoPlayer`, as on the market page), or the video a link chose with `?v=<id>`; `/watch/<id>` for a startup with no market opens `/startups/<slug>?v=<id>` instead of looping back to a page with no player. 235 tests, typecheck and lint pass; a real mouse click in headless Edge played the live video YLslsZuEaNE with sound.
 - **Live since 2026-10-22 (pushed as 61d8bec on the owner's "Push it live and check the live site."): the owner's pages no longer hang, and the review page plays YouTube videos.** `src/db/client.ts` turns postgres.js pipelining off (`max_pipeline: 0`; TECH_STACK.md), which ended the owner's top-bar count hanging in about a third of page loads (25 of 25 owner page loads through the app's own client afterwards); `/review` has a loading screen; the review card plays a founder's YouTube video in YouTube's player (it used a plain `<video>`, which can't play YouTube links) with an "Open on YouTube" link; a title YouTube filled in now follows a swapped link. 235 tests, typecheck, lint and the webpack build pass.
 - **Owner since 2026-10-22: @mughil (mughilmurugan20@gmail.com) alone** (DECISIONS.md 2026-10-22, "@mughil is an owner" and its follow-up). @mughil was made an owner, then @ducky (murugan.23@osu.edu) and @mitrapredict (predictmitra@gmail.com) lost owner powers and are ordinary members, each by a guarded transaction on `profiles.is_owner`; there is no audit kind for owner changes, so this record stands in for one. No code grants owner powers by email. @mughil's founder profile is still waiting for review. Earlier entries that name two owners describe the time before this.
@@ -239,6 +238,10 @@ Operational notes for whoever works on this next:
 - Sharing credentials with collaborators: never through Git. The Supabase project has its own organization since 2026-09-24, moved there from the owner's personal one so collaborators cannot see an unrelated old project (Supabase limits access per project only on paid plans). Invite each person to that organization as a Developer, which shows them the project URL, keys and connection strings. Supabase never displays the database password, so that one value goes to each person through a self-destructing link. The Anthropic key only powers proof-wording suggestions and can be left blank.
 
 ## Session history
+
+### 2026-10-22 - Leftover campus wording removed (Claude Code)
+
+The owner: "fix any issues like uiuc osu mentions sitll being there, also why does everything say no offer and every market is unavaialble". Changed five strings in `auth-form.tsx`, `lifecycle-actions.ts`, `create/flows.tsx` and `markets/[id]/page.tsx`; no schema, rule or exchange change. Explained, not changed: on 2026-10-22 the database had 34 open markets and zero `exchange_journal` rows, so every book is empty ("No offer"), and `readiness.execution` is false ("Trading unavailable"); both are by design. Checked: 235 tests, typecheck, lint. Pushed to `main` on the owner's "yes push it live".
 
 ### 2026-10-22 - Founder videos that never played (Claude Code)
 
