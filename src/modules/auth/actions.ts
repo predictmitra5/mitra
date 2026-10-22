@@ -1,9 +1,12 @@
 "use server";
+import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db/client";
 import { isBanned } from "@/modules/account/standing";
 import { hasCompletedProfile } from "@/modules/account/viewer";
+import { LIMITS, RATE_LIMITED_MESSAGE } from "@/modules/security/rate-limit";
+import { within } from "@/modules/security/request";
 import { createAuthClient } from "./server";
 import { appOrigin } from "./config";
 import {
@@ -30,6 +33,7 @@ export async function signIn(
     password.length > 128
   )
     return { error: "Enter your email and password." };
+  if (!(await within(LIMITS.signIn, `email:${email}`))) return { error: RATE_LIMITED_MESSAGE };
   let finished = false;
   try {
     const client = await createAuthClient();
@@ -63,6 +67,7 @@ export async function sendSignupCode(
 ): Promise<FormState> {
   const email = normalizeEmail(form.get("email"));
   if (!email) return { error: "Enter a valid email address." };
+  if (!(await within(LIMITS.sendCode, `email:${email}`))) return { error: RATE_LIMITED_MESSAGE };
   try {
     const client = await createAuthClient();
     const { error } = await client.auth.signInWithOtp({
@@ -96,6 +101,7 @@ export async function verifyEmailCode(
     next = safeReturnTo(form.get("next"));
   if (!email || typeof token !== "string" || !/^\d{6}$/.test(token))
     return { error: "Enter your email and the six-digit code." };
+  if (!(await within(LIMITS.verifyCode, `email:${email}`))) return { error: RATE_LIMITED_MESSAGE, verification: { email } };
   let returning = false;
   try {
     const client = await createAuthClient();
@@ -120,6 +126,14 @@ export async function verifyEmailCode(
       return { error: "This account could not be verified." };
     }
     returning = await hasCompletedProfile(getDb(), identity.id);
+    if (!returning) {
+      // The code proves this person owns the mailbox. Anyone who registered the
+      // address earlier with a password of their own (Supabase's public sign-up
+      // endpoint allows that) loses it here, and their sessions end; the person
+      // sets their own password on the next screen (2026-10-21).
+      await client.auth.updateUser({ password: `${randomBytes(24).toString("base64url")}aA1!` }).catch(() => undefined);
+      await client.auth.signOut({ scope: "others" }).catch(() => undefined);
+    }
   } catch {
     return unavailable;
   }
@@ -137,6 +151,7 @@ export async function setSignupPassword(
   if (invalid) return { error: invalid, verified: true };
   if (password !== form.get("confirmPassword"))
     return { error: "Your passwords don’t match.", verified: true };
+  if (!(await within(LIMITS.setPassword))) return { error: RATE_LIMITED_MESSAGE, verified: true };
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.getUser();
@@ -147,6 +162,7 @@ export async function setSignupPassword(
         error: "Choose a different password and try again.",
         verified: true,
       };
+    await client.auth.signOut({ scope: "others" }).catch(() => undefined);
   } catch {
     return { ...unavailable, verified: true };
   }
@@ -159,6 +175,7 @@ export async function requestPasswordReset(
 ): Promise<FormState> {
   const email = normalizeEmail(form.get("email"));
   if (!email) return { error: "Enter a valid email address." };
+  if (!(await within(LIMITS.passwordReset, `email:${email}`))) return { error: RATE_LIMITED_MESSAGE };
   try {
     const client = await createAuthClient();
     if (
@@ -185,6 +202,7 @@ export async function resetPassword(
   if (invalid) return { error: invalid };
   if (password !== form.get("confirmPassword"))
     return { error: "Your passwords don’t match." };
+  if (!(await within(LIMITS.setPassword))) return { error: RATE_LIMITED_MESSAGE };
   try {
     const client = await createAuthClient();
     const { data, error } = await client.auth.getUser();

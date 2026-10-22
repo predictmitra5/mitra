@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const client = createServerClient(url, key, {
-    cookieOptions: { httpOnly: true, sameSite: "lax", path: "/" },
+    cookieOptions: { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(values, headers) {

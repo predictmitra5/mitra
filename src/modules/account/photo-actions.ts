@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { LIMITS, RATE_LIMITED_MESSAGE } from "@/modules/security/rate-limit";
+import { within } from "@/modules/security/request";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import type { FormState } from "@/modules/auth/policy";
@@ -23,6 +25,7 @@ export async function startPhotoUpload(file: { contentType: string; bytes: numbe
   try {
     const identity = await currentIdentity();
     if (!identity) return { ok: false, ...signedOut };
+    if (!(await within(LIMITS.upload, `user:${identity.id}`))) return { ok: false, error: RATE_LIMITED_MESSAGE };
     const start = await beginPhotoUpload(getDb(), identity.id, { contentType: file?.contentType, bytes: file?.bytes });
     return { ok: true, ...start };
   } catch (error) {

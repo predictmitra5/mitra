@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { isUuid } from "@/modules/market/input";
 import { isInactive } from "@/modules/account/standing";
 import { isIndustry, VIDEO_KINDS, type IndustryKey } from "./labels";
+import { MEDIA_BUCKET } from "./media-buckets";
+import { checkYoutubeVideo, youtubeId, youtubeThumbnail, youtubeUrl, type YoutubeCheck } from "./youtube";
 
 /*
  * Creator tools (2026-10-19): a member makes a founder profile, registers
@@ -22,8 +24,17 @@ const { profiles, founders, startups, startupFounders, videos, startupUpdates, v
 type Database<Q extends PgQueryResultHKT> = PgDatabase<Q, typeof schema>;
 
 export class CreatorError extends Error {
-  constructor(public readonly code: "PROFILE_REQUIRED" | "FOUNDER_REQUIRED" | "NOT_ALLOWED" | "INVALID_INPUT" | "TAKEN" | "LIMIT", message: string) {
+  /** The form field the message is about, so the step-by-step screens can return to it (2026-10-21). */
+  constructor(public readonly code: "PROFILE_REQUIRED" | "FOUNDER_REQUIRED" | "NOT_ALLOWED" | "INVALID_INPUT" | "TAKEN" | "LIMIT", message: string, public readonly field?: string) {
     super(message); this.name = "CreatorError";
+  }
+}
+
+/** Tags a validation error with the field it came from. */
+function at<T>(field: string, read: () => T): T {
+  try { return read(); } catch (error) {
+    if (error instanceof CreatorError && !error.field) throw new CreatorError(error.code, error.message, field);
+    throw error;
   }
 }
 
@@ -95,6 +106,51 @@ async function requireManager<Q extends PgQueryResultHKT>(database: Database<Q>,
 
 // ----------------------------------------------------------- founder profile
 
+const HANDLE = /^[a-z0-9_]{3,24}$/;
+
+export function normalizeHandle(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase().replace(/^@+/, "") : "";
+}
+
+/**
+ * A founder's @handle is unique across members and founders (2026-10-21), so
+ * nobody can take another person's @: it is free if no other founder has it
+ * and no other member uses it as their username.
+ */
+async function founderHandleFree<Q extends PgQueryResultHKT>(database: Database<Q>, handle: string, userId: string): Promise<boolean> {
+  const [founder] = await database.select({ userId: founders.userId }).from(founders).where(eq(founders.handle, handle)).limit(1);
+  if (founder && founder.userId !== userId) return false;
+  const [member] = await database.select({ id: profiles.id }).from(profiles).where(eq(profiles.handle, handle)).limit(1);
+  return !member || member.id === userId;
+}
+
+/** The handle asked for if it is free, otherwise the nearest free one: `ravishah2`, `ravishah3`… */
+export async function suggestFounderHandle<Q extends PgQueryResultHKT>(database: Database<Q>, wanted: unknown, userId: string): Promise<string> {
+  let base = normalizeHandle(wanted).replace(/[^a-z0-9_]/g, "").slice(0, 20);
+  if (base.length < 3) base = `${base}founder`.slice(0, 20);
+  const taken = new Set<string>();
+  const others = await database.select({ handle: founders.handle, userId: founders.userId }).from(founders).where(sql`starts_with(${founders.handle}, ${base})`);
+  for (const row of others) if (row.userId !== userId) taken.add(row.handle);
+  const members = await database.select({ handle: profiles.handle, id: profiles.id }).from(profiles).where(sql`starts_with(${profiles.handle}, ${base})`);
+  for (const row of members) if (row.id !== userId) taken.add(row.handle);
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 10_000; n += 1) {
+    const candidate = `${base.slice(0, 24 - String(n).length)}${n}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base.slice(0, 16)}${Date.now() % 100_000_000}`;
+}
+
+/** What the handle screen shows while a founder types: whether it is theirs to take, and if not, a free one. */
+export async function checkFounderHandle<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, wanted: unknown) {
+  await requireMember(database, userId);
+  const handle = normalizeHandle(wanted);
+  if (!HANDLE.test(handle)) return { handle, valid: false, available: false, suggestion: await suggestFounderHandle(database, handle, userId) };
+  const [mine] = await database.select({ handle: founders.handle }).from(founders).where(eq(founders.userId, userId)).limit(1);
+  const available = mine?.handle === handle || await founderHandleFree(database, handle, userId);
+  return { handle, valid: true, available, suggestion: available ? handle : await suggestFounderHandle(database, handle, userId) };
+}
+
 export type FounderInput = {
   handle: unknown; name: unknown; headline: unknown; bio: unknown; background?: unknown; location?: unknown;
   portraitUrl?: unknown; websiteUrl?: unknown; accomplishments?: unknown;
@@ -103,22 +159,24 @@ export type FounderInput = {
 /** Creates this member's founder profile (waiting for review) or updates it. */
 export async function saveFounderProfile<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, input: FounderInput, now: Date = new Date()) {
   await requireMember(database, userId);
-  const handle = typeof input.handle === "string" ? input.handle.trim().toLowerCase().replace(/^@/, "") : "";
-  if (!/^[a-z0-9_]{3,24}$/.test(handle)) throw new CreatorError("INVALID_INPUT", "Handle: 3 to 24 letters, numbers or underscores.");
+  const handle = normalizeHandle(input.handle);
+  if (!HANDLE.test(handle)) throw new CreatorError("INVALID_INPUT", "Handle: 3 to 24 letters, numbers or underscores.", "handle");
   const values = {
     handle,
-    name: text(input.name, "Name", 2, 80),
-    headline: text(input.headline, "Headline", 6, 120),
-    bio: text(input.bio, "Bio", 20, 600),
-    background: optionalText(input.background, "Background", 800),
-    location: optionalText(input.location, "Location", 80),
-    portraitUrl: mediaUrl(input.portraitUrl, "Portrait"),
-    websiteUrl: mediaUrl(input.websiteUrl, "Website"),
-    accomplishments: lines(input.accomplishments, "Accomplishments", 6, 160),
+    name: at("name", () => text(input.name, "Name", 2, 80)),
+    headline: at("headline", () => text(input.headline, "Headline", 6, 120)),
+    bio: at("bio", () => text(input.bio, "Bio", 20, 600)),
+    background: at("background", () => optionalText(input.background, "Background", 800)),
+    location: at("location", () => optionalText(input.location, "Location", 80)),
+    portraitUrl: at("portraitUrl", () => mediaUrl(input.portraitUrl, "Photo")),
+    websiteUrl: at("websiteUrl", () => mediaUrl(input.websiteUrl, "Website")),
+    accomplishments: at("accomplishments", () => lines(input.accomplishments, "Accomplishments", 6, 160)),
   };
   const [existing] = await database.select().from(founders).where(eq(founders.userId, userId)).limit(1);
-  const [clash] = await database.select({ id: founders.id }).from(founders).where(eq(founders.handle, handle));
-  if (clash && clash.id !== existing?.id) throw new CreatorError("TAKEN", "That handle is taken. Try another.");
+  // A founder keeps the handle they already have; a new or changed one must be free.
+  if (existing?.handle !== handle && !(await founderHandleFree(database, handle, userId))) {
+    throw new CreatorError("TAKEN", `@${handle} is taken. Try @${await suggestFounderHandle(database, handle, userId)}.`, "handle");
+  }
   if (existing) {
     if (existing.status === "suspended") throw new CreatorError("NOT_ALLOWED", "This profile is suspended. Contact the owner.");
     const [row] = await database.update(founders).set(values).where(eq(founders.id, existing.id)).returning();
@@ -138,26 +196,25 @@ export type StartupInput = {
 };
 
 function startupValues(input: StartupInput) {
-  if (!isIndustry(input.industry)) throw new CreatorError("INVALID_INPUT", "Pick an industry.");
+  if (!isIndustry(input.industry)) throw new CreatorError("INVALID_INPUT", "Pick an industry.", "industry");
   const founded = typeof input.foundedOn === "string" && /^\d{4}-\d{2}(-\d{2})?$/.test(input.foundedOn.trim()) ? new Date(`${input.foundedOn.trim().slice(0, 7)}-01T12:00:00Z`) : null;
-  const features = lines(input.features, "Product features", 3, 40);
   return {
-    name: text(input.name, "Name", 2, 60),
-    tagline: text(input.tagline, "Tagline", 4, 60),
-    headline: text(input.headline, "Headline", 6, 90),
-    description: text(input.description, "Description", 30, 1200),
+    name: at("name", () => text(input.name, "Name", 2, 60)),
+    tagline: at("tagline", () => text(input.tagline, "Tagline", 4, 60)),
+    headline: at("headline", () => text(input.headline, "Headline", 6, 90)),
+    description: at("description", () => text(input.description, "Description", 30, 1200)),
     industry: input.industry as IndustryKey,
-    tags: lines(input.tags, "Tags", 5, 24).map((t) => t.replace(/^#/, "")),
-    stage: text(input.stage, "Stage", 2, 40),
+    tags: at("tags", () => lines(input.tags, "Tags", 5, 24).map((t) => t.replace(/^#/, ""))),
+    stage: at("stage", () => text(input.stage, "Stage", 2, 40)),
     foundedOn: founded,
-    headquarters: optionalText(input.headquarters, "Based in", 80),
-    websiteUrl: mediaUrl(input.websiteUrl, "Website"),
-    logoUrl: mediaUrl(input.logoUrl, "Logo"),
-    thumbnailUrl: mediaUrl(input.thumbnailUrl, "Thumbnail"),
-    productImageUrl: mediaUrl(input.productImageUrl, "Product image"),
-    productDetails: text(input.productDetails, "Product details", 20, 1200),
-    productFeatures: features,
-    screenshotUrls: lines(input.screenshots, "Screenshots", 6, 600).map((u) => mediaUrl(u, "Screenshot")!),
+    headquarters: at("headquarters", () => optionalText(input.headquarters, "Based in", 80)),
+    websiteUrl: at("websiteUrl", () => mediaUrl(input.websiteUrl, "Website")),
+    logoUrl: at("logoUrl", () => mediaUrl(input.logoUrl, "Logo")),
+    thumbnailUrl: at("thumbnailUrl", () => mediaUrl(input.thumbnailUrl, "Thumbnail")),
+    productImageUrl: at("productImageUrl", () => mediaUrl(input.productImageUrl, "Product image")),
+    productDetails: at("productDetails", () => text(input.productDetails, "Product details", 20, 1200)),
+    productFeatures: at("features", () => lines(input.features, "Product features", 3, 40)),
+    screenshotUrls: at("screenshots", () => lines(input.screenshots, "Screenshots", 6, 600).map((u) => mediaUrl(u, "Screenshot")!)),
   };
 }
 
@@ -170,7 +227,7 @@ export async function registerStartup<Q extends PgQueryResultHKT>(database: Data
   const values = startupValues(input);
   const pending = await database.$count(startups, and(eq(startups.createdBy, userId), eq(startups.status, "pending")));
   if (pending >= MAX_PENDING_STARTUPS) throw new CreatorError("LIMIT", `You have ${MAX_PENDING_STARTUPS} startups waiting for review. Wait for those first.`);
-  const role = optionalText(input.role, "Your role", 60) ?? "Founder";
+  const role = at("role", () => optionalText(input.role, "Your role", 60)) ?? "Founder";
   const base = slugify(values.name);
   let slug = base;
   for (let n = 2; (await database.select({ id: startups.id }).from(startups).where(eq(startups.slug, slug))).length; n += 1) slug = `${base}-${n}`;
@@ -204,20 +261,48 @@ export function parseCaptions(value: unknown, durationSeconds: number): { at: nu
   return raw.map((line, i) => ({ at: Math.round(i * step * 10) / 10, text: line.slice(0, 200) }));
 }
 
-export async function addVideo<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, startupId: unknown, input: VideoInput, now: Date = new Date()) {
+/**
+ * The video a founder adds (2026-10-21): a YouTube link, stored in its one
+ * canonical form, or, only while Mitra's own uploads are on, a file this
+ * member uploaded to Mitra's media bucket. Links to files anywhere else are
+ * refused.
+ */
+export function videoLink(value: unknown, userId: string): { url: string; youtube: string | null } {
+  const id = youtubeId(value);
+  if (id) return { url: youtubeUrl(id), youtube: id };
+  const own = process.env.STARTUP_MEDIA_UPLOADS === "on" && process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${userId}/` : null;
+  const url = typeof value === "string" ? value.trim() : "";
+  if (own && url.startsWith(own) && /^[0-9a-f-]{36}\.(mp4|webm)$/.test(url.slice(own.length))) return { url, youtube: null };
+  throw new CreatorError("INVALID_INPUT", "Paste the YouTube link to your video, like youtube.com/watch?v=… or youtu.be/…", "videoUrl");
+}
+
+const YOUTUBE_REFUSAL: Partial<Record<YoutubeCheck, string>> = {
+  not_embeddable: "YouTube says this video can't be played on other sites. In YouTube Studio, open the video's details, choose Show more and turn on Allow embedding.",
+  missing: "YouTube can't find that video, or it's private. Set it to Public or Unlisted in YouTube Studio and paste the link again.",
+};
+
+export async function addVideo<Q extends PgQueryResultHKT>(database: Database<Q>, userId: string, startupId: unknown, input: VideoInput, now: Date = new Date(),
+  checkYoutube: (id: string) => Promise<YoutubeCheck> = checkYoutubeVideo) {
   const startup = await requireManager(database, userId, startupId);
   const kind = typeof input.kind === "string" && (VIDEO_KINDS as readonly string[]).includes(input.kind) ? input.kind : "pitch";
   const seconds = Number(input.durationSeconds);
-  if (!Number.isInteger(seconds) || seconds < 5 || seconds > 600) throw new CreatorError("INVALID_INPUT", "Length: 5 to 600 seconds.");
-  const videoUrl = mediaUrl(input.videoUrl, "Video file");
+  if (!Number.isInteger(seconds) || seconds < 5 || seconds > 600) throw new CreatorError("INVALID_INPUT", "Videos can be 5 seconds to 10 minutes long.", "durationSeconds");
+  const link = videoLink(input.videoUrl, userId);
+  const title = at("title", () => text(input.title, "Title", 4, 100));
+  const description = at("description", () => text(input.description, "Description", 10, 500));
+  const thumbnail = at("thumbnailUrl", () => mediaUrl(input.thumbnailUrl, "Thumbnail"));
   const captions = parseCaptions(input.captions, seconds);
-  if (!videoUrl && captions.length === 0) throw new CreatorError("INVALID_INPUT", "Add a video file link, or captions for a captioned placeholder.");
+  if (link.youtube) {
+    const refusal = YOUTUBE_REFUSAL[await checkYoutube(link.youtube)];
+    if (refusal) throw new CreatorError("INVALID_INPUT", refusal, "videoUrl");
+  }
   const pending = await database.$count(videos, and(eq(videos.uploadedBy, userId), eq(videos.status, "pending")));
   if (pending >= MAX_PENDING_VIDEOS) throw new CreatorError("LIMIT", `You have ${MAX_PENDING_VIDEOS} videos waiting for review. Wait for those first.`);
   const [founder] = await database.select({ id: founders.id }).from(founders).where(eq(founders.userId, userId)).limit(1);
   const [row] = await database.insert(videos).values({
-    startupId: startup.id, founderId: founder?.id ?? null, title: text(input.title, "Title", 4, 100), description: text(input.description, "Description", 10, 500),
-    kind, videoUrl, thumbnailUrl: mediaUrl(input.thumbnailUrl, "Thumbnail"), durationSeconds: seconds, captions,
+    startupId: startup.id, founderId: founder?.id ?? null, title, description,
+    kind, videoUrl: link.url, thumbnailUrl: thumbnail ?? (link.youtube ? youtubeThumbnail(link.youtube) : null), durationSeconds: seconds, captions,
     status: "pending", uploadedBy: userId, createdAt: now,
   }).returning();
   return row;

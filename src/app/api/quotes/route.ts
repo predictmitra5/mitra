@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { getDb } from "@/db/client";
 import { MAX_QUOTES, readQuotes } from "@/modules/discovery/feed";
+import { LIMITS } from "@/modules/security/rate-limit";
+import { limitResponse } from "@/modules/security/request";
 
 /*
  * Live prices for goals already on screen (decided 2026-09-24). Pages poll this
@@ -14,6 +16,8 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 
 export async function GET(request: NextRequest) {
+  const blocked = await limitResponse(request, LIMITS.quotes);
+  if (blocked) return blocked;
   const raw = request.nextUrl.searchParams.get("ids") ?? "";
   const ids = raw.split(",").map((id) => id.trim()).filter(Boolean).slice(0, MAX_QUOTES);
   try {

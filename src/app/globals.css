@@ -190,6 +190,33 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-v
 .topic { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; user-select: none; }
 .topic.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .topic:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Becoming a founder, one question per screen (2026-10-21). */
+.step-form .field textarea { min-height: 140px; padding: 14px 16px; border-radius: 12px; font-size: 17px; line-height: 1.5; background: var(--card); }
+.step-count { text-align: right; font-variant-numeric: tabular-nums; }
+.step-list { display: flex; flex-direction: column; gap: 10px; }
+.step-handle-status { min-height: 1.5em; }
+.step-ok { color: var(--yes, var(--accent)); font-weight: 500; }
+.step-inline { padding: 0; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.step-image { display: flex; flex-direction: column; gap: 14px; }
+.step-image .media-upload { align-self: flex-start; }
+.step-image-preview { align-self: center; width: 100%; max-width: 320px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); background: var(--card); }
+.step-image-preview.round { width: 140px; height: 140px; aspect-ratio: 1; border-radius: 999px; }
+.step-youtube { display: flex; flex-direction: column; gap: 14px; }
+.step-youtube-preview { display: flex; flex-direction: column; gap: 8px; }
+.step-youtube-preview .player { border-radius: 14px; }
+.step-youtube-preview .player-stage img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.step-review { display: flex; flex-direction: column; margin: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.step-review-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 16px; border-top: 1px solid var(--line); }
+.step-review-row:first-child { border-top: 0; }
+.step-review-row dt { grid-column: 1; color: var(--muted); font-size: 12.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.step-review-row dd { grid-column: 1; margin: 0; font-size: 15.5px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+.step-review-edit { grid-column: 2; grid-row: 1 / span 2; align-self: center; min-height: 44px; padding: 0 6px; font-weight: 600; }
+.step-review-list { margin: 0; padding-left: 18px; white-space: normal; }
+.step-review-image { display: block; width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.step-review-image.round { width: 64px; height: 64px; aspect-ratio: 1; border-radius: 999px; }
+.step-review-video { display: inline-flex; align-items: center; gap: 10px; }
+.step-review-video img { width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; }
 .how-list { display: flex; flex-direction: column; margin: 0 0 8px; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .how-list li { display: flex; gap: 14px; padding: 16px; border-top: 1px solid var(--line); }
 .how-list li:first-child { border-top: 0; }
@@ -1168,6 +1195,12 @@ html[data-theme="light"] .startup-mark:not(.thumb-logo) { background: hsl(var(--
   .player:hover .player-controls { opacity: 1; }
   .player:not(.is-playing):hover .player-big { opacity: 1; transform: translate(-50%, -50%); }
 }
+/* A founder's YouTube video (2026-10-21): YouTube's frame over the thumbnail, shown once it is ready. */
+.player-youtube .player-stage { cursor: auto; }
+.player-frame { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 220ms var(--ease); }
+.player-youtube.is-ready .player-frame { opacity: 1; }
+.player-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+.player-fallback { position: absolute; z-index: 2; left: 50%; bottom: 14px; padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / 0.7); color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; transform: translateX(-50%); backdrop-filter: blur(6px); }
 
 /* The small price chart on cards: baby blue over a soft fill, after the owner's screenshot. */
 .spark { display: flex; flex: 0 1 230px; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 110px; margin: 0; }
@@ -1409,6 +1442,10 @@ html[data-theme="light"] .market-chance strong { color: #2b8fc4; }
 .create-step p, .create-card p { margin: 0; }
 .create-card + .create-card { margin-top: 12px; }
 .create-card-head { display: flex; align-items: center; gap: 14px; }
+.create-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.create-next { border-color: var(--accent); }
+.create-next .btn { align-self: flex-start; }
+a.create-new { color: var(--ink); font-weight: 600; text-decoration: none; }
 .create-card-head > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 14px; }
 .create-card details { border-top: 1px solid var(--line); padding-top: 12px; }
 .create-card summary { font-weight: 600; cursor: pointer; }

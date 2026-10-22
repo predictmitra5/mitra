@@ -1065,3 +1065,19 @@ export const campusQrClaims = pgTable("campus_qr_claims", {
   index("campus_qr_claims_campaign_idx").on(table.campaignId, table.createdAt),
   check("campus_qr_claims_reward_check", sql`${table.rewardMicro} > 0`),
 ]);
+
+/**
+ * Request limits (2026-10-21): one row per rule, subject and time window, with
+ * how many requests it has seen. The subject is a keyed one-way hash of an
+ * address or account id, never the address itself; the daily maintenance route
+ * deletes windows older than a day.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  bucket: text("bucket").notNull(),
+  subject: text("subject").notNull(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  hits: integer("hits").notNull().default(1),
+}, (table) => [
+  primaryKey({ columns: [table.bucket, table.subject, table.windowStart] }),
+  index("rate_limits_window_idx").on(table.windowStart),
+]);

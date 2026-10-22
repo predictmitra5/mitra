@@ -7,6 +7,8 @@ import { recommendVideos } from "@/modules/recommend/feed";
 import { VIEWER_COOKIE, viewerFor } from "@/modules/recommend/events";
 import { readVideoCards } from "@/modules/startups/read";
 import { isUuid } from "@/modules/market/input";
+import { LIMITS } from "@/modules/security/rate-limit";
+import { within } from "@/modules/security/request";
 import { toVideoCardData, type VideoCardData } from "./video-data";
 
 /**
@@ -15,6 +17,7 @@ import { toVideoCardData, type VideoCardData } from "./video-data";
  */
 export async function moreVideos(shown: string[], following: boolean): Promise<VideoCardData[]> {
   const exclude = new Set((Array.isArray(shown) ? shown : []).filter(isUuid).slice(0, 300));
+  if (!(await within(LIMITS.feed))) return [];
   try {
     let identity = null;
     try { identity = await currentIdentity(); } catch { /* a visitor */ }

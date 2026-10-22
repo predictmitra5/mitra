@@ -25,6 +25,7 @@ const ICONS: Record<string, LucideIcon> = {
 export const GLYPH_NAMES = ["sparkles", "robot", "gamepad", "battery", "heart", "code", "wallet", "utensils", "bike", "mic", "headphones", "eye", "plane", "fish", "leaf", "shirt", "send", "activity", "ear", "pen"] as const;
 
 export function Glyph({ name, size = 18, className }: { name: string; size?: number; className?: string }) {
-  const Icon = ICONS[name] ?? CircleCheck;
+  // Own keys only: a feature typed as "constructor" must not find Object.prototype (2026-10-21).
+  const Icon = (Object.hasOwn(ICONS, name) ? ICONS[name] : undefined) ?? CircleCheck;
   return <Icon size={size} className={className} aria-hidden="true" strokeWidth={1.9} />;
 }

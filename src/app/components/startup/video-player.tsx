@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Captions, CaptionsOff, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { duration } from "@/modules/startups/labels";
+import { youtubeId } from "@/modules/startups/youtube";
 import { onBeforeFlush, track } from "../feed/tracker";
+import { YouTubePlayer } from "./youtube-player";
 
 /*
  * The founder video player (2026-10-19): play and pause, a progress bar you
@@ -11,7 +13,8 @@ import { onBeforeFlush, track } from "../feed/tracker";
  * feed passes `active`, and a video starts muted because browsers only allow
  * that without a tap.
  *
- * A video with a file plays it. A demo video has no file, so the player runs
+ * A founder video is a YouTube link (2026-10-21) and plays in YouTube's own
+ * player (youtube-player.tsx). A video with a file plays it. A demo video has no file, so the player runs
  * over the founder-and-startup thumbnail for the video's length with its
  * captions, as the brief's "working placeholder": every control works and it
  * reports watch time like a real video. It says it is a demo.
@@ -32,14 +35,22 @@ export type PlayerVideo = {
   isDemo: boolean;
 };
 
-export function VideoPlayer({ video, poster, active = false, track: tracking = true, className }: {
+type PlayerProps = {
   video: PlayerVideo;
   /** The thumbnail drawn under the controls (and the whole picture for a demo video). */
   poster: ReactNode;
   active?: boolean;
   track?: boolean;
   className?: string;
-}) {
+};
+
+export function VideoPlayer(props: PlayerProps) {
+  const youtube = youtubeId(props.video.videoUrl);
+  if (youtube) return <YouTubePlayer youtube={youtube} videoId={props.video.id} title={props.video.title} poster={props.poster} active={props.active} track={props.track} className={props.className} />;
+  return <FilePlayer {...props} />;
+}
+
+function FilePlayer({ video, poster, active = false, track: tracking = true, className }: PlayerProps) {
   const media = useRef<HTMLVideoElement>(null);
   /** The placeholder's position in seconds, read by its animation loop. */
   const clock = useRef(0);

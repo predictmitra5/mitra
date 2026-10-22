@@ -5,19 +5,20 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readViewerOrNull } from "@/modules/account/viewer";
 import { CreatorError, readCreatorHome, type CreatorHome } from "@/modules/startups/creator";
-import { mediaUploadsEnabled } from "@/modules/startups/media";
 import { duration, industryLabel, videoKindLabel } from "@/modules/startups/labels";
 import { MarketFooter, MarketHeader } from "@/app/components/market/market-header";
 import { FounderFace, StartupMark } from "@/app/components/startup/thumb";
 import { VerificationBadge } from "@/app/components/startup/profile-parts";
-import { ClaimForm, FounderForm, StartupForm, SuggestForm, UpdateForm, VideoForm, type StartupDefaults } from "./forms";
+import { ClaimForm, SuggestForm, UpdateForm } from "./forms";
 
 /*
- * Create (2026-10-19): the creator hub. A member makes a founder profile,
- * registers startups, describes the product, posts videos and thumbnails,
- * writes updates, sends claims for verification and suggests markets, and
- * sees followers and how their videos are watched. Everything new waits for
- * the owner's approval; founders never create or settle markets.
+ * Create (2026-10-19): the creator hub. Since 2026-10-21 the founder profile,
+ * startups and videos are made and edited one question per screen
+ * (/create/founder, /create/startup, /create/video); a member without a
+ * founder profile starts there. Here a founder sees what they have, follows
+ * the next step, writes updates, sends claims for verification and suggests
+ * markets, and sees followers and how their videos are watched. Everything new
+ * waits for the owner's approval; founders never create or settle markets.
  */
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Create", robots: { index: false } };
@@ -25,17 +26,13 @@ export const metadata: Metadata = { title: "Create", robots: { index: false } };
 const STATUS: Record<string, string> = { pending: "Waiting for review", approved: "Live", rejected: "Turned down", suspended: "Suspended" };
 const day = (value: Date | null) => value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" }).format(value) : "";
 
-function startupDefaults(startup: CreatorHome["startups"][number] | null): StartupDefaults {
-  if (!startup) return { startupId: null, name: "", tagline: "", headline: "", description: "", industry: "ai", tags: "", stage: "", foundedOn: "", headquarters: "", websiteUrl: "", logoUrl: "", thumbnailUrl: "", productImageUrl: "", productDetails: "", features: "", screenshots: "" };
-  return {
-    startupId: startup.id, name: startup.name, tagline: startup.tagline, headline: startup.headline, description: startup.description, industry: startup.industry,
-    tags: startup.tags.join("\n"), stage: startup.stage, foundedOn: startup.foundedOn ? startup.foundedOn.toISOString().slice(0, 7) : "", headquarters: startup.headquarters ?? "",
-    websiteUrl: startup.websiteUrl ?? "", logoUrl: startup.logoUrl ?? "", thumbnailUrl: startup.thumbnailUrl ?? "", productImageUrl: startup.productImageUrl ?? "",
-    productDetails: startup.productDetails, features: startup.productFeatures.map((f) => f.replace(/^[a-z-]+:/, "")).join("\n"), screenshots: startup.screenshotUrls.join("\n"),
-  };
-}
+const SAVED: Record<string, string> = {
+  profile: "Founder profile saved.",
+  startup: "Startup saved. The owner reviews new startups before they appear anywhere.",
+  video: "Video sent for review. It appears in feeds once the owner approves it.",
+};
 
-export default async function CreatePage() {
+export default async function CreatePage({ searchParams }: PageProps<"/create">) {
   const identity = await currentIdentity();
   if (!identity) redirect("/sign-in");
   const database = getDb();
@@ -47,8 +44,11 @@ export default async function CreatePage() {
     problem = "Creator tools are temporarily unavailable.";
   }
   const viewer = await readViewerOrNull(database, identity.id);
-  const uploads = mediaUploadsEnabled();
   const founder = home?.founder ?? null;
+  if (home && !founder) redirect("/create/founder");
+  const saved = (await searchParams).saved;
+  const notice = typeof saved === "string" ? SAVED[saved] : undefined;
+  const live = home?.startups.filter((s) => s.status === "approved" || s.status === "pending") ?? [];
 
   return (
     <div className="market-shell">
@@ -56,14 +56,7 @@ export default async function CreatePage() {
       <main className="account create">
         <div className="account-head"><h1>Create</h1><span className="muted">For founders: your profile, your startups, your videos</span></div>
         {problem && <p className="form-error" role="alert">{problem}</p>}
-        {home && !founder && (
-          <section className="create-step">
-            <h2>1. Your founder profile</h2>
-            <p className="muted">People follow founders, not just companies. Your name, a headline and a short bio appear under every video you post. The owner approves new profiles before they are public.</p>
-            <FounderForm uploads={uploads} defaults={{ handle: "", name: viewer?.displayName ?? "", headline: "", bio: "", background: "", location: "", portraitUrl: "", websiteUrl: "", accomplishments: "" }} />
-          </section>
-        )}
-
+        {notice && <p className="form-success" role="status">{notice}</p>}
         {home && founder && (
           <>
             <section className="create-card">
@@ -71,15 +64,27 @@ export default async function CreatePage() {
                 <FounderFace founder={founder} size={56} />
                 <div>
                   <h2>{founder.name} <span className={`status-pill status-${founder.status === "approved" ? "open" : founder.status}`}>{STATUS[founder.status]}</span></h2>
-                  <p className="muted">@{founder.handle} · {home.founderFollowers.toLocaleString("en-US")} followers{founder.status === "approved" && <> · <Link href={`/founders/${founder.handle}`}>View profile</Link></>}</p>
+                  <p className="muted">@{founder.handle} · {home.founderFollowers.toLocaleString("en-US")} followers{founder.status === "approved" && <> · <Link href={`/@${founder.handle}`}>View profile</Link></>}</p>
                   {founder.reviewReason && founder.status !== "approved" && <p className="form-error">The owner&rsquo;s note: {founder.reviewReason}</p>}
                 </div>
               </div>
-              <details><summary>Edit founder profile</summary>
-                <FounderForm uploads={uploads} defaults={{ handle: founder.handle, name: founder.name, headline: founder.headline, bio: founder.bio, background: founder.background ?? "",
-                  location: founder.location ?? "", portraitUrl: founder.portraitUrl ?? "", websiteUrl: founder.websiteUrl ?? "", accomplishments: founder.accomplishments.join("\n") }} />
-              </details>
+              {founder.status !== "suspended" && <div className="create-actions"><Link className="btn btn-quiet" href="/create/founder">Edit profile</Link></div>}
             </section>
+
+            {founder.status !== "suspended" && founder.status !== "rejected" && live.length === 0 && (
+              <section className="create-card create-next">
+                <h2>Next: your startup</h2>
+                <p className="muted">Tell people what you&rsquo;re building, one question at a time. Then add your first video.</p>
+                <Link className="btn btn-primary" href="/create/startup">Register your startup</Link>
+              </section>
+            )}
+            {live.length > 0 && home.videos.length === 0 && (
+              <section className="create-card create-next">
+                <h2>Next: your first video</h2>
+                <p className="muted">Paste a YouTube link to a video of you talking about {live[0].name}. Unlisted works.</p>
+                <Link className="btn btn-primary" href={`/create/video?startup=${live[0].id}`}>Add a video</Link>
+              </section>
+            )}
 
             <section aria-labelledby="your-startups">
               <div className="account-section-head"><h2 id="your-startups">Your startups</h2><span className="muted">{home.startups.length}</span></div>
@@ -96,15 +101,17 @@ export default async function CreatePage() {
                     </div>
                   </div>
                   {(startup.status === "approved" || startup.status === "pending") && <>
-                    <details><summary>Post a video</summary><VideoForm startupId={startup.id} uploads={uploads} /></details>
+                    <div className="create-actions">
+                      <Link className="btn btn-primary" href={`/create/video?startup=${startup.id}`}>Add a video</Link>
+                      <Link className="btn btn-quiet" href={`/create/startup?id=${startup.id}`}>Edit details</Link>
+                    </div>
                     <details><summary>Post an update or milestone</summary><UpdateForm startupId={startup.id} /></details>
                     <details><summary>Send a claim for verification</summary><ClaimForm startupId={startup.id} /></details>
                     {startup.status === "approved" && <details><summary>Suggest a market</summary><SuggestForm startupId={startup.id} /></details>}
-                    <details><summary>Edit description and product</summary><StartupForm uploads={uploads} defaults={startupDefaults(startup)} /></details>
                   </>}
                 </article>
               ))}
-              <details className="create-card create-new"><summary>Register a startup</summary><StartupForm uploads={uploads} defaults={startupDefaults(null)} /></details>
+              {live.length > 0 && founder.status !== "suspended" && founder.status !== "rejected" && <Link className="create-card create-new" href="/create/startup">Register another startup</Link>}
             </section>
 
             {home.videos.length > 0 && (
@@ -142,7 +149,7 @@ export default async function CreatePage() {
             )}
           </>
         )}
-        <p className="muted account-small">{uploads ? "Files upload straight to Mitra's storage; images are re-encoded so no location or camera data stays in them." : "Uploads aren't switched on yet, so paste links to your video and image files for now."} Everything you post is reviewed by the owner before it is public, and stays labelled as founder-reported until checked.</p>
+        <p className="muted account-small">Videos are YouTube links: upload to YouTube (Unlisted is fine), then paste the link. Everything you post is reviewed by the owner before it is public, and stays labelled as founder-reported until checked.</p>
       </main>
       <MarketFooter />
     </div>

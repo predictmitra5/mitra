@@ -148,6 +148,13 @@
       "when": 1792547277757,
       "tag": "0020_market_catalog_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792628931343,
+      "tag": "0021_rate_limits",
+      "breakpoints": true
     }
   ]
 }

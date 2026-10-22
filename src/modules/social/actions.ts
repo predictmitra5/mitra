@@ -6,6 +6,8 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { recordServerEvent, VIEWER_COOKIE, viewerFor } from "@/modules/recommend/events";
 import { isUuid } from "@/modules/market/input";
+import { LIMITS, RATE_LIMITED_MESSAGE } from "@/modules/security/rate-limit";
+import { within } from "@/modules/security/request";
 import {
   addComment, fileReport, listComments, setFounderFollow, setLike, setSave, setStartupFollow, SocialError, type CommentTarget, type ReportTarget, type Toggle,
 } from "./service";
@@ -31,6 +33,7 @@ async function member() {
 }
 
 const signedOut = { ok: false as const, error: "Log in or sign up to do that.", code: "SIGNED_OUT" };
+const limited = { ok: false as const, error: RATE_LIMITED_MESSAGE, code: "RATE_LIMITED" };
 
 async function viewerOf(userId: string) {
   return viewerFor(userId, (await cookies()).get(VIEWER_COOKIE)?.value);
@@ -39,6 +42,7 @@ async function viewerOf(userId: string) {
 export async function toggleLike(videoId: string, on: boolean): Promise<Result<Toggle>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.social, `user:${identity.id}`))) return limited;
   try {
     const value = await setLike(getDb(), identity.id, videoId, on);
     await recordServerEvent(getDb(), await viewerOf(identity.id), videoId, on ? "like" : "unlike");
@@ -49,6 +53,7 @@ export async function toggleLike(videoId: string, on: boolean): Promise<Result<T
 export async function toggleSave(videoId: string, on: boolean): Promise<Result<Toggle>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.social, `user:${identity.id}`))) return limited;
   try {
     const value = await setSave(getDb(), identity.id, videoId, on);
     await recordServerEvent(getDb(), await viewerOf(identity.id), videoId, on ? "save" : "unsave");
@@ -61,6 +66,7 @@ export async function toggleSave(videoId: string, on: boolean): Promise<Result<T
 export async function toggleFounderFollow(founderId: string, on: boolean, videoId?: string | null): Promise<Result<Toggle>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.social, `user:${identity.id}`))) return limited;
   try {
     const value = await setFounderFollow(getDb(), identity.id, founderId, on);
     if (on && videoId && isUuid(videoId)) await recordServerEvent(getDb(), await viewerOf(identity.id), videoId, "follow_founder");
@@ -71,6 +77,7 @@ export async function toggleFounderFollow(founderId: string, on: boolean, videoI
 export async function toggleStartupFollow(startupId: string, on: boolean, videoId?: string | null): Promise<Result<Toggle>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.social, `user:${identity.id}`))) return limited;
   try {
     const value = await setStartupFollow(getDb(), identity.id, startupId, on);
     if (on && videoId && isUuid(videoId)) await recordServerEvent(getDb(), await viewerOf(identity.id), videoId, "follow_startup");
@@ -83,6 +90,7 @@ export type PostedComment = { id: string; body: string; createdAt: string };
 export async function postComment(input: { target: CommentTarget; targetId: string; body: string; parentId?: string | null }): Promise<Result<PostedComment>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.social, `user:${identity.id}`))) return limited;
   try {
     const row = await addComment(getDb(), identity.id, input);
     if (input.target === "video") await recordServerEvent(getDb(), await viewerOf(identity.id), input.targetId, "comment");
@@ -94,6 +102,7 @@ export async function postComment(input: { target: CommentTarget; targetId: stri
 export async function reportItem(input: { target: ReportTarget; targetId: string; reason: string }): Promise<Result<{ filed: boolean }>> {
   const identity = await member();
   if (!identity) return signedOut;
+  if (!(await within(LIMITS.report, `user:${identity.id}`))) return limited;
   try {
     const row = await fileReport(getDb(), identity.id, input);
     if (input.target === "video") await recordServerEvent(getDb(), await viewerOf(identity.id), input.targetId, "report");
@@ -106,6 +115,7 @@ export type CommentData = { id: string; body: string; createdAt: string; author:
 /** Comments for a video, market or startup, newest first. Public, like the page they sit on. */
 export async function getComments(target: CommentTarget, targetId: string): Promise<CommentData[]> {
   if (!["market", "video", "startup"].includes(target) || !isUuid(targetId)) return [];
+  if (!(await within(LIMITS.feed))) return [];
   try {
     const rows = await listComments(getDb(), target, targetId, 80);
     return rows.map((c) => ({ id: c.id, body: c.body, createdAt: c.createdAt.toISOString(), author: c.author }));

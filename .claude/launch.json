@@ -2,15 +2,37 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
       "name": "site",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "site", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "site",
+        "run",
+        "dev"
+      ],
       "port": 3100
     },
     {
       "name": "site-prod",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "site", "run", "start", "--", "-p", "3101"],
+      "runtimeArgs": [
+        "--prefix",
+        "site",
+        "run",
+        "start",
+        "--",
+        "-p",
+        "3101"
+      ],
       "port": 3101
     }
   ]

@@ -4,6 +4,8 @@ import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { parseClientEvents, recordVideoEvents, viewerFor } from "@/modules/recommend/events";
 import { isViewerToken, newViewerToken, VIEWER_COOKIE, VIEWER_COOKIE_MAX_AGE } from "@/modules/recommend/viewer-cookie";
+import { LIMITS } from "@/modules/security/rate-limit";
+import { limitResponse } from "@/modules/security/request";
 
 /*
  * What the video player reports (2026-10-19): impressions, watch time,
@@ -18,6 +20,9 @@ export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 
 export async function POST(request: NextRequest) {
+  // By address, so a visitor dropping the feed cookie on every request still has a ceiling.
+  const blocked = await limitResponse(request, LIMITS.events);
+  if (blocked) return blocked;
   let body: unknown = null;
   try {
     const text = await request.text();

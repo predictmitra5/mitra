@@ -217,7 +217,10 @@ export async function readFounderPage<Q extends PgQueryResultHKT>(database: Data
   const updates = await database.select({ id: startupUpdates.id, kind: startupUpdates.kind, title: startupUpdates.title, body: startupUpdates.body, happenedAt: startupUpdates.happenedAt,
     verification: startupUpdates.verification, isDemo: startupUpdates.isDemo, startupSlug: startups.slug, startupName: startups.name })
     .from(startupUpdates).leftJoin(startups, eq(startups.id, startupUpdates.startupId))
-    .where(and(eq(startupUpdates.founderId, row.id), isNull(startupUpdates.removedAt))).orderBy(desc(startupUpdates.happenedAt)).limit(40);
+    // Only updates about approved startups (or none), as on the activity page: a pending or suspended
+    // startup stays unseen until the owner approves it (security review, 2026-10-21).
+    .where(and(eq(startupUpdates.founderId, row.id), isNull(startupUpdates.removedAt), or(isNull(startupUpdates.startupId), eq(startups.status, "approved"), sql`${preview}`)))
+    .orderBy(desc(startupUpdates.happenedAt)).limit(40);
   const marketIds = companyIds.length ? (await database.select({ id: markets.id }).from(markets)
     .where(and(inArray(markets.startupId, companyIds), sql`${markets.approvedAt} is not null`, inArray(markets.status, ["open", "closed", "ruled", "settled"])))
     .orderBy(sql`case when ${markets.status} = 'open' then 0 else 1 end`, asc(markets.deadlineAt))).map((m) => m.id) : [];

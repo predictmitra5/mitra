@@ -11,7 +11,7 @@ export async function createAuthClient(readOnly = false) {
   const { url, key } = authConfig();
   const jar = await cookies();
   return createServerClient(url, key, {
-    cookieOptions: { httpOnly: true, sameSite: "lax", path: "/" },
+    cookieOptions: { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" },
     cookies: {
       getAll: () => jar.getAll(),
       setAll(values) {

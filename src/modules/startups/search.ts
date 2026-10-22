@@ -60,9 +60,11 @@ export async function searchAll<Q extends PgQueryResultHKT>(database: Database<Q
   const founderText = sql`concat_ws(' ', ${founders.name}, ${founders.handle}, ${founders.headline}, ${founders.bio}, ${founders.background})`;
   const founderRows = await database.selectDistinctOn([founders.id], {
     id: founders.id, handle: founders.handle, name: founders.name, headline: founders.headline, hue: founders.hue, portraitUrl: founders.portraitUrl, startupName: startups.name,
-  }).from(founders).leftJoin(startupFounders, eq(startupFounders.founderId, founders.id)).leftJoin(startups, eq(startups.id, startupFounders.startupId))
+  }).from(founders).leftJoin(startupFounders, eq(startupFounders.founderId, founders.id))
+    // Only approved startups are joined, so a pending or suspended one never names a founder in results.
+    .leftJoin(startups, and(eq(startups.id, startupFounders.startupId), eq(startups.status, "approved")))
     .where(and(eq(founders.status, "approved"), or(everyWord(words, founderText), byIndustry && and(byIndustry, eq(startups.status, "approved")))))
-    .orderBy(founders.id).limit(SEARCH_LIMIT);
+    .orderBy(founders.id, sql`${startups.name} is null`).limit(SEARCH_LIMIT);
 
   const marketText = sql`concat_ws(' ', ${markets.question}, ${markets.shortQuestion}, ${startups.name}, ${startups.industry}::text)`;
   const marketIds = (await database.select({ id: markets.id }).from(markets).innerJoin(startups, eq(startups.id, markets.startupId))

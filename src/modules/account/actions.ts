@@ -6,6 +6,8 @@ import { getDb } from "@/db/client";
 import { createAuthClient, currentIdentity } from "@/modules/auth/server";
 import { deleteAuthIdentity } from "@/modules/auth/admin";
 import { safeReturnTo, type FormState } from "@/modules/auth/policy";
+import { LIMITS, RATE_LIMITED_MESSAGE } from "@/modules/security/rate-limit";
+import { within } from "@/modules/security/request";
 import { AccountError, provisionAccount } from "./provision";
 import { saveTopics } from "./topics";
 import { WithdrawalError, withdrawAccount } from "./withdrawal";
@@ -15,6 +17,7 @@ export async function completeProfile(_state: FormState, form: FormData): Promis
   try {
     const identity = await currentIdentity();
     if (!identity) return { error: "Sign in with your verified email to continue." };
+    if (!(await within(LIMITS.onboarding, `user:${identity.id}`))) return { error: RATE_LIMITED_MESSAGE };
     const displayName = form.get("displayName");
     const handle = form.get("handle");
     if (typeof displayName !== "string" || typeof handle !== "string") return { error: "Enter a display name and username." };
@@ -36,6 +39,7 @@ export async function saveOnboardingTopics(_state: FormState, form: FormData): P
   try {
     const identity = await currentIdentity();
     if (!identity) return { error: "Sign in with your verified email to continue." };
+    if (!(await within(LIMITS.onboarding, `user:${identity.id}`))) return { error: RATE_LIMITED_MESSAGE };
     await saveTopics(getDb(), identity.id, form.getAll("topic"));
   } catch {
     return { error: "We couldn’t save your topics. Please try again shortly." };
@@ -48,6 +52,7 @@ export async function deleteAccount(_state: FormState, form: FormData): Promise<
   if (form.get("confirmation") !== "DELETE") return { error: "Type DELETE exactly to confirm." };
   const identity = await currentIdentity();
   if (!identity) return { error: "Sign in again before deleting your account." };
+  if (!(await within(LIMITS.account, `user:${identity.id}`))) return { error: RATE_LIMITED_MESSAGE };
   try {
     await withdrawAccount(getDb(), identity.id, withdrawalStorage);
     await deleteAuthIdentity(identity.id);
