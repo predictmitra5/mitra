@@ -24,7 +24,7 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The 2026-10-22 Shorts thumbnails and image uploads are built and committed locally but not pushed; going live is item 0d of Next actions (the two image buckets first). The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
+**Claude Code, 2026-10-22: putting Shorts thumbnails and image uploads live**, on the owner's "Push it live: create the media-uploads and startup-media buckets, push main, and check the live site." In order (Next actions 0d): run `scripts/setup-evidence-storage.mjs media-uploads startup-media` and read back both buckets (`media-uploads` private, JPEG/PNG/WebP; `startup-media` public, WebP only, 5 MB) and that nothing else changed; push `main`; check the live app answers as before, the video and founder screens still redirect visitors to sign-in, and image upload starts no longer fail for want of a bucket. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`.
 
 ## Deferred, to come back to
 
