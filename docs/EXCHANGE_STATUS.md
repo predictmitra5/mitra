@@ -37,10 +37,10 @@ Before execution can open, a separately reviewed provider/authorization implemen
 
 User explicitly confirmed there is **no current recoverable backup**. The required backup/restore prerequisite is therefore unmet. There is no ignored local environment file with credentials, and the connected Supabase tool exposes neither Auth deletion nor Auth/settings/Storage administration. A normal connector connection is not a backup or an Auth-admin credential. Browser work did not establish an authenticated Supabase dashboard session; no reconnection was initiated.
 
-Retain these verified, active profiles. Since 2026-10-22 @mughil is the only owner; the other two are ordinary members (DECISIONS.md):
+Retain these verified, active profiles. Since 2026-10-22 @mughil and @mitrapredict are the owners; @ducky is an ordinary member (DECISIONS.md):
 
 - `mughilmurugan20@gmail.com` (@mughil, owner): `330fbf16-9f90-4f19-b919-8873844d36fb`.
-- `predictmitra@gmail.com` (@mitrapredict, owner until 2026-10-22): `6b64e355-844f-4bf4-88ba-9781bd5bdc66`.
+- `predictmitra@gmail.com` (@mitrapredict, owner): `6b64e355-844f-4bf4-88ba-9781bd5bdc66`.
 - `murugan.23@osu.edu` (@ducky, owner until 2026-10-22): `ffaf0f4e-dec8-400f-b542-388660a43b8c`.
 
 Other real Auth identity authorized for deletion: `virmani.20@osu.edu`, `6715c2a0-6a59-42e9-952a-93c69e8813c4`. It has no application profile in the inspected state. Do not delete Auth rows directly with SQL. Revoke sessions and use supported Auth administration after recovery is verified.
