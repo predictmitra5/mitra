@@ -30,15 +30,23 @@ export async function readViewer<Q extends PgQueryResultHKT>(
 ): Promise<Viewer> {
   const empty: Viewer = { displayName: null, photo: null, balanceMicro: null, ownerQueue: null };
   if (!isUuid(userId)) return empty;
-  const [row] = await database.select({ profile: profiles })
-    .from(profiles)
-    .where(eq(profiles.id, userId)).limit(1);
+  // The three reads are independent, so they run side by side (2026-10-22).
+  // Funds and the owner count are only shown once the profile check passes;
+  // ownerQueue checks ownership itself before counting anything. A failed
+  // balance shows no balance (null), never a made-up one, and a failed owner
+  // count hides the badge; neither takes the name and photo down with it.
+  const [rows, available, queue] = await Promise.all([
+    database.select({ profile: profiles }).from(profiles).where(eq(profiles.id, userId)).limit(1),
+    readFunds(database, userId).then((f) => f.available * 10_000, () => null),
+    ownerQueue(database, userId).catch(() => null),
+  ]);
+  const row = rows[0];
   if (!row || !row.profile.adultConfirmedAt || isInactive(row.profile)) return empty;
   return {
     displayName: row.profile.displayName,
     photo: photoUrl(row.profile.handle, row.profile.photoUpdatedAt),
-    balanceMicro: (await readFunds(database,userId)).available * 10_000,
-    ownerQueue: await ownerQueue(database, userId),
+    balanceMicro: available,
+    ownerQueue: queue,
   };
 }
 

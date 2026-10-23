@@ -22,6 +22,8 @@ export default async function Markets({ searchParams }: PageProps<"/markets">) {
   const now = new Date();
   let feed: Feed = EMPTY_FEED;
   let unavailable = false;
+  // The top bar loads beside the markets (2026-10-22); readViewerOrNull never throws.
+  const viewerRead = identity ? readViewerOrNull(getDb(), identity.id) : Promise.resolve(null);
   try {
     const database = getDb();
     feed = await readFeed(database, now);
@@ -30,7 +32,7 @@ export default async function Markets({ searchParams }: PageProps<"/markets">) {
   } catch {
     unavailable = true;
   }
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
+  const viewer = await viewerRead;
   const { q } = await searchParams;
   const featured: FeaturedData | null = feed.featured && {
     ...toCardData(feed.featured),

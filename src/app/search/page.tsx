@@ -21,13 +21,15 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
   const query = typeof raw === "string" ? raw.slice(0, 80).trim() : "";
   let identity = null;
   try { identity = await currentIdentity(); } catch { /* a visitor */ }
-  const viewer = identity ? await readViewerOrNull(getDb(), identity.id) : null;
+  // The top bar and the results load side by side (2026-10-22); readViewerOrNull never throws.
+  const viewerRead = identity ? readViewerOrNull(getDb(), identity.id) : Promise.resolve(null);
   const now = new Date();
   let results: SearchResults | null = null;
   let failed = false;
   if (query) {
     try { results = await searchAll(getDb(), query, identity?.id ?? null, now); } catch { failed = true; }
   }
+  const viewer = await viewerRead;
   const total = results ? results.startups.length + results.founders.length + results.markets.length + results.videos.length : 0;
 
   return (

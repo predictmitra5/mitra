@@ -9,6 +9,7 @@ import { readPublicMarket, readTrader } from "@/modules/market/service";
 import { readCards, readPriceSeries, readTicker, readVolumeBuckets, recordClick } from "@/modules/discovery/feed";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { readViewerOrNull } from "@/modules/account/viewer";
+import { optional, timed } from "@/modules/diagnostics/timing";
 import { cardTitle, closesInWords } from "@/modules/discovery/present";
 import { statusLine } from "@/modules/events/status";
 import { formatMoment } from "@/modules/events/time";
@@ -81,50 +82,55 @@ function VerificationBadge({ level }: { level: string }) {
 export default async function MarketPage({ params, searchParams }: PageProps<"/markets/[id]">) {
   const { id } = await params;
   const now = new Date();
+  // Who is asking doesn't depend on the market, so the sign-in check starts
+  // alongside it (2026-10-22). The market itself still loads after its due
+  // close or payout has run (advanceMarket, inside loadMarket).
+  const identityRead = currentIdentity().then((value) => ({ value, failed: false }), () => ({ value: null, failed: true }));
   let market;
-  try { market = await loadMarket(id); }
+  try { market = await timed("market.load", () => loadMarket(id)); }
   catch { return <Unavailable />; }
   if (!market) notFound();
-  let identity = null;
-  let trader = null;
-  let objections: Awaited<ReturnType<typeof readObjections>> = [];
-  let accountUnavailable = false;
-  try {
-    identity = await currentIdentity();
-    if (identity) {
-      trader = await readTrader(getDb(), identity.id, id);
-      if (trader) objections = await readObjections(getDb(), identity.id, id);
+  const { value: identity, failed: identityFailed } = await identityRead;
+  const database = getDb();
+
+  // Everything below only reads, and no read needs another's answer, so they
+  // all run side by side. Each extra falls back on its own: a failed chart
+  // leaves the chart empty without blanking the comments. Prices and balances
+  // are never filled in by a fallback.
+  const traderRead = identity ? readTrader(database, identity.id, id) : Promise.resolve(null);
+  // Objections are read with the trader but shown only to a trader, as before.
+  const objectionsRead = identity ? readObjections(database, identity.id, id) : Promise.resolve([]);
+  const account = (async () => {
+    if (identityFailed) return { trader: null, objections: [] as Awaited<ReturnType<typeof readObjections>>, unavailable: true };
+    try {
+      const trader = await traderRead;
+      const objections = trader ? await objectionsRead : [];
+      return { trader, objections, unavailable: false };
+    } catch {
+      return { trader: null, objections: [] as Awaited<ReturnType<typeof readObjections>>, unavailable: true };
     }
-  } catch { accountUnavailable = true; }
+  })();
+  objectionsRead.catch(() => { /* handled above when it is needed; ignored for non-traders */ });
+  const [{ trader, objections, unavailable: accountUnavailable }, , series, volumes, card, ticker, info, comments, followsStartup, viewer] = await timed("market.reads", () => Promise.all([
+    account,
+    // Signed-out reads remain available but cannot write click telemetry. This
+    // is outside the cached loader so metadata generation never double-counts.
+    identity ? recordClick(database, id) : null,
+    // Price history, volume and the ticker: public, and additive, so a failure
+    // leaves the chart empty and the prices above it still correct.
+    optional(readPriceSeries(database, id, { at: now, yesBp: Math.round(market.yesPrice * 10_000) })
+      .then((points) => points.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp }))), [] as { at: string; yesBp: number }[]),
+    optional(readVolumeBuckets(database, id, now).then((rows) => rows.map((b) => ({ ...b, at: b.at.toISOString() }))), [] as { at: string; micro: number; hourly: boolean }[]),
+    optional(readCards(database, [id], now).then(([found]): CardData | null => (found ? toCardData(found) : null)), null),
+    optional(readTicker(database, now).then((rows) => rows.map(toCardData)), [] as CardData[]),
+    optional(readMarketStartup(database, market.startupId), null),
+    optional(listComments(database, "market", id, 60), [] as Awaited<ReturnType<typeof listComments>>),
+    market.startupId && identity
+      ? optional(followState(database, identity.id, { startupIds: [market.startupId] }).then((state) => state.startups.has(market.startupId!)), false)
+      : false,
+    readViewerOrNull(database, identity?.id),
+  ]));
 
-  // Signed-out reads remain available but cannot write click telemetry. This
-  // is outside the cached loader so metadata generation never double-counts.
-  if (identity) await recordClick(getDb(), id);
-  // Price history, volume and the ticker: public, and additive, so a failure
-  // leaves the chart empty and the prices above it still correct.
-  let series: { at: string; yesBp: number }[] = [];
-  let volumes: { at: string; micro: number; hourly: boolean }[] = [];
-  let card: CardData | null = null;
-  let ticker: CardData[] = [];
-  let info: Awaited<ReturnType<typeof readMarketStartup>> = null;
-  let comments: Awaited<ReturnType<typeof listComments>> = [];
-  let followsStartup = false;
-  try {
-    const database = getDb();
-    const points = await readPriceSeries(database, id, { at: now, yesBp: Math.round(market.yesPrice * 10_000) });
-    series = points.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp }));
-    volumes = (await readVolumeBuckets(database, id, now)).map((b) => ({ ...b, at: b.at.toISOString() }));
-    const [found] = await readCards(database, [id], now);
-    card = found ? toCardData(found) : null;
-    ticker = (await readTicker(database, now)).map(toCardData);
-    info = await readMarketStartup(database, market.startupId);
-    comments = await listComments(database, "market", id, 60);
-    if (market.startupId) followsStartup = (await followState(database, identity?.id, { startupIds: [market.startupId] })).startups.has(market.startupId);
-  } catch {
-    // Leave these empty.
-  }
-
-  const viewer = await readViewerOrNull(getDb(), identity?.id);
   const open = market.tradingOpen;
   const zone = market.timeZone ?? ZONE;
   const status = market.pausedAt && market.status === "open" ? "Trading paused"

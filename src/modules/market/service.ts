@@ -135,15 +135,19 @@ export async function insidersFor<Q extends PgQueryResultHKT>(
   market: Pick<Market, "startupId">,
 ): Promise<string[]> {
   if (!market.startupId) return [];
-  const linked = await database
-    .select({ userId: founders.userId })
-    .from(startupFounders)
-    .innerJoin(founders, eq(founders.id, startupFounders.founderId))
-    .where(eq(startupFounders.startupId, market.startupId));
-  const [startup] = await database
-    .select({ createdBy: startups.createdBy })
-    .from(startups)
-    .where(eq(startups.id, market.startupId));
+  // Two independent reads, side by side (2026-10-22). Only the market page's
+  // read-only trader lookup calls this; it is never inside a transaction.
+  const [linked, [startup]] = await Promise.all([
+    database
+      .select({ userId: founders.userId })
+      .from(startupFounders)
+      .innerJoin(founders, eq(founders.id, startupFounders.founderId))
+      .where(eq(startupFounders.startupId, market.startupId)),
+    database
+      .select({ createdBy: startups.createdBy })
+      .from(startups)
+      .where(eq(startups.id, market.startupId)),
+  ]);
   return [
     ...new Set(
       [...linked.map((row) => row.userId), startup?.createdBy ?? null].filter(
@@ -158,20 +162,17 @@ export async function readTrader<Q extends PgQueryResultHKT>(
   userId: string,
   marketId: string,
 ) {
-  const [profile] = await database
-    .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId));
+  // Read-only, so the independent reads run side by side (2026-10-22); the
+  // insiders need the market's startup, so they follow. Nothing is returned
+  // unless the profile and market checks pass, exactly as before.
+  const [[profile], [market], deciders, state] = await Promise.all([
+    database.select().from(profiles).where(eq(profiles.id, userId)),
+    database.select().from(markets).where(eq(markets.id, marketId)),
+    database.select().from(marketOutcomeDeciders).where(eq(marketOutcomeDeciders.marketId, marketId)),
+    readExchange(database),
+  ]);
   if (!profile || isInactive(profile) || !profile.adultConfirmedAt) return null;
-  const [market] = await database
-    .select()
-    .from(markets)
-    .where(eq(markets.id, marketId));
   if (!market?.startupId) return null;
-  const deciders = await database
-    .select()
-    .from(marketOutcomeDeciders)
-    .where(eq(marketOutcomeDeciders.marketId, marketId));
   const block = tradeBlockReason(userId, {
     subjectUserId: null,
     outcomeDeciderUserIds: [
@@ -180,8 +181,7 @@ export async function readTrader<Q extends PgQueryResultHKT>(
     ],
     insiderUserIds: await insidersFor(database, market),
   });
-  const state = await readExchange(database),
-    held = state.holdings.filter(
+  const held = state.holdings.filter(
       (p) => p.userId === userId && p.marketId === marketId,
     ),
     amount = (side: "yes" | "no") =>
