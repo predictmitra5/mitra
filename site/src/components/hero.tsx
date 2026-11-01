@@ -22,7 +22,7 @@ export function HeroShell({ children }: { children: React.ReactNode }) {
           <div className="lotus" data-hero-lotus>
             <div className="lotus-glow" />
             <div className="lotus-core">
-              <LotusArt paused={paused} />
+              <LotusArt />
             </div>
           </div>
         </div>

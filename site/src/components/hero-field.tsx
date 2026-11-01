@@ -10,6 +10,11 @@ import { useEffect, useRef } from "react";
  * It stops when it is off screen, when the tab is hidden, when the visitor
  * presses pause, and draws a single still frame for people who ask their
  * device to reduce motion.
+ *
+ * Kept light, since it fills the screen: drawn at one canvas pixel per CSS
+ * pixel (the lines are faint, so a sharper canvas buys nothing but four times
+ * the pixels on a 2x screen), 30 times a second (they drift slowly), and with
+ * its fades toward the edges drawn into each line rather than masked by CSS.
  */
 
 type Line = { base: number; amp: number; slope: number; speed: number; coarse: number; fine: number; alpha: number; seed: number; pulse: number };
@@ -26,6 +31,12 @@ function seeded(seed: number) {
 
 const random = seeded(20261020);
 const TABLE = Float32Array.from({ length: 1024 }, () => random());
+const FRAME_MS = 1000 / 30;
+
+/** How visible a line is at a height (0 to 1 of the canvas): fading out over the top and bottom sixths. */
+function verticalFade(at: number): number {
+  return Math.max(0, Math.min(1, at / 0.16, (1 - at) / 0.16));
+}
 
 /** Smooth 1-D value noise in [0, 1]. */
 function noise(x: number): number {
@@ -76,6 +87,8 @@ export function HeroField({ paused }: { paused: boolean }) {
     let height = 0;
     let ratio = 1;
     let lines: Line[] = [];
+    // Across the width: faint at the left, full from 45% to 90%, gone at the right edge.
+    let across: CanvasGradient | null = null;
     let time = 0;
     let last = 0;
     let frame = 0;
@@ -98,8 +111,9 @@ export function HeroField({ paused }: { paused: boolean }) {
       const step = width > 900 ? 6 : 5;
       const head = width * 0.8;
       for (const line of lines) {
-        const alpha = Math.min(0.5, line.alpha + line.pulse * 0.32);
-        context.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+        const fade = verticalFade(line.base);
+        context.globalAlpha = Math.min(0.5, line.alpha + line.pulse * 0.32) * fade;
+        context.strokeStyle = across ?? "#fff";
         context.beginPath();
         for (let x = -step; x <= width + step; x += step) {
           const y = yAt(line, x);
@@ -109,33 +123,45 @@ export function HeroField({ paused }: { paused: boolean }) {
         context.stroke();
         if (line.pulse > 0.02) {
           const y = yAt(line, head);
-          context.fillStyle = `rgba(255,255,255,${Math.min(1, line.pulse * 1.4).toFixed(3)})`;
+          context.fillStyle = "#fff";
+          context.globalAlpha = Math.min(1, line.pulse * 1.4) * verticalFade(y / height);
           context.beginPath();
           context.arc(head, y, 2.6, 0, Math.PI * 2);
           context.fill();
           const ring = (1 - line.pulse) * 16 + 3;
-          context.strokeStyle = `rgba(255,255,255,${(line.pulse * 0.5).toFixed(3)})`;
+          context.strokeStyle = "#fff";
+          context.globalAlpha = line.pulse * 0.5 * verticalFade(y / height);
           context.beginPath();
           context.arc(head, y, ring, 0, Math.PI * 2);
           context.stroke();
         }
       }
+      context.globalAlpha = 1;
     };
 
     const resize = () => {
       const box = canvas.getBoundingClientRect();
-      ratio = Math.min(window.devicePixelRatio || 1, 2);
+      ratio = Math.min(window.devicePixelRatio || 1, 1);
       width = Math.max(1, box.width);
       height = Math.max(1, box.height);
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
+      across = context.createLinearGradient(0, 0, width, 0);
+      across.addColorStop(0, "rgba(255,255,255,0.2)");
+      across.addColorStop(0.45, "#fff");
+      across.addColorStop(0.9, "#fff");
+      across.addColorStop(1, "rgba(255,255,255,0)");
       lines = makeLines(height);
       draw();
     };
 
     const loop = (now: number) => {
       frame = 0;
-      const delta = last ? Math.min(0.05, (now - last) / 1000) : 0;
+      if (last && now - last < FRAME_MS - 2) {
+        wake();
+        return;
+      }
+      const delta = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       time += delta;
       nextPulse -= delta;

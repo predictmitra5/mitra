@@ -19,34 +19,44 @@ export function SiteHeader({ items, appUrl }: { items: Item[]; appUrl: string })
   const [active, setActive] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
+  // Which section is under the bar, watched through a one-pixel line across its
+  // middle, so scrolling never has to measure the page.
   useEffect(() => {
-    let frame = 0;
     const ids = new Set(items.map((item) => item.id));
-    const measure = () => {
-      frame = 0;
-      const box = bar.current?.getBoundingClientRect();
-      const probe = box ? box.top + box.height / 2 : 44;
-      let surface = "ink";
-      let current: string | null = null;
+    const sections = [...document.querySelectorAll<HTMLElement>("main > section[data-surface], footer[data-surface]")];
+    const under = new Set<HTMLElement>();
+    let observer: IntersectionObserver | null = null;
+    let timer = 0;
+    const update = () => {
       // Later sections slide over earlier ones, so the last one under the bar is on top.
-      for (const section of document.querySelectorAll<HTMLElement>("main > section[data-surface], footer[data-surface]")) {
-        const rect = section.getBoundingClientRect();
-        if (rect.top <= probe && rect.bottom > probe) {
-          surface = section.dataset.surface ?? surface;
-          current = section.id || null;
-        }
-      }
-      setTone(surface === "ink" ? "dark" : "light");
-      setActive(current && ids.has(current) ? current : null);
+      const top = sections.filter((section) => under.has(section)).at(-1);
+      setTone((top?.dataset.surface ?? "ink") === "ink" ? "dark" : "light");
+      setActive(top?.id && ids.has(top.id) ? top.id : null);
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(measure); };
-    measure();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
+    const watch = () => {
+      observer?.disconnect();
+      under.clear();
+      const box = bar.current?.getBoundingClientRect();
+      const line = Math.round(box ? box.top + box.height / 2 : 44);
+      observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) under.add(entry.target as HTMLElement);
+          else under.delete(entry.target as HTMLElement);
+        }
+        update();
+      }, { rootMargin: `${-line}px 0px ${line + 1 - window.innerHeight}px 0px` });
+      for (const section of sections) observer.observe(section);
+    };
+    const onResize = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(watch, 150);
+    };
+    watch();
+    window.addEventListener("resize", onResize);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      window.clearTimeout(timer);
+      observer?.disconnect();
+      window.removeEventListener("resize", onResize);
     };
   }, [items]);
 

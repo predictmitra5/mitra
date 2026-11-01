@@ -43,7 +43,8 @@ export function MotionRoot() {
     const root = document.documentElement;
     if (root.dataset.motion !== "full") return;
 
-    const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+    // Lerp 0.14 (Lenis's default is 0.1): still smooth, but the page catches up with the wheel sooner.
+    const lenis = new Lenis({ lerp: 0.14, smoothWheel: true });
     setSmoothScroller(lenis);
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
