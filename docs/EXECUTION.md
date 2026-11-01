@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-11-01: every market page on app.mitra.market says "This market is temporarily unavailable"** (all 25 listed, checked over HTTPS). Cause, reproduced locally against the live database: `advanceMarket` runs in a transaction, and since 61d8bec (2026-10-22) the database client sets postgres.js `max_pipeline: 0`; postgres.js only reserves a connection for `sql.begin` inside `execute()` while `sent.length < max_pipeline`, so with 0 no transaction is ever reserved and each fails with `UNSAFE_TRANSACTION` (every `database.transaction` in the app, not only this page). Plan: keep reads unpipelined (the 2026-10-22 fix for the pooler hang) and give `begin` its own small pool with `max_pipeline: 1` in `src/db/client.ts` (with drizzle's date parsers), then check market pages locally against the live database, the app's tests, type check and lint, push, and check the live pages. Technical repair; no product rule changes.
+
+None other by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
