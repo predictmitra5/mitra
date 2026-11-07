@@ -834,3 +834,11 @@ The owner first requested nine current markets, then clarified a few per categor
 **User instruction** (the owner): "make @mitrapredict have owner powers".
 
 **Decision:** @mitrapredict (predictmitra@gmail.com) gets owner powers again, alongside @mughil, who stays an owner. @ducky (murugan.23@osu.edu) stays an ordinary member. The 2026-10-22 "only owner" decision above is superseded as to @mitrapredict. As for every owner, @mitrapredict can't trade any market and can't delete their own account while an owner.
+
+## 2026-11-07 - The website's lotus opens like a lotus into the logo
+
+**User instruction** (the owner, on the website's opening): "can we add an animation for the mitra logo at the wach founders call what happens next.  as u can thee tm teh lgoo is a bunch of lotus. so like maybe we do a lotus like animation combining into the logo. maybe it opens liek alotus into the mitra logo" (spelling as written).
+
+**Decision:** as mitra.market opens, the large lotus behind "Watch founders build. Call what happens next." blooms: the logo's own lines start folded together into a closed, upright bud above the flower's base and open outward, the petal tips trailing a little behind, until they settle exactly into the logo. This takes the place of the lines drawing themselves in; the faint fill, the breathing, the glow and the light along the lines follow as before.
+
+**Readings taken (the owner can change any of them):** "the mitra logo" here is the large lotus of the opening, not the small logo in the menu bar; the bloom plays once, as the page opens; people who ask their device to reduce motion see the still logo, as now; the lotus at the foot of the page keeps drawing itself in with the scroll. Going live follows the 2026-10-08 rule: shown to the owner before it is pushed.

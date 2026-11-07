@@ -24,7 +24,9 @@ Only one agent should work in this folder at a time. Before starting, check that
 
 ## In progress
 
-None by Claude Code. The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
+**Claude Code, 2026-11-07: the opening's lotus blooms into the logo** (DECISIONS.md 2026-11-07; the website's motion, DECISIONS.md 2026-10-20). Plan: a new `site/src/components/lotus-bloom.ts` turns `LOTUS_PATH` into the same path folded toward a closed upright bud (each point's angle around a pivot under the flower's base narrowed and its distance shortened, the tips easing open later than the base), and `motion-root.tsx`'s opening tweens it from bud to logo over about 2.6 s on both lotus paths in place of the stroke draw-in, then restores the exact `LOTUS_PATH`; the light along the lines (`.lotus-sheen`, masked by the still outline) stays hidden until the bloom ends. Reduced motion and no JavaScript are unchanged. Checks: the site's type check, lint and build; frames of the bloom; dropped frames during it in a real Edge window on the owner's laptop (it repaints the outline every frame for those seconds). Then DESIGN.md section 18. Not pushed until the owner has seen it.
+
+The verified non-destructive exchange release is published; the backup-dependent reset and external Auth/media/launch steps remain explicitly outstanding in `docs/EXCHANGE_STATUS.md`. No other writer should infer that the entire reset/cleanup is complete.
 
 ## Deferred, to come back to
 
