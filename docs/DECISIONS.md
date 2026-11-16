@@ -856,3 +856,16 @@ The owner first requested nine current markets, then clarified a few per categor
 - **This replaces, for demo markets only,** the 2026-10-20 lines "Preserve demo content as fictional illustration without monetary activity or live financial statistics" and "empty books have no fabricated quote". Real markets are unchanged: their prices, book and volume come only from actual orders and executions.
 
 **Readings taken (the owner can change any of them):** volume stays counted in contracts, as the app counts it now (Kalshi's screenshot counts dollars; switching is a separate choice). The demo markets' published resolution text, which ends "No financial activity is simulated or funded", is frozen like every market's terms and stays; the page's demo note says what is simulated. Choosing a side in the trade panel fills in that side's offer as the limit price.
+
+## 2026-11-15 - YouTube's hover and loading, vibrant colours and generated thumbnails; the font is planned next
+
+**User instruction** (the owner, the same day, with a screenshot of YouTube's home grid): "the ui is also extremely boring on mitra. youtube.com, open youtube and see how the thumbnails load, how the mouse moving stuff affects. it should be addictive to be on mitra. the colors should be vibrant. for this, ive also connected u to higgsfield, so you can generate thumbnails and insert them, so they actually look good. the font can also be changed to something more unique, and related to mitra. do the thumbnails and shit, for the fonts pull it up in artifacts last after u push the change so we can plan that out" (spelling tidied).
+
+**What YouTube does, read from youtube.com on 2026-11-15:** a thumbnail waits as a plain tile with its length already in the corner, and the picture fades in when it arrives; on hover, small black buttons (Watch later, Add to queue) fade in over 0.3 s, then after a moment the video plays muted in place while the whole card (picture, title and details) sits on a raised, rounded grey panel; corners are 12 px; a pressed control darkens by about a tenth; a blurred copy of the picture lends its colour around the player ("ambient mode").
+
+**Decision:**
+
+- **Hover and loading like YouTube** on the home grid (devices with a pointer): the raised panel behind the hovered card, a Save button fading in on the picture, a muted preview after a short hover (YouTube's player for founder videos; the demo placeholder with its captions for demo videos), a soft glow in the startup's colour, pictures fading in over a plain tile. A preview is not counted as a watch. People who ask for reduced motion get no zoom and no automatic preview.
+- **Vibrant colours:** each startup's colour drives its thumbnail and glow; the drawn thumbnail (used when a startup has no picture) becomes a saturated poster in that colour; Yes and No are stronger; card charts are green when the price is up and red when down. Baby blue stays the main button colour (2026-10-05).
+- **Thumbnails generated with Higgsfield** for the demo startups, labelled Demo like everything about them, showing fictional people only. They are stored with the app and used wherever a demo startup has no picture of its own.
+- **The font is not changed now.** Geist stays (2026-10-09) until the owner picks; after the push, the options are laid out in an artifact for the owner to choose from.
