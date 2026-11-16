@@ -869,3 +869,12 @@ The owner first requested nine current markets, then clarified a few per categor
 - **Vibrant colours:** each startup's colour drives its thumbnail and glow; the drawn thumbnail (used when a startup has no picture) becomes a saturated poster in that colour; Yes and No are stronger; card charts are green when the price is up and red when down. Baby blue stays the main button colour (2026-10-05).
 - **Thumbnails generated with Higgsfield** for the demo startups, labelled Demo like everything about them, showing fictional people only. They are stored with the app and used wherever a demo startup has no picture of its own.
 - **The font is not changed now.** Geist stays (2026-10-09) until the owner picks; after the push, the options are laid out in an artifact for the owner to choose from.
+
+## 2026-11-16 - The hover glow takes its colours from the picture
+
+**User instruction** (the owner, the day after the demo thumbnails went out): "now the thumbnail highlight as you put your mouse over it doesn't match the thumbnail colors. can you fix that with situational code, so it changes per thumbnail?" (spelling tidied).
+
+**Decision:**
+
+- **The hover panel tint and glow on the home grid come from the picture itself**, worked out in the browser once the picture has loaded: its dominant vivid colour for the panel, and the left and right sides of the picture for the glow on each side, kept bright enough to glow on the dark page. Every picture gets its own; nothing is stored.
+- **Where a picture can't be read** (a drawn poster, or another site's image that doesn't allow it), the glow stays in the startup's colour, as on 2026-11-15.
