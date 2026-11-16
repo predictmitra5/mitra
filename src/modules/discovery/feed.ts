@@ -6,6 +6,7 @@ import { readExchange } from "@/modules/exchange/store";
 import { quotes } from "@/modules/exchange/engine";
 import { isUuid } from "@/modules/market/input";
 import { demoHistory, demoQuote, demoSpark, demoVolumeBuckets, type DemoMarketInput } from "@/modules/startups/demo/simulated";
+import { demoCardPicture } from "@/modules/startups/demo/thumbnails";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
 const { markets, startups, startupFounders, founders, feedEventBuckets } = schema;
@@ -132,6 +133,7 @@ const cardColumns = {
   logoUrl: startups.logoUrl,
   productFeatures: startups.productFeatures,
   thumbnailUrl: startups.thumbnailUrl,
+  startupIsDemo: startups.isDemo,
   liquidityMicro: markets.liquidityMicro,
   yesSharesMicro: markets.yesSharesMicro,
   noSharesMicro: markets.noSharesMicro,
@@ -160,6 +162,7 @@ type CardRow = {
   logoUrl: string | null;
   productFeatures: string[] | null;
   thumbnailUrl: string | null;
+  startupIsDemo: boolean;
   liquidityMicro: number;
   yesSharesMicro: number | null;
   noSharesMicro: number | null;
@@ -194,7 +197,8 @@ function toCard(row: FeedRow, reason: FeedReason, now: Date): FeedCard {
     hue: row.hue,
     logoUrl: row.logoUrl,
     productFeatures: row.productFeatures ?? [],
-    thumbnailUrl: row.thumbnailUrl,
+    // A demo startup without a picture gets its generated thumbnail (demo/thumbnails.ts).
+    thumbnailUrl: demoCardPicture(row.startupSlug, row.startupIsDemo, row.thumbnailUrl),
     founderName: null,
     founderHandle: null,
     founderHue: 205,

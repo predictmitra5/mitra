@@ -1,0 +1,136 @@
+{
+  "about": "Prompts for the demo video thumbnails (DECISIONS.md 2026-11-15, 'Thumbnails generated with Higgsfield'). Fictional people only; no real names go into a prompt. Model: Higgsfield Soul 2.0 (soul_2), 16:9; each prompt is the scene followed by the style. Naming YouTube, thumbnails or Y Combinator in a prompt made the model paint captions and play buttons onto the picture, so the style describes a plain photograph. A video with 'same' shows the founder from that file's picture, described again in words (passing the picture as a reference made Soul 2 copy the whole scene). Each founder is shown as the catalog's name reads, the same person in every video. convert.mjs turns the downloads into 1280x720 WebP in public/demo/thumbnails.",
+  "style": "Candid documentary photograph, shot on a cinema camera with a 35mm lens, shallow depth of field, natural light, crisp detail, vivid saturated colours with strong contrast.",
+  "thumbnails": [
+    {
+      "file": "lumenly-1",
+      "scene": "A founder in their mid-20s sits on a stool in a sunlit study room, talking to camera with an animated, confident expression, one hand mid-gesture. Behind them a whiteboard covered in a week-by-week study plan and sticky notes, and a laptop showing a study app with a blue interface. Cobalt-blue accent wall and a blue desk lamp. Subject on the left third."
+    },
+    {
+      "file": "lumenly-2",
+      "same": "lumenly-1",
+      "scene": "A young East Asian woman in her mid-20s with shoulder-length dark brown hair parted to the side, wearing a denim shirt over a black top, sits at a desk and holds a phone up toward the camera, its screen showing a bright blue study app; printed lecture slides with highlighter marks on the desk and a cobalt-blue desk lamp glowing. Smiling, eyebrows raised, mid-explanation."
+    },
+    {
+      "file": "lumenly-3",
+      "same": "lumenly-1",
+      "scene": "A young East Asian woman in her mid-20s with shoulder-length dark brown hair parted to the side, wearing a denim shirt and a cobalt-blue jacket with a backpack on one shoulder, walks across a college campus quad in early autumn talking to a handheld camera; students on the paths and orange leaves behind, golden-hour light."
+    },
+    {
+      "file": "nexa-robotics-1",
+      "scene": "A man in his early 30s, a mechanical engineer in a navy work shirt, guides a compact teal-and-white robot arm by hand through a pick-and-place motion over a workbench of machined metal parts in a small family machine shop, looking up at the camera with a grin. An older shop worker in safety glasses watches. Cyan task lights, lathes in the background."
+    },
+    {
+      "file": "nexa-robotics-2",
+      "same": "nexa-robotics-1",
+      "scene": "A white man in his early 30s with short dark curly hair, a full dark beard and a wide grin, wearing a navy work shirt with an embroidered name patch, stands between a lathe and a milling machine in a small machine shop with his arms crossed, talking to camera; a teal-and-white robot arm out of focus behind him, cyan light across the floor."
+    },
+    {
+      "file": "northstar-games-1",
+      "scene": "A Chinese-American woman in her early 30s, a game director, sits on a worn couch with three teammates in a cosy indie game studio, all holding controllers and a handheld gaming PC, laughing at a big screen off camera whose violet stormy-sky glow lights their faces. Posters of concept art and string lights behind."
+    },
+    {
+      "file": "northstar-games-2",
+      "same": "northstar-games-1",
+      "scene": "A Chinese-American woman in her early 30s with a short black bob and bangs, wearing a rust-orange knit top, sits at her desk in a small game studio at night, monitors behind her showing concept art of a floating island in a violet storm sky, talking to camera with a calm smile; violet LED light along the shelves."
+    },
+    {
+      "file": "verdant-grid-1",
+      "scene": "An Indian electrical engineer, a woman in her early 30s with long dark hair in a braid, wearing an emerald-green work jacket over a dark grey T-shirt, stands in a clean apartment-building basement beside a tall white battery cabinet with a row of small emerald-green status lights, one hand on the cabinet, explaining to camera; conduit and meters on a whitewashed brick wall, warm overhead light."
+    },
+    {
+      "file": "verdant-grid-2",
+      "same": "verdant-grid-1",
+      "scene": "An Indian electrical engineer, a woman in her early 30s with long dark hair in a braid, wearing an emerald-green work jacket over a dark grey T-shirt, stands on the front steps of an old red-brick apartment building on a leafy city street, talking to camera; neighbours walking by, bright afternoon."
+    },
+    {
+      "file": "pulsewell-1",
+      "scene": "A Black cardiologist in their late 50s with short white hair, in a white coat over a blue shirt and striped tie with a stethoscope, sits in a hospital clinic office talking earnestly to camera; a monitor behind shows a long ECG trace with crimson highlights, a model of a heart on the shelf, warm lamp light."
+    },
+    {
+      "file": "pulsewell-2",
+      "same": "pulsewell-1",
+      "scene": "A Black cardiologist in his late 60s with short white hair, a grey moustache and short goatee and a deeply lined face, in a white coat over a light-blue shirt and a red-and-navy striped tie with a stethoscope, holds a small white oval adhesive heart-monitoring patch up between two fingers toward the camera; its small box open on the desk and a tablet showing a crimson ECG trace; clinic room, warm lamp light."
+    },
+    {
+      "file": "stackwise-1",
+      "scene": "A German software engineer, a woman in her mid-30s with shoulder-length light brown hair, wearing a light-blue shirt, stands at a standing desk in a bright Berlin loft, pointing at a large monitor that shows a code diff with green and red lines and an indigo side panel, glancing back at the camera; indigo bias lighting, plants and exposed concrete."
+    },
+    {
+      "file": "stackwise-2",
+      "same": "stackwise-1",
+      "scene": "A German software engineer, a woman in her mid-30s with shoulder-length light brown hair, wearing a light-blue shirt, sits on a wooden bench in a busy Berlin café with a laptop open beside her, talking to camera with an easy smile; indigo evening light through tall windows."
+    },
+    {
+      "file": "tally-1",
+      "scene": "A Black man in his early 30s, smiling at the camera, sits in a sunny Atlanta coffee shop tipping a handful of coins from a glass jar into his palm, his phone lying face down on the table beside a latte; warm golden-amber light."
+    },
+    {
+      "file": "orbit-kitchen-1",
+      "scene": "A Latina former line cook in her late 20s chops vegetables in a bright home kitchen, a tablet propped up beside her showing a seven-day dinner plan grid, fresh tomatoes, peppers and herbs on the counter, a tomato-red pot on the stove, laughing toward the camera."
+    },
+    {
+      "file": "orbit-kitchen-2",
+      "same": "orbit-kitchen-1",
+      "scene": "A Latina woman in her late 20s with long dark hair in a high ponytail, wearing a black apron over a black tank top, leans against a stainless-steel counter in a busy restaurant kitchen at night, flames and cooks blurred behind her, talking to camera; warm orange-red light."
+    },
+    {
+      "file": "ferro-labs-1",
+      "scene": "A Japanese-American hardware engineer in their late 30s works in a garage bike workshop, fitting a hub-motor rear wheel onto a vintage steel road bike in a work stand, a compact battery clipped to the bottle mount, tools on a pegboard; bright orange accents, rainy daylight through the open garage door."
+    },
+    {
+      "file": "tidewell-1",
+      "scene": "A Latina therapist in her late 30s with long dark hair and a cream cardigan sits in an armchair in a calm therapy office with plants, holding a phone in both hands near her mouth and speaking into it like a voice memo, eyes toward the camera; a tablet rests face down on her knee; teal accents, soft afternoon sun."
+    },
+    {
+      "file": "fieldnote-1",
+      "scene": "A radio producer in their early 30s with headphones around the neck holds a handheld microphone toward a laughing produce vendor at a lively outdoor market stall, crates of purple eggplants and figs, a purple awning overhead, warm humid daylight."
+    },
+    {
+      "file": "parallax-ai-1",
+      "scene": "An Arab-American machine-learning researcher in their mid-30s in a hi-vis vest holds a tablet labelling metal car parts beside a factory conveyor, a small industrial computer with an electric-blue light mounted next to a camera over the line; glancing at the camera, blue glow on the machinery."
+    },
+    {
+      "file": "parallax-ai-2",
+      "same": "parallax-ai-1",
+      "scene": "A man in his mid-30s with short dark hair and a dark beard, wearing a grey T-shirt under a yellow hi-vis vest, stands on a large car-parts factory floor among machines and yellow safety lines with his hands in his pockets, talking to camera; electric-blue light from the line behind."
+    },
+    {
+      "file": "kestrel-aero-1",
+      "scene": "A Latina aerospace engineer in her early 30s stands at sunrise at the edge of a vast cornfield beside a weatherproof drone dock, a quadcopter drone lifting off above her, a tablet in her hand; lime-green fields and a golden sky."
+    },
+    {
+      "file": "pixel-harbor-1",
+      "scene": "An Indian-American solo game developer in his late 20s sits in a cosy apartment at dusk, rain on the window, holding up a phone toward the camera whose screen shows a cosy pixel-art fishing harbour with an aqua sea, smiling; aqua and warm lamp light."
+    },
+    {
+      "file": "carbonfold-1",
+      "scene": "A materials scientist, a woman in her early 30s with her hair tied back under a white hard hat, wearing a green safety vest, stands at a ready-mix concrete plant beside a chute pouring grey concrete, holding a small concrete test cylinder toward the camera; green machinery and blue sky."
+    },
+    {
+      "file": "loop-closet-1",
+      "scene": "A Korean-American fashion merchandiser in their late 20s picks up a magenta jacket in a garment bag from the counter of a sunny Los Angeles café, phone in hand showing a rental app, smiling at the camera; magenta and pink accents, palm trees outside."
+    },
+    {
+      "file": "paystream-1",
+      "scene": "A Ghanaian-American designer, a man in his early 30s with short twists and a neat beard, sits in a Brooklyn co-working space with exposed brick, a laptop showing an invoice dashboard with a violet interface, talking to camera with a determined expression; violet neon light."
+    },
+    {
+      "file": "tracelight-1",
+      "scene": "An Italian-American infrastructure engineer, a woman in her mid-30s with dark wavy shoulder-length hair, sits in a San Francisco office at night, pointing at a large monitor that shows a dark dashboard with rows of horizontal blue bars like a timeline, one bar highlighted red, looking at the camera; blue screen glow, city lights through the window."
+    },
+    {
+      "file": "sona-audio-1",
+      "scene": "A Black man in his mid-30s wearing small earbuds leans in to talk with a friend in a crowded honky-tonk bar, a band blurred on stage behind, touching one earbud and smiling; hot-pink neon light."
+    },
+    {
+      "file": "draftboard-1",
+      "scene": "A young East Asian woman in her early 30s with dark hair pulled back in a low bun, wearing a navy button-up shirt, sits at a café table holding a paper napkin with a pencil sketch of app screens in one hand and, in her other hand, a phone showing the matching clickable prototype, delighted expression; purple accents."
+    },
+    {
+      "file": "draftboard-2",
+      "same": "draftboard-1",
+      "scene": "A young East Asian woman in her early 30s with dark hair pulled back in a low bun, wearing a navy button-up shirt, stands in front of a whiteboard covered in wireframe sketches of app screens in a bright studio, marker in hand, talking to camera; purple light across the wall."
+    }
+  ]
+}

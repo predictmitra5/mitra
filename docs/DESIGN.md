@@ -449,3 +449,35 @@ The founder page gains a **Profile** card at the top of the side column: Based i
 ### A Short's thumbnail (2026-10-22)
 
 DECISIONS.md 2026-10-22, "YouTube Shorts need their own wide thumbnail". When the pasted link is a Short, a line under the YouTube preview says "This is a YouTube Short, so you'll add a wide thumbnail for it in a moment." The thumbnail screen then reads "Add a wide thumbnail", explains that a Short's tall thumbnail gets cut off on Mitra's wide cards, and has no Skip; for other videos it stays "Use a different thumbnail?" with Skip. Every picture question (thumbnail, logo, cover picture) now offers "Choose an image" above "Or paste a link".
+
+## 20. Prices on the buttons and simulated demo trading (2026-11-15)
+
+DECISIONS.md 2026-11-15, "Prices on the Yes and No buttons; simulated trading on demo markets". Every Yes/No control says its price the way Kalshi does: "Yes 48¢" and "No 53¢" on cards (`PriceButtons`), the trade panel's sides, the phone's buy bar and the market page's headline. When nobody offers a side of a real market the button says "Yes" or "No" alone; "No offer" is gone. Choosing a side fills its offer into the limit price.
+
+The order book is Kalshi's ladder (`src/app/markets/[id]/order-book.tsx`): a Yes/No switch, the offers above (highest first, down to the best), the last trade and the spread between, the bids below, each level with its contracts, the running cost to take it and a depth bar. A resting order on one side shows as an offer on the other at 100¢ minus its price, as the exchange matches them.
+
+Demo markets show simulated trading (`src/modules/startups/demo/simulated.ts`): a history from the 50/50 opening, the last trade, offers a cent or two apart, a five-level book, volume in contracts with hourly and daily bars, traders and the day's change. Nothing is stored; the numbers come from the market's id and the moment, so everyone sees the same thing and history already shown never changes. The demo note and the Demo tag say the numbers are simulated. Real markets are untouched.
+
+## 21. YouTube's hover, vibrant colour and real-looking demo thumbnails (2026-11-15)
+
+DECISIONS.md 2026-11-15, "YouTube's hover and loading, vibrant colours and generated thumbnails", read from youtube.com the same day.
+
+### Loading
+
+A picture waits as a tile in the startup's colour with its length already in the corner, then fades in when it arrives (`src/app/components/startup/thumb-image.tsx`); a picture already cached, or a page without scripts, shows at once. The first three cards load eagerly, the rest lazily.
+
+### Hover (devices with a pointer)
+
+On the home grid (`src/app/components/home/grid-card.tsx`) the hovered card sits on a raised, rounded panel tinted in the startup's colour, with a soft glow in that colour; a Save button fades in on the picture; after 650 ms the video previews muted in place through `VideoPlayer` with tracking off (a preview is not a watch), and clicking the preview opens the market. Reduced motion gets no zoom and no preview.
+
+### Phone
+
+As on YouTube's phone home, one picture plays muted while you scroll: of the pictures at least 60% on screen, the one whose centre is nearest a line 40% down the screen (`src/app/components/home/in-view-play.ts`).
+
+### Colour
+
+Each startup's hue drives its tile, glow and fallback poster; Yes and No tints are stronger; card sparklines are green when the price is up and red when it is down. Baby blue stays the main button colour.
+
+### Demo thumbnails
+
+The 30 demo videos have real-looking pictures of fictional founders, made with Higgsfield (Soul 2.0) and kept in `public/demo/thumbnails/<startup slug>-<video number>.webp` at 1280x720 (about 50 to 100 KB each). Each shows the founder in the video's scene (the Nexa arm in a machine shop, the Pulsewell patch in a clinic, the Kestrel drone over a cornfield) with an accent in the startup's colour, as a candid documentary photograph with no text on it; a founder with several videos is the same person in each. `src/modules/startups/demo/thumbnails.ts` lists them (READY); the reads give a demo video its picture, a demo startup its first video's, and a demo market's card its startup's, only when the record has no picture of its own. Real startups and videos only ever show what their founders supplied, or the drawn poster. Prompts, and why they read as they do, are in `scripts/demo-thumbnails/prompts.json`; `convert.mjs` makes the WebP files and `thumbnails.test.ts` checks the list against the folder.

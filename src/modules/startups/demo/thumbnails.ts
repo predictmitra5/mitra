@@ -9,11 +9,33 @@ import { DEMO_STARTUPS } from "./catalog";
  * Real startups and videos never do: they show what their founders supplied.
  *
  * READY lists the pictures that exist, so a missing file never shows a broken
- * image. Not wired into the reads yet (src/modules/startups/read.ts toVideo and
- * its startup rows, src/modules/discovery/feed.ts toCard).
+ * image (thumbnails.test.ts checks the list against the folder). The reads use
+ * it: src/modules/startups/read.ts (toVideo and its startup rows) and
+ * src/modules/discovery/feed.ts (toCard).
  */
 
-const READY = new Set<string>([]);
+export const READY: ReadonlySet<string> = new Set<string>([
+  "lumenly-1", "lumenly-2", "lumenly-3",
+  "nexa-robotics-1", "nexa-robotics-2",
+  "northstar-games-1", "northstar-games-2",
+  "verdant-grid-1", "verdant-grid-2",
+  "pulsewell-1", "pulsewell-2",
+  "stackwise-1", "stackwise-2",
+  "tally-1",
+  "orbit-kitchen-1", "orbit-kitchen-2",
+  "ferro-labs-1",
+  "tidewell-1",
+  "fieldnote-1",
+  "parallax-ai-1", "parallax-ai-2",
+  "kestrel-aero-1",
+  "pixel-harbor-1",
+  "carbonfold-1",
+  "loop-closet-1",
+  "paystream-1",
+  "tracelight-1",
+  "sona-audio-1",
+  "draftboard-1", "draftboard-2",
+]);
 
 const byTitle = new Map<string, string>();
 const bySlug = new Map<string, string>();
@@ -41,7 +63,7 @@ export function demoStartupPicture<T extends { isDemo: boolean; slug: string; th
   return path ? { ...startup, thumbnailUrl: path } : startup;
 }
 
-/** The same, for a market card, which knows its startup by slug and is a demo when the market is. */
-export function demoCardPicture(slug: string, isSample: boolean, thumbnailUrl: string | null): string | null {
-  return thumbnailUrl ?? (isSample ? bySlug.get(slug) ?? null : null);
+/** The same, for a market card, which knows its startup by slug and whether it is a demo. */
+export function demoCardPicture(slug: string, startupIsDemo: boolean, thumbnailUrl: string | null): string | null {
+  return thumbnailUrl ?? (startupIsDemo ? bySlug.get(slug) ?? null : null);
 }

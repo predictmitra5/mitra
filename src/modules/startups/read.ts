@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import type { CaptionCue } from "@/db/schema";
 import { readCards, readFeed, type FeedCard } from "@/modules/discovery/feed";
 import { isUuid } from "@/modules/market/input";
+import { demoStartupPicture, demoVideoPicture } from "./demo/thumbnails";
 
 /*
  * The information engine's public reads (2026-10-19): founders, startups,
@@ -63,8 +64,9 @@ const videoColumns = {
   isDemo: videos.isDemo, startupId: videos.startupId, founderId: videos.founderId,
 };
 
+/** A demo video or startup without a picture of its own gets its generated thumbnail (demo/thumbnails.ts). */
 function toVideo(row: { publishedAt: Date | null } & Omit<VideoSummary, "publishedAt">): VideoSummary {
-  return { ...row, publishedAt: row.publishedAt ?? new Date(0), captions: Array.isArray(row.captions) ? row.captions : [] };
+  return demoVideoPicture({ ...row, publishedAt: row.publishedAt ?? new Date(0), captions: Array.isArray(row.captions) ? row.captions : [] });
 }
 
 const asMap = (rows: { id: string; n: number }[]) => new Map(rows.map((r) => [r.id, Number(r.n)]));
@@ -129,7 +131,7 @@ export async function readVideoCards<Q extends PgQueryResultHKT>(
     const person = people.find((p) => p.id === row.video.founderId && (p.startupId === row.startup.id || !p.startupId)) ?? people.find((p) => p.id === row.video.founderId);
     const founder: FounderSummary | null = person ? { id: person.id, handle: person.handle, name: person.name, headline: person.headline, bio: person.bio, portraitUrl: person.portraitUrl, hue: person.hue, role: person.role ?? null } : null;
     const card: VideoCardModel = {
-      ...toVideo(row.video), startup: { ...row.startup, tags: row.startup.tags ?? [], productFeatures: row.startup.productFeatures ?? [] }, founder,
+      ...toVideo(row.video), startup: demoStartupPicture({ ...row.startup, tags: row.startup.tags ?? [], productFeatures: row.startup.productFeatures ?? [] }), founder,
       counts: { likes: likes.get(row.video.id) ?? 0, saves: saves.get(row.video.id) ?? 0, comments: talkMap.get(row.video.id) ?? 0,
         startupFollowers: startupFans.get(row.startup.id) ?? 0, founderFollowers: founder ? founderFans.get(founder.id) ?? 0 : 0 },
       viewer: { liked: mine.liked.has(row.video.id), saved: mine.saved.has(row.video.id), followsFounder: !!founder && mine.founders.has(founder.id), followsStartup: mine.startups.has(row.startup.id) },
@@ -188,7 +190,7 @@ export async function readStartupPage<Q extends PgQueryResultHKT>(database: Data
   const { createdBy, ...startup } = row;
   void createdBy;
   return {
-    startup: { ...startup, tags: startup.tags ?? [], productFeatures: startup.productFeatures ?? [], screenshotUrls: startup.screenshotUrls ?? [] },
+    startup: demoStartupPicture({ ...startup, tags: startup.tags ?? [], productFeatures: startup.productFeatures ?? [], screenshotUrls: startup.screenshotUrls ?? [] }),
     preview,
     team: team.filter((t) => t.status === "approved" || preview).map(({ userId, status, ...t }) => { void userId; void status; return t; }),
     videos: videoRows.map(toVideo),
@@ -249,7 +251,7 @@ export async function readFounderPage<Q extends PgQueryResultHKT>(database: Data
   return {
     founder: { ...founder, accomplishments: founder.accomplishments ?? [] },
     preview,
-    companies: companies.map(({ status: s, ...c }) => { void s; return { ...c, tags: c.tags ?? [], productFeatures: c.productFeatures ?? [] }; }),
+    companies: companies.map(({ status: s, ...c }) => { void s; return demoStartupPicture({ ...c, tags: c.tags ?? [], productFeatures: c.productFeatures ?? [] }); }),
     videos: videoRows.map(toVideo),
     updates: updates as TimelineItem[],
     markets: marketCards,
@@ -281,7 +283,7 @@ export async function readMarketStartup<Q extends PgQueryResultHKT>(database: Da
   const { status, ...startup } = row;
   void status;
   return {
-    startup: { ...startup, tags: startup.tags ?? [], productFeatures: startup.productFeatures ?? [] },
+    startup: demoStartupPicture({ ...startup, tags: startup.tags ?? [], productFeatures: startup.productFeatures ?? [] }),
     team: team.map((t) => ({ ...t, role: t.role ?? null })),
     video: video ? toVideo(video) : null,
     updates: updates as Omit<TimelineItem, "startupSlug" | "startupName">[],
