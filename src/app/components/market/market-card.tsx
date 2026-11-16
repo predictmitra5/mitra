@@ -66,9 +66,9 @@ export function closesAt(card: Pick<CardData, "deadlineAt" | "timeZone">): strin
   return `Closes ${closeDate(card)}`;
 }
 
-/** The small label on demonstration data (2026-10-19): fictional startups, people and numbers. */
+/** The small label on demonstration data (2026-10-19): fictional startups and people, simulated trading (2026-11-15). */
 export function SampleTag({ label = "Demo" }: { label?: string }) {
-  return <span className="sample-tag" title="Fictional startup and market for illustration. No live exchange activity.">{label}</span>;
+  return <span className="sample-tag" title="Fictional startup and market. Its prices and volume are simulated; nobody has traded it.">{label}</span>;
 }
 
 /**
@@ -118,17 +118,25 @@ export function Gain({ micro }: { micro: number }) {
   );
 }
 
-/** Yes and No with their prices, "YES · 42¢" as in the owner's screenshot; each opens the market with that side chosen. */
+/** "48¢", or null when nobody is offering that side (never "No offer", never an invented price). */
+export function cents(value: number | null | undefined): string | null {
+  return value === null || value === undefined ? null : `${value}¢`;
+}
+
+/**
+ * Yes and No with their prices, "Yes 48¢" and "No 53¢" as on Kalshi (2026-11-15);
+ * a side nobody offers reads "Yes" or "No" alone. Each opens the market with that side chosen.
+ */
 export function PriceButtons({ id, yesAskCents = null, noAskCents = null, size = "card", onOpen }: { id: string; yesPrice?: number; yesAskCents?: number | null; noAskCents?: number | null; size?: "card" | "large"; onOpen?: () => void }) {
-  const yes = yesAskCents === null ? "No offer" : `${yesAskCents}¢`;
-  const no = noAskCents === null ? "No offer" : `${noAskCents}¢`;
+  const yes = cents(yesAskCents);
+  const no = cents(noAskCents);
   return (
     <div className={`price-buttons price-buttons-${size}`}>
-      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={`Choose Yes: ${yes}`} onClick={onOpen}>
-        <span>Yes · {yes}</span>
+      <Link className="price-button price-yes" href={`/markets/${id}?side=yes`} prefetch={false} aria-label={yes ? `Buy Yes at ${yes}` : "Buy Yes"} onClick={onOpen}>
+        <span>Yes</span>{yes && <span className="price-cents">{yes}</span>}
       </Link>
-      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={`Choose No: ${no}`} onClick={onOpen}>
-        <span>No · {no}</span>
+      <Link className="price-button price-no" href={`/markets/${id}?side=no`} prefetch={false} aria-label={no ? `Buy No at ${no}` : "Buy No"} onClick={onOpen}>
+        <span>No</span>{no && <span className="price-cents">{no}</span>}
       </Link>
     </div>
   );

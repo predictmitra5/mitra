@@ -5,6 +5,7 @@ import { PINNED_FEATURED_MARKET_ID } from "@/config/featured";
 import { readExchange } from "@/modules/exchange/store";
 import { quotes } from "@/modules/exchange/engine";
 import { isUuid } from "@/modules/market/input";
+import { demoHistory, demoQuote, demoSpark, demoVolumeBuckets, type DemoMarketInput } from "@/modules/startups/demo/simulated";
 import { rankMarkets, type FeedReason, type MarketSignals } from "./ranking";
 
 const { markets, startups, startupFounders, founders, feedEventBuckets } = schema;
@@ -251,7 +252,7 @@ export async function readFeed<Q extends PgQueryResultHKT>(
   const pick = pinned ?? mover ?? open.find((card) => card.volumeMicro > 0) ?? open[0] ?? cards[0];
   let featured: FeaturedMarket | null = null;
   if (pick) {
-    const history = (await readSeries(database, [pick.id])).get(pick.id) ?? [];
+    const history = pick.isSample ? demoPriceSeries(pick, now) : (await readSeries(database, [pick.id])).get(pick.id) ?? [];
     // End the line at the live price, so the chart agrees with the buttons beside it.
     const current = { at: now, yesBp: Math.round(pick.yesPrice * 10_000) };
     featured = { ...pick, series: thinSeries([...history, current]), moving: pick === mover };
@@ -372,12 +373,32 @@ async function readPastCards<Q extends PgQueryResultHKT>(
 async function fillInformation<Q extends PgQueryResultHKT>(database: Database<Q>, cards: FeedCard[], now: Date) {
  if (!cards.length) return;
  const [state,people]=await Promise.all([readExchange(database),readPrimaryFounders(database,[...new Set(cards.map(c=>c.startupId))])]);
- for(const card of cards){const q=quotes(state,card.id,now.getTime()),fills=state.fills.filter(f=>f.marketId===card.id),then=[...fills].reverse().find(f=>f.at<=now.getTime()-86_400_000);
+ for(const card of cards){
+ // Demo markets show simulated trading (DECISIONS.md 2026-11-15); real ones only actual executions.
+ if(card.isSample){const d=demoQuote(demoInput(card),now);card.yesPrice=d.lastYesCents/100;card.hasPrice=true;card.yesAskCents=d.yesAskCents;card.noAskCents=d.noAskCents;
+ card.volumeMicro=d.volumeContracts*1_000_000;card.traders=d.traders;card.change24hBp=d.change24hBp;card.spark=demoSpark(demoInput(card),now,SPARK_POINTS);
+ const founder=people.get(card.startupId);if(founder)Object.assign(card,founder);continue;}
+ const q=quotes(state,card.id,now.getTime()),fills=state.fills.filter(f=>f.marketId===card.id),then=[...fills].reverse().find(f=>f.at<=now.getTime()-86_400_000);
  card.yesPrice=q.lastYes===null?0.5:q.lastYes/100;card.hasPrice=q.lastYes!==null;card.yesAskCents=q.yes?.price??null;card.noAskCents=q.no?.price??null;
  card.volumeMicro=q.volumeContracts*1_000_000;card.traders=q.traders;card.change24hBp=then&&q.lastYes!==null?q.lastYes*100-(then.outcome==='yes'?then.price:100-then.price)*100:0;
  card.spark=thinSeries(fills.map(f=>({at:new Date(f.at),yesBp:(f.outcome==='yes'?f.price:100-f.price)*100})),SPARK_POINTS);
  const founder=people.get(card.startupId);if(founder)Object.assign(card,founder);
  }
+}
+
+/** What the demo simulation needs to know about a market (src/modules/startups/demo/simulated.ts). */
+export function demoInput(market: { id: string; approvedAt: Date | null; deadlineAt: Date; tradingOpen: boolean; ruledOutcome: "yes" | "no" | null }): DemoMarketInput {
+  return { id: market.id, openedAt: market.approvedAt ?? market.deadlineAt, deadlineAt: market.deadlineAt, tradingOpen: market.tradingOpen, ruledOutcome: market.ruledOutcome };
+}
+
+/** A demo market's simulated chart history; real markets use readPriceSeries. */
+export function demoPriceSeries(market: Parameters<typeof demoInput>[0], now: Date): PricePoint[] {
+  return demoHistory(demoInput(market), now);
+}
+
+/** A demo market's simulated volume bars; real markets use readVolumeBuckets. */
+export function demoVolume(market: Parameters<typeof demoInput>[0], now: Date): { at: Date; micro: number; hourly: boolean }[] {
+  return demoVolumeBuckets(demoInput(market), now);
 }
 
 /** Each startup's primary founder (the one marked primary, else the first linked), for cards. */

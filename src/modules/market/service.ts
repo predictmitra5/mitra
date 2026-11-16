@@ -6,6 +6,7 @@ import { tradeBlockReason } from "./eligibility";
 import { isInactive } from "@/modules/account/standing";
 import { readExchange } from "@/modules/exchange/store";
 import { quotes, funds } from "@/modules/exchange/engine";
+import { demoBook, demoQuote } from "@/modules/startups/demo/simulated";
 const {
   markets,
   profiles,
@@ -101,16 +102,44 @@ export async function readPublicMarket<Q extends PgQueryResultHKT>(
   void _l;
   void _y;
   void _n;
+  const tradingOpen =
+    row.status === "open" &&
+    !row.tradingClosedAt &&
+    !row.pausedAt &&
+    row.deadlineAt.getTime() > Date.now();
+  if (row.isSample) {
+    // Demo markets show simulated trading (DECISIONS.md 2026-11-15). Nothing is
+    // read from or written to the exchange; no order can be placed on them.
+    const now = new Date();
+    const demo = {
+      id: row.id,
+      openedAt: row.approvedAt ?? row.createdAt,
+      deadlineAt: row.deadlineAt,
+      tradingOpen,
+      ruledOutcome: row.ruledOutcome,
+    };
+    const d = demoQuote(demo, now);
+    return {
+      ...fields,
+      liquidity: 0,
+      tradingOpen,
+      contestOpen:
+        row.status === "ruled" &&
+        !!row.contestEndsAt &&
+        row.contestEndsAt.getTime() > Date.now(),
+      yesPrice: d.lastYesCents / 100,
+      hasPrice: true,
+      yesAskCents: d.yesAskCents,
+      noAskCents: d.noAskCents,
+      book: demoBook(demo, now) as { outcome: "yes" | "no"; direction: "buy" | "sell"; price: number; quantity: number }[],
+    };
+  }
   const state = await readExchange(database),
     q = quotes(state, id);
   return {
     ...fields,
     liquidity: 0,
-    tradingOpen:
-      row.status === "open" &&
-      !row.tradingClosedAt &&
-      !row.pausedAt &&
-      row.deadlineAt.getTime() > Date.now(),
+    tradingOpen,
     contestOpen:
       row.status === "ruled" &&
       !!row.contestEndsAt &&

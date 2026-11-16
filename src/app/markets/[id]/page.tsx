@@ -6,7 +6,7 @@ import { BadgeCheck, ExternalLink } from "lucide-react";
 import { getDb } from "@/db/client";
 import { currentIdentity } from "@/modules/auth/server";
 import { readPublicMarket, readTrader } from "@/modules/market/service";
-import { readCards, readPriceSeries, readTicker, readVolumeBuckets, recordClick } from "@/modules/discovery/feed";
+import { demoPriceSeries, demoVolume, readCards, readPriceSeries, readTicker, readVolumeBuckets, recordClick } from "@/modules/discovery/feed";
 import { advanceMarket, readObjections } from "@/modules/market/lifecycle";
 import { readViewerOrNull } from "@/modules/account/viewer";
 import { optional, timed } from "@/modules/diagnostics/timing";
@@ -29,6 +29,7 @@ import { LiveChart, LivePrice, LiveStats } from "./live-market";
 import { TradeDock } from "./trade-dock";
 import type { TradeAccess } from "./trade-panel";
 import { ObjectionForm } from "./objection-form";
+import { OrderBook } from "./order-book";
 
 /*
  * A market's page (2026-10-19, startup markets), in the brief's order: the
@@ -118,9 +119,10 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
     identity ? recordClick(database, id) : null,
     // Price history, volume and the ticker: public, and additive, so a failure
     // leaves the chart empty and the prices above it still correct.
-    optional(readPriceSeries(database, id, { at: now, yesBp: Math.round(market.yesPrice * 10_000) })
+    // Demo markets draw their simulated history (DECISIONS.md 2026-11-15).
+    optional((market.isSample ? Promise.resolve(demoPriceSeries(market, now)) : readPriceSeries(database, id, { at: now, yesBp: Math.round(market.yesPrice * 10_000) }))
       .then((points) => points.map((point) => ({ at: new Date(point.at).toISOString(), yesBp: point.yesBp }))), [] as { at: string; yesBp: number }[]),
-    optional(readVolumeBuckets(database, id, now).then((rows) => rows.map((b) => ({ ...b, at: b.at.toISOString() }))), [] as { at: string; micro: number; hourly: boolean }[]),
+    optional((market.isSample ? Promise.resolve(demoVolume(market, now)) : readVolumeBuckets(database, id, now)).then((rows) => rows.map((b) => ({ ...b, at: b.at.toISOString() }))), [] as { at: string; micro: number; hourly: boolean }[]),
     optional(readCards(database, [id], now).then(([found]): CardData | null => (found ? toCardData(found) : null)), null),
     optional(readTicker(database, now).then((rows) => rows.map(toCardData)), [] as CardData[]),
     optional(readMarketStartup(database, market.startupId), null),
@@ -192,8 +194,8 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
           <h1>{market.question}</h1>
           {market.isSample && startup && (
             <p className="sample-note">
-              <strong>Demo market.</strong> {startup.name}, its founders and every number on this page are fictional, made to demonstrate Mitra.
-              This content is illustrative. Exchange prices and volume include only actual executions; this market cannot accept real orders.
+              <strong>Demo market.</strong> {startup.name} and its founders are fictional, made to show how Mitra works.
+              Its prices, chart, order book and volume are simulated: nobody has traded it, and it can&rsquo;t take orders.
             </p>
           )}
           <LivePrice id={market.id} yesPrice={market.yesPrice} hasPrice={market.hasPrice} yesAskCents={market.yesAskCents} noAskCents={market.noAskCents} status={status} />
@@ -218,7 +220,10 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         {market.status === "cancelled" && <section className="goal-notice"><h2>Void. Contracts settle at $0.50.</h2><p className="goal-text">Outstanding orders are cancelled. Each fully collateralized contract pays $0.50; an unavailable source is never treated as No.</p></section>}
         {!!objections.length && <section className="goal-notice"><h2>Private objections you can view</h2><p className="muted">Visible only to each author and the owner.</p>{objections.map((objection) => <article key={objection.id} className="goal-objection"><p className="muted">Ruling version {objection.rulingVersion} · {formatMoment(objection.createdAt, zone)}</p><p className="goal-text">{objection.reason}</p></article>)}</section>}
 
-        <section className="goal-section rise"><h2>Order book</h2>{market.book.length ? <table><thead><tr><th>Outcome</th><th>Direction</th><th>Limit</th><th>Contracts</th></tr></thead><tbody>{market.book.map((o,i)=><tr key={i}><td>{o.outcome}</td><td>{o.direction}</td><td>{o.price}¢</td><td>{o.quantity}</td></tr>)}</tbody></table>:<p className="muted">No resting orders. No executable quote is available.</p>}</section>
+        <section className="goal-section rise" aria-labelledby="book-title">
+          <div className="goal-section-head"><h2 id="book-title">Order book</h2>{market.isSample && <SampleTag label="Simulated" />}</div>
+          <OrderBook book={market.book} lastYesCents={market.hasPrice ? Math.round(market.yesPrice * 100) : null} />
+        </section>
         {/* 4. What the startup is. */}
         {info && startup && (
           <section className="goal-section rise" aria-labelledby="about-title">
@@ -277,7 +282,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         {/* 5. The market's numbers. */}
         <section className="goal-section rise" aria-labelledby="stats-title">
           <h2 id="stats-title">Market statistics</h2>
-          <LiveStats id={market.id} yesPrice={market.yesPrice} volumeMicro={card?.volumeMicro ?? 0} traders={card?.traders ?? 0}
+          <LiveStats id={market.id} yesPrice={market.yesPrice} yesAskCents={market.yesAskCents} noAskCents={market.noAskCents} volumeMicro={card?.volumeMicro ?? 0} traders={card?.traders ?? 0}
             closes={formatMoment(market.deadlineAt, zone)} created={statsCreated} status={status} />
         </section>
 
@@ -333,6 +338,7 @@ export default async function MarketPage({ params, searchParams }: PageProps<"/m
         heldNoMicro={held?.noSharesMicro ?? 0}
         heldYesCostMicro={held?.yesCostBasisMicro ?? 0}
         heldNoCostMicro={held?.noCostBasisMicro ?? 0}
+        demo={market.isSample}
         initialSide={requestedSide === "no" ? "NO" : "YES"}
         openInitially={open && (requestedSide === "yes" || requestedSide === "no")}
         tradingOpen={open}

@@ -1223,8 +1223,28 @@ html[data-theme="light"] .spark-dot { background: #2b8fc4; }
 .spark-empty { position: absolute; inset: auto 0 50% 0; border-top: 1px dashed var(--line-strong); }
 .spark figcaption { font-size: 12px; color: var(--muted); }
 
-/* Yes and No, "YES · 42¢", centred in their tints (both screenshots). */
-.price-button { justify-content: center; }
+/* Yes and No with their prices, "Yes 48¢", centred in their tints (2026-11-15, Kalshi's way). */
+.price-button { justify-content: center; gap: 6px; }
+.trade-side { justify-content: center; gap: 6px; }
+.price-cents { font-variant-numeric: tabular-nums; }
+
+/* The order book as a ladder (2026-11-15): offers above the spread, bids below, depth bars behind the prices. */
+.book { display: grid; gap: 8px; }
+.book-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); }
+.book-tabs button { height: 36px; margin-bottom: -1px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.book-tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.book-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
+.book-table th { padding: 6px 8px; color: var(--muted); font-size: 11.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
+.book-table th:first-child { width: 44%; text-align: left; }
+.book-table td { padding: 6px 8px; text-align: right; }
+.book-table .book-price { position: relative; z-index: 0; text-align: left; font-weight: 600; }
+.book-depth { position: absolute; z-index: -1; left: 0; top: 3px; bottom: 3px; min-width: 3px; border-radius: 4px; transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+.book-ask .book-price { color: var(--no); }
+.book-ask .book-depth { background: var(--no-tint); }
+.book-bid .book-price { color: var(--yes); }
+.book-bid .book-depth { background: var(--yes-tint); }
+.book-table .book-mid td { padding: 8px; border-block: 1px solid var(--line); color: var(--muted); font-size: 13px; text-align: center; }
+@media (hover: hover) { .book-tabs button:hover:not([aria-pressed="true"]) { color: var(--ink-soft); } }
 .price-buttons-card .price-button { height: 46px; border-radius: 12px; font-size: 15px; }
 
 /* ---- The video feed ---- */

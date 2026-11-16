@@ -26,7 +26,7 @@ function watchPhone(onChange: () => void) {
 
 export function TradeDock({
   marketId, title, name, photo, mark, yesAskCents = null, noAskCents = null, access, balanceMicro,
-  initialSide, openInitially, tradingOpen, position,
+  initialSide, openInitially, tradingOpen, position, demo = false,
 }: {
   marketId: string;
   title: string;
@@ -49,6 +49,8 @@ export function TradeDock({
   tradingOpen: boolean;
   /** The trader's position, shown under the panel on a desktop. */
   position: ReactNode;
+  /** A demo market: its prices are simulated and it takes no orders (2026-11-15). */
+  demo?: boolean;
 }) {
   const live = useLiveQuotes([marketId]);
   const quote = live.get(marketId);
@@ -112,17 +114,17 @@ export function TradeDock({
             <h2 id={`trade-title-${marketId}`}>{title}</h2>
             <button type="button" className="dock-close" onClick={() => setOpen(false)}>Close</button>
           </div>
-          <TradePanel marketId={marketId} yesAskCents={yes} noAskCents={no} access={access} balanceMicro={balanceMicro} side={side} onSide={selectSide} />
+          <TradePanel marketId={marketId} yesAskCents={yes} noAskCents={no} access={access} balanceMicro={balanceMicro} side={side} onSide={selectSide} demo={demo} />
         </div>
         {position}
       </aside>
       {tradingOpen && (
         <div className="buy-bar">
-          <button type="button" className="buy-bar-yes" aria-label={`Buy Yes, ${yes === null ? "No offer" : `${yes}¢`}`} onClick={(event) => openWith("YES", event.currentTarget)}>
-            <span>Buy Yes</span><span>{yes === null ? "No offer" : `${yes}¢`}</span>
+          <button type="button" className="buy-bar-yes" aria-label={yes === null ? "Buy Yes" : `Buy Yes at ${yes}¢`} onClick={(event) => openWith("YES", event.currentTarget)}>
+            <span>Buy Yes</span>{yes !== null && <span>{yes}¢</span>}
           </button>
-          <button type="button" className="buy-bar-no" aria-label={`Buy No, ${no === null ? "No offer" : `${no}¢`}`} onClick={(event) => openWith("NO", event.currentTarget)}>
-            <span>Buy No</span><span>{no === null ? "No offer" : `${no}¢`}</span>
+          <button type="button" className="buy-bar-no" aria-label={no === null ? "Buy No" : `Buy No at ${no}¢`} onClick={(event) => openWith("NO", event.currentTarget)}>
+            <span>Buy No</span>{no !== null && <span>{no}¢</span>}
           </button>
         </div>
       )}

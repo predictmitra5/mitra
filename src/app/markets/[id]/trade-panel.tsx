@@ -18,6 +18,7 @@ export function TradePanel({
   yesAskCents = null,
   noAskCents = null,
   balanceMicro,
+  demo = false,
 }: {
   marketId: string;
   access: TradeAccess;
@@ -26,11 +27,15 @@ export function TradePanel({
   yesAskCents?: number | null;
   noAskCents?: number | null;
   balanceMicro: number | null;
+  /** A demo market: its prices are simulated and it takes no orders (2026-11-15). */
+  demo?: boolean;
 }) {
   const [direction, setDirection] = useState<"buy" | "sell">("buy"),
-    [limit, setLimit] = useState(""),
+    // Until someone types a limit, it follows the chosen side's best offer.
+    [typed, setTyped] = useState<string | null>(null),
     [quantity, setQuantity] = useState("1");
   const offer = side === "YES" ? yesAskCents : noAskCents;
+  const limit = typed ?? (offer === null ? "" : String(offer));
   const valid =
     /^\d+$/.test(limit) &&
     Number(limit) >= 1 &&
@@ -60,20 +65,25 @@ export function TradePanel({
             key={s}
             type="button"
             className={`trade-side trade-side-${s.toLowerCase()}${side === s ? " is-active" : ""}`}
-            onClick={() => onSide(s)}
+            onClick={() => {
+              onSide(s);
+              setTyped(null);
+            }}
             aria-pressed={side === s}
           >
-            {s === "YES" ? "Yes" : "No"} ·{" "}
-            {(s === "YES" ? yesAskCents : noAskCents) === null
-              ? "No offer"
-              : `${s === "YES" ? yesAskCents : noAskCents}¢`}
+            <span>{s === "YES" ? "Yes" : "No"}</span>
+            {(s === "YES" ? yesAskCents : noAskCents) !== null && (
+              <span className="price-cents">{s === "YES" ? yesAskCents : noAskCents}¢</span>
+            )}
           </button>
         ))}
       </div>
       <p className="field-hint">
-        {offer === null
-          ? "No offers are resting in this book. You can inspect a limit order below."
-          : `Best available ${side.toLowerCase()} offer: ${offer}¢. Execution depends on available quantity.`}
+        {demo
+          ? "Demo market: these prices are simulated to show how trading looks. It can’t take orders."
+          : offer === null
+            ? `Nobody is offering ${side === "YES" ? "Yes" : "No"} right now. You can still set a limit price below.`
+            : `Best ${side === "YES" ? "Yes" : "No"} offer: ${offer}¢. How much fills depends on the contracts offered.`}
       </p>
       <div className="field">
         <label htmlFor={`limit-${marketId}`}>Limit price (¢)</label>
@@ -85,7 +95,7 @@ export function TradePanel({
           max="99"
           step="1"
           value={limit}
-          onChange={(e) => setLimit(e.target.value)}
+          onChange={(e) => setTyped(e.target.value)}
           placeholder="1–99"
         />
       </div>
@@ -142,7 +152,9 @@ export function TradePanel({
                 ? "This market is closed."
                 : access.kind === "paused"
                   ? (access.reason ?? "Trading is paused.")
-                  : "Account funding and trading are not available yet."}
+                  : demo
+                    ? "This is a demo market, so it can’t take orders."
+                    : "Account funding and trading are not available yet."}
           </p>
         </>
       )}

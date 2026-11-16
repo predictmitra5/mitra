@@ -9,14 +9,18 @@ it("renders independent offers and carries the chosen side in each destination",
   const html = renderToStaticMarkup(createElement(PriceButtons, { id, yesAskCents: 44, noAskCents: 71 }));
   expect(html).toContain(`${id}?side=yes`);
   expect(html).toContain(`${id}?side=no`);
-  expect(html).toContain("Yes · 44¢");
-  expect(html).toContain("No · 71¢");
+  expect(html).toContain("<span>Yes</span><span class=\"price-cents\">44¢</span>");
+  expect(html).toContain("<span>No</span><span class=\"price-cents\">71¢</span>");
+  expect(html).toContain('aria-label="Buy Yes at 44¢"');
   expect(html).not.toContain("56¢");
+  expect(html).not.toContain("No offer");
 });
 it("does not turn the last-traded price into an executable offer", () => {
   const html = renderToStaticMarkup(createElement(PriceButtons, { id, yesPrice: 0.44 }));
-  expect(html.match(/No offer/g)).toHaveLength(4); // visible text and accessible labels
-  expect(html).not.toContain("44¢");
+  expect(html).not.toContain("¢");
+  expect(html).not.toContain("No offer");
+  expect(html).toContain('aria-label="Buy Yes"');
+  expect(html).toContain('aria-label="Buy No"');
 });
 it("clears offers and last-trade status when a fresh quote has no liquidity", () => {
   const card = { id, yesPrice: 0.5, hasPrice: true, yesAskCents: 40, noAskCents: 75, change24hBp: 0, volumeMicro: 0, tradingOpen: true };
