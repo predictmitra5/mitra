@@ -2,10 +2,11 @@ import { CirclePlay } from "lucide-react";
 import { initials } from "@/modules/discovery/present";
 import { duration, splitFeature } from "@/modules/startups/labels";
 import { Glyph } from "./glyph";
+import { ThumbImage } from "./thumb-image";
 
 /*
  * The founder-and-startup thumbnail (2026-10-19), after the owner's first
- * screenshot: the founder on the left (photo, or initials in a circle, with
+ * screenshot, in the startup's own vivid colour since 2026-11-15: the founder on the left (photo, or initials in a circle, with
  * name and role), the startup on the right (logo or glyph, name, tagline and
  * three product features), and "Founder video" with the length along the
  * bottom. Every discovery card, recommendation, profile and market page shows
@@ -36,13 +37,13 @@ export function StartupThumb({
   priority?: boolean;
 }) {
   const picture = imageUrl ?? startup.thumbnailUrl ?? null;
-  // The panel keeps one palette (globals.css); the founder's circle takes their hue.
-  const style = { "--face-hue": founder?.hue ?? startup.hue } as React.CSSProperties;
+  // Each startup's own colour (2026-11-15, "the colors should be vibrant"):
+  // the drawn poster, the tile a picture loads over, and the hover glow.
+  const style = { "--thumb-hue": startup.hue, "--face-hue": founder?.hue ?? startup.hue } as React.CSSProperties;
   return (
     <div className={`thumb${picture ? " thumb-has-photo" : ""}${className ? ` ${className}` : ""}`} style={style}>
       {picture ? (
-        // eslint-disable-next-line @next/next/no-img-element -- founders' own images, any host
-        <img className="thumb-photo" src={picture} alt="" loading={priority ? "eager" : "lazy"} decoding="async" />
+        <ThumbImage src={picture} priority={priority} />
       ) : (
         <div className="thumb-composite" aria-hidden="true">
           <div className="thumb-person">

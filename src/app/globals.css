@@ -39,10 +39,10 @@
   --ring: rgb(137 207 240 / 0.22);
   --bright: 1.08;
   --yes: #3fd38a;
-  --yes-tint: rgb(63 211 138 / 0.14);
+  --yes-tint: rgb(63 211 138 / 0.18);
   --yes-ink: #04170c;
   --no: #ff5c63;
-  --no-tint: rgb(255 92 99 / 0.14);
+  --no-tint: rgb(255 92 99 / 0.18);
   --no-ink: #1c0405;
   --danger: #ff8f85;
   --danger-bg: #2c1512;
@@ -1141,24 +1141,33 @@ html[data-theme="light"] .school-button { background: var(--raised); border: 1px
 /* The drawn founder-and-startup thumbnail. It sizes everything from its own
    width (container units), so it is the same picture at any size, and keeps
    its own dark palette in both themes, like an image. */
-/* One slate-blue palette for every drawn thumbnail, as in the owner's screenshot;
-   only the founder's initials circle takes their own pastel. */
-.thumb { --thumb-hue: 214; --face-hue: 205; position: relative; display: block; container-type: inline-size; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 16px; background: hsl(var(--thumb-hue) 30% 23%); color: #fff; isolation: isolate; }
-.thumb-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Every drawn thumbnail is a poster in its startup's own colour (2026-11-15,
+   "the colors should be vibrant"; it was one slate blue): a saturated base with
+   two lights of neighbouring hues, the founder's initials on a bright disc, and
+   the product on dark glass. A picture loads over a tile of the same colour and
+   fades in, as YouTube's do. */
+.thumb { --thumb-hue: 214; --face-hue: 205; position: relative; display: block; container-type: inline-size; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 16px; color: #fff; isolation: isolate;
+  background:
+    radial-gradient(75% 95% at 100% 0%, hsl(calc(var(--thumb-hue) + 38) 96% 62% / 0.9), transparent 62%),
+    radial-gradient(70% 90% at 0% 100%, hsl(calc(var(--thumb-hue) - 34) 94% 56% / 0.75), transparent 60%),
+    linear-gradient(135deg, hsl(var(--thumb-hue) 82% 44%), hsl(calc(var(--thumb-hue) + 22) 80% 22%)); }
+.thumb-has-photo { background: hsl(var(--thumb-hue) 30% 17%); }
+.thumb-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 260ms var(--ease), transform 700ms cubic-bezier(0.22, 1, 0.36, 1); }
+.thumb-photo[data-fade="waiting"], .thumb-photo[data-fade="failed"] { opacity: 0; }
 .thumb-has-photo::after { content: ""; position: absolute; inset: auto 0 0 0; height: 32%; background: linear-gradient(transparent, rgb(0 0 0 / 0.55)); pointer-events: none; }
 .thumb-composite { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); align-items: center; gap: 3.6cqw; padding: 4.6cqw 4.6cqw 13.5cqw; transform-origin: 40% 45%; }
 .thumb-person { display: flex; flex-direction: column; align-items: center; gap: 1.5cqw; min-width: 0; text-align: center; }
-.thumb-face { display: grid; place-items: center; width: 25cqw; aspect-ratio: 1; overflow: hidden; border-radius: 50%; background: hsl(var(--face-hue) 70% 86%); color: hsl(214 40% 16%); font-size: 9.4cqw; font-weight: 500; letter-spacing: -0.02em; }
+.thumb-face { display: grid; place-items: center; width: 25cqw; aspect-ratio: 1; overflow: hidden; border-radius: 50%; background: linear-gradient(150deg, #fff 8%, hsl(var(--face-hue) 95% 84%) 70%); color: hsl(var(--thumb-hue) 75% 24%); font-size: 9.4cqw; font-weight: 600; letter-spacing: -0.03em; box-shadow: 0 0 0 1.1cqw rgb(255 255 255 / 0.22), 0 2.4cqw 6cqw rgb(0 0 0 / 0.35); }
 .thumb-face img { width: 100%; height: 100%; object-fit: cover; }
-.thumb-name { margin-top: 1.4cqw; font-size: 3.5cqw; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
-.thumb-role { font-size: 2.6cqw; color: hsl(var(--thumb-hue) 22% 80%); }
-.thumb-product { display: flex; flex-direction: column; gap: 1.4cqw; min-width: 0; padding: 3.8cqw 3.6cqw; border-radius: 3cqw; background: hsl(var(--thumb-hue) 40% 11%); }
+.thumb-name { margin-top: 1.4cqw; font-size: 3.7cqw; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; text-shadow: 0 0.4cqw 1.6cqw rgb(0 0 0 / 0.35); }
+.thumb-role { font-size: 2.6cqw; color: rgb(255 255 255 / 0.82); }
+.thumb-product { display: flex; flex-direction: column; gap: 1.4cqw; min-width: 0; padding: 3.8cqw 3.6cqw; border: 1px solid rgb(255 255 255 / 0.16); border-radius: 3cqw; background: rgb(6 8 14 / 0.42); box-shadow: 0 2.4cqw 7cqw rgb(0 0 0 / 0.28); }
 .thumb-brand { display: flex; align-items: center; gap: 1.6cqw; min-width: 0; font-size: 3.7cqw; letter-spacing: -0.01em; }
 .thumb-brand strong { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.thumb-logo.startup-mark { width: 4.6cqw; height: 4.6cqw; border-radius: 1.2cqw; background: transparent; color: hsl(var(--thumb-hue) 85% 84%); }
+.thumb-logo.startup-mark { width: 4.6cqw; height: 4.6cqw; border-radius: 1.2cqw; background: transparent; color: hsl(calc(var(--thumb-hue) + 38) 100% 78%); }
 .thumb-logo.startup-mark svg { width: 4.4cqw; height: 4.4cqw; }
-.thumb-tagline { overflow: hidden; font-size: 2.55cqw; color: hsl(var(--thumb-hue) 20% 78%); white-space: nowrap; text-overflow: ellipsis; }
-.thumb-features { display: flex; flex-direction: column; gap: 2.3cqw; margin: 1.4cqw 0 0; padding: 2.8cqw 2.6cqw; list-style: none; border-radius: 2.2cqw; background: hsl(var(--thumb-hue) 30% 23%); font-size: 2.55cqw; }
+.thumb-tagline { overflow: hidden; font-size: 2.55cqw; color: rgb(255 255 255 / 0.78); white-space: nowrap; text-overflow: ellipsis; }
+.thumb-features { display: flex; flex-direction: column; gap: 2.3cqw; margin: 1.4cqw 0 0; padding: 2.8cqw 2.6cqw; list-style: none; border-radius: 2.2cqw; background: rgb(255 255 255 / 0.1); font-size: 2.55cqw; }
 .thumb-features li { display: flex; align-items: center; gap: 1.7cqw; min-width: 0; white-space: nowrap; }
 .thumb-features svg { flex: none; width: 2.9cqw; height: 2.9cqw; }
 .thumb-bar { position: absolute; z-index: 1; left: 4.6cqw; right: 4.6cqw; bottom: 3.8cqw; display: flex; align-items: center; justify-content: space-between; gap: 2cqw; font-size: 3.1cqw; font-weight: 500; transition: opacity 200ms var(--ease); }
@@ -1216,6 +1225,13 @@ html[data-theme="light"] .startup-mark:not(.thumb-logo) { background: hsl(var(--
 .spark-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; animation: chart-reveal 900ms cubic-bezier(0.65, 0, 0.35, 1) 150ms backwards; }
 .spark-line { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; }
 .spark-area { fill: color-mix(in srgb, var(--accent) 17%, transparent); }
+/* Green when the price rose over the chart, red when it fell (2026-11-15), as on Kalshi's lists. */
+.spark.spark-up .spark-line { stroke: var(--yes); }
+.spark.spark-up .spark-area { fill: color-mix(in srgb, var(--yes) 16%, transparent); }
+.spark.spark-up .spark-dot { background: var(--yes); }
+.spark.spark-down .spark-line { stroke: var(--no); }
+.spark.spark-down .spark-area { fill: color-mix(in srgb, var(--no) 16%, transparent); }
+.spark.spark-down .spark-dot { background: var(--no); }
 html[data-theme="light"] .spark-line { stroke: #2b8fc4; }
 html[data-theme="light"] .spark-area { fill: rgb(43 143 196 / 0.12); }
 .spark-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--card); transform: translate(-50%, -50%); animation: dot-in 260ms cubic-bezier(0.22, 1, 0.36, 1) 950ms backwards; }
@@ -1673,6 +1689,36 @@ a.yt-guide-title > span { font-size: 22px; font-weight: 400; line-height: 1; }
 .yt-more .icon-button { width: 36px; height: 36px; border-color: transparent; }
 .yt-more .menu { top: calc(100% + 4px); bottom: auto; }
 .yt-pills .price-button { height: 40px; border-radius: 999px; font-size: 14.5px; }
+
+/* YouTube's hover (2026-11-15, read from youtube.com): the card rises onto a
+   rounded panel, the picture glows in the startup's colour and eases in a
+   little, a Save button fades in over 0.3 s, and after a short rest a muted
+   preview plays in place (grid-card.tsx). The glow is a coloured shadow, not a
+   blur filter, so hovering stays cheap. */
+.yt-card { position: relative; isolation: isolate; }
+.yt-card::before { content: ""; position: absolute; z-index: -1; inset: -10px -10px -12px; border-radius: 20px; background: var(--hover); opacity: 0; transform: scale(0.97); transition: opacity 200ms var(--ease), transform 280ms var(--ease); pointer-events: none; }
+.yt-thumb, .yt-card .player { transition: box-shadow 360ms var(--ease); }
+.yt-thumb .thumb-composite { transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1); }
+.yt-hover-save { position: absolute; z-index: 4; top: 8px; right: 8px; display: none; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.68); color: #fff; cursor: pointer; opacity: 0; transition: opacity 300ms var(--ease), background-color 160ms var(--ease); }
+.yt-preview-link { position: absolute; z-index: 2; inset: 0; border-radius: 12px; }
+.yt-card.is-playing .player-controls { padding-top: 18px; }
+.yt-card .player { box-shadow: 0 0 0 1px rgb(255 255 255 / 0.04); }
+.yt-thumb:active .thumb { transform: scale(0.985); }
+.yt-thumb .thumb { transition: transform 160ms var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .yt-card:hover::before, .yt-card:focus-within::before { opacity: 1; transform: none; }
+  .yt-card:hover .yt-thumb, .yt-card:hover .player { box-shadow: 0 14px 56px -6px hsl(var(--thumb-hue, 205) 95% 55% / 0.85), 0 0 22px -4px hsl(var(--thumb-hue, 205) 95% 60% / 0.55), 0 0 0 1px hsl(var(--thumb-hue, 205) 95% 72% / 0.35); }
+  .yt-card:hover::before { background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--thumb-hue, 205) 90% 55%) 16%, var(--hover)), var(--hover) 62%); }
+  .yt-card:hover .thumb-composite, .yt-card:hover .yt-thumb .thumb-photo { transform: scale(1.04); }
+  .yt-hover-save { display: grid; }
+  .yt-media:hover .yt-hover-save, .yt-hover-save:focus-visible { opacity: 1; }
+  .yt-hover-save:hover { background: rgb(0 0 0 / 0.86); }
+  html[data-theme="light"] .yt-card:hover .yt-thumb, html[data-theme="light"] .yt-card:hover .player { box-shadow: 0 16px 40px -14px hsl(var(--thumb-hue, 205) 90% 50% / 0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yt-card::before { transition: opacity 120ms linear; transform: none !important; }
+  .yt-card:hover .thumb-composite, .yt-card:hover .yt-thumb .thumb-photo, .yt-thumb:active .thumb { transform: none; }
+}
 
 /* One shelf, as YouTube's: markets closing soon, sideways, then Explore more. */
 .yt-shelf { display: flex; grid-column: 1 / -1; flex-direction: column; gap: 16px; min-width: 0; padding: 8px 0 24px; border-bottom: 1px solid var(--line); }

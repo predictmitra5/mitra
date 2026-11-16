@@ -1,7 +1,7 @@
 /*
  * A card's small price chart (2026-10-19), after the owner's first screenshot:
- * the chance of Yes over about three months as a baby blue line over a soft
- * fill, with a dot at today's price. Drawn from the market's recorded price
+ * the chance of Yes over about three months as a line over a soft fill (green
+ * when it rose, red when it fell, baby blue when flat, since 2026-11-15), with a dot at today's price. Drawn from the market's recorded price
  * history (every point is the price after a real trade), joined point to point
  * at this size, where steps read as noise; the market page's large chart keeps
  * its step lines. It draws in from the left, and stays still for people who
@@ -27,10 +27,19 @@ export function sparkPaths(points: readonly SparkPoint[], width = 100, height = 
   return { line, area: `${line}V${height}H0Z`, end: { x: x(last.t), y: y(last.v) } };
 }
 
+/** Which way the price went over the chart: up, down or flat. Exported for tests. */
+export function sparkDirection(points: readonly SparkPoint[]): "up" | "down" | "flat" {
+  const sorted = [...points].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  if (sorted.length < 2) return "flat";
+  const change = sorted[sorted.length - 1].yesBp - sorted[0].yesBp;
+  return change > 0 ? "up" : change < 0 ? "down" : "flat";
+}
+
 export function Sparkline({ points, label, caption }: { points: readonly SparkPoint[]; label: string; caption?: string }) {
   const paths = sparkPaths(points);
+  const direction = sparkDirection(points);
   return (
-    <figure className="spark">
+    <figure className={`spark${direction === "flat" ? "" : ` spark-${direction}`}`}>
       <div className="spark-plot">
         {paths ? (
           <svg className="spark-svg" viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label={label}>

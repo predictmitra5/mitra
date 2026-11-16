@@ -15,6 +15,7 @@ import { ReportSheet } from "../social/report-sheet";
 import { askToSignUp, toast } from "../feed/needs-account";
 import { track } from "../feed/tracker";
 import type { VideoCardData } from "../feed/video-data";
+import { useInViewPlay } from "./in-view-play";
 
 /*
  * One card of the home grid, copied from YouTube's (2026-10-20): the 16:9
@@ -26,7 +27,22 @@ import type { VideoCardData } from "../feed/video-data";
  * "Moving most today" in place of "Sponsored" and Yes/No pills under it, and
  * on a phone its video plays muted with captions, as YouTube's first video
  * does.
+ *
+ * YouTube's hover and play (2026-11-15): with a mouse, the card rises onto a
+ * panel, glows in the startup's colour, offers Save on the picture and, after
+ * a short hover, plays a muted preview in place; on a phone, the video in the
+ * middle of the screen plays muted as you scroll. A preview opens the market
+ * when clicked and is not counted as a watch. Reduced motion turns both off.
  */
+
+/** How long a pointer rests on a picture before its preview plays. */
+const PREVIEW_DELAY_MS = 650;
+const REDUCE = "(prefers-reduced-motion: reduce)";
+function subscribeReduce(callback: () => void) {
+  const query = window.matchMedia(REDUCE);
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+}
 
 const PHONE = "(max-width: 799px)";
 function subscribe(callback: () => void) {
@@ -79,7 +95,13 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
   const href = market ? `/markets/${market.id}` : `/startups/${startup.slug}`;
   const title = market ? cardTitle(market) : card.title;
   const phone = usePhone();
+  const reduce = useSyncExternalStore(subscribeReduce, () => window.matchMedia(REDUCE).matches, () => false);
   const ref = useRef<HTMLElement>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
+  const center = useInViewPlay(mediaRef, card.id, phone && !reduce);
+  const [preview, setPreview] = useState(false);
+  const hoverTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
@@ -138,18 +160,38 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
     <StartupThumb priority={index < 3} bar={false} imageUrl={card.thumbnailUrl}
       startup={startup} founder={founder ? { name: founder.name, portraitUrl: founder.portraitUrl, hue: founder.hue, role: founder.role } : null} />
   );
-  const playing = highlight && phone;
+  function hoverStart(event: React.PointerEvent) {
+    if (event.pointerType !== "mouse" || phone || reduce) return;
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => setPreview(true), PREVIEW_DELAY_MS);
+  }
+  function hoverEnd() {
+    window.clearTimeout(hoverTimer.current);
+    setPreview(false);
+  }
+
+  // The highlight's phone video counts as a watch, as before; previews don't.
+  const playing = phone ? (reduce ? highlight : center === card.id) : preview;
 
   return (
-    <article ref={ref} className={`yt-card rise${highlight ? " yt-card-highlight" : ""}`} style={{ "--rise-i": Math.min(index, 8) } as React.CSSProperties}>
-      <div className="yt-media">
-        {playing ? <VideoPlayer video={card} poster={thumb} active /> : (
+    <article ref={ref} className={`yt-card rise${highlight ? " yt-card-highlight" : ""}${playing ? " is-playing" : ""}`}
+      style={{ "--rise-i": Math.min(index, 8), "--thumb-hue": startup.hue } as React.CSSProperties}>
+      <div className="yt-media" ref={mediaRef} onPointerEnter={hoverStart} onPointerLeave={hoverEnd}>
+        {playing ? (
+          <>
+            <VideoPlayer video={card} poster={thumb} active track={highlight && phone} />
+            <Link className="yt-preview-link" href={href} prefetch={false} onClick={open} tabIndex={-1} aria-hidden="true" />
+          </>
+        ) : (
           <Link className="yt-thumb" href={href} prefetch={false} onClick={open} tabIndex={-1} aria-hidden="true">
             {thumb}
             <span className="yt-duration">{duration(card.durationSeconds)}</span>
           </Link>
         )}
         {card.isDemo && !playing && <span className="yt-demo"><SampleTag /></span>}
+        <button type="button" className="yt-hover-save" onClick={save} aria-label={saved ? "Remove from saved" : "Save video"} title={saved ? "Saved" : "Save"}>
+          <Bookmark size={18} aria-hidden="true" fill={saved ? "currentColor" : "none"} />
+        </button>
       </div>
       <div className="yt-info">
         {founder ? (
