@@ -468,7 +468,7 @@ A picture waits as a tile in the startup's colour with its length already in the
 
 ### Hover (devices with a pointer)
 
-On the home grid (`src/app/components/home/grid-card.tsx`) the hovered card sits on a raised, rounded panel tinted in the startup's colour, with a soft glow in that colour; a Save button fades in on the picture; after 650 ms the video previews muted in place through `VideoPlayer` with tracking off (a preview is not a watch), and clicking the preview opens the market. Reduced motion gets no zoom and no preview.
+On the home grid (`src/app/components/home/grid-card.tsx`) the hovered card sits on a raised, rounded panel tinted in the picture's own colours, with a glow that takes each side's colour from that side of the picture (since 2026-11-16; see Colour); a Save button fades in on the picture; after 650 ms the video previews muted in place through `VideoPlayer` with tracking off (a preview is not a watch), and clicking the preview opens the market. Reduced motion gets no zoom and no preview.
 
 ### Phone
 
@@ -476,7 +476,7 @@ As on YouTube's phone home, one picture plays muted while you scroll: of the pic
 
 ### Colour
 
-Each startup's hue drives its tile, glow and fallback poster; Yes and No tints are stronger; card sparklines are green when the price is up and red when it is down. Baby blue stays the main button colour.
+Each startup's hue drives its tile and fallback poster. The hover glow comes from the picture itself (DECISIONS.md 2026-11-16; `src/app/components/startup/picture-colour.ts`): once a picture has loaded, the browser takes the part the card shows (16:9, cropped like the picture itself) and shrinks it to 32x18 pixels and each pixel votes for its hue by how vivid it is, with the warm band of skin, wood and brick counting for less, so a neon sign or a jacket beside a face sets the colour; the left and right halves are read the same way for the glow on each side, and every colour is lifted to glow on the dark page. Mitra's own pictures are read directly and other sites' through a copy they allow (YouTube's thumbnails do); a drawn poster, or a picture that can't be read, glows in the startup's hue. Colours that arrive while the pointer is already on a card ease in (registered colour properties); phones and touch screens, which never show the glow, don't read pictures at all; Yes and No tints are stronger; card sparklines are green when the price is up and red when it is down. Baby blue stays the main button colour.
 
 ### Demo thumbnails
 

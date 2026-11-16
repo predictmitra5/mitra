@@ -3,6 +3,7 @@ import { initials } from "@/modules/discovery/present";
 import { duration, splitFeature } from "@/modules/startups/labels";
 import { Glyph } from "./glyph";
 import { ThumbImage } from "./thumb-image";
+import type { PictureColours } from "./picture-colour";
 
 /*
  * The founder-and-startup thumbnail (2026-10-19), after the owner's first
@@ -24,7 +25,7 @@ export type ThumbStartup = {
 };
 
 export function StartupThumb({
-  startup, founder, imageUrl, durationSeconds, label = "Founder video", bar = true, className, priority = false,
+  startup, founder, imageUrl, durationSeconds, label = "Founder video", bar = true, className, priority = false, onColour,
 }: {
   startup: ThumbStartup;
   founder: ThumbFounder;
@@ -35,6 +36,8 @@ export function StartupThumb({
   bar?: boolean;
   className?: string;
   priority?: boolean;
+  /** Called with the picture's own colours once it has loaded (the home grid's hover glow, 2026-11-16). */
+  onColour?: (colours: PictureColours | null) => void;
 }) {
   const picture = imageUrl ?? startup.thumbnailUrl ?? null;
   // Each startup's own colour (2026-11-15, "the colors should be vibrant"):
@@ -43,7 +46,7 @@ export function StartupThumb({
   return (
     <div className={`thumb${picture ? " thumb-has-photo" : ""}${className ? ` ${className}` : ""}`} style={style}>
       {picture ? (
-        <ThumbImage src={picture} priority={priority} />
+        <ThumbImage src={picture} priority={priority} onColour={onColour} />
       ) : (
         <div className="thumb-composite" aria-hidden="true">
           <div className="thumb-person">

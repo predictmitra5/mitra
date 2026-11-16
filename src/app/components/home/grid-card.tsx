@@ -9,6 +9,7 @@ import { duration } from "@/modules/startups/labels";
 import { Change, closeDate, PriceButtons, SampleTag, type CardData } from "../market/market-card";
 import { Sparkline } from "../market/sparkline";
 import { FounderFace, StartupThumb } from "../startup/thumb";
+import type { PictureColours } from "../startup/picture-colour";
 import { VideoPlayer } from "../startup/video-player";
 import { FollowButton } from "../social/follow-button";
 import { ReportSheet } from "../social/report-sheet";
@@ -33,6 +34,8 @@ import { useInViewPlay } from "./in-view-play";
  * a short hover, plays a muted preview in place; on a phone, the video in the
  * middle of the screen plays muted as you scroll. A preview opens the market
  * when clicked and is not counted as a watch. Reduced motion turns both off.
+ * Since 2026-11-16 the panel and glow take their colours from the picture
+ * itself (picture-colour.ts), the startup's colour only when it can't be read.
  */
 
 /** How long a pointer rests on a picture before its preview plays. */
@@ -50,6 +53,14 @@ function subscribe(callback: () => void) {
   query.addEventListener("change", callback);
   return () => query.removeEventListener("change", callback);
 }
+// The hover glow is only drawn for a mouse (globals.css), so only then is the picture read for its colours.
+const POINTER = "(hover: hover) and (pointer: fine)";
+function subscribePointer(callback: () => void) {
+  const query = window.matchMedia(POINTER);
+  query.addEventListener("change", callback);
+  return () => query.removeEventListener("change", callback);
+}
+
 /** Whether the screen is phone-sized; false on the server, so the first paint is the still thumbnail. */
 function usePhone() {
   return useSyncExternalStore(subscribe, () => window.matchMedia(PHONE).matches, () => false);
@@ -100,6 +111,8 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
   const mediaRef = useRef<HTMLDivElement>(null);
   const center = useInViewPlay(mediaRef, card.id, phone && !reduce);
   const [preview, setPreview] = useState(false);
+  const [glow, setGlow] = useState<PictureColours | null>(null);
+  const pointer = useSyncExternalStore(subscribePointer, () => window.matchMedia(POINTER).matches, () => false);
   const hoverTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -157,7 +170,7 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
   }
 
   const thumb = (
-    <StartupThumb priority={index < 3} bar={false} imageUrl={card.thumbnailUrl}
+    <StartupThumb priority={index < 3} bar={false} imageUrl={card.thumbnailUrl} onColour={pointer ? setGlow : undefined}
       startup={startup} founder={founder ? { name: founder.name, portraitUrl: founder.portraitUrl, hue: founder.hue, role: founder.role } : null} />
   );
   function hoverStart(event: React.PointerEvent) {
@@ -175,7 +188,8 @@ export function GridCard({ card, now, signedIn, highlight = false, index = 0, on
 
   return (
     <article ref={ref} className={`yt-card rise${highlight ? " yt-card-highlight" : ""}${playing ? " is-playing" : ""}`}
-      style={{ "--rise-i": Math.min(index, 8), "--thumb-hue": startup.hue } as React.CSSProperties}>
+      style={{ "--rise-i": Math.min(index, 8), "--thumb-hue": startup.hue,
+        ...(glow && { "--glow": glow.main, "--glow-left": glow.left, "--glow-right": glow.right }) } as React.CSSProperties}>
       <div className="yt-media" ref={mediaRef} onPointerEnter={hoverStart} onPointerLeave={hoverEnd}>
         {playing ? (
           <>

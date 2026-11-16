@@ -1691,11 +1691,19 @@ a.yt-guide-title > span { font-size: 22px; font-weight: 400; line-height: 1; }
 .yt-pills .price-button { height: 40px; border-radius: 999px; font-size: 14.5px; }
 
 /* YouTube's hover (2026-11-15, read from youtube.com): the card rises onto a
-   rounded panel, the picture glows in the startup's colour and eases in a
+   rounded panel, the picture glows in its own colours (the startup's when it
+   can't be read, 2026-11-16) and eases in a
    little, a Save button fades in over 0.3 s, and after a short rest a muted
    preview plays in place (grid-card.tsx). The glow is a coloured shadow, not a
    blur filter, so hovering stays cheap. */
-.yt-card { position: relative; isolation: isolate; }
+/* Registered as colours so a picture's colours arriving mid-hover ease in, panel gradient included. */
+@property --glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glow-left { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --glow-right { syntax: "<color>"; inherits: true; initial-value: transparent; }
+.yt-card { position: relative; isolation: isolate;
+  /* The glow's colours: from the picture itself when it can be read (grid-card.tsx sets these, 2026-11-16), else the startup's. */
+  --glow: hsl(var(--thumb-hue, 205) 92% 58%); --glow-left: var(--glow); --glow-right: var(--glow);
+  transition: --glow 360ms var(--ease), --glow-left 360ms var(--ease), --glow-right 360ms var(--ease); }
 .yt-card::before { content: ""; position: absolute; z-index: -1; inset: -10px -10px -12px; border-radius: 20px; background: var(--hover); opacity: 0; transform: scale(0.97); transition: opacity 200ms var(--ease), transform 280ms var(--ease); pointer-events: none; }
 .yt-thumb, .yt-card .player { transition: box-shadow 360ms var(--ease); }
 .yt-thumb .thumb-composite { transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1); }
@@ -1707,13 +1715,13 @@ a.yt-guide-title > span { font-size: 22px; font-weight: 400; line-height: 1; }
 .yt-thumb .thumb { transition: transform 160ms var(--ease); }
 @media (hover: hover) and (pointer: fine) {
   .yt-card:hover::before, .yt-card:focus-within::before { opacity: 1; transform: none; }
-  .yt-card:hover .yt-thumb, .yt-card:hover .player { box-shadow: 0 14px 56px -6px hsl(var(--thumb-hue, 205) 95% 55% / 0.85), 0 0 22px -4px hsl(var(--thumb-hue, 205) 95% 60% / 0.55), 0 0 0 1px hsl(var(--thumb-hue, 205) 95% 72% / 0.35); }
-  .yt-card:hover::before { background: linear-gradient(180deg, color-mix(in srgb, hsl(var(--thumb-hue, 205) 90% 55%) 16%, var(--hover)), var(--hover) 62%); }
+  .yt-card:hover .yt-thumb, .yt-card:hover .player { box-shadow: -16px 14px 56px -8px color-mix(in srgb, var(--glow-left) 85%, transparent), 16px 14px 56px -8px color-mix(in srgb, var(--glow-right) 85%, transparent), 0 0 22px -4px color-mix(in srgb, var(--glow) 55%, transparent), 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--glow) 60%, #fff) 35%, transparent); }
+  .yt-card:hover::before { background: linear-gradient(180deg, transparent, var(--hover) 62%), linear-gradient(90deg, color-mix(in srgb, var(--glow-left) 16%, var(--hover)), color-mix(in srgb, var(--glow-right) 16%, var(--hover))); }
   .yt-card:hover .thumb-composite, .yt-card:hover .yt-thumb .thumb-photo { transform: scale(1.04); }
   .yt-hover-save { display: grid; }
   .yt-media:hover .yt-hover-save, .yt-hover-save:focus-visible { opacity: 1; }
   .yt-hover-save:hover { background: rgb(0 0 0 / 0.86); }
-  html[data-theme="light"] .yt-card:hover .yt-thumb, html[data-theme="light"] .yt-card:hover .player { box-shadow: 0 16px 40px -14px hsl(var(--thumb-hue, 205) 90% 50% / 0.55); }
+  html[data-theme="light"] .yt-card:hover .yt-thumb, html[data-theme="light"] .yt-card:hover .player { box-shadow: -12px 16px 40px -14px color-mix(in srgb, var(--glow-left) 55%, transparent), 12px 16px 40px -14px color-mix(in srgb, var(--glow-right) 55%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .yt-card::before { transition: opacity 120ms linear; transform: none !important; }
