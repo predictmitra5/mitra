@@ -1,10 +1,11 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { FaqList } from "@/components/faq-list";
 import { HeroShell } from "@/components/hero";
+import { LotusArt } from "@/components/lotus-art";
 import { HowStory } from "@/components/how-story";
 import { LotusOutline } from "@/components/lotus-outline";
 import { MarketCard } from "@/components/market-card";
-import { MotionRoot } from "@/components/motion-root";
+import { PageMotion } from "@/components/page-motion";
 import { RulesCard } from "@/components/rules-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -36,7 +37,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader items={items} appUrl={app()} />
       <main id="main">
-        <HeroShell>
+        <HeroShell art={<LotusArt />}>
           <div className="hero-copy">
             <p className="hero-kicker" data-hero-kicker><span className="pulse-dot" aria-hidden="true" />Founder videos, startup markets</p>
             <h1 className="display" data-split="hero">
@@ -173,7 +174,7 @@ export default function Home() {
         </section>
       </main>
       <SiteFooter showTeam={SHOW_TEAM} />
-      <MotionRoot />
+      <PageMotion />
     </>
   );
 }

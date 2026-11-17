@@ -171,6 +171,22 @@ main { position: relative; z-index: 1; }
   box-shadow: 0 -1px 0 rgb(11 11 12 / 0.05), 0 -28px 56px -36px rgb(11 11 12 / 0.4);
 }
 .chapter-scrim { position: absolute; inset: 0; z-index: 3; background: rgb(11 11 12 / 0.24); opacity: 0; pointer-events: none; }
+.sheet-timeline { view-timeline: --sheet block; view-timeline-inset: 0; }
+/* The next sheet's top overlaps this sheet's bottom by one corner radius. */
+.sheet-timeline > .chapter-scrim {
+  animation: sheet-dim auto cubic-bezier(0.3333, 0, 0.6667, 0) both;
+  animation-timeline: --sheet;
+  animation-range: entry-crossing calc(100% - var(--sheet-radius)) exit-crossing calc(100% - var(--sheet-radius));
+}
+@media (hover: hover) and (pointer: fine) {
+  .sheet-timeline > [data-chapter-content] {
+    animation: sheet-sink auto linear both;
+    animation-timeline: --sheet;
+    animation-range: entry-crossing calc(100% - var(--sheet-radius)) exit-crossing calc(100% - var(--sheet-radius));
+  }
+}
+@keyframes sheet-dim { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-sink { from { transform: translateY(0); } to { transform: translateY(18vh); } }
 
 /* Vela's rails: hairlines down the edges of the content on light sections. */
 .has-rails::before {
@@ -253,8 +269,12 @@ main { position: relative; z-index: 1; }
 /* Its own stacking layer, so its dimming scrim and pause button stay under the sheet that covers it. */
 .hero { position: relative; z-index: 0; isolation: isolate; display: flex; align-items: flex-end; min-height: max(640px, 100svh); overflow: clip; }
 .hero-art { position: absolute; inset: 0; }
-/* Its fades toward the edges are drawn into the lines (hero-field.tsx). */
 .hero-field { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-field canvas { width: 100%; height: 100%; }
+.hero-field::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgb(11 11 12 / 0.8), transparent 45%, transparent 90%, var(--bg));
+}
 .lotus-place {
   position: absolute; top: 45%; right: max(1.5vw, calc(50% - 760px)); width: min(56vw, 920px); aspect-ratio: 198 / 134; transform: translateY(-50%);
   -webkit-mask-image: linear-gradient(205deg, #000 38%, rgb(0 0 0 / 0.35) 72%, rgb(0 0 0 / 0.1) 100%);
@@ -264,7 +284,7 @@ main { position: relative; z-index: 1; }
 .lotus-core { position: absolute; inset: 0; animation: lotus-breathe 8s ease-in-out infinite; }
 .lotus-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .lotus-fill { fill: rgb(255 255 255 / 0.05); }
-.lotus-line { fill: none; stroke: rgb(255 255 255 / 0.5); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.lotus-line { fill: none; stroke: rgb(255 255 255 / 0.5); stroke-width: 1; stroke-linejoin: round; }
 /* The light along the petals: a band moved by the compositor, shown only through the outline. */
 .lotus-sheen {
   position: absolute; inset: 0; overflow: hidden;
@@ -309,7 +329,7 @@ main { position: relative; z-index: 1; }
 }
 .motion-toggle:active { transform: scale(0.92); background: rgb(255 255 255 / 0.12); }
 .motion-toggle svg { width: 18px; height: 18px; }
-.hero[data-paused] :is(.lotus-core, .lotus-glow, .pulse-dot, .lotus-sheen i) { animation-play-state: paused; }
+.hero:is([data-paused], [data-offscreen]) :is(.lotus-core, .lotus-glow, .pulse-dot, .lotus-sheen i) { animation-play-state: paused; }
 html[data-motion="reduce"] .motion-toggle { display: none; }
 
 /* ---------- Example markets ---------- */
@@ -602,7 +622,7 @@ html[data-motion="reduce"] .demo-pause { display: none; }
 .closing-art { position: absolute; right: -2%; bottom: -26%; width: min(60vw, 900px); aspect-ratio: 198 / 134; pointer-events: none; }
 .lotus-outline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .lotus-outline-fill { fill: rgb(255 255 255 / 0.025); }
-.lotus-outline-line { fill: none; stroke: rgb(255 255 255 / 0.32); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.lotus-outline-line { fill: none; stroke: rgb(255 255 255 / 0.32); stroke-width: 1; stroke-linejoin: round; }
 .closing-title { position: relative; font-size: clamp(48px, 8.4vw, 136px); font-weight: 600; line-height: 0.95; letter-spacing: -0.056em; }
 .closing-actions { position: relative; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
 
@@ -623,12 +643,17 @@ html[data-motion="reduce"] .demo-pause { display: none; }
 }
 .footer-cols a:active { color: rgb(255 255 255 / 0.6); }
 .footer-word {
+  position: relative; overflow: hidden;
   width: min(100%, 1080px); aspect-ratio: 517 / 134; margin-top: clamp(64px, 7vw, 104px);
-  background: linear-gradient(100deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.08) 42%, rgb(255 255 255 / 0.32) 50%, rgb(255 255 255 / 0.08) 58%, rgb(255 255 255 / 0.08) 100%) 100% 0 / 320% 100% no-repeat;
+  background: rgb(255 255 255 / 0.08);
   -webkit-mask: url("/brand/mitra-logo.svg") left center / contain no-repeat; mask: url("/brand/mitra-logo.svg") left center / contain no-repeat;
 }
-.footer[data-seen] .footer-word { animation: sweep 6s cubic-bezier(0.45, 0, 0.55, 1) 0.4s 3; }
-@keyframes sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+.footer[data-seen] .footer-word::after {
+  content: ""; position: absolute; inset: 0 auto 0 -95%; width: 70%;
+  background: linear-gradient(100deg, transparent 12%, rgb(255 255 255 / 0.26) 50%, transparent 88%);
+  animation: sweep 6s cubic-bezier(0.45, 0, 0.55, 1) 0.4s 3;
+}
+@keyframes sweep { to { transform: translateX(314.3%); } }
 .footer-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgb(255 255 255 / 0.1); font-size: 13px; color: rgb(255 255 255 / 0.45); }
 
 /* ---------- Narrower screens ---------- */
@@ -727,6 +752,7 @@ html[data-motion="full"]:not(.motion-ready) :is([data-reveal], [data-card], [dat
 html[data-motion="full"] .rules-card:not([data-on="true"]) :is(.rules-list > div, .rules-lock) { opacity: 0; }
 html[data-motion="full"] .rules-card:not([data-on="true"]) .rules-bar b { transform: scaleX(0); }
 .split-line-mask { overflow-clip-margin: 0.08em; }
+[data-reveal-pending] { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; transition-delay: 0s !important; }

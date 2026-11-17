@@ -1,4 +1,4 @@
-import { LOTUS_PATH, LOTUS_VIEWBOX } from "@/content/lotus-path";
+import { LOTUS_VIEWBOX } from "@/content/lotus-path";
 
 /*
  * The lotus in fine lines with nothing moving inside it, for the closing call.
@@ -9,8 +9,8 @@ import { LOTUS_PATH, LOTUS_VIEWBOX } from "@/content/lotus-path";
 export function LotusOutline({ className }: { className?: string }) {
   return (
     <svg className={`lotus-outline${className ? ` ${className}` : ""}`} viewBox={LOTUS_VIEWBOX} aria-hidden="true" focusable="false">
-      <path className="lotus-outline-fill" d={LOTUS_PATH} fillRule="evenodd" />
-      <path className="lotus-outline-line" d={LOTUS_PATH} pathLength={1} data-draw />
+      <use className="lotus-outline-fill" href="#lotus-outline-shape" />
+      <use className="lotus-outline-line" href="#lotus-outline-shape" data-draw />
     </svg>
   );
 }

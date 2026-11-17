@@ -15,8 +15,11 @@ export function LotusArt() {
   return (
     <>
       <svg className="lotus-svg" viewBox={LOTUS_VIEWBOX} aria-hidden="true" focusable="false">
-        <path className="lotus-fill" d={LOTUS_PATH} fillRule="evenodd" data-lotus-fill />
-        <path className="lotus-line" d={LOTUS_PATH} pathLength={1} data-lotus-line />
+        <defs>
+          <path id="lotus-outline-shape" d={LOTUS_PATH} fillRule="evenodd" vectorEffect="non-scaling-stroke" />
+        </defs>
+        <use className="lotus-fill" href="#lotus-outline-shape" data-lotus-fill />
+        <use className="lotus-line" href="#lotus-outline-shape" data-lotus-line />
       </svg>
       <div className="lotus-sheen" aria-hidden="true"><i /></div>
     </>

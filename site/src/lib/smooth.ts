@@ -1,19 +1,43 @@
-import type Lenis from "lenis";
+import Lenis from "lenis";
 
-/*
- * The page's smooth scroller (Lenis), when it runs. It is off for people who
- * ask their device to reduce motion; in-page links then jump, helped by the
- * stylesheet's scroll-padding.
- */
-let current: Lenis | null = null;
+/** Drive Lenis only between the first input and the last interpolated frame. */
+export function enableSmoothScroll(onScroll: () => void) {
+  const lenis = new Lenis({ lerp: 0.14, smoothWheel: true });
+  let frame = 0;
+  const tick = (now: number) => {
+    frame = 0;
+    if (lenis.isScrolling !== "smooth") return;
+    lenis.raf(now);
+    if (lenis.isScrolling === "smooth") frame = requestAnimationFrame(tick);
+  };
+  const wake = () => {
+    if (frame) return;
+    // Reset the clock before a new scroll so idle time cannot skip its easing.
+    lenis.raf(performance.now());
+    frame = requestAnimationFrame(tick);
+  };
+  lenis.on("scroll", onScroll);
+  lenis.on("virtual-scroll", ({ event }) => {
+    if (event.type === "wheel" && !event.ctrlKey) wake();
+  });
 
-export function setSmoothScroller(lenis: Lenis | null): void {
-  current = lenis;
-}
+  const onClick = (event: MouseEvent) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+    const hash = link?.getAttribute("href");
+    if (!hash || hash === "#") return;
+    const target = hash === "#top" ? document.body : document.getElementById(hash.slice(1));
+    if (!target) return;
+    event.preventDefault();
+    wake();
+    lenis.scrollTo(target, { duration: 1.4 });
+    history.replaceState(null, "", hash === "#top" ? location.pathname : hash);
+  };
+  document.addEventListener("click", onClick);
 
-export function scrollToTarget(target: HTMLElement | string): void {
-  const element = typeof target === "string" ? document.querySelector<HTMLElement>(target) : target;
-  if (!element) return;
-  if (current) current.scrollTo(element, { duration: 1.4 });
-  else element.scrollIntoView({ block: "start" });
+  return () => {
+    document.removeEventListener("click", onClick);
+    cancelAnimationFrame(frame);
+    lenis.destroy();
+  };
 }

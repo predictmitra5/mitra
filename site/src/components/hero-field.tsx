@@ -11,10 +11,9 @@ import { useEffect, useRef } from "react";
  * presses pause, and draws a single still frame for people who ask their
  * device to reduce motion.
  *
- * Kept light, since it fills the screen: drawn at one canvas pixel per CSS
- * pixel (the lines are faint, so a sharper canvas buys nothing but four times
- * the pixels on a 2x screen), 30 times a second (they drift slowly), and with
- * its fades toward the edges drawn into each line rather than masked by CSS.
+ * Each line is painted once into a narrow strip with room to drift. At 30 Hz
+ * the field moves those strips and draws the pulse. Only a line that reaches
+ * the end of its strip needs its points sampled and stroked again.
  */
 
 type Line = { base: number; amp: number; slope: number; speed: number; coarse: number; fine: number; alpha: number; seed: number; pulse: number };
@@ -32,6 +31,7 @@ function seeded(seed: number) {
 const random = seeded(20261020);
 const TABLE = Float32Array.from({ length: 1024 }, () => random());
 const FRAME_MS = 1000 / 30;
+const DRIFT_ROOM = 96;
 
 /** How visible a line is at a height (0 to 1 of the canvas): fading out over the top and bottom sixths. */
 function verticalFade(at: number): number {
@@ -67,6 +67,41 @@ function makeLines(height: number): Line[] {
   });
 }
 
+function lineY(line: Line, x: number, offset: number, width: number, height: number) {
+  const shifted = x + offset;
+  const wave = (noise(line.seed + shifted / line.coarse) - 0.5) * 2 * line.amp
+    + (noise(line.seed * 2 + shifted / line.fine) - 0.5) * 0.36 * line.amp;
+  return line.base * height + wave + line.slope * (x - width / 2);
+}
+
+function makeStrip(line: Line, width: number, height: number) {
+  const bitmap = document.createElement("canvas");
+  const top = Math.floor(line.base * height - 1.18 * line.amp
+    - Math.abs(line.slope) * (width / 2 + DRIFT_ROOM) - 2);
+  bitmap.width = Math.ceil(width) + DRIFT_ROOM + 2;
+  bitmap.height = Math.ceil(2 * (line.base * height - top)) + 2;
+  const ink = bitmap.getContext("2d")!;
+  const step = width > 900 ? 6 : 5;
+  let start = -Infinity;
+
+  return (context: CanvasRenderingContext2D, offset: number) => {
+    if (offset - start >= DRIFT_ROOM) {
+      start = offset;
+      ink.clearRect(0, 0, bitmap.width, bitmap.height);
+      ink.strokeStyle = "#fff";
+      ink.lineJoin = "round";
+      ink.beginPath();
+      ink.moveTo(0, lineY(line, 0, start, width, height) - top);
+      for (let x = step; x < bitmap.width + step; x += step) {
+        ink.lineTo(x, lineY(line, x, start, width, height) - top);
+      }
+      ink.stroke();
+    }
+    const drift = offset - start;
+    context.drawImage(bitmap, -drift, top - line.slope * drift);
+  };
+}
+
 export function HeroField({ paused }: { paused: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pausedRef = useRef(paused);
@@ -81,48 +116,26 @@ export function HeroField({ paused }: { paused: boolean }) {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     let width = 0;
     let height = 0;
-    let ratio = 1;
-    let lines: Line[] = [];
-    // Across the width: faint at the left, full from 45% to 90%, gone at the right edge.
-    let across: CanvasGradient | null = null;
+    let strips: { line: Line; paint: ReturnType<typeof makeStrip> }[] = [];
     let time = 0;
     let last = 0;
     let frame = 0;
-    let visible = true;
     let nextPulse = 1.2;
-    let pulsing = -1;
-
-    const yAt = (line: Line, x: number) => {
-      const shifted = x + time * line.speed;
-      const wave = (noise(line.seed + shifted / line.coarse) - 0.5) * 2 * line.amp
-        + (noise(line.seed * 2 + shifted / line.fine) - 0.5) * 0.36 * line.amp;
-      return line.base * height + wave + line.slope * (x - width / 2);
-    };
 
     const draw = () => {
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
       context.clearRect(0, 0, width, height);
-      context.lineWidth = 1;
-      context.lineJoin = "round";
-      const step = width > 900 ? 6 : 5;
       const head = width * 0.8;
-      for (const line of lines) {
+      for (const { line, paint } of strips) {
         const fade = verticalFade(line.base);
         context.globalAlpha = Math.min(0.5, line.alpha + line.pulse * 0.32) * fade;
-        context.strokeStyle = across ?? "#fff";
-        context.beginPath();
-        for (let x = -step; x <= width + step; x += step) {
-          const y = yAt(line, x);
-          if (x === -step) context.moveTo(x, y);
-          else context.lineTo(x, y);
-        }
-        context.stroke();
+        const offset = time * line.speed;
+        paint(context, offset);
         if (line.pulse > 0.02) {
-          const y = yAt(line, head);
+          const y = lineY(line, head, offset, width, height);
           context.fillStyle = "#fff";
           context.globalAlpha = Math.min(1, line.pulse * 1.4) * verticalFade(y / height);
           context.beginPath();
@@ -139,19 +152,11 @@ export function HeroField({ paused }: { paused: boolean }) {
       context.globalAlpha = 1;
     };
 
-    const resize = () => {
-      const box = canvas.getBoundingClientRect();
-      ratio = Math.min(window.devicePixelRatio || 1, 1);
-      width = Math.max(1, box.width);
-      height = Math.max(1, box.height);
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-      across = context.createLinearGradient(0, 0, width, 0);
-      across.addColorStop(0, "rgba(255,255,255,0.2)");
-      across.addColorStop(0.45, "#fff");
-      across.addColorStop(0.9, "#fff");
-      across.addColorStop(1, "rgba(255,255,255,0)");
-      lines = makeLines(height);
+    const resize = ({ width: w, height: h }: DOMRectReadOnly) => {
+      if (width === Math.round(w) && height === Math.round(h)) return;
+      width = canvas.width = Math.max(1, Math.round(w));
+      height = canvas.height = Math.max(1, Math.round(h));
+      strips = makeLines(height).map((line) => ({ line, paint: makeStrip(line, width, height) }));
       draw();
     };
 
@@ -165,17 +170,16 @@ export function HeroField({ paused }: { paused: boolean }) {
       last = now;
       time += delta;
       nextPulse -= delta;
-      if (nextPulse <= 0 && lines.length) {
-        pulsing = Math.floor(random() * lines.length);
-        lines[pulsing].pulse = 1;
+      if (nextPulse <= 0 && strips.length) {
+        strips[Math.floor(random() * strips.length)].line.pulse = 1;
         nextPulse = 1.4 + random() * 1.6;
       }
-      for (const line of lines) line.pulse = Math.max(0, line.pulse - delta * 0.55);
+      for (const { line } of strips) line.pulse = Math.max(0, line.pulse - delta * 0.55);
       draw();
       wake();
     };
 
-    const running = () => !still && visible && !pausedRef.current && document.visibilityState === "visible";
+    const running = () => !reduced.matches && !pausedRef.current && document.visibilityState === "visible";
     const wake = () => {
       if (running()) {
         if (!frame) frame = requestAnimationFrame(loop);
@@ -187,25 +191,18 @@ export function HeroField({ paused }: { paused: boolean }) {
     };
     wakeRef.current = wake;
 
-    const sizeObserver = new ResizeObserver(resize);
+    const sizeObserver = new ResizeObserver(([entry]) => resize(entry.contentRect));
     sizeObserver.observe(canvas);
-    const viewObserver = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      wake();
-    });
-    viewObserver.observe(canvas);
-    document.addEventListener("visibilitychange", wake);
-    resize();
+    reduced.addEventListener("change", wake);
     wake();
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
       sizeObserver.disconnect();
-      viewObserver.disconnect();
-      document.removeEventListener("visibilitychange", wake);
+      reduced.removeEventListener("change", wake);
       wakeRef.current = () => {};
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="hero-field" data-hero-field aria-hidden="true" />;
+  return <div className="hero-field" data-hero-field aria-hidden="true"><canvas ref={canvasRef} /></div>;
 }
